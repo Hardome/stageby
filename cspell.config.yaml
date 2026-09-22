@@ -5,7 +5,10 @@ import:
 useGitignore: true
 enableGlobDot: true
 words:
+  - healthcheck
+  - isready
   - Stageby
+  - Trixie
 ignorePaths:
   - '**/node_modules/**'
   - '**/dist/**'

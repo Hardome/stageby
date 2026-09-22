@@ -1,0 +1,16 @@
+{
+  "name": "stageby",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "bootstrap": "node ./scripts/bootstrap.mjs",
+    "dev": "pnpm --dir api run dev",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs --follow postgres"
+  }
+}

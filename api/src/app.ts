@@ -6,9 +6,13 @@ import { registerErrorHandler } from './error-handler.js';
 import { databasePlugin } from './plugins/database.js';
 import { registerDocumentation } from './plugins/documentation.js';
 import { registerSecurity } from './plugins/security.js';
+import { DrizzleTodoRepository } from './todos/drizzle-todo-repository.js';
+import { registerTodoRoutes } from './todos/routes.js';
+import type { TodoRepository } from './todos/todo-repository.js';
 
 interface BuildAppOptions {
   environment: Environment;
+  todoRepository?: TodoRepository;
 }
 
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
@@ -39,6 +43,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(databasePlugin, {
     databaseUrl: options.environment.DATABASE_URL,
   });
+
+  registerTodoRoutes(app, options.todoRepository ?? new DrizzleTodoRepository(app.db));
 
   return app;
 }

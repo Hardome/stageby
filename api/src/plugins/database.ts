@@ -3,9 +3,11 @@ import type { FastifyPluginAsync } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import { Pool } from 'pg';
 
+import * as databaseSchema from '../db/schema.js';
+
 declare module 'fastify' {
   interface FastifyInstance {
-    db: NodePgDatabase;
+    db: NodePgDatabase<typeof databaseSchema>;
   }
 }
 
@@ -15,7 +17,7 @@ interface DatabasePluginOptions {
 
 const databasePluginCallback: FastifyPluginAsync<DatabasePluginOptions> = async (app, options) => {
   const pool = new Pool({ connectionString: options.databaseUrl });
-  const database = drizzle({ client: pool });
+  const database = drizzle({ client: pool, schema: databaseSchema });
 
   app.decorate('db', database);
   app.addHook('onClose', async () => {
