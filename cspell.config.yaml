@@ -1,0 +1,15 @@
+version: '0.2'
+language: en, en-US, ru, ru-RU
+import:
+  - '@cspell/dict-ru_ru/cspell-ext.json'
+useGitignore: true
+enableGlobDot: true
+words:
+  - Stageby
+ignorePaths:
+  - '**/node_modules/**'
+  - '**/dist/**'
+  - '**/coverage/**'
+  - '**/pnpm-lock.yaml'
+  - 'api/src/generated/**'
+  - 'api/src/db/migrations/**'
