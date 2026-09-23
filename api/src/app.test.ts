@@ -1,184 +1,104 @@
 import { randomUUID } from 'node:crypto';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { sql } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { buildApp } from './app.js';
-import { parseEnvironment } from './config/env.js';
-import type { CreateTodo, Todo, UpdateTodo } from './generated/types.gen.js';
-import type { TodoRepository } from './todos/todo-repository.js';
+import { buildApp } from '#app/app';
+import { type Environment, parseEnvironment } from '#app/config/env';
+import { todos } from '#app/db/schema/todos';
 
-const apps: Awaited<ReturnType<typeof buildApp>>[] = [];
+let app: Awaited<ReturnType<typeof buildApp>>;
+let environment: Environment;
 
-class InMemoryTodoRepository implements TodoRepository {
-  readonly #todos = new Map<string, Todo>();
-
-  async findAll(): Promise<Todo[]> {
-    return [...this.#todos.values()];
+beforeAll(async () => {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('Для тестов приложения требуется DATABASE_URL. Запустите PostgreSQL.');
   }
 
-  async findById(id: string): Promise<Todo | null> {
-    return this.#todos.get(id) ?? null;
-  }
-
-  async create(input: CreateTodo): Promise<Todo> {
-    const now = new Date().toISOString();
-    const todo: Todo = {
-      id: randomUUID(),
-      title: input.title,
-      description: input.description ?? null,
-      completed: false,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    this.#todos.set(todo.id, todo);
-    return todo;
-  }
-
-  async update(id: string, input: UpdateTodo): Promise<Todo | null> {
-    const current = this.#todos.get(id);
-
-    if (!current) {
-      return null;
-    }
-
-    const todo: Todo = {
-      ...current,
-      ...input,
-      updatedAt: new Date().toISOString(),
-    };
-
-    this.#todos.set(id, todo);
-    return todo;
-  }
-
-  async delete(id: string): Promise<boolean> {
-    return this.#todos.delete(id);
-  }
-}
-
-afterEach(async () => {
-  await Promise.all(apps.splice(0).map((app) => app.close()));
-});
-
-function createEnvironment() {
-  return parseEnvironment({
+  environment = parseEnvironment({
+    ...process.env,
     NODE_ENV: 'test',
-    HOST: '127.0.0.1',
-    PORT: '3001',
     LOG_LEVEL: 'silent',
-    DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/stageby_test',
     CORS_ORIGIN: 'http://localhost:5173',
     RATE_LIMIT_MAX: '100',
     RATE_LIMIT_TIME_WINDOW: '1 minute',
   });
-}
 
-async function createTestApp(repository = new InMemoryTodoRepository()) {
-  const app = await buildApp({
-    environment: createEnvironment(),
-    todoRepository: repository,
-  });
+  app = await buildApp({ environment });
+  await app.ready();
 
-  apps.push(app);
-  return app;
-}
+  try {
+    await app.db.execute(sql`select 1`);
+  } catch (cause) {
+    throw new Error('PostgreSQL недоступен для тестов приложения.', { cause });
+  }
+});
 
-describe('application', () => {
-  it('serves the OpenAPI contract through Swagger UI', async () => {
-    const app = await createTestApp();
+afterAll(async () => {
+  await app?.close();
+});
 
-    const response = await app.inject({
-      method: 'GET',
-      url: '/documentation/json',
-    });
+describe('Приложение', () => {
+  it('отдаёт контракт OpenAPI', async () => {
+    const response = await app.inject({ method: 'GET', url: '/documentation/json' });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       openapi: '3.1.0',
-      info: {
-        title: 'Stageby API',
-        version: '0.0.0',
-      },
-      paths: {
-        '/todos': {},
-        '/todos/{id}': {},
-      },
+      info: { title: 'Stageby API', version: '0.0.0' },
+      paths: { '/todos': {}, '/todos/{id}': {} },
     });
   });
 
-  it('creates, reads, updates, lists and deletes todos', async () => {
-    const app = await createTestApp();
-
-    const createResponse = await app.inject({
-      method: 'POST',
-      url: '/todos',
-      payload: {
-        title: 'Build foundation',
-        description: null,
-      },
-    });
-
-    expect(createResponse.statusCode).toBe(201);
-    const created = createResponse.json<Todo>();
-    expect(created).toMatchObject({
-      title: 'Build foundation',
-      description: null,
-      completed: false,
-    });
-
-    const listResponse = await app.inject({ method: 'GET', url: '/todos' });
-    expect(listResponse.statusCode).toBe(200);
-    expect(listResponse.json()).toEqual([created]);
-
-    const getResponse = await app.inject({ method: 'GET', url: `/todos/${created.id}` });
-    expect(getResponse.statusCode).toBe(200);
-    expect(getResponse.json()).toEqual(created);
-
-    const updateResponse = await app.inject({
-      method: 'PATCH',
-      url: `/todos/${created.id}`,
-      payload: { completed: true },
-    });
-    expect(updateResponse.statusCode).toBe(200);
-    expect(updateResponse.json()).toMatchObject({
-      id: created.id,
-      completed: true,
-    });
-
-    const deleteResponse = await app.inject({ method: 'DELETE', url: `/todos/${created.id}` });
-    expect(deleteResponse.statusCode).toBe(204);
-    expect(deleteResponse.body).toBe('');
-
-    const missingResponse = await app.inject({ method: 'GET', url: `/todos/${created.id}` });
-    expect(missingResponse.statusCode).toBe(404);
-    expect(missingResponse.json()).toEqual({
-      error: 'Not Found',
-      message: 'Todo not found',
-    });
-  });
-
-  it('validates todo requests against the contract schemas', async () => {
-    const app = await createTestApp();
-
-    const createResponse = await app.inject({
-      method: 'POST',
-      url: '/todos',
-      payload: {},
-    });
-    expect(createResponse.statusCode).toBe(400);
-
-    const updateResponse = await app.inject({
-      method: 'PATCH',
-      url: `/todos/${randomUUID()}`,
-      payload: {},
-    });
-    expect(updateResponse.statusCode).toBe(400);
-
-    const invalidIdResponse = await app.inject({
+  it('добавляет заголовки CORS и защиты', async () => {
+    const response = await app.inject({
       method: 'GET',
-      url: '/todos/not-a-uuid',
+      url: `/todos/${randomUUID()}`,
+      headers: { origin: 'http://localhost:5173' },
     });
-    expect(invalidIdResponse.statusCode).toBe(400);
+
+    expect(response.statusCode).toBe(404);
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+  });
+
+  it('подключает БД к модулю', async () => {
+    const rows = await app.db.select().from(todos).limit(1);
+    expect(Array.isArray(rows)).toBe(true);
+
+    const response = await app.inject({ method: 'GET', url: `/todos/${randomUUID()}` });
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({ error: 'Не найдено', message: 'Задача не найдена' });
+  });
+
+  it('оформляет ошибки проверки данных через общий обработчик', async () => {
+    const response = await app.inject({ method: 'POST', url: '/todos', payload: {} });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      error: 'Некорректный запрос',
+      message: 'Ошибка проверки данных запроса',
+    });
+  });
+
+  it('ограничивает число запросов', async () => {
+    const limitedApp = await buildApp({
+      environment: { ...environment, RATE_LIMIT_MAX: 1 },
+    });
+
+    try {
+      const url = `/todos/${randomUUID()}`;
+      const first = await limitedApp.inject({ method: 'GET', url });
+      const second = await limitedApp.inject({ method: 'GET', url });
+
+      expect(first.statusCode).toBe(404);
+      expect(second.statusCode).toBe(429);
+      expect(second.json()).toMatchObject({
+        error: 'Слишком много запросов',
+        message: 'Превышен лимит запросов',
+      });
+    } finally {
+      await limitedApp.close();
+    }
   });
 });

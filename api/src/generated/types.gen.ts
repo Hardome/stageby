@@ -57,7 +57,7 @@ export type CreateTodoData = {
 
 export type CreateTodoErrors = {
     /**
-     * Invalid request
+     * Некорректный запрос
      */
     400: Error;
 };
@@ -84,7 +84,7 @@ export type DeleteTodoData = {
 
 export type DeleteTodoErrors = {
     /**
-     * Todo not found
+     * Задача не найдена
      */
     404: Error;
 };
@@ -111,7 +111,7 @@ export type GetTodoData = {
 
 export type GetTodoErrors = {
     /**
-     * Todo not found
+     * Задача не найдена
      */
     404: Error;
 };
@@ -138,11 +138,11 @@ export type UpdateTodoData = {
 
 export type UpdateTodoErrors = {
     /**
-     * Invalid request
+     * Некорректный запрос
      */
     400: Error;
     /**
-     * Todo not found
+     * Задача не найдена
      */
     404: Error;
 };

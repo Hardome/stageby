@@ -3,7 +3,7 @@ import fastifyHelmet from '@fastify/helmet';
 import fastifyRateLimit from '@fastify/rate-limit';
 import type { FastifyInstance } from 'fastify';
 
-import type { Environment } from '../config/env.js';
+import type { Environment } from '#app/config/env';
 
 export async function registerSecurity(app: FastifyInstance, environment: Environment): Promise<void> {
   await app.register(fastifyCors, {

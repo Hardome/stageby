@@ -5,8 +5,10 @@ import:
 useGitignore: true
 enableGlobDot: true
 words:
+  - codegen
   - healthcheck
   - isready
+  - nosniff
   - Stageby
   - Trixie
 ignorePaths:

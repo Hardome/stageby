@@ -1,6 +1,5 @@
 import type { FastifyInstance } from 'fastify';
 
-import type { RouteHandlers } from '../generated/fastify.gen.js';
 import {
   zCreateTodoBody,
   zCreateTodoResponse,
@@ -12,26 +11,29 @@ import {
   zUpdateTodoBody,
   zUpdateTodoPath,
   zUpdateTodoResponse,
-} from '../generated/zod.gen.js';
-import type { TodoRepository } from './todo-repository.js';
+} from '#app/generated/zod.gen';
+import { toTodo } from '#app/modules/todos/mapper';
+import type { TodoRepository } from '#app/modules/todos/repository';
+import type { RouteHandlers } from '#app/modules/todos/types';
 
 const updateTodoBodySchema = zUpdateTodoBody.refine((body) => Object.keys(body).length > 0, {
-  message: 'At least one field is required',
+  message: 'Укажите хотя бы одно поле',
 });
 
 const notFoundResponse = {
-  error: 'Not Found',
-  message: 'Todo not found',
+  error: 'Не найдено',
+  message: 'Задача не найдена',
 };
 
 export function registerTodoRoutes(app: FastifyInstance, repository: TodoRepository): void {
   const listTodos: RouteHandlers['listTodos'] = async (_request, reply) => {
-    return reply.status(200).send(await repository.findAll());
+    const todos = await repository.findAll();
+    return reply.status(200).send(todos.map(toTodo));
   };
 
   const createTodo: RouteHandlers['createTodo'] = async (request, reply) => {
     const todo = await repository.create(request.body);
-    return reply.status(201).send(todo);
+    return reply.status(201).send(toTodo(todo));
   };
 
   const getTodo: RouteHandlers['getTodo'] = async (request, reply) => {
@@ -41,7 +43,7 @@ export function registerTodoRoutes(app: FastifyInstance, repository: TodoReposit
       return reply.status(404).send(notFoundResponse);
     }
 
-    return reply.status(200).send(todo);
+    return reply.status(200).send(toTodo(todo));
   };
 
   const updateTodo: RouteHandlers['updateTodo'] = async (request, reply) => {
@@ -51,7 +53,7 @@ export function registerTodoRoutes(app: FastifyInstance, repository: TodoReposit
       return reply.status(404).send(notFoundResponse);
     }
 
-    return reply.status(200).send(todo);
+    return reply.status(200).send(toTodo(todo));
   };
 
   const deleteTodo: RouteHandlers['deleteTodo'] = async (request, reply) => {

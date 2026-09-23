@@ -3,22 +3,30 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#app/*": {
+      "types": "./src/*.ts",
+      "development": "./src/*.ts",
+      "default": "./dist/*.js"
+    },
+    "#test/*": "./test/*.ts"
+  },
   "engines": {
     "node": ">=24.0.0",
     "pnpm": ">=11.0.0"
   },
   "scripts": {
     "build": "pnpm run codegen && tsc -p tsconfig.build.json",
-    "codegen": "openapi-ts && biome format --write src/generated && pnpm run typecheck",
-    "db:generate": "node --env-file-if-exists=.env ./node_modules/drizzle-kit/bin.cjs generate",
-    "db:migrate": "node --env-file-if-exists=.env ./node_modules/drizzle-kit/bin.cjs migrate",
-    "db:studio": "node --env-file-if-exists=.env ./node_modules/drizzle-kit/bin.cjs studio",
-    "dev": "tsx watch src/server.ts",
+    "codegen": "openapi-ts && pnpm run typecheck",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "dev": "node --conditions=development --import tsx --watch src/server.ts",
     "format": "biome format --write src openapi-ts.config.ts drizzle.config.ts vitest.config.ts",
     "lint": "pnpm run lint:biome:fix && pnpm run spellcheck && pnpm run typecheck",
     "lint:biome:fix": "biome check --write --unsafe --no-errors-on-unmatched",
     "start": "node dist/server.js",
-    "spellcheck": "cspell --config ../cspell.config.yaml \"src/**/*.ts\" \"*.config.ts\" README.md .env.example",
+    "spellcheck": "cspell --config ../cspell.config.yaml \"src/**/*.ts\" \"test/**/*.ts\" \"../docs/**/*.md\" \"*.config.ts\" README.md .env.example",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json"

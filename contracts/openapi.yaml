@@ -88,13 +88,13 @@ components:
         format: uuid
   responses:
     BadRequest:
-      description: Invalid request
+      description: Некорректный запрос
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
     NotFound:
-      description: Todo not found
+      description: Задача не найдена
       content:
         application/json:
           schema:
