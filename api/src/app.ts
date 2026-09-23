@@ -1,18 +1,15 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
 
-import type { Environment } from './config/env.js';
-import { registerErrorHandler } from './error-handler.js';
-import { databasePlugin } from './plugins/database.js';
-import { registerDocumentation } from './plugins/documentation.js';
-import { registerSecurity } from './plugins/security.js';
-import { DrizzleTodoRepository } from './todos/drizzle-todo-repository.js';
-import { registerTodoRoutes } from './todos/routes.js';
-import type { TodoRepository } from './todos/todo-repository.js';
+import type { Environment } from '#app/config/env';
+import { todoModule } from '#app/modules/todos/index';
+import { registerDatabase } from '#app/plugins/database';
+import { registerDocumentation } from '#app/plugins/documentation';
+import { registerErrorHandler } from '#app/plugins/error-handler';
+import { registerSecurity } from '#app/plugins/security';
 
 interface BuildAppOptions {
   environment: Environment;
-  todoRepository?: TodoRepository;
 }
 
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
@@ -33,18 +30,18 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         : { level: options.environment.LOG_LEVEL },
   }).withTypeProvider<ZodTypeProvider>();
 
+  /* Валидация запросов и ответов через zod */
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
+  /* Плагины */
   registerErrorHandler(app, options.environment);
-
   await registerSecurity(app, options.environment);
+  await registerDatabase(app, options.environment);
   await registerDocumentation(app);
-  await app.register(databasePlugin, {
-    databaseUrl: options.environment.DATABASE_URL,
-  });
 
-  registerTodoRoutes(app, options.todoRepository ?? new DrizzleTodoRepository(app.db));
+  /* Модули */
+  await app.register(todoModule);
 
   return app;
 }

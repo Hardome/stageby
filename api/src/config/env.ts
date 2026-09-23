@@ -14,7 +14,7 @@ const environmentSchema = z.object({
         return false;
       }
     },
-    { message: 'DATABASE_URL must be a PostgreSQL URL' },
+    { message: 'DATABASE_URL должен содержать адрес PostgreSQL' },
   ),
   CORS_ORIGIN: z
     .string()

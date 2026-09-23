@@ -1,42 +1,27 @@
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
-import type * as databaseSchema from '../db/schema.js';
-import { todos } from '../db/schema.js';
-import type { CreateTodo, Todo, UpdateTodo } from '../generated/types.gen.js';
-import type { TodoRepository } from './todo-repository.js';
+import type * as databaseSchema from '#app/db/schema/index';
+import { todos } from '#app/db/schema/todos';
+import type { CreateTodo, TodoRow, UpdateTodo } from '#app/modules/todos/types';
 
-type TodoRow = typeof todos.$inferSelect;
-
-function mapTodo(row: TodoRow): Todo {
-  return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    completed: row.completed,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  };
-}
-
-export class DrizzleTodoRepository implements TodoRepository {
+export class TodoRepository {
   readonly #database: NodePgDatabase<typeof databaseSchema>;
 
   constructor(database: NodePgDatabase<typeof databaseSchema>) {
     this.#database = database;
   }
 
-  async findAll(): Promise<Todo[]> {
-    const rows = await this.#database.select().from(todos);
-    return rows.map(mapTodo);
+  async findAll(): Promise<TodoRow[]> {
+    return this.#database.select().from(todos);
   }
 
-  async findById(id: string): Promise<Todo | null> {
+  async findById(id: string): Promise<TodoRow | null> {
     const [row] = await this.#database.select().from(todos).where(eq(todos.id, id)).limit(1);
-    return row ? mapTodo(row) : null;
+    return row ?? null;
   }
 
-  async create(input: CreateTodo): Promise<Todo> {
+  async create(input: CreateTodo): Promise<TodoRow> {
     const [row] = await this.#database
       .insert(todos)
       .values({
@@ -46,13 +31,13 @@ export class DrizzleTodoRepository implements TodoRepository {
       .returning();
 
     if (!row) {
-      throw new Error('Failed to create todo');
+      throw new Error('Не удалось создать задачу');
     }
 
-    return mapTodo(row);
+    return row;
   }
 
-  async update(id: string, input: UpdateTodo): Promise<Todo | null> {
+  async update(id: string, input: UpdateTodo): Promise<TodoRow | null> {
     const values: Partial<typeof todos.$inferInsert> = {
       updatedAt: new Date(),
     };
@@ -70,7 +55,7 @@ export class DrizzleTodoRepository implements TodoRepository {
     }
 
     const [row] = await this.#database.update(todos).set(values).where(eq(todos.id, id)).returning();
-    return row ? mapTodo(row) : null;
+    return row ?? null;
   }
 
   async delete(id: string): Promise<boolean> {

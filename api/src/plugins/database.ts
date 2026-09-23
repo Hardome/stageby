@@ -1,9 +1,10 @@
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import { Pool } from 'pg';
 
-import * as databaseSchema from '../db/schema.js';
+import type { Environment } from '#app/config/env';
+import * as databaseSchema from '#app/db/schema/index';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -25,6 +26,13 @@ const databasePluginCallback: FastifyPluginAsync<DatabasePluginOptions> = async 
   });
 };
 
-export const databasePlugin = fastifyPlugin(databasePluginCallback, {
+const databasePlugin = fastifyPlugin(databasePluginCallback, {
   name: 'database',
 });
+
+export async function registerDatabase(
+  app: FastifyInstance,
+  environment: Pick<Environment, 'DATABASE_URL'>,
+): Promise<void> {
+  await app.register(databasePlugin, { databaseUrl: environment.DATABASE_URL });
+}

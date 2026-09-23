@@ -11,6 +11,9 @@ words:
   - isready
   - Kubb
   - segmentless
+  - healthcheck
+  - isready
+  - nosniff
   - Stageby
   - Steiger
   - Trixie

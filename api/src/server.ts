@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 
-import { buildApp } from './app.js';
-import { parseEnvironment } from './config/env.js';
+import { buildApp } from '#app/app';
+import { parseEnvironment } from '#app/config/env';
 
 if (existsSync('.env')) {
   loadEnvFile('.env');
@@ -25,7 +25,7 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
   try {
     await app.close();
   } catch (error) {
-    app.log.error({ error }, 'Graceful shutdown failed');
+    app.log.error({ error }, 'Не удалось корректно остановить сервер');
     process.exitCode = 1;
   }
 }
@@ -44,7 +44,7 @@ try {
     port: environment.PORT,
   });
 } catch (error) {
-  app.log.error({ error }, 'Failed to start server');
+  app.log.error({ error }, 'Не удалось запустить сервер');
   process.exitCode = 1;
   await app.close();
 }
