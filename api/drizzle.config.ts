@@ -1,6 +1,7 @@
-import { defineConfig } from 'drizzle-kit';
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
+
+import { defineConfig } from 'drizzle-kit';
 
 if (existsSync('.env')) {
   loadEnvFile('.env');
@@ -9,7 +10,7 @@ if (existsSync('.env')) {
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL is required to run Drizzle Kit');
+  throw new Error('Для запуска Drizzle Kit требуется DATABASE_URL');
 }
 
 export default defineConfig({
