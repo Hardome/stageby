@@ -1,0 +1,125 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "root": true,
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["**", "!src/generated", "!src/db/migrations", "!!dist", "!!node_modules"]
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 120,
+    "bracketSpacing": true,
+    "useEditorconfig": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "none",
+      "complexity": {
+        "noBannedTypes": "error",
+        "noUselessThisAlias": "error",
+        "noUselessTypeConstraint": "error",
+        "noExcessiveCognitiveComplexity": "error",
+        "useWhile": "error",
+        "noForEach": "error",
+        "noStaticOnlyClass": "error",
+        "noUselessSwitchCase": "error",
+        "noUselessUndefined": "error",
+        "useFlatMap": "error",
+        "useIndexOf": "error",
+        "useDateNow": "error"
+      },
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noInvalidBuiltinInstantiation": "error",
+        "noGlobalDirnameFilename": "error"
+      },
+      "nursery": {
+        "useExpect": "error",
+        "noConditionalExpect": "error",
+        "noIdenticalTestTitle": "error",
+        "useConsistentTestIt": "error",
+        "useArraySome": "error",
+        "useRegexpTest": "error"
+      },
+      "style": {
+        "useArrayLiterals": "error",
+        "noNamespace": "error",
+        "noCommonJs": "error",
+        "useAsConstAssertion": "error",
+        "useExplicitLengthCheck": "error",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false,
+            "requireAscii": true,
+            "filenameCases": ["kebab-case", "camelCase"]
+          }
+        },
+        "useForOf": "error",
+        "useCollapsedIf": "error",
+        "noNestedTernary": "error",
+        "useNumericSeparators": "error",
+        "useAtIndex": "error",
+        "useNodejsImportProtocol": "error",
+        "useNumberNamespace": "error",
+        "noSubstr": "error",
+        "useTrimStartEnd": "error",
+        "useThrowNewError": "error",
+        "useExportType": "error",
+        "useImportType": "error",
+        "useGlobalThis": "error"
+      },
+      "suspicious": {
+        "noTsIgnore": "error",
+        "noExplicitAny": "error",
+        "noExtraNonNullAssertion": "error",
+        "noMisleadingInstantiator": "error",
+        "noNonNullAssertedOptionalChain": "error",
+        "noUnsafeDeclarationMerging": "error",
+        "noUnusedExpressions": "error",
+        "useNamespaceKeyword": "error",
+        "noDuplicateTestHooks": "error",
+        "noSkippedTests": "error",
+        "noFocusedTests": "error",
+        "noMisplacedAssertion": "error",
+        "useErrorMessage": "error",
+        "noEmptySource": "error",
+        "noThenProperty": "error",
+        "useNumberToFixedDigitsArgument": "error",
+        "noDuplicateEnumValues": "error"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [[":PACKAGE_WITH_PROTOCOL:"], ":BLANK_LINE:", [":PACKAGE:"], ":BLANK_LINE:", [":PATH:"]]
+          }
+        }
+      }
+    }
+  }
+}
