@@ -18,6 +18,7 @@ words:
   - Steiger
   - Trixie
   - tanstack
+  - Stageby
 ignorePaths:
   - '**/node_modules/**'
   - '**/dist/**'

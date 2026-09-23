@@ -1,1 +1,1 @@
-export { todos } from '#app/db/schema/todos';
+export { todos } from './todos.ts';
