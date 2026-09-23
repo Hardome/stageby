@@ -69,7 +69,12 @@ for (const directory of ['api', 'web']) {
   createEnvironment(directory);
 }
 
-run('pnpm', ['--dir', 'api', 'install', '--frozen-lockfile']);
+for (const directory of ['api', 'web']) {
+  run('pnpm', ['--dir', directory, 'install', '--frozen-lockfile']);
+}
+
+run('pnpm', ['--dir', 'api', 'run', 'codegen']);
+run('pnpm', ['--dir', 'web', 'run', 'codegen']);
 run('docker', ['compose', 'up', '-d', '--wait', 'postgres']);
 run('pnpm', ['--dir', 'api', 'run', 'db:migrate']);
 

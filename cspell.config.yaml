@@ -6,15 +6,26 @@ useGitignore: true
 enableGlobDot: true
 words:
   - codegen
+  - Filenaming
+  - healthcheck
+  - isready
+  - Kubb
+  - segmentless
   - healthcheck
   - isready
   - nosniff
   - Stageby
+  - Steiger
   - Trixie
+  - tanstack
+  - Stageby
 ignorePaths:
   - '**/node_modules/**'
   - '**/dist/**'
   - '**/coverage/**'
   - '**/pnpm-lock.yaml'
+  - '**/*.tsbuildinfo'
+  - 'api/src/generated/**'
+  - 'web/src/generated/**'
   - 'api/src/generated/**'
   - 'api/src/db/migrations/**'
