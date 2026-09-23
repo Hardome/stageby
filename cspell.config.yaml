@@ -27,5 +27,4 @@ ignorePaths:
   - '**/*.tsbuildinfo'
   - 'api/src/generated/**'
   - 'web/src/generated/**'
-  - 'api/src/generated/**'
   - 'api/src/db/migrations/**'
