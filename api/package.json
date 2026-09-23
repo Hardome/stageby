@@ -9,8 +9,7 @@
   },
   "scripts": {
     "build": "pnpm run codegen && tsc -p tsconfig.build.json",
-    "codegen": "openapi-ts",
-    "contracts:check": "pnpm run codegen && pnpm run typecheck",
+    "codegen": "openapi-ts && biome format --write src/generated && pnpm run typecheck",
     "db:generate": "node --env-file-if-exists=.env ./node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "node --env-file-if-exists=.env ./node_modules/drizzle-kit/bin.cjs migrate",
     "db:studio": "node --env-file-if-exists=.env ./node_modules/drizzle-kit/bin.cjs studio",

@@ -1,33 +1,42 @@
 # Stageby API
 
-Fastify API на TypeScript с contract-first OpenAPI, Zod и Drizzle ORM.
+Серверная часть приложения для поэтапного строительства: Fastify и TypeScript, контракт OpenAPI, проверка данных через Zod и PostgreSQL через Drizzle ORM.
 
-## Контракты
+## Первый запуск
 
-Источник истины находится в `../contracts/openapi.yaml`. Файлы в `src/generated` создаются автоматически и не должны редактироваться вручную.
-
-```sh
-pnpm run contracts:check
-```
-
-## Локальный запуск
-
-Скопируйте `.env.example` в `.env`, укажите доступный PostgreSQL и выполните:
+Нужны Node.js 24+, pnpm 11+ и запущенный PostgreSQL. Команды выполняются из папки `api`:
 
 ```sh
-pnpm dev
+cd api
+pnpm install
+pnpm run db:migrate
+pnpm run dev
 ```
 
-Swagger UI будет доступен по адресу `/documentation`.
+По умолчанию API слушает `http://127.0.0.1:3001`, Swagger UI доступен на [http://127.0.0.1:3001/documentation](http://127.0.0.1:3001/documentation).
+
+## Основные команды
+
+| Команда | Назначение |
+| --- | --- |
+| `pnpm run dev` | Разработка с перезапуском при изменении файлов |
+| `pnpm run test` / `pnpm run test:watch` | Тесты один раз / в режиме наблюдения |
+| `pnpm run lint` | Biome, проверка орфографии и типов; Biome автоматически исправляет файлы |
+| `pnpm run typecheck` | Только проверка типов |
+| `pnpm run build` / `pnpm run start` | Собрать проект / запустить собранный сервер |
 
 ## База данных
 
-Схема Drizzle находится в `src/db/schema.ts`, миграции — в `src/db/migrations`.
+Схема описывается в `src/db/schema.ts`, SQL-миграции хранятся в `src/db/migrations`.
 
 ```sh
-pnpm db:generate
-pnpm db:migrate
-pnpm db:studio
+pnpm run db:generate
+pnpm run db:migrate
 ```
 
-Rate limit использует память процесса. Для нескольких экземпляров API потребуется общий внешний store. Если приложение работает за reverse proxy, настройте `trustProxy` под конкретную инфраструктуру.
+`db:generate` сравнивает схему с предыдущей миграцией и создаёт новый SQL-файл, но не меняет базу. 
+`db:migrate` применяет только ещё не выполненные миграции и записывает их в журнал Drizzle. После изменения схемы запускайте команды в этом порядке. Для просмотра базы: `pnpm run db:studio`.
+
+## Контракт API
+
+Источник истины — `../contracts/openapi.yaml`. После его изменения запустите `pnpm run codegen`: команда заново создаст `src/generated` и проверит типы. Сгенерированные файлы вручную не редактируются.
