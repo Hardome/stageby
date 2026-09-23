@@ -8,7 +8,7 @@
   },
   "scripts": {
     "bootstrap": "node ./scripts/bootstrap.mjs",
-    "dev": "pnpm --dir api run dev",
+    "dev": "pnpm --dir web exec concurrently --raw -k \"pnpm --dir ../api run dev\" \"pnpm run dev\"",
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs --follow postgres"
