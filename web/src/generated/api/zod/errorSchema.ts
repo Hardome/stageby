@@ -6,8 +6,8 @@
 import * as z from 'zod'
 
 export const errorSchema = z.object({
-  error: z.string(),
-  message: z.string(),
+  error: z.string().describe('Краткое название ошибки HTTP, соответствующее статусу ответа.').meta({ examples: ['Не найдено'] }),
+  message: z.string().describe('Описание причины ошибки для человека.').meta({ examples: ['Задача не найдена'] }),
 }).catchall(z.unknown())
 
 export type ErrorSchemaType = z.infer<typeof errorSchema>

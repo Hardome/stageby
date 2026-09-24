@@ -1,0 +1,390 @@
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      tags:
+        - Users
+      summary: Список пользователей
+      description: Только руководитель. Сортировка fullName ASC, id ASC. По умолчанию активные и неактивные. Фильтры
+        объединяются через AND.
+      parameters:
+        - $ref: ../common/common.yaml#/components/parameters/Limit
+        - $ref: ../common/common.yaml#/components/parameters/Offset
+        - name: role
+          in: query
+          required: false
+          description: Точная роль.
+          schema:
+            $ref: "#/components/schemas/UserRole"
+        - name: isActive
+          in: query
+          required: false
+          description: Активность.
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          required: false
+          description: Поиск подстроки в имени или логине без учёта регистра.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPage"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+    post:
+      operationId: createUser
+      tags:
+        - Users
+      summary: Создать учётную запись
+      description: Только руководитель. Новая запись активна. Логин уникален среди всех записей, включая неактивные;
+        дубликат — 409 login_taken. Самостоятельной регистрации нет.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUser"
+      responses:
+        "201":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getUser
+      tags:
+        - Users
+      summary: Карточка пользователя
+      description: Только руководитель. Остальные получают свой профиль через /auth/me.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+    patch:
+      operationId: updateUser
+      tags:
+        - Users
+      summary: Изменить пользователя
+      description: "Только руководитель. Деактивация и изменение роли отзывают все сессии пользователя. Нельзя
+        лишить систему последнего активного manager (409 last_manager). Нельзя деактивировать или сменить роль
+        назначенного мастера/приёмщика незавершённого этапа: сначала переназначьте этап (409 user_in_use).
+        Удаления нет; история сохраняется."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUser"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /users/{userId}/password:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    put:
+      operationId: setUserPassword
+      tags:
+        - Users
+      summary: Установить пароль пользователя
+      description: Только руководитель. Заменяет пароль и отзывает все сессии целевого пользователя, включая
+        текущую, если он меняет собственный пароль. Следующий запрос требует повторного входа.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetUserPassword"
+      responses:
+        "204":
+          description: Операция выполнена; тело отсутствует.
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+components:
+  schemas:
+    UserRole:
+      examples:
+        - "foreman"
+      type: string
+      enum:
+        - manager
+        - estimator
+        - foreman
+        - inspector
+      description: manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector —
+        приёмщик.
+    User:
+      description: "Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности."
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - login
+        - fullName
+        - role
+        - phone
+        - isActive
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          examples:
+            - 1
+          description: "Стабильный ID пользователя."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        login:
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: ^[a-z0-9][a-z0-9._-]{2,63}$
+          description: Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
+          examples:
+            - foreman.ivan
+        fullName:
+          examples:
+            - "Иван Петров"
+          description: "Полное имя сотрудника или исполнителя для отображения."
+          type: string
+          minLength: 1
+          maxLength: 255
+        role:
+          $ref: "#/components/schemas/UserRole"
+        phone:
+          examples:
+            - "+7 900 000-00-00"
+            - null
+          description: "Контактный телефон пользователя; null — не указан."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 32
+        isActive:
+          examples:
+            - true
+          description: "Признак активной учётной записи. Неактивный пользователь не может войти в систему."
+          type: boolean
+        createdAt:
+          examples:
+            - "2026-09-20T08:00:00Z"
+          description: "Дата и время создания записи в UTC, формат RFC 3339."
+          type: string
+          format: date-time
+        updatedAt:
+          examples:
+            - "2026-09-24T10:00:00Z"
+          description: "Дата и время последнего изменения записи в UTC, формат RFC 3339."
+          type: string
+          format: date-time
+    UserBrief:
+      description: "Краткие сведения о пользователе для назначений и отметок выполнения или приёмки."
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - fullName
+      properties:
+        id:
+          examples:
+            - 1
+          description: "Стабильный ID пользователя."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        fullName:
+          examples:
+            - "Иван Петров"
+          description: "Полное имя сотрудника или исполнителя для отображения."
+          type: string
+          minLength: 1
+          maxLength: 255
+    UserPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          description: "Пользователи текущей страницы с учётом фильтров и прав доступа."
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          examples:
+            - 1
+          description: "Общее количество записей с учётом фильтров и прав доступа до применения limit и offset."
+          type: integer
+          minimum: 0
+        limit:
+          examples:
+            - 20
+          description: "Применённый размер страницы; количество items может быть меньше."
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          examples:
+            - 0
+          description: "Количество пропущенных записей после фильтрации и проверки доступа."
+          type: integer
+          minimum: 0
+    CreateUser:
+      type: object
+      additionalProperties: false
+      required:
+        - login
+        - password
+        - fullName
+        - role
+      properties:
+        login:
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: ^[a-z0-9][a-z0-9._-]{2,63}$
+          description: Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
+          examples:
+            - foreman.ivan
+        password:
+          examples:
+            - "Example-Only-Password-123!"
+          type: string
+          minLength: 8
+          maxLength: 128
+          writeOnly: true
+          description: Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.
+        fullName:
+          examples:
+            - "Иван Петров"
+          description: "Полное имя сотрудника или исполнителя для отображения."
+          type: string
+          minLength: 1
+          maxLength: 255
+        role:
+          $ref: "#/components/schemas/UserRole"
+        phone:
+          examples:
+            - "+7 900 000-00-00"
+            - null
+          description: "Контактный телефон пользователя; null — не указан."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 32
+    UpdateUser:
+      type: object
+      additionalProperties: false
+      properties:
+        fullName:
+          examples:
+            - "Иван Петров"
+          description: "Полное имя сотрудника или исполнителя для отображения."
+          type: string
+          minLength: 1
+          maxLength: 255
+        role:
+          $ref: "#/components/schemas/UserRole"
+        phone:
+          examples:
+            - "+7 900 000-00-00"
+            - null
+          description: "Контактный телефон пользователя; null очищает сохранённый телефон."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 32
+        isActive:
+          examples:
+            - true
+          description: "Активность учётной записи. false деактивирует пользователя и отзывает его сессии; ограничения на последнего руководителя и действующие назначения проверяет сервер."
+          type: boolean
+      minProperties: 1
+    SetUserPassword:
+      type: object
+      additionalProperties: false
+      required:
+        - password
+      properties:
+        password:
+          examples:
+            - "Example-Only-Password-123!"
+          type: string
+          minLength: 8
+          maxLength: 128
+          writeOnly: true
+          description: Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.

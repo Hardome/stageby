@@ -25,8 +25,8 @@ pnpm run bootstrap
 Команда:
 
 1. создаст `api/.env` и `web/.env` из файлов-примеров, если их ещё нет;
-2. установит зависимости API и веб-приложения;
-3. сгенерирует код из OpenAPI-контракта и дерево маршрутов;
+2. установит зависимости контрактов, API и веб-приложения;
+3. проверит OpenAPI-контракт, сгенерирует код и дерево маршрутов;
 4. запустит PostgreSQL;
 5. применит миграции базы данных.
 
@@ -62,6 +62,7 @@ pnpm run dev
 
 - [API](api/README.md)
 - [Web](web/README.md)
+- [Контракты](contracts/README.md)
 
 ## Структура репозитория
 
@@ -77,16 +78,21 @@ stageby/
 
 ## Работа с контрактом
 
-Источник истины для HTTP API — `contracts/openapi.yaml`. После его изменения обновите сгенерированный код обоих приложений:
+Источник истины для HTTP API — `contracts/references/stageby/stageby.yaml`, который объединяет маршруты сущностей из `contracts/references/`. Описаны пользователи, проекты, этапы, чек-листы и вход по логину/паролю. Финансовый модуль отложен. Это целевой контракт: новые серверные маршруты ещё не реализованы; демонстрационный модуль `todos` сохранён. Redocly проверяет исходники и собирает `contracts/openapi.yaml`, который читают приложения. После изменения контракта соберите его и обновите сгенерированный код обоих приложений:
 
 ```sh
+pnpm --dir contracts run build
 pnpm --dir api run codegen
 pnpm --dir web run codegen
 ```
+
+Результаты сборки — `contracts/openapi.yaml` и `contracts/dist/index.html`. Собранный `openapi.yaml` хранится в Git и вручную не редактируется. Подробности — в [руководстве по контрактам](contracts/README.md).
 
 Файлы в `api/src/generated` и `web/src/generated` вручную не редактируются.
 
 ## Документация
 
+- [Предметная модель](docs/domain-model.md)
+- [Сценарии и правила API](docs/api-contract.md)
 - [Разработка API-модулей](docs/api-modules-guidelines.md)
 - [Работа с базой данных и миграциями](docs/database-guidelines.md)

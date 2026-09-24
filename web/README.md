@@ -73,7 +73,7 @@ web/
 
 ## API-клиент
 
-Источник истины — [`contracts/openapi.yaml`](../contracts/openapi.yaml). Kubb генерирует в `src/generated/api`:
+Источник истины — [`contracts/references/stageby/stageby.yaml`](../contracts/references/stageby/stageby.yaml), объединяющий файлы сущностей. После изменения исходников выполните из корня Stageby `pnpm --dir contracts run generate`. Kubb читает собранный `contracts/openapi.yaml` и генерирует в `src/generated/api`:
 
 - TypeScript-типы;
 - Zod-схемы;

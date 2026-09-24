@@ -2,9 +2,104 @@
 
 import type { RouteHandler } from 'fastify';
 
-import type { CreateTodoData, CreateTodoErrors, CreateTodoResponses, DeleteTodoData, DeleteTodoErrors, DeleteTodoResponses, GetTodoData, GetTodoErrors, GetTodoResponses, ListTodosResponses, UpdateTodoData, UpdateTodoErrors, UpdateTodoResponses } from './types.gen.js';
+import type { AcceptStageData, AcceptStageErrors, AcceptStageResponses, ChangeStageStatusData, ChangeStageStatusErrors, ChangeStageStatusResponses, ConfigureStageChecklistData, ConfigureStageChecklistErrors, ConfigureStageChecklistResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateTodoData, CreateTodoErrors, CreateTodoResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteTodoData, DeleteTodoErrors, DeleteTodoResponses, GetCurrentUserErrors, GetCurrentUserResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetStageChecklistData, GetStageChecklistErrors, GetStageChecklistResponses, GetStageData, GetStageErrors, GetStageResponses, GetTodoData, GetTodoErrors, GetTodoResponses, GetUserData, GetUserErrors, GetUserResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListProjectStagesData, ListProjectStagesErrors, ListProjectStagesResponses, ListStagesData, ListStagesErrors, ListStagesResponses, ListTodosResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutErrors, LogoutResponses, ReturnStageForReworkData, ReturnStageForReworkErrors, ReturnStageForReworkResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, UpdateChecklistItemData, UpdateChecklistItemErrors, UpdateChecklistItemResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateStageData, UpdateStageErrors, UpdateStageResponses, UpdateTodoData, UpdateTodoErrors, UpdateTodoResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen.js';
 
 export type RouteHandlers = {
+    listUsers: RouteHandler<{
+        Querystring?: ListUsersData['query'];
+        Reply: ListUsersErrors & ListUsersResponses;
+    }>;
+    createUser: RouteHandler<{
+        Body: CreateUserData['body'];
+        Reply: CreateUserErrors & CreateUserResponses;
+    }>;
+    getUser: RouteHandler<{
+        Params: GetUserData['path'];
+        Reply: GetUserErrors & GetUserResponses;
+    }>;
+    updateUser: RouteHandler<{
+        Body: UpdateUserData['body'];
+        Params: UpdateUserData['path'];
+        Reply: UpdateUserErrors & UpdateUserResponses;
+    }>;
+    setUserPassword: RouteHandler<{
+        Body: SetUserPasswordData['body'];
+        Params: SetUserPasswordData['path'];
+        Reply: SetUserPasswordErrors & SetUserPasswordResponses;
+    }>;
+    login: RouteHandler<{
+        Body: LoginData['body'];
+        Reply: LoginErrors & LoginResponses;
+    }>;
+    logout: RouteHandler<{
+        Reply: LogoutErrors & LogoutResponses;
+    }>;
+    getCurrentUser: RouteHandler<{
+        Reply: GetCurrentUserErrors & GetCurrentUserResponses;
+    }>;
+    listProjects: RouteHandler<{
+        Querystring?: ListProjectsData['query'];
+        Reply: ListProjectsErrors & ListProjectsResponses;
+    }>;
+    createProject: RouteHandler<{
+        Body: CreateProjectData['body'];
+        Reply: CreateProjectErrors & CreateProjectResponses;
+    }>;
+    getProject: RouteHandler<{
+        Params: GetProjectData['path'];
+        Reply: GetProjectErrors & GetProjectResponses;
+    }>;
+    updateProject: RouteHandler<{
+        Body: UpdateProjectData['body'];
+        Params: UpdateProjectData['path'];
+        Reply: UpdateProjectErrors & UpdateProjectResponses;
+    }>;
+    listStages: RouteHandler<{
+        Querystring?: ListStagesData['query'];
+        Reply: ListStagesErrors & ListStagesResponses;
+    }>;
+    listProjectStages: RouteHandler<{
+        Params: ListProjectStagesData['path'];
+        Reply: ListProjectStagesErrors & ListProjectStagesResponses;
+    }>;
+    getStage: RouteHandler<{
+        Params: GetStageData['path'];
+        Reply: GetStageErrors & GetStageResponses;
+    }>;
+    updateStage: RouteHandler<{
+        Body: UpdateStageData['body'];
+        Params: UpdateStageData['path'];
+        Reply: UpdateStageErrors & UpdateStageResponses;
+    }>;
+    changeStageStatus: RouteHandler<{
+        Body: ChangeStageStatusData['body'];
+        Params: ChangeStageStatusData['path'];
+        Reply: ChangeStageStatusErrors & ChangeStageStatusResponses;
+    }>;
+    acceptStage: RouteHandler<{
+        Body: AcceptStageData['body'];
+        Params: AcceptStageData['path'];
+        Reply: AcceptStageErrors & AcceptStageResponses;
+    }>;
+    returnStageForRework: RouteHandler<{
+        Body: ReturnStageForReworkData['body'];
+        Params: ReturnStageForReworkData['path'];
+        Reply: ReturnStageForReworkErrors & ReturnStageForReworkResponses;
+    }>;
+    getStageChecklist: RouteHandler<{
+        Params: GetStageChecklistData['path'];
+        Reply: GetStageChecklistErrors & GetStageChecklistResponses;
+    }>;
+    configureStageChecklist: RouteHandler<{
+        Body: ConfigureStageChecklistData['body'];
+        Params: ConfigureStageChecklistData['path'];
+        Reply: ConfigureStageChecklistErrors & ConfigureStageChecklistResponses;
+    }>;
+    updateChecklistItem: RouteHandler<{
+        Body: UpdateChecklistItemData['body'];
+        Params: UpdateChecklistItemData['path'];
+        Reply: UpdateChecklistItemErrors & UpdateChecklistItemResponses;
+    }>;
     listTodos: RouteHandler<{
         Reply: ListTodosResponses;
     }>;
