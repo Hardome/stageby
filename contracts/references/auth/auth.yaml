@@ -1,0 +1,121 @@
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      tags:
+        - Auth
+      summary: Войти по логину и паролю
+      description: "Публичный вход. Токен действует до expiresAt (максимум 12 часов) либо отзыва. Refresh-токенов в
+        первой версии нет; после истечения нужен повторный вход. Обязателен лимит попыток по IP и логину.
+        Ответ не кэшируется (Cache-Control: no-store)."
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+          headers:
+            Cache-Control:
+              description: Токены не кэшируются.
+              schema:
+                type: string
+                enum:
+                  - no-store
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "429":
+          $ref: ../common/common.yaml#/components/responses/ApiTooManyRequests
+  /auth/logout:
+    post:
+      operationId: logout
+      tags:
+        - Auth
+      summary: Завершить текущую сессию
+      description: Отзывает предъявленный токен. При последующих запросах с ним возвращается 401.
+      responses:
+        "204":
+          description: Операция выполнена; тело отсутствует.
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags:
+        - Auth
+      summary: Получить свой профиль
+      description: Профиль текущего активного пользователя, без пароля или его хеша.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: ../users/users.yaml#/components/schemas/User
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: ^[a-z0-9][a-z0-9._-]{2,63}$
+          description: Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
+          examples:
+            - foreman.ivan
+        password:
+          examples:
+            - "Example-Only-Password-123!"
+          type: string
+          minLength: 1
+          maxLength: 128
+          writeOnly: true
+          description: Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.
+    Session:
+      type: object
+      additionalProperties: false
+      required:
+        - accessToken
+        - tokenType
+        - expiresAt
+        - user
+      properties:
+        accessToken:
+          examples:
+            - "example-only-session-token-not-valid"
+          type: string
+          minLength: 1
+          maxLength: 4096
+          description: Непрозрачный секретный токен сессии.
+        tokenType:
+          examples:
+            - "Bearer"
+          description: "Схема передачи accessToken в заголовке Authorization — Bearer."
+          type: string
+          enum:
+            - Bearer
+        expiresAt:
+          examples:
+            - "2026-09-24T20:00:00Z"
+          description: "Дата и время истечения сессии в UTC, формат RFC 3339. После истечения требуется новый вход."
+          type: string
+          format: date-time
+        user:
+          $ref: ../users/users.yaml#/components/schemas/User

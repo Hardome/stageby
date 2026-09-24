@@ -8,12 +8,25 @@ import type { Todo } from './Todo'
 
 export type UpdateTodo = {
     /**
+     * @description Название задачи.
      * @minLength 1
      * @maxLength 255
+     * @example Подготовить список задач
      * @type string | undefined
     */
     title?: string;
+    /**
+     * @description Подробное описание задачи; null — описание отсутствует.
+     * @example Составить список задач на следующую неделю.
+     * @example null
+     * @type string | undefined
+    */
     description?: string | null;
+    /**
+     * @description Признак завершённой задачи.
+     * @example false
+     * @type boolean | undefined
+    */
     completed?: boolean;
 };
 

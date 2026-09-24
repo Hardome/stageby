@@ -8,8 +8,8 @@ import { errorSchema } from './errorSchema'
 import { todoSchema } from './todoSchema'
 
 export const createTodoSchema = z.object({
-  title: z.string().min(1).max(255),
-  description: z.string().nullish(),
+  title: z.string().min(1).max(255).describe('Название задачи.').meta({ examples: ['Подготовить список задач'] }),
+  description: z.string().nullish().describe('Подробное описание задачи; null — описание отсутствует.').meta({ examples: ['Составить список задач на следующую неделю.', ] }),
 }).strict()
 
 export type CreateTodoSchemaType = z.infer<typeof createTodoSchema>

@@ -2,6 +2,283 @@
 
 import * as z from 'zod';
 
+/**
+ * manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
+ */
+export const zUserRole = z.enum([
+    'manager',
+    'estimator',
+    'foreman',
+    'inspector'
+]);
+
+/**
+ * Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.
+ */
+export const zUser = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
+    fullName: z.string().min(1).max(255),
+    role: zUserRole,
+    phone: z.string().min(1).max(32).nullable(),
+    isActive: z.boolean(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zUserPage = z.object({
+    items: z.array(zUser),
+    total: z.int().gte(0),
+    limit: z.int().gte(1).lte(100),
+    offset: z.int().gte(0)
+});
+
+export const zApiError = z.object({
+    error: z.string().min(1).max(255),
+    code: z.string().min(1).max(100),
+    message: z.string().min(1).max(2000),
+    details: z.array(z.object({
+        path: z.string().min(1).max(255),
+        message: z.string().min(1).max(1000)
+    })).optional()
+});
+
+export const zCreateUser = z.object({
+    login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
+    fullName: z.string().min(1).max(255),
+    role: zUserRole,
+    phone: z.string().min(1).max(32).nullish()
+});
+
+export const zUpdateUser = z.object({
+    fullName: z.string().min(1).max(255).optional(),
+    role: zUserRole.optional(),
+    phone: z.string().min(1).max(32).nullish(),
+    isActive: z.boolean().optional()
+});
+
+export const zSetUserPassword = z.object({
+    password: z.string().min(8).max(128)
+});
+
+export const zLoginRequest = z.object({
+    login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/)
+});
+
+export const zSession = z.object({
+    accessToken: z.string().min(1).max(4096),
+    tokenType: z.enum(['Bearer']),
+    expiresAt: z.iso.datetime(),
+    user: zUser
+});
+
+export const zCoordinates = z.object({
+    latitude: z.number().gte(-90).lte(90),
+    longitude: z.number().gte(-180).lte(180)
+});
+
+export const zProject = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    title: z.string().min(1).max(255),
+    ownerName: z.string().min(1).max(255),
+    address: z.string().min(1).max(1000).nullable(),
+    coordinates: zCoordinates.nullable(),
+    cadastralNumber: z.string().min(1).max(100).nullable(),
+    houseDesign: z.string().min(1).max(255).nullable(),
+    contractLabel: z.string().min(1).max(255).nullable(),
+    dueDate: z.iso.date().nullable(),
+    notes: z.string().min(1).max(5000).nullable(),
+    isArchived: z.boolean(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zProjectPage = z.object({
+    items: z.array(zProject),
+    total: z.int().gte(0),
+    limit: z.int().gte(1).lte(100),
+    offset: z.int().gte(0)
+});
+
+export const zCreateProject = z.object({
+    title: z.string().min(1).max(255),
+    ownerName: z.string().min(1).max(255),
+    address: z.string().min(1).max(1000).nullish(),
+    coordinates: zCoordinates.nullish(),
+    cadastralNumber: z.string().min(1).max(100).nullish(),
+    houseDesign: z.string().min(1).max(255).nullish(),
+    contractLabel: z.string().min(1).max(255).nullish(),
+    dueDate: z.iso.date().nullish(),
+    notes: z.string().min(1).max(5000).nullish()
+});
+
+export const zUpdateProject = z.object({
+    title: z.string().min(1).max(255).optional(),
+    ownerName: z.string().min(1).max(255).optional(),
+    address: z.string().min(1).max(1000).nullish(),
+    coordinates: zCoordinates.nullish(),
+    cadastralNumber: z.string().min(1).max(100).nullish(),
+    houseDesign: z.string().min(1).max(255).nullish(),
+    contractLabel: z.string().min(1).max(255).nullish(),
+    dueDate: z.iso.date().nullish(),
+    notes: z.string().min(1).max(5000).nullish(),
+    isArchived: z.boolean().optional()
+});
+
+/**
+ * created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту версию.
+ */
+export const zStageStatus = z.enum([
+    'created',
+    'assigned',
+    'supplied',
+    'started',
+    'in_progress',
+    'acceptance',
+    'completed'
+]);
+
+/**
+ * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; plaster — Штукатурка; heating — Отопление.
+ */
+export const zStageType = z.enum([
+    'foundation',
+    'walls',
+    'roof',
+    'windows',
+    'facade',
+    'electrical',
+    'plaster',
+    'heating'
+]);
+
+/**
+ * Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
+ */
+export const zUserBrief = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    fullName: z.string().min(1).max(255)
+});
+
+export const zAcceptance = z.object({
+    decision: z.enum(['accepted', 'rejected']),
+    comment: z.string().min(1).max(5000).nullable(),
+    correctionDueDate: z.iso.date().nullable(),
+    decidedBy: zUserBrief,
+    decidedAt: z.iso.datetime()
+});
+
+export const zStage = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    projectId: z.int().gte(1).lte(2147483647),
+    projectTitle: z.string().min(1).max(255),
+    projectAddress: z.string().min(1).max(1000).nullable(),
+    projectCoordinates: zCoordinates.nullable(),
+    projectIsArchived: z.boolean(),
+    type: zStageType,
+    title: z.enum([
+        'Фундамент',
+        'Стены',
+        'Крыша',
+        'Окна',
+        'Фасад',
+        'Электрика',
+        'Штукатурка',
+        'Отопление'
+    ]),
+    position: z.int().gte(1).lte(8),
+    workSubtypes: z.array(z.string().min(1).max(255)).max(30),
+    assignee: zUserBrief.nullable(),
+    inspector: zUserBrief.nullable(),
+    status: zStageStatus,
+    plannedStartDate: z.iso.date().nullable(),
+    plannedEndDate: z.iso.date().nullable(),
+    actualStartDate: z.iso.date().nullable(),
+    actualEndDate: z.iso.date().nullable(),
+    predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7),
+    notes: z.string().min(1).max(5000).nullable(),
+    progressPercent: z.number().gte(0).lte(100),
+    latestAcceptance: zAcceptance.nullable(),
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zStagePage = z.object({
+    items: z.array(zStage),
+    total: z.int().gte(0),
+    limit: z.int().gte(1).lte(100),
+    offset: z.int().gte(0)
+});
+
+export const zProjectStages = z.object({
+    items: z.array(zStage).max(8)
+});
+
+export const zUpdateStage = z.object({
+    expectedVersion: z.int().gte(1),
+    assigneeId: z.int().gte(1).lte(2147483647).nullish(),
+    inspectorId: z.int().gte(1).lte(2147483647).nullish(),
+    workSubtypes: z.array(z.string().min(1).max(255)).max(30).optional(),
+    plannedStartDate: z.iso.date().nullish(),
+    plannedEndDate: z.iso.date().nullish(),
+    predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7).optional(),
+    notes: z.string().min(1).max(5000).nullish()
+});
+
+export const zChangeStageStatus = z.object({
+    expectedVersion: z.int().gte(1),
+    status: z.enum([
+        'supplied',
+        'started',
+        'in_progress',
+        'acceptance'
+    ])
+});
+
+export const zAcceptStage = z.object({
+    expectedVersion: z.int().gte(1),
+    comment: z.string().min(1).max(5000).nullish()
+});
+
+export const zRejectStage = z.object({
+    expectedVersion: z.int().gte(1),
+    comment: z.string().min(1).max(5000),
+    correctionDueDate: z.iso.date(),
+    itemIds: z.array(z.int().gte(1).lte(2147483647)).min(1).max(4)
+});
+
+export const zChecklistItem = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    title: z.string().min(1).max(500),
+    position: z.int().gte(1).lte(4),
+    isCompleted: z.boolean(),
+    completedAt: z.iso.datetime().nullable(),
+    completedBy: zUserBrief.nullable()
+});
+
+export const zChecklist = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    stageId: z.int().gte(1).lte(2147483647),
+    items: z.array(zChecklistItem).max(4),
+    progressPercent: z.number().gte(0).lte(100),
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zConfigureChecklist = z.object({
+    expectedVersion: z.int().gte(1),
+    items: z.array(z.object({
+        title: z.string().min(1).max(500)
+    })).min(3).max(4)
+});
+
+export const zUpdateChecklistItem = z.object({
+    expectedVersion: z.int().gte(1),
+    isCompleted: z.boolean()
+});
+
 export const zTodo = z.object({
     id: z.uuid(),
     title: z.string().min(1).max(255),
@@ -16,18 +293,256 @@ export const zCreateTodo = z.object({
     description: z.string().nullish()
 });
 
+export const zError = z.object({
+    error: z.string(),
+    message: z.string()
+});
+
 export const zUpdateTodo = z.object({
     title: z.string().min(1).max(255).optional(),
     description: z.string().nullish(),
     completed: z.boolean().optional()
 });
 
-export const zError = z.object({
-    error: z.string(),
-    message: z.string()
+export const zCreateUserWritable = z.object({
+    login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
+    password: z.string().min(8).max(128),
+    fullName: z.string().min(1).max(255),
+    role: zUserRole,
+    phone: z.string().min(1).max(32).nullish()
 });
 
+export const zLoginRequestWritable = z.object({
+    login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
+    password: z.string().min(1).max(128)
+});
+
+/**
+ * Размер страницы, от 1 до 100.
+ */
+export const zLimit = z.int().gte(1).lte(100).default(20);
+
+/**
+ * Количество пропущенных записей после фильтрации и проверки доступа.
+ */
+export const zOffset = z.int().gte(0).default(0);
+
 export const zTodoId = z.uuid();
+
+export const zListUsersQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(20),
+    offset: z.int().gte(0).optional().default(0),
+    role: zUserRole.optional(),
+    isActive: z.boolean().optional(),
+    search: z.string().min(1).max(100).optional()
+});
+
+/**
+ * Успешный ответ
+ */
+export const zListUsersResponse = zUserPage;
+
+export const zCreateUserBody = zCreateUserWritable;
+
+/**
+ * Успешный ответ
+ */
+export const zCreateUserResponse = zUser;
+
+export const zGetUserPath = z.object({
+    userId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zGetUserResponse = zUser;
+
+export const zUpdateUserBody = zUpdateUser;
+
+export const zUpdateUserPath = z.object({
+    userId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zUpdateUserResponse = zUser;
+
+export const zSetUserPasswordBody = zSetUserPassword;
+
+export const zSetUserPasswordPath = z.object({
+    userId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Операция выполнена; тело отсутствует.
+ */
+export const zSetUserPasswordResponse = z.void();
+
+export const zLoginBody = zLoginRequestWritable;
+
+/**
+ * Успешный ответ
+ */
+export const zLoginResponse = zSession;
+
+/**
+ * Операция выполнена; тело отсутствует.
+ */
+export const zLogoutResponse = z.void();
+
+/**
+ * Успешный ответ
+ */
+export const zGetCurrentUserResponse = zUser;
+
+export const zListProjectsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(20),
+    offset: z.int().gte(0).optional().default(0),
+    isArchived: z.boolean().optional().default(false),
+    search: z.string().min(1).max(100).optional()
+});
+
+/**
+ * Успешный ответ
+ */
+export const zListProjectsResponse = zProjectPage;
+
+export const zCreateProjectBody = zCreateProject;
+
+/**
+ * Успешный ответ
+ */
+export const zCreateProjectResponse = zProject;
+
+export const zGetProjectPath = z.object({
+    projectId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zGetProjectResponse = zProject;
+
+export const zUpdateProjectBody = zUpdateProject;
+
+export const zUpdateProjectPath = z.object({
+    projectId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zUpdateProjectResponse = zProject;
+
+export const zListStagesQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(20),
+    offset: z.int().gte(0).optional().default(0),
+    projectId: z.int().gte(1).lte(2147483647).optional(),
+    assigneeId: z.int().gte(1).lte(2147483647).optional(),
+    status: zStageStatus.optional(),
+    includeArchived: z.boolean().optional().default(false)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zListStagesResponse = zStagePage;
+
+export const zListProjectStagesPath = z.object({
+    projectId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zListProjectStagesResponse = zProjectStages;
+
+export const zGetStagePath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zGetStageResponse = zStage;
+
+export const zUpdateStageBody = zUpdateStage;
+
+export const zUpdateStagePath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zUpdateStageResponse = zStage;
+
+export const zChangeStageStatusBody = zChangeStageStatus;
+
+export const zChangeStageStatusPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zChangeStageStatusResponse = zStage;
+
+export const zAcceptStageBody = zAcceptStage;
+
+export const zAcceptStagePath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zAcceptStageResponse = zStage;
+
+export const zReturnStageForReworkBody = zRejectStage;
+
+export const zReturnStageForReworkPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zReturnStageForReworkResponse = zStage;
+
+export const zGetStageChecklistPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zGetStageChecklistResponse = zChecklist;
+
+export const zConfigureStageChecklistBody = zConfigureChecklist;
+
+export const zConfigureStageChecklistPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zConfigureStageChecklistResponse = zChecklist;
+
+export const zUpdateChecklistItemBody = zUpdateChecklistItem;
+
+export const zUpdateChecklistItemPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647),
+    itemId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zUpdateChecklistItemResponse = zChecklist;
 
 /**
  * Todo list

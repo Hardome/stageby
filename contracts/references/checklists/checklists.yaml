@@ -1,0 +1,277 @@
+paths:
+  /stages/{stageId}/checklist:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getStageChecklist
+      tags:
+        - Checklists
+      summary: Чек-лист этапа
+      description: Один чек-лист на этап, создаётся вместе с проектом. Доступ как к этапу. Первоначально items=[],
+        progressPercent=0, version=1.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Checklist"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+    put:
+      operationId: configureStageChecklist
+      tags:
+        - Checklists
+      summary: Настроить контрольные точки
+      description: "Руководитель или инженер. Только до старта: created, assigned или supplied. Атомарно заменяет
+        весь состав на 3–4 пункта. Создаёт новые ID пунктов, все отметки false, position начинается с 1;
+        увеличивает версии чек-листа и этапа. expectedVersion относится к чек-листу. После старта состав
+        фиксирован. Архив — 409 project_archived. Названия не должны состоять из пробелов."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfigureChecklist"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Checklist"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /stages/{stageId}/checklist/items/{itemId}:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+      - name: itemId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    patch:
+      operationId: updateChecklistItem
+      tags:
+        - Checklists
+      summary: Отметить или снять выполнение пункта
+      description: Руководитель или назначенный мастер, только в in_progress. Фотографии не требуются и не
+        принимаются в текущей версии. itemId должен принадлежать чек-листу данного этапа, иначе 404.
+        expectedVersion — версия всего чек-листа. false→true устанавливает completedAt и completedBy на
+        сервере; true→false очищает их. Повтор текущего значения с актуальной версией — без изменений.
+        Пересчитывает прогресс и атомарно увеличивает версии чек-листа и этапа. 100% не меняет статус
+        автоматически. Приёмка и completed блокируют отметки; архив — 409 project_archived.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateChecklistItem"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Checklist"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+components:
+  schemas:
+    ChecklistItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - position
+        - isCompleted
+        - completedAt
+        - completedBy
+      properties:
+        id:
+          examples:
+            - 3001
+          description: "ID пункта чек-листа. При замене состава чек-листа создаются новые идентификаторы пунктов."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        title:
+          examples:
+            - "Проверить соответствие выполненных работ проекту"
+          description: "Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку."
+          type: string
+          minLength: 1
+          maxLength: 500
+        position:
+          examples:
+            - 1
+          description: "Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке."
+          type: integer
+          minimum: 1
+          maximum: 4
+        isCompleted:
+          examples:
+            - true
+          description: "Признак выполнения контрольной точки."
+          type: boolean
+        completedAt:
+          examples:
+            - "2026-09-24T09:30:00Z"
+            - null
+          description: "Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен."
+          type:
+            - string
+            - "null"
+          format: date-time
+        completedBy:
+          description: "Пользователь, отметивший выполнение; null — пункт не выполнен. Устанавливается сервером."
+          anyOf:
+            - $ref: ../users/users.yaml#/components/schemas/UserBrief
+            - type: "null"
+    Checklist:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - stageId
+        - items
+        - progressPercent
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          examples:
+            - 2001
+          description: "Стабильный ID чек-листа этапа."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        stageId:
+          examples:
+            - 1001
+          description: "Стабильный ID этапа, которому принадлежит запись."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChecklistItem"
+          maxItems: 4
+          description: Пустой новый чек-лист либо 3–4 пункта. Порядок position ASC.
+        progressPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 100 × выполненные пункты / все пункты, округление до двух знаков. Пустой чек-лист — 0. Только
+            вычисляется сервером.
+          examples:
+            - 33.33
+        version:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия записи. Увеличивается при каждом изменении.
+        createdAt:
+          examples:
+            - "2026-09-20T08:00:00Z"
+          description: "Дата и время создания записи в UTC, формат RFC 3339."
+          type: string
+          format: date-time
+        updatedAt:
+          examples:
+            - "2026-09-24T10:00:00Z"
+          description: "Дата и время последнего изменения записи в UTC, формат RFC 3339."
+          type: string
+          format: date-time
+    ConfigureChecklist:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - items
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+            properties:
+              title:
+                examples:
+                  - "Проверить соответствие выполненных работ проекту"
+                description: "Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку."
+                type: string
+                minLength: 1
+                maxLength: 500
+          minItems: 3
+          maxItems: 4
+          description: Порядок массива определяет position. Равный вес каждого пункта.
+    UpdateChecklistItem:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - isCompleted
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        isCompleted:
+          examples:
+            - true
+          description: "Новое состояние пункта. true отмечает выполнение, false снимает отметку; сервер заполняет или очищает completedAt и completedBy и пересчитывает прогресс."
+          type: boolean

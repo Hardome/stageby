@@ -1,11 +1,744 @@
 openapi: 3.1.0
 info:
   title: Stageby API
-  version: 0.0.0
+  version: 0.1.0
+  description: 'Контракт первой версии управления строительством: пользователи, проекты, этапы и чек-листы. Финансовый модуль, фото, материалы, инструмент и платежи отложены. Реализация новых маршрутов выполняется отдельно. ID новых сущностей — положительные целые числа int32, назначаемые БД автоматически. Даты работ YYYY-MM-DD; timestamps — RFC 3339 UTC. Календарный часовой пояс первой версии Asia/Yekaterinburg. PATCH меняет только переданные поля, null очищает только nullable-поле, пустое тело запрещено; массив заменяется целиком. Все изменения атомарны. Неизвестные поля и query-параметры — 400. Непустые текстовые значения обрезаются по краям и не могут состоять только из пробелов; пароли не обрезаются. Политики доступа обязательны на сервере, включая списки, total и вложенные записи. Документ описывает целевой API; демонстрационные /todos временно сохранены для совместимости текущих приложений и сохраняют строковые UUID.'
+servers:
+  - url: http://127.0.0.1:3001
+    description: Локальная разработка. Вне локальной среды только HTTPS.
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+    description: Логин, пароль и сессии. Первого руководителя создаёт административная команда при развёртывании, публичной регистрации нет.
+  - name: Users
+    description: Сотрудники и исполнители. Управление только руководителем.
+  - name: Projects
+    description: Объекты строительства и данные клиента.
+  - name: Stages
+    description: Фиксированные виды работ, назначения, зависимости и приёмка.
+  - name: Checklists
+    description: Один чек-лист с контрольными точками на этап. В текущей версии без фото.
+  - name: Todos
+    description: Существующий демонстрационный модуль. Не входит в предметную модель строительства.
 paths:
+  /users:
+    get:
+      operationId: listUsers
+      tags:
+        - Users
+      summary: Список пользователей
+      description: Только руководитель. Сортировка fullName ASC, id ASC. По умолчанию активные и неактивные. Фильтры объединяются через AND.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: role
+          in: query
+          required: false
+          description: Точная роль.
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: isActive
+          in: query
+          required: false
+          description: Активность.
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          required: false
+          description: Поиск подстроки в имени или логине без учёта регистра.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+    post:
+      operationId: createUser
+      tags:
+        - Users
+      summary: Создать учётную запись
+      description: Только руководитель. Новая запись активна. Логин уникален среди всех записей, включая неактивные; дубликат — 409 login_taken. Самостоятельной регистрации нет.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '201':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
+  /users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getUser
+      tags:
+        - Users
+      summary: Карточка пользователя
+      description: Только руководитель. Остальные получают свой профиль через /auth/me.
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+    patch:
+      operationId: updateUser
+      tags:
+        - Users
+      summary: Изменить пользователя
+      description: 'Только руководитель. Деактивация и изменение роли отзывают все сессии пользователя. Нельзя лишить систему последнего активного manager (409 last_manager). Нельзя деактивировать или сменить роль назначенного мастера/приёмщика незавершённого этапа: сначала переназначьте этап (409 user_in_use). Удаления нет; история сохраняется.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
+  /users/{userId}/password:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    put:
+      operationId: setUserPassword
+      tags:
+        - Users
+      summary: Установить пароль пользователя
+      description: Только руководитель. Заменяет пароль и отзывает все сессии целевого пользователя, включая текущую, если он меняет собственный пароль. Следующий запрос требует повторного входа.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetUserPassword'
+      responses:
+        '204':
+          description: Операция выполнена; тело отсутствует.
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+  /auth/login:
+    post:
+      operationId: login
+      tags:
+        - Auth
+      summary: Войти по логину и паролю
+      description: 'Публичный вход. Токен действует до expiresAt (максимум 12 часов) либо отзыва. Refresh-токенов в первой версии нет; после истечения нужен повторный вход. Обязателен лимит попыток по IP и логину. Ответ не кэшируется (Cache-Control: no-store).'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          headers:
+            Cache-Control:
+              description: Токены не кэшируются.
+              schema:
+                type: string
+                enum:
+                  - no-store
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '429':
+          $ref: '#/components/responses/ApiTooManyRequests'
+  /auth/logout:
+    post:
+      operationId: logout
+      tags:
+        - Auth
+      summary: Завершить текущую сессию
+      description: Отзывает предъявленный токен. При последующих запросах с ним возвращается 401.
+      responses:
+        '204':
+          description: Операция выполнена; тело отсутствует.
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags:
+        - Auth
+      summary: Получить свой профиль
+      description: Профиль текущего активного пользователя, без пароля или его хеша.
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+  /projects:
+    get:
+      operationId: listProjects
+      tags:
+        - Projects
+      summary: Список объектов строительства
+      description: Руководитель и инженер-сметчик. Мастер и приёмщик работают через /stages без доступа к полной карточке клиента. Сортировка createdAt DESC, id ASC. Фильтры AND.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: isArchived
+          in: query
+          required: false
+          description: По умолчанию только активные проекты.
+          schema:
+            type: boolean
+            default: false
+        - name: search
+          in: query
+          required: false
+          description: Подстрока названия, имени клиента, адреса или кадастрового номера без учёта регистра.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectPage'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+    post:
+      operationId: createProject
+      tags:
+        - Projects
+      summary: Создать проект с восемью этапами
+      description: 'Только руководитель. Атомарно создаёт проект, по одному этапу каждого фиксированного типа и пустой чек-лист каждого этапа. Статусы created, назначения и даты этапов null, зависимости пустые. Получить этапы: GET /projects/{projectId}/stages. Необязательные поля проекта по умолчанию null; isArchived=false.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProject'
+      responses:
+        '201':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+  /projects/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getProject
+      tags:
+        - Projects
+      summary: Карточка проекта
+      description: Руководитель и инженер-сметчик. Финансы выдаются отдельным методом.
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+    patch:
+      operationId: updateProject
+      tags:
+        - Projects
+      summary: Изменить или архивировать проект
+      description: Только руководитель. Архивирование не удаляет историю, делает этапы и чек-листы проекта доступными только для чтения. Разархивирование — isArchived=false. Физического удаления проекта и фиксированных этапов нет.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProject'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+  /stages:
+    get:
+      operationId: listStages
+      tags:
+        - Stages
+      summary: Список доступных этапов
+      description: Руководитель и инженер видят все этапы; мастер — только где assigneeId равен его ID; приёмщик — только где inspectorId равен его ID. Фильтры AND применяются после ограничения доступа, total не раскрывает чужие записи. По умолчанию без архивных проектов. Сортировка projectId ASC, position ASC, id ASC.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: projectId
+          in: query
+          required: false
+          description: Фильтр проекта.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+        - name: assigneeId
+          in: query
+          required: false
+          description: Фильтр мастера; не расширяет доступ.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+        - name: status
+          in: query
+          required: false
+          description: Рабочий статус.
+          schema:
+            $ref: '#/components/schemas/StageStatus'
+        - name: includeArchived
+          in: query
+          required: false
+          description: Включить этапы архивных проектов.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StagePage'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+  /projects/{projectId}/stages:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: listProjectStages
+      tags:
+        - Stages
+      summary: Этапы одного проекта
+      description: 'Без пагинации: максимум восемь записей, position ASC. Руководитель и инженер видят все восемь; мастер и приёмщик — только назначенные им. Для существующего проекта вне области доступа возвращается 404.'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectStages'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+  /stages/{stageId}:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getStage
+      tags:
+        - Stages
+      summary: Карточка этапа
+      description: Доступ как у /stages. Карточка содержит адрес и координаты для выезда, но не имя клиента и договор. latestAcceptance хранит последнее решение, не журнал всех проверок.
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stage'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+    patch:
+      operationId: updateStage
+      tags:
+        - Stages
+      summary: Настроить этап
+      description: Руководитель меняет все входные поля. Инженер — workSubtypes, плановые даты и notes. Назначенный мастер — только notes. Приёмщик — чтение. Назначать можно только активного foreman и активного inspector. Первое назначение автоматически переводит created в assigned; снятие допускается только из assigned и возвращает created. В supplied/started/in_progress/acceptance мастер обязателен, допускается его замена руководителем. completed неизменяем. После начала (started и далее) зависимости не меняются. Плановое окончание не раньше начала, сравнивается результирующая запись после PATCH. Предшественники — этапы того же проекта, без себя и циклов; проверка графа и запись выполняются атомарно. Удаление назначенного приёмщика во время acceptance запрещено. Архив — 409 project_archived. Передача запрещённого роли поля — 403, весь запрос отклоняется.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStage'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stage'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
+  /stages/{stageId}/status:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    put:
+      operationId: changeStageStatus
+      tags:
+        - Stages
+      summary: Перевести этап в следующий рабочий статус
+      description: Руководитель или назначенный мастер. Разрешены assigned→supplied→started→in_progress→acceptance. Повтор того же статуса с актуальной версией возвращает запись без изменения. Пропуск или обратный переход — 409 invalid_transition. Для started нужны активный мастер, чек-лист из 3–4 пунктов и completed у всех предшественников; actualStartDate устанавливает сервер. Для acceptance нужны все выполненные пункты и активный назначенный приёмщик. supplied отмечается вручную, учёт материалов пока отсутствует. Возврат на доработку и завершение выполняются только методами приёмки. Архив — 409 project_archived.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeStageStatus'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stage'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
+  /stages/{stageId}/acceptance:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    post:
+      operationId: acceptStage
+      tags:
+        - Stages
+      summary: Принять этап
+      description: Назначенный приёмщик или руководитель. Только из acceptance, при всех выполненных пунктах. Атомарно записывает latestAcceptance с decision=accepted, текущим пользователем, временем и correctionDueDate=null; переводит этап в completed и устанавливает actualEndDate. Это электронная отметка приёмки, не PDF и не юридически значимая подпись. Архив — 409 project_archived.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptStage'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stage'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
+  /stages/{stageId}/rework:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    post:
+      operationId: returnStageForRework
+      tags:
+        - Stages
+      summary: Вернуть этап на доработку
+      description: Назначенный приёмщик или руководитель. Только из acceptance. Замечание, дата исправления и itemIds обязательны; дата не раньше текущей даты объекта. Интерфейс может предложить сегодня + 2 календарных дня, сервер не угадывает срок. Все itemIds должны принадлежать этому чек-листу, иначе 400 invalid_request. Переводит в in_progress, пишет latestAcceptance с decision=rejected и сбрасывает только указанные пункты для повторной проверки (completedAt/completedBy=null), остальные отметки сохраняет. Увеличивает версии этапа и чек-листа атомарно. Архив — 409 project_archived.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectStage'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stage'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
+  /stages/{stageId}/checklist:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getStageChecklist
+      tags:
+        - Checklists
+      summary: Чек-лист этапа
+      description: Один чек-лист на этап, создаётся вместе с проектом. Доступ как к этапу. Первоначально items=[], progressPercent=0, version=1.
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checklist'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+    put:
+      operationId: configureStageChecklist
+      tags:
+        - Checklists
+      summary: Настроить контрольные точки
+      description: 'Руководитель или инженер. Только до старта: created, assigned или supplied. Атомарно заменяет весь состав на 3–4 пункта. Создаёт новые ID пунктов, все отметки false, position начинается с 1; увеличивает версии чек-листа и этапа. expectedVersion относится к чек-листу. После старта состав фиксирован. Архив — 409 project_archived. Названия не должны состоять из пробелов.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigureChecklist'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checklist'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
+  /stages/{stageId}/checklist/items/{itemId}:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+      - name: itemId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    patch:
+      operationId: updateChecklistItem
+      tags:
+        - Checklists
+      summary: Отметить или снять выполнение пункта
+      description: Руководитель или назначенный мастер, только в in_progress. Фотографии не требуются и не принимаются в текущей версии. itemId должен принадлежать чек-листу данного этапа, иначе 404. expectedVersion — версия всего чек-листа. false→true устанавливает completedAt и completedBy на сервере; true→false очищает их. Повтор текущего значения с актуальной версией — без изменений. Пересчитывает прогресс и атомарно увеличивает версии чек-листа и этапа. 100% не меняет статус автоматически. Приёмка и completed блокируют отметки; архив — 409 project_archived.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChecklistItem'
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checklist'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
   /todos:
     get:
       operationId: listTodos
+      tags:
+        - Todos
+      security: []
       summary: List todos
       responses:
         '200':
@@ -18,6 +751,9 @@ paths:
                   $ref: '#/components/schemas/Todo'
     post:
       operationId: createTodo
+      tags:
+        - Todos
+      security: []
       summary: Create a todo
       requestBody:
         required: true
@@ -39,6 +775,9 @@ paths:
       - $ref: '#/components/parameters/TodoId'
     get:
       operationId: getTodo
+      tags:
+        - Todos
+      security: []
       summary: Get a todo
       responses:
         '200':
@@ -51,6 +790,9 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       operationId: updateTodo
+      tags:
+        - Todos
+      security: []
       summary: Update a todo
       requestBody:
         required: true
@@ -71,6 +813,9 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: deleteTodo
+      tags:
+        - Todos
+      security: []
       summary: Delete a todo
       responses:
         '204':
@@ -78,7 +823,31 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'Токен сессии из POST /auth/login. Передаётся только в Authorization: Bearer <token>. Сервер проверяет срок, отзыв, активность пользователя и актуальную роль при каждом запросе.'
   parameters:
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Размер страницы, от 1 до 100.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Количество пропущенных записей после фильтрации и проверки доступа.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
     TodoId:
       name: id
       in: path
@@ -86,20 +855,1313 @@ components:
       schema:
         type: string
         format: uuid
-  responses:
-    BadRequest:
-      description: Некорректный запрос
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Задача не найдена
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
+    UserRole:
+      examples:
+        - foreman
+      type: string
+      enum:
+        - manager
+        - estimator
+        - foreman
+        - inspector
+      description: manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
+    User:
+      description: Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - login
+        - fullName
+        - role
+        - phone
+        - isActive
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          examples:
+            - 1
+          description: Стабильный ID пользователя.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        login:
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: ^[a-z0-9][a-z0-9._-]{2,63}$
+          description: Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
+          examples:
+            - foreman.ivan
+        fullName:
+          examples:
+            - Иван Петров
+          description: Полное имя сотрудника или исполнителя для отображения.
+          type: string
+          minLength: 1
+          maxLength: 255
+        role:
+          $ref: '#/components/schemas/UserRole'
+        phone:
+          examples:
+            - +7 900 000-00-00
+            - null
+          description: Контактный телефон пользователя; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 32
+        isActive:
+          examples:
+            - true
+          description: Признак активной учётной записи. Неактивный пользователь не может войти в систему.
+          type: boolean
+        createdAt:
+          examples:
+            - '2026-09-20T08:00:00Z'
+          description: Дата и время создания записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+        updatedAt:
+          examples:
+            - '2026-09-24T10:00:00Z'
+          description: Дата и время последнего изменения записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+    UserPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          description: Пользователи текущей страницы с учётом фильтров и прав доступа.
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          examples:
+            - 1
+          description: Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.
+          type: integer
+          minimum: 0
+        limit:
+          examples:
+            - 20
+          description: Применённый размер страницы; количество items может быть меньше.
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          examples:
+            - 0
+          description: Количество пропущенных записей после фильтрации и проверки доступа.
+          type: integer
+          minimum: 0
+    ApiError:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+        - code
+        - message
+      properties:
+        error:
+          examples:
+            - Bad Request
+          description: Краткое название ошибки HTTP, соответствующее статусу ответа.
+          type: string
+          minLength: 1
+          maxLength: 255
+        code:
+          examples:
+            - invalid_request
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 'Машинный код: invalid_request, unauthenticated, forbidden, not_found, version_conflict, invalid_transition, login_taken и т. д.'
+        message:
+          examples:
+            - Плановое окончание не может быть раньше планового начала.
+          description: Описание причины ошибки для человека.
+          type: string
+          minLength: 1
+          maxLength: 2000
+        details:
+          description: Подробности ошибок отдельных полей запроса; могут отсутствовать.
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - path
+              - message
+            properties:
+              path:
+                examples:
+                  - body.plannedEndDate
+                type: string
+                minLength: 1
+                maxLength: 255
+                description: 'Путь к полю: body.plannedEndDate, query.limit и т. п.'
+              message:
+                examples:
+                  - Плановое окончание не может быть раньше планового начала.
+                description: Описание ошибки в поле запроса, указанном в path.
+                type: string
+                minLength: 1
+                maxLength: 1000
+    CreateUser:
+      type: object
+      additionalProperties: false
+      required:
+        - login
+        - password
+        - fullName
+        - role
+      properties:
+        login:
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: ^[a-z0-9][a-z0-9._-]{2,63}$
+          description: Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
+          examples:
+            - foreman.ivan
+        password:
+          examples:
+            - Example-Only-Password-123!
+          type: string
+          minLength: 8
+          maxLength: 128
+          writeOnly: true
+          description: Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.
+        fullName:
+          examples:
+            - Иван Петров
+          description: Полное имя сотрудника или исполнителя для отображения.
+          type: string
+          minLength: 1
+          maxLength: 255
+        role:
+          $ref: '#/components/schemas/UserRole'
+        phone:
+          examples:
+            - +7 900 000-00-00
+            - null
+          description: Контактный телефон пользователя; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 32
+    UpdateUser:
+      type: object
+      additionalProperties: false
+      properties:
+        fullName:
+          examples:
+            - Иван Петров
+          description: Полное имя сотрудника или исполнителя для отображения.
+          type: string
+          minLength: 1
+          maxLength: 255
+        role:
+          $ref: '#/components/schemas/UserRole'
+        phone:
+          examples:
+            - +7 900 000-00-00
+            - null
+          description: Контактный телефон пользователя; null очищает сохранённый телефон.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 32
+        isActive:
+          examples:
+            - true
+          description: Активность учётной записи. false деактивирует пользователя и отзывает его сессии; ограничения на последнего руководителя и действующие назначения проверяет сервер.
+          type: boolean
+      minProperties: 1
+    SetUserPassword:
+      type: object
+      additionalProperties: false
+      required:
+        - password
+      properties:
+        password:
+          examples:
+            - Example-Only-Password-123!
+          type: string
+          minLength: 8
+          maxLength: 128
+          writeOnly: true
+          description: Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: ^[a-z0-9][a-z0-9._-]{2,63}$
+          description: Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
+          examples:
+            - foreman.ivan
+        password:
+          examples:
+            - Example-Only-Password-123!
+          type: string
+          minLength: 1
+          maxLength: 128
+          writeOnly: true
+          description: Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.
+    Session:
+      type: object
+      additionalProperties: false
+      required:
+        - accessToken
+        - tokenType
+        - expiresAt
+        - user
+      properties:
+        accessToken:
+          examples:
+            - example-only-session-token-not-valid
+          type: string
+          minLength: 1
+          maxLength: 4096
+          description: Непрозрачный секретный токен сессии.
+        tokenType:
+          examples:
+            - Bearer
+          description: Схема передачи accessToken в заголовке Authorization — Bearer.
+          type: string
+          enum:
+            - Bearer
+        expiresAt:
+          examples:
+            - '2026-09-24T20:00:00Z'
+          description: Дата и время истечения сессии в UTC, формат RFC 3339. После истечения требуется новый вход.
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/User'
+    Coordinates:
+      type: object
+      additionalProperties: false
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          examples:
+            - 56.8389
+          description: Географическая широта в десятичных градусах, от −90 до 90.
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          examples:
+            - 60.6057
+          description: Географическая долгота в десятичных градусах, от −180 до 180.
+          type: number
+          minimum: -180
+          maximum: 180
+    Project:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - ownerName
+        - address
+        - coordinates
+        - cadastralNumber
+        - houseDesign
+        - contractLabel
+        - dueDate
+        - notes
+        - isArchived
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          examples:
+            - 101
+          description: Стабильный ID проекта — объекта строительства.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        title:
+          examples:
+            - Дом на Лесной
+          description: Название объекта строительства для отображения.
+          type: string
+          minLength: 1
+          maxLength: 255
+        ownerName:
+          examples:
+            - Анна Смирнова
+          description: Имя клиента или собственника объекта строительства.
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          examples:
+            - Екатеринбург, ул. Лесная, д. 10
+            - null
+          description: Адрес объекта строительства; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 1000
+        coordinates:
+          description: Географические координаты объекта для отображения на карте; null — не указаны.
+          anyOf:
+            - $ref: '#/components/schemas/Coordinates'
+            - type: 'null'
+        cadastralNumber:
+          examples:
+            - '66:41:0000000:123'
+            - null
+          description: Кадастровый номер объекта в текстовом виде; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 100
+        houseDesign:
+          examples:
+            - Семья 67
+            - null
+          description: Название варианта дома, например «Семья 67»; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 255
+        contractLabel:
+          examples:
+            - Договор по объекту «Дом на Лесной»
+            - null
+          description: Текстовый реквизит «договор» из исходной ведомости; null — не указан. Не является идентификатором пользователя.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 255
+        dueDate:
+          examples:
+            - '2026-12-01'
+            - null
+          description: Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана.
+          type:
+            - string
+            - 'null'
+          format: date
+        notes:
+          examples:
+            - Въезд на участок со стороны Лесной улицы.
+            - null
+          description: Примечания к проекту; null — отсутствуют.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 5000
+        isArchived:
+          examples:
+            - false
+          description: Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.
+          type: boolean
+        createdAt:
+          examples:
+            - '2026-09-20T08:00:00Z'
+          description: Дата и время создания записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+        updatedAt:
+          examples:
+            - '2026-09-24T10:00:00Z'
+          description: Дата и время последнего изменения записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+    ProjectPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          description: Проекты текущей страницы с учётом фильтров и прав доступа.
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        total:
+          examples:
+            - 1
+          description: Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.
+          type: integer
+          minimum: 0
+        limit:
+          examples:
+            - 20
+          description: Применённый размер страницы; количество items может быть меньше.
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          examples:
+            - 0
+          description: Количество пропущенных записей после фильтрации и проверки доступа.
+          type: integer
+          minimum: 0
+    CreateProject:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - ownerName
+      properties:
+        title:
+          examples:
+            - Дом на Лесной
+          description: Название объекта строительства для отображения.
+          type: string
+          minLength: 1
+          maxLength: 255
+        ownerName:
+          examples:
+            - Анна Смирнова
+          description: Имя клиента или собственника объекта строительства.
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          examples:
+            - Екатеринбург, ул. Лесная, д. 10
+            - null
+          description: Адрес объекта строительства; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 1000
+        coordinates:
+          description: Географические координаты объекта для отображения на карте; null — не указаны.
+          anyOf:
+            - $ref: '#/components/schemas/Coordinates'
+            - type: 'null'
+        cadastralNumber:
+          examples:
+            - '66:41:0000000:123'
+            - null
+          description: Кадастровый номер объекта в текстовом виде; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 100
+        houseDesign:
+          examples:
+            - Семья 67
+            - null
+          description: Название варианта дома, например «Семья 67»; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 255
+        contractLabel:
+          examples:
+            - Договор по объекту «Дом на Лесной»
+            - null
+          description: Текстовый реквизит «договор» из исходной ведомости; null — не указан. Не является идентификатором пользователя.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 255
+        dueDate:
+          examples:
+            - '2026-12-01'
+            - null
+          description: Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана.
+          type:
+            - string
+            - 'null'
+          format: date
+        notes:
+          examples:
+            - Въезд на участок со стороны Лесной улицы.
+            - null
+          description: Примечания к проекту; null — отсутствуют.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 5000
+    UpdateProject:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          examples:
+            - Дом на Лесной
+          description: Название объекта строительства для отображения.
+          type: string
+          minLength: 1
+          maxLength: 255
+        ownerName:
+          examples:
+            - Анна Смирнова
+          description: Имя клиента или собственника объекта строительства.
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          examples:
+            - Екатеринбург, ул. Лесная, д. 10
+            - null
+          description: Адрес объекта строительства; null очищает сохранённое значение.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 1000
+        coordinates:
+          description: Географические координаты объекта; null очищает сохранённое значение.
+          anyOf:
+            - $ref: '#/components/schemas/Coordinates'
+            - type: 'null'
+        cadastralNumber:
+          examples:
+            - '66:41:0000000:123'
+            - null
+          description: Кадастровый номер объекта; null очищает сохранённое значение.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 100
+        houseDesign:
+          examples:
+            - Семья 67
+            - null
+          description: Название варианта дома; null очищает сохранённое значение.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 255
+        contractLabel:
+          examples:
+            - Договор по объекту «Дом на Лесной»
+            - null
+          description: Текстовый реквизит «договор» из исходной ведомости; null очищает сохранённое значение.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 255
+        dueDate:
+          examples:
+            - '2026-12-01'
+            - null
+          description: Плановая дата сдачи объекта в формате YYYY-MM-DD; null очищает сохранённое значение.
+          type:
+            - string
+            - 'null'
+          format: date
+        notes:
+          examples:
+            - Въезд на участок со стороны Лесной улицы.
+            - null
+          description: Примечания к проекту; null очищает сохранённое значение.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 5000
+        isArchived:
+          examples:
+            - false
+          description: Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.
+          type: boolean
+      minProperties: 1
+    StageStatus:
+      examples:
+        - in_progress
+      type: string
+      enum:
+        - created
+        - assigned
+        - supplied
+        - started
+        - in_progress
+        - acceptance
+        - completed
+      description: created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту версию.
+    StageType:
+      examples:
+        - foundation
+      type: string
+      enum:
+        - foundation
+        - walls
+        - roof
+        - windows
+        - facade
+        - electrical
+        - plaster
+        - heating
+      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; plaster — Штукатурка; heating — Отопление.
+    UserBrief:
+      description: Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - fullName
+      properties:
+        id:
+          examples:
+            - 1
+          description: Стабильный ID пользователя.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        fullName:
+          examples:
+            - Иван Петров
+          description: Полное имя сотрудника или исполнителя для отображения.
+          type: string
+          minLength: 1
+          maxLength: 255
+    Acceptance:
+      type: object
+      additionalProperties: false
+      required:
+        - decision
+        - comment
+        - correctionDueDate
+        - decidedBy
+        - decidedAt
+      properties:
+        decision:
+          examples:
+            - rejected
+          description: 'Решение по этапу: accepted — принят, rejected — возвращён на доработку.'
+          type: string
+          enum:
+            - accepted
+            - rejected
+        comment:
+          examples:
+            - Устранить замечания по качеству выполнения контрольной точки.
+            - null
+          description: Комментарий к решению. Для возврата на доработку содержит обязательное замечание; при приёмке может быть null.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 5000
+        correctionDueDate:
+          examples:
+            - '2026-09-27'
+            - null
+          description: Срок исправления замечаний в формате YYYY-MM-DD при возврате на доработку; null — этап принят.
+          type:
+            - string
+            - 'null'
+          format: date
+        decidedBy:
+          $ref: '#/components/schemas/UserBrief'
+        decidedAt:
+          examples:
+            - '2026-09-24T10:00:00Z'
+          description: Дата и время принятия решения в UTC, формат RFC 3339. Устанавливается сервером.
+          type: string
+          format: date-time
+    Stage:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - projectId
+        - projectTitle
+        - projectAddress
+        - projectCoordinates
+        - projectIsArchived
+        - type
+        - title
+        - position
+        - workSubtypes
+        - assignee
+        - inspector
+        - status
+        - plannedStartDate
+        - plannedEndDate
+        - actualStartDate
+        - actualEndDate
+        - predecessorStageIds
+        - notes
+        - progressPercent
+        - latestAcceptance
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          examples:
+            - 1001
+          description: Стабильный ID этапа строительства.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        projectId:
+          examples:
+            - 101
+          description: Стабильный ID проекта, которому принадлежит запись.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        projectTitle:
+          examples:
+            - Дом на Лесной
+          description: Название проекта, которому принадлежит этап.
+          type: string
+          minLength: 1
+          maxLength: 255
+        projectAddress:
+          examples:
+            - Екатеринбург, ул. Лесная, д. 10
+            - null
+          description: Адрес объекта строительства для выезда на этап; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 1000
+        projectCoordinates:
+          description: Координаты объекта строительства для выезда на этап; null — не указаны.
+          anyOf:
+            - $ref: '#/components/schemas/Coordinates'
+            - type: 'null'
+        projectIsArchived:
+          examples:
+            - false
+          description: Признак архивного проекта. Если true, изменения этапа запрещены.
+          type: boolean
+        type:
+          $ref: '#/components/schemas/StageType'
+        title:
+          examples:
+            - Фундамент
+          type: string
+          enum:
+            - Фундамент
+            - Стены
+            - Крыша
+            - Окна
+            - Фасад
+            - Электрика
+            - Штукатурка
+            - Отопление
+          description: Название однозначно определяется type и не меняется.
+        position:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          maximum: 8
+          description: Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
+        workSubtypes:
+          description: Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 255
+          maxItems: 30
+          uniqueItems: true
+        assignee:
+          description: Назначенный ответственный мастер; null — мастер не назначен.
+          anyOf:
+            - $ref: '#/components/schemas/UserBrief'
+            - type: 'null'
+        inspector:
+          description: Назначенный приёмщик этапа; null — приёмщик не назначен.
+          anyOf:
+            - $ref: '#/components/schemas/UserBrief'
+            - type: 'null'
+        status:
+          $ref: '#/components/schemas/StageStatus'
+        plannedStartDate:
+          examples:
+            - '2026-09-21'
+            - null
+          description: Плановая дата начала этапа в формате YYYY-MM-DD; null — не задана.
+          type:
+            - string
+            - 'null'
+          format: date
+        plannedEndDate:
+          examples:
+            - '2026-09-28'
+            - null
+          description: Плановая дата окончания этапа в формате YYYY-MM-DD; null — не задана. Не раньше планового начала, если обе даты заданы.
+          type:
+            - string
+            - 'null'
+          format: date
+        actualStartDate:
+          examples:
+            - '2026-09-21'
+            - null
+          description: Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.
+          type:
+            - string
+            - 'null'
+          format: date
+        actualEndDate:
+          examples:
+            - '2026-09-28'
+            - null
+          description: Фактическая дата завершения в формате YYYY-MM-DD. Устанавливается сервером при приёмке; null — этап ещё не принят.
+          type:
+            - string
+            - 'null'
+          format: date
+        predecessorStageIds:
+          description: ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+          maxItems: 7
+          uniqueItems: true
+        notes:
+          examples:
+            - Согласовать время доставки бетона.
+            - null
+          description: Примечания к этапу; null — отсутствуют.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 5000
+        progressPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 100 × выполненные пункты / все пункты, округление до двух знаков. Пустой чек-лист — 0. Только вычисляется сервером.
+          examples:
+            - 33.33
+        latestAcceptance:
+          description: Последнее решение о приёмке или доработке; null — решений ещё не было. Полная история проверок не возвращается.
+          anyOf:
+            - $ref: '#/components/schemas/Acceptance'
+            - type: 'null'
+        version:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия записи. Увеличивается при каждом изменении.
+        createdAt:
+          examples:
+            - '2026-09-20T08:00:00Z'
+          description: Дата и время создания записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+        updatedAt:
+          examples:
+            - '2026-09-24T10:00:00Z'
+          description: Дата и время последнего изменения записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+    StagePage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          description: Этапы текущей страницы с учётом фильтров и прав доступа.
+          type: array
+          items:
+            $ref: '#/components/schemas/Stage'
+        total:
+          examples:
+            - 1
+          description: Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.
+          type: integer
+          minimum: 0
+        limit:
+          examples:
+            - 20
+          description: Применённый размер страницы; количество items может быть меньше.
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          examples:
+            - 0
+          description: Количество пропущенных записей после фильтрации и проверки доступа.
+          type: integer
+          minimum: 0
+    ProjectStages:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          description: Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации.
+          type: array
+          items:
+            $ref: '#/components/schemas/Stage'
+          maxItems: 8
+    UpdateStage:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        assigneeId:
+          examples:
+            - 1
+            - null
+          description: ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 2147483647
+        inspectorId:
+          examples:
+            - 2
+            - null
+          description: ID назначаемого приёмщика; null снимает назначение. Снятие приёмщика во время приёмки запрещено.
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 2147483647
+        workSubtypes:
+          description: Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 255
+          maxItems: 30
+          uniqueItems: true
+        plannedStartDate:
+          examples:
+            - '2026-09-21'
+            - null
+          description: Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату.
+          type:
+            - string
+            - 'null'
+          format: date
+        plannedEndDate:
+          examples:
+            - '2026-09-28'
+            - null
+          description: Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. После изменения не может быть раньше планового начала, если обе даты заданы.
+          type:
+            - string
+            - 'null'
+          format: date
+        predecessorStageIds:
+          description: ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+          maxItems: 7
+          uniqueItems: true
+        notes:
+          examples:
+            - Согласовать время доставки бетона.
+            - null
+          description: Новые примечания к этапу; null очищает сохранённые примечания.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 5000
+      minProperties: 2
+    ChangeStageStatus:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - status
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        status:
+          examples:
+            - in_progress
+          description: Следующий рабочий статус в цепочке assigned → supplied → started → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.
+          type: string
+          enum:
+            - supplied
+            - started
+            - in_progress
+            - acceptance
+    AcceptStage:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        comment:
+          examples:
+            - Работы проверены и приняты без замечаний.
+            - null
+          description: Необязательный комментарий к приёмке этапа; null — без комментария.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 5000
+    RejectStage:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - comment
+        - correctionDueDate
+        - itemIds
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        comment:
+          examples:
+            - Устранить замечания по качеству выполнения контрольной точки.
+          description: Обязательное замечание с причиной возврата этапа на доработку.
+          type: string
+          minLength: 1
+          maxLength: 5000
+        correctionDueDate:
+          examples:
+            - '2026-09-27'
+          description: Обязательный срок исправления в формате YYYY-MM-DD, не раньше текущей даты объекта в часовом поясе Asia/Yekaterinburg.
+          type: string
+          format: date
+        itemIds:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          description: Пункты текущего чек-листа, требующие повторного выполнения.
+    ChecklistItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - position
+        - isCompleted
+        - completedAt
+        - completedBy
+      properties:
+        id:
+          examples:
+            - 3001
+          description: ID пункта чек-листа. При замене состава чек-листа создаются новые идентификаторы пунктов.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        title:
+          examples:
+            - Проверить соответствие выполненных работ проекту
+          description: Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
+          type: string
+          minLength: 1
+          maxLength: 500
+        position:
+          examples:
+            - 1
+          description: Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.
+          type: integer
+          minimum: 1
+          maximum: 4
+        isCompleted:
+          examples:
+            - true
+          description: Признак выполнения контрольной точки.
+          type: boolean
+        completedAt:
+          examples:
+            - '2026-09-24T09:30:00Z'
+            - null
+          description: Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.
+          type:
+            - string
+            - 'null'
+          format: date-time
+        completedBy:
+          description: Пользователь, отметивший выполнение; null — пункт не выполнен. Устанавливается сервером.
+          anyOf:
+            - $ref: '#/components/schemas/UserBrief'
+            - type: 'null'
+    Checklist:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - stageId
+        - items
+        - progressPercent
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          examples:
+            - 2001
+          description: Стабильный ID чек-листа этапа.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        stageId:
+          examples:
+            - 1001
+          description: Стабильный ID этапа, которому принадлежит запись.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistItem'
+          maxItems: 4
+          description: Пустой новый чек-лист либо 3–4 пункта. Порядок position ASC.
+        progressPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 100 × выполненные пункты / все пункты, округление до двух знаков. Пустой чек-лист — 0. Только вычисляется сервером.
+          examples:
+            - 33.33
+        version:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия записи. Увеличивается при каждом изменении.
+        createdAt:
+          examples:
+            - '2026-09-20T08:00:00Z'
+          description: Дата и время создания записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+        updatedAt:
+          examples:
+            - '2026-09-24T10:00:00Z'
+          description: Дата и время последнего изменения записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+    ConfigureChecklist:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - items
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+            properties:
+              title:
+                examples:
+                  - Проверить соответствие выполненных работ проекту
+                description: Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
+                type: string
+                minLength: 1
+                maxLength: 500
+          minItems: 3
+          maxItems: 4
+          description: Порядок массива определяет position. Равный вес каждого пункта.
+    UpdateChecklistItem:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - isCompleted
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        isCompleted:
+          examples:
+            - true
+          description: Новое состояние пункта. true отмечает выполнение, false снимает отметку; сервер заполняет или очищает completedAt и completedBy и пересчитывает прогресс.
+          type: boolean
     Todo:
       type: object
       additionalProperties: false
@@ -112,22 +2174,41 @@ components:
         - updatedAt
       properties:
         id:
+          examples:
+            - 123e4567-e89b-42d3-a456-426614174000
+          description: Стабильный UUID задачи.
           type: string
           format: uuid
         title:
+          examples:
+            - Подготовить список задач
+          description: Название задачи.
           type: string
           minLength: 1
           maxLength: 255
         description:
+          examples:
+            - Составить список задач на следующую неделю.
+            - null
+          description: Подробное описание задачи; null — описание отсутствует.
           type:
             - string
             - 'null'
         completed:
+          examples:
+            - false
+          description: Признак завершённой задачи.
           type: boolean
         createdAt:
+          examples:
+            - '2026-09-20T08:00:00Z'
+          description: Дата и время создания записи в UTC, формат RFC 3339.
           type: string
           format: date-time
         updatedAt:
+          examples:
+            - '2026-09-24T10:00:00Z'
+          description: Дата и время последнего изменения записи в UTC, формат RFC 3339.
           type: string
           format: date-time
     CreateTodo:
@@ -137,28 +2218,20 @@ components:
         - title
       properties:
         title:
+          examples:
+            - Подготовить список задач
+          description: Название задачи.
           type: string
           minLength: 1
           maxLength: 255
         description:
+          examples:
+            - Составить список задач на следующую неделю.
+            - null
+          description: Подробное описание задачи; null — описание отсутствует.
           type:
             - string
             - 'null'
-    UpdateTodo:
-      type: object
-      additionalProperties: false
-      minProperties: 1
-      properties:
-        title:
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          type:
-            - string
-            - 'null'
-        completed:
-          type: boolean
     Error:
       type: object
       additionalProperties: true
@@ -167,6 +2240,126 @@ components:
         - message
       properties:
         error:
+          examples:
+            - Не найдено
+          description: Краткое название ошибки HTTP, соответствующее статусу ответа.
           type: string
         message:
+          examples:
+            - Задача не найдена
+          description: Описание причины ошибки для человека.
           type: string
+    UpdateTodo:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title:
+          examples:
+            - Подготовить список задач
+          description: Название задачи.
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          examples:
+            - Составить список задач на следующую неделю.
+            - null
+          description: Подробное описание задачи; null — описание отсутствует.
+          type:
+            - string
+            - 'null'
+        completed:
+          examples:
+            - false
+          description: Признак завершённой задачи.
+          type: boolean
+  responses:
+    ApiBadRequest:
+      description: Некорректные поля, формат, даты или неизвестные параметры.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: Bad Request
+            code: invalid_request
+            message: Плановое окончание не может быть раньше планового начала.
+            details:
+              - path: body.plannedEndDate
+                message: Плановое окончание не может быть раньше планового начала.
+    ApiUnauthorized:
+      description: Токен отсутствует, недействителен, истёк или отозван. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: Unauthorized
+            code: unauthenticated
+            message: Не удалось подтвердить авторизацию.
+      headers:
+        WWW-Authenticate:
+          description: Схема аутентификации.
+          schema:
+            type: string
+            examples:
+              - Bearer
+    ApiForbidden:
+      description: Роль не разрешает эту операцию или изменение поля.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: Forbidden
+            code: forbidden
+            message: Недостаточно прав для выполнения операции.
+    ApiConflict:
+      description: Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: Conflict
+            code: version_conflict
+            message: Запись была изменена; обновите данные и повторите запрос.
+    ApiNotFound:
+      description: Запись не существует либо находится вне доступной пользователю области.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: Not Found
+            code: not_found
+            message: Запись не найдена или недоступна.
+    ApiTooManyRequests:
+      description: Превышен лимит запросов. Повторите через Retry-After секунд.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: Too Many Requests
+            code: rate_limited
+            message: Превышен лимит запросов. Повторите попытку позже.
+      headers:
+        Retry-After:
+          description: Число секунд до следующей попытки.
+          schema:
+            type: integer
+            minimum: 1
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Задача не найдена
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
