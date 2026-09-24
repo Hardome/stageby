@@ -1,8 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 
-import { listTodosQueryKey } from '@entities/todo';
-
 import { useDeleteTodo } from '@api/mutations/useDeleteTodo';
+import { listTodosQueryKey } from '@api/queries/useListTodos';
 
 type DeleteTodoButtonProperties = {
   id: string;

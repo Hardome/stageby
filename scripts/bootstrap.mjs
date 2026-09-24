@@ -69,13 +69,13 @@ for (const directory of ['api', 'web']) {
   createEnvironment(directory);
 }
 
-for (const directory of ['contracts', 'api', 'web']) {
+for (const directory of ['.', 'contracts', 'api', 'web']) {
   run('pnpm', ['--dir', directory, 'install', '--frozen-lockfile']);
 }
 
-run('pnpm', ['--dir', 'contracts', 'run', 'generate']);
-run('pnpm', ['--dir', 'api', 'run', 'codegen']);
-run('pnpm', ['--dir', 'web', 'run', 'codegen']);
+run('pnpm', ['exec', 'lefthook', 'install']);
+
+run('pnpm', ['run', 'codegen']);
 run('docker', ['compose', 'up', '-d', '--wait', 'postgres']);
 run('pnpm', ['--dir', 'api', 'run', 'db:migrate']);
 

@@ -1,5 +1,4 @@
-import { TodoList } from '@widgets/todo-list';
-import { CreateTodoForm } from '@features/create';
+import { TodoList } from '@features/todo-list';
 
 export function HomePage() {
   return (
@@ -10,7 +9,6 @@ export function HomePage() {
           <h1 className="m-0 font-bold text-4xl tracking-[-0.055em] sm:text-6xl">Мои задачи</h1>
           <p className="mt-3.5 mb-0 text-stone-500">Простой список дел на сегодня</p>
         </header>
-        <CreateTodoForm />
         <TodoList />
       </div>
     </main>

@@ -1,7 +1,9 @@
-import { DeleteTodoButton } from '@features/delete';
-import { ToggleTodoCheckbox } from '@features/toggle';
-import type { Todo } from '@entities/todo';
-import { useListTodos } from '@entities/todo';
+import { useListTodos } from '@api/queries/useListTodos';
+import type { Todo } from '@api/types';
+
+import { CreateTodoForm } from './create-form';
+import { DeleteTodoButton } from './delete-button';
+import { ToggleTodoCheckbox } from './toggle-todo-checkbox';
 
 function TodoListItem({ todo }: { todo: Todo }) {
   return (
@@ -76,16 +78,19 @@ export function TodoList() {
   const completedCount = todos.data.filter((todo) => todo.completed).length;
 
   return (
-    <section aria-label="Список задач">
-      <div className="flex justify-between px-0.5 pt-5 pb-3 font-bold text-stone-500 text-xs uppercase tracking-wider">
-        <span>Всего: {todos.data.length}</span>
-        <span>Выполнено: {completedCount}</span>
-      </div>
-      <ul className="m-0 grid list-none gap-2.5 p-0">
-        {todos.data.map((todo) => (
-          <TodoListItem key={todo.id} todo={todo} />
-        ))}
-      </ul>
-    </section>
+    <>
+      <CreateTodoForm />
+      <section aria-label="Список задач">
+        <div className="flex justify-between px-0.5 pt-5 pb-3 font-bold text-stone-500 text-xs uppercase tracking-wider">
+          <span>Всего: {todos.data.length}</span>
+          <span>Выполнено: {completedCount}</span>
+        </div>
+        <ul className="m-0 grid list-none gap-2.5 p-0">
+          {todos.data.map((todo) => (
+            <TodoListItem key={todo.id} todo={todo} />
+          ))}
+        </ul>
+      </section>
+    </>
   );
 }

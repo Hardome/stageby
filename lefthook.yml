@@ -1,0 +1,27 @@
+pre-commit:
+  commands:
+    lint-staged:
+      run: pnpm exec lint-staged
+    fsd-lint:
+      glob: "web/src/**/*.{ts,tsx}"
+      run: pnpm --dir web run lint:fsd
+
+pre-push:
+  commands:
+    contracts:
+      run: pnpm --dir contracts run lint
+    api:
+      run: pnpm --dir api run typecheck && pnpm --dir api run test
+    web:
+      run: pnpm --dir web run typecheck && pnpm --dir web run test
+
+post-merge:
+  commands:
+    root:
+      run: pnpm install --frozen-lockfile
+    contracts:
+      run: pnpm --dir contracts install --frozen-lockfile
+    api:
+      run: pnpm --dir api install --frozen-lockfile
+    web:
+      run: pnpm --dir web install --frozen-lockfile
