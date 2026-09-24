@@ -44,8 +44,7 @@ paths:
         - Projects
       summary: Создать проект с восемью этапами
       description: "Только руководитель. Атомарно создаёт проект, по одному этапу каждого фиксированного типа и
-        пустой чек-лист каждого этапа. Статусы created, назначения и даты этапов null, зависимости пустые, все
-        четыре суммы null. Получить этапы: GET /projects/{projectId}/stages. Необязательные поля проекта по
+        пустой чек-лист каждого этапа. Статусы created, назначения и даты этапов null, зависимости пустые. Получить этапы: GET /projects/{projectId}/stages. Необязательные поля проекта по
         умолчанию null; isArchived=false."
       requestBody:
         required: true
@@ -102,7 +101,7 @@ paths:
       tags:
         - Projects
       summary: Изменить или архивировать проект
-      description: Только руководитель. Архивирование не удаляет историю, делает этапы, чек-листы и финансы проекта
+      description: Только руководитель. Архивирование не удаляет историю, делает этапы и чек-листы проекта
         доступными только для чтения. Разархивирование — isArchived=false. Физического удаления проекта и
         фиксированных этапов нет.
       requestBody:
@@ -118,38 +117,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Project"
-        "400":
-          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
-        "401":
-          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
-        "403":
-          $ref: ../common/common.yaml#/components/responses/ApiForbidden
-        "404":
-          $ref: ../common/common.yaml#/components/responses/ApiNotFound
-  /projects/{projectId}/finance:
-    parameters:
-      - name: projectId
-        in: path
-        required: true
-        description: Стабильный идентификатор записи.
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-    get:
-      operationId: getProjectFinance
-      tags:
-        - Finance
-      summary: План-факт по проекту
-      description: Только руководитель. Итоги вычисляются по восьми этапам, независимо от пагинации. Не являются
-        прогнозом платежей по датам.
-      responses:
-        "200":
-          description: Успешный ответ
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProjectFinance"
         "400":
           $ref: ../common/common.yaml#/components/responses/ApiBadRequest
         "401":
@@ -507,81 +474,3 @@ components:
           description: "Количество пропущенных записей после фильтрации и проверки доступа."
           type: integer
           minimum: 0
-    ProjectFinance:
-      type: object
-      additionalProperties: false
-      required:
-        - projectId
-        - currency
-        - plannedMaterialCost
-        - actualMaterialCost
-        - plannedLaborCost
-        - actualLaborCost
-        - updatedAt
-      properties:
-        projectId:
-          examples:
-            - 101
-          description: "Стабильный ID проекта, по этапам которого рассчитаны финансовые итоги."
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-        currency:
-          examples:
-            - "RUB"
-          description: "Валюта сумм — российский рубль (RUB). Денежные значения передаются в целых копейках."
-          type: string
-          enum:
-            - RUB
-        plannedMaterialCost:
-          type:
-            - integer
-            - "null"
-          minimum: 0
-          maximum: 7999999999992
-          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-          examples:
-            - 15000000
-            - null
-        actualMaterialCost:
-          type:
-            - integer
-            - "null"
-          minimum: 0
-          maximum: 7999999999992
-          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-          examples:
-            - 15000000
-            - null
-        plannedLaborCost:
-          type:
-            - integer
-            - "null"
-          minimum: 0
-          maximum: 7999999999992
-          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-          examples:
-            - 15000000
-            - null
-        actualLaborCost:
-          type:
-            - integer
-            - "null"
-          minimum: 0
-          maximum: 7999999999992
-          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-          examples:
-            - 15000000
-            - null
-        updatedAt:
-          examples:
-            - "2026-09-24T10:00:00Z"
-            - null
-          description: "Дата и время последнего изменения финансов этапов проекта в UTC, формат RFC 3339; null — суммы ещё не вводились."
-          type:
-            - string
-            - "null"
-          format: date-time
-      description: Каждый показатель — сумма по восьми этапам. Если хотя бы на одном этапе этот показатель null,
-        итог также null. updatedAt — последнее изменение финансов этапов, либо null, если суммы ещё не
-        вводили.

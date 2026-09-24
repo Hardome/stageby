@@ -321,40 +321,6 @@ export type UpdateProject = {
 };
 
 /**
- * Каждый показатель — сумма по восьми этапам. Если хотя бы на одном этапе этот показатель null, итог также null. updatedAt — последнее изменение финансов этапов, либо null, если суммы ещё не вводили.
- */
-export type ProjectFinance = {
-    /**
-     * Стабильный ID проекта, по этапам которого рассчитаны финансовые итоги.
-     */
-    projectId: number;
-    /**
-     * Валюта сумм — российский рубль (RUB). Денежные значения передаются в целых копейках.
-     */
-    currency: 'RUB';
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    plannedMaterialCost: number | null;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    actualMaterialCost: number | null;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    plannedLaborCost: number | null;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    actualLaborCost: number | null;
-    /**
-     * Дата и время последнего изменения финансов этапов проекта в UTC, формат RFC 3339; null — суммы ещё не вводились.
-     */
-    updatedAt: string | null;
-};
-
-/**
  * created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту версию.
  */
 export type StageStatus = 'created' | 'assigned' | 'supplied' | 'started' | 'in_progress' | 'acceptance' | 'completed';
@@ -591,64 +557,6 @@ export type RejectStage = {
      * Пункты текущего чек-листа, требующие повторного выполнения.
      */
     itemIds: Array<number>;
-};
-
-export type StageFinance = {
-    /**
-     * Стабильный ID этапа, которому принадлежит запись.
-     */
-    stageId: number;
-    /**
-     * Валюта сумм — российский рубль (RUB). Денежные значения передаются в целых копейках.
-     */
-    currency: 'RUB';
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    plannedMaterialCost: number | null;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    actualMaterialCost: number | null;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    plannedLaborCost: number | null;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    actualLaborCost: number | null;
-    /**
-     * Версия записи. Увеличивается при каждом изменении.
-     */
-    version: number;
-    /**
-     * Дата и время последнего изменения финансов этапа в UTC, формат RFC 3339; null — суммы ещё не вводились.
-     */
-    updatedAt: string | null;
-};
-
-export type UpdateStageFinance = {
-    /**
-     * Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
-     */
-    expectedVersion: number;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    plannedMaterialCost?: number | null;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    actualMaterialCost?: number | null;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    plannedLaborCost?: number | null;
-    /**
-     * Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
-     */
-    actualLaborCost?: number | null;
 };
 
 export type ChecklistItem = {
@@ -1315,48 +1223,6 @@ export type UpdateProjectResponses = {
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
 
-export type GetProjectFinanceData = {
-    body?: never;
-    path: {
-        /**
-         * Стабильный идентификатор записи.
-         */
-        projectId: number;
-    };
-    query?: never;
-    url: '/projects/{projectId}/finance';
-};
-
-export type GetProjectFinanceErrors = {
-    /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
-     */
-    400: ApiError;
-    /**
-     * Токен отсутствует, недействителен, истёк или отозван. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
-     */
-    401: ApiError;
-    /**
-     * Роль не разрешает эту операцию или изменение поля.
-     */
-    403: ApiError;
-    /**
-     * Запись не существует либо находится вне доступной пользователю области.
-     */
-    404: ApiError;
-};
-
-export type GetProjectFinanceError = GetProjectFinanceErrors[keyof GetProjectFinanceErrors];
-
-export type GetProjectFinanceResponses = {
-    /**
-     * Успешный ответ
-     */
-    200: ProjectFinance;
-};
-
-export type GetProjectFinanceResponse = GetProjectFinanceResponses[keyof GetProjectFinanceResponses];
-
 export type ListStagesData = {
     body?: never;
     path?: never;
@@ -1678,94 +1544,6 @@ export type ReturnStageForReworkResponses = {
 };
 
 export type ReturnStageForReworkResponse = ReturnStageForReworkResponses[keyof ReturnStageForReworkResponses];
-
-export type GetStageFinanceData = {
-    body?: never;
-    path: {
-        /**
-         * Стабильный идентификатор записи.
-         */
-        stageId: number;
-    };
-    query?: never;
-    url: '/stages/{stageId}/finance';
-};
-
-export type GetStageFinanceErrors = {
-    /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
-     */
-    400: ApiError;
-    /**
-     * Токен отсутствует, недействителен, истёк или отозван. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
-     */
-    401: ApiError;
-    /**
-     * Роль не разрешает эту операцию или изменение поля.
-     */
-    403: ApiError;
-    /**
-     * Запись не существует либо находится вне доступной пользователю области.
-     */
-    404: ApiError;
-};
-
-export type GetStageFinanceError = GetStageFinanceErrors[keyof GetStageFinanceErrors];
-
-export type GetStageFinanceResponses = {
-    /**
-     * Успешный ответ
-     */
-    200: StageFinance;
-};
-
-export type GetStageFinanceResponse = GetStageFinanceResponses[keyof GetStageFinanceResponses];
-
-export type UpdateStageFinanceData = {
-    body: UpdateStageFinance;
-    path: {
-        /**
-         * Стабильный идентификатор записи.
-         */
-        stageId: number;
-    };
-    query?: never;
-    url: '/stages/{stageId}/finance';
-};
-
-export type UpdateStageFinanceErrors = {
-    /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
-     */
-    400: ApiError;
-    /**
-     * Токен отсутствует, недействителен, истёк или отозван. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
-     */
-    401: ApiError;
-    /**
-     * Роль не разрешает эту операцию или изменение поля.
-     */
-    403: ApiError;
-    /**
-     * Запись не существует либо находится вне доступной пользователю области.
-     */
-    404: ApiError;
-    /**
-     * Конфликт версии, логина, зависимости или состояния. Изменения не применены.
-     */
-    409: ApiError;
-};
-
-export type UpdateStageFinanceError = UpdateStageFinanceErrors[keyof UpdateStageFinanceErrors];
-
-export type UpdateStageFinanceResponses = {
-    /**
-     * Успешный ответ
-     */
-    200: StageFinance;
-};
-
-export type UpdateStageFinanceResponse = UpdateStageFinanceResponses[keyof UpdateStageFinanceResponses];
 
 export type GetStageChecklistData = {
     body?: never;

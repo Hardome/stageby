@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { createProjectResponseSchema, createProjectErrorSchema } from '../zod/createProjectSchema'
 
 /**
- * @description Только руководитель. Атомарно создаёт проект, по одному этапу каждого фиксированного типа и пустой чек-лист каждого этапа. Статусы created, назначения и даты этапов null, зависимости пустые, все четыре суммы null. Получить этапы: GET /projects/{projectId}/stages. Необязательные поля проекта по умолчанию null; isArchived=false.
+ * @description Только руководитель. Атомарно создаёт проект, по одному этапу каждого фиксированного типа и пустой чек-лист каждого этапа. Статусы created, назначения и даты этапов null, зависимости пустые. Получить этапы: GET /projects/{projectId}/stages. Необязательные поля проекта по умолчанию null; isArchived=false.
  * @summary Создать проект с восемью этапами
  * {@link /projects}
  */

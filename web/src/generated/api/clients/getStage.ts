@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { getStageResponseSchema, getStageErrorSchema } from '../zod/getStageSchema'
 
 /**
- * @description Доступ как у /stages. Карточка содержит адрес и координаты для выезда, но не имя клиента, договор и финансовые показатели. latestAcceptance хранит последнее решение, не журнал всех проверок.
+ * @description Доступ как у /stages. Карточка содержит адрес и координаты для выезда, но не имя клиента и договор. latestAcceptance хранит последнее решение, не журнал всех проверок.
  * @summary Карточка этапа
  * {@link /stages/:stageId}
  */

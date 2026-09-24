@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { updateProjectResponseSchema, updateProjectErrorSchema } from '../zod/updateProjectSchema'
 
 /**
- * @description Только руководитель. Архивирование не удаляет историю, делает этапы, чек-листы и финансы проекта доступными только для чтения. Разархивирование — isArchived=false. Физического удаления проекта и фиксированных этапов нет.
+ * @description Только руководитель. Архивирование не удаляет историю, делает этапы и чек-листы проекта доступными только для чтения. Разархивирование — isArchived=false. Физического удаления проекта и фиксированных этапов нет.
  * @summary Изменить или архивировать проект
  * {@link /projects/:projectId}
  */

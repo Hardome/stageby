@@ -126,19 +126,6 @@ export const zUpdateProject = z.object({
 });
 
 /**
- * Каждый показатель — сумма по восьми этапам. Если хотя бы на одном этапе этот показатель null, итог также null. updatedAt — последнее изменение финансов этапов, либо null, если суммы ещё не вводили.
- */
-export const zProjectFinance = z.object({
-    projectId: z.int().gte(1).lte(2147483647),
-    currency: z.enum(['RUB']),
-    plannedMaterialCost: z.int().gte(0).lte(7999999999992).nullable(),
-    actualMaterialCost: z.int().gte(0).lte(7999999999992).nullable(),
-    plannedLaborCost: z.int().gte(0).lte(7999999999992).nullable(),
-    actualLaborCost: z.int().gte(0).lte(7999999999992).nullable(),
-    updatedAt: z.iso.datetime().nullable()
-});
-
-/**
  * created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту версию.
  */
 export const zStageStatus = z.enum([
@@ -259,25 +246,6 @@ export const zRejectStage = z.object({
     comment: z.string().min(1).max(5000),
     correctionDueDate: z.iso.date(),
     itemIds: z.array(z.int().gte(1).lte(2147483647)).min(1).max(4)
-});
-
-export const zStageFinance = z.object({
-    stageId: z.int().gte(1).lte(2147483647),
-    currency: z.enum(['RUB']),
-    plannedMaterialCost: z.int().gte(0).lte(999999999999).nullable(),
-    actualMaterialCost: z.int().gte(0).lte(999999999999).nullable(),
-    plannedLaborCost: z.int().gte(0).lte(999999999999).nullable(),
-    actualLaborCost: z.int().gte(0).lte(999999999999).nullable(),
-    version: z.int().gte(1),
-    updatedAt: z.iso.datetime().nullable()
-});
-
-export const zUpdateStageFinance = z.object({
-    expectedVersion: z.int().gte(1),
-    plannedMaterialCost: z.int().gte(0).lte(999999999999).nullish(),
-    actualMaterialCost: z.int().gte(0).lte(999999999999).nullish(),
-    plannedLaborCost: z.int().gte(0).lte(999999999999).nullish(),
-    actualLaborCost: z.int().gte(0).lte(999999999999).nullish()
 });
 
 export const zChecklistItem = z.object({
@@ -468,15 +436,6 @@ export const zUpdateProjectPath = z.object({
  */
 export const zUpdateProjectResponse = zProject;
 
-export const zGetProjectFinancePath = z.object({
-    projectId: z.int().gte(1).lte(2147483647)
-});
-
-/**
- * Успешный ответ
- */
-export const zGetProjectFinanceResponse = zProjectFinance;
-
 export const zListStagesQuery = z.object({
     limit: z.int().gte(1).lte(100).optional().default(20),
     offset: z.int().gte(0).optional().default(0),
@@ -552,26 +511,6 @@ export const zReturnStageForReworkPath = z.object({
  * Успешный ответ
  */
 export const zReturnStageForReworkResponse = zStage;
-
-export const zGetStageFinancePath = z.object({
-    stageId: z.int().gte(1).lte(2147483647)
-});
-
-/**
- * Успешный ответ
- */
-export const zGetStageFinanceResponse = zStageFinance;
-
-export const zUpdateStageFinanceBody = zUpdateStageFinance;
-
-export const zUpdateStageFinancePath = z.object({
-    stageId: z.int().gte(1).lte(2147483647)
-});
-
-/**
- * Успешный ответ
- */
-export const zUpdateStageFinanceResponse = zStageFinance;
 
 export const zGetStageChecklistPath = z.object({
     stageId: z.int().gte(1).lte(2147483647)

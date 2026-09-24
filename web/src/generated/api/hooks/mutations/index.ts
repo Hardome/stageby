@@ -14,6 +14,5 @@ export { setUserPasswordMutationKey, setUserPasswordMutationOptions, useSetUserP
 export { updateChecklistItemMutationKey, updateChecklistItemMutationOptions, useUpdateChecklistItem } from './useUpdateChecklistItem'
 export { updateProjectMutationKey, updateProjectMutationOptions, useUpdateProject } from './useUpdateProject'
 export { updateStageMutationKey, updateStageMutationOptions, useUpdateStage } from './useUpdateStage'
-export { updateStageFinanceMutationKey, updateStageFinanceMutationOptions, useUpdateStageFinance } from './useUpdateStageFinance'
 export { updateTodoMutationKey, updateTodoMutationOptions, useUpdateTodo } from './useUpdateTodo'
 export { updateUserMutationKey, updateUserMutationOptions, useUpdateUser } from './useUpdateUser'

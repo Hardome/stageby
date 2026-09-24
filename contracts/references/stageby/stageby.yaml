@@ -2,8 +2,8 @@ openapi: 3.1.0
 info:
   title: Stageby API
   version: 0.1.0
-  description: "Контракт первой версии управления строительством: пользователи, проекты, этапы, чек-листы и
-    ручной план-факт. Фото, материалы, инструмент и платежи отложены. Реализация новых маршрутов выполняется
+  description: "Контракт первой версии управления строительством: пользователи, проекты, этапы и чек-листы.
+    Финансовый модуль, фото, материалы, инструмент и платежи отложены. Реализация новых маршрутов выполняется
     отдельно. ID новых сущностей — положительные целые числа int32, назначаемые БД автоматически. Даты работ YYYY-MM-DD; timestamps — RFC 3339 UTC. Календарный часовой пояс
     первой версии Asia/Yekaterinburg. PATCH меняет только переданные поля, null очищает только nullable-поле,
     пустое тело запрещено; массив заменяется целиком. Все изменения атомарны. Неизвестные поля и
@@ -28,8 +28,6 @@ tags:
     description: Фиксированные виды работ, назначения, зависимости и приёмка.
   - name: Checklists
     description: Один чек-лист с контрольными точками на этап. В текущей версии без фото.
-  - name: Finance
-    description: Четыре суммы на этап и итоги проекта. Доступ только руководителю.
   - name: Todos
     description: Существующий демонстрационный модуль. Не входит в предметную модель строительства.
 paths:
@@ -49,8 +47,6 @@ paths:
     $ref: ../projects/projects.yaml#/paths/~1projects
   /projects/{projectId}:
     $ref: ../projects/projects.yaml#/paths/~1projects~1{projectId}
-  /projects/{projectId}/finance:
-    $ref: ../projects/projects.yaml#/paths/~1projects~1{projectId}~1finance
   /stages:
     $ref: ../stages/stages.yaml#/paths/~1stages
   /projects/{projectId}/stages:
@@ -63,8 +59,6 @@ paths:
     $ref: ../stages/stages.yaml#/paths/~1stages~1{stageId}~1acceptance
   /stages/{stageId}/rework:
     $ref: ../stages/stages.yaml#/paths/~1stages~1{stageId}~1rework
-  /stages/{stageId}/finance:
-    $ref: ../stages/stages.yaml#/paths/~1stages~1{stageId}~1finance
   /stages/{stageId}/checklist:
     $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist
   /stages/{stageId}/checklist/items/{itemId}:
