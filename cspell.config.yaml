@@ -1,7 +1,7 @@
-version: '0.2'
+version: "0.2"
 language: en, en-US, ru, ru-RU
 import:
-  - '@cspell/dict-ru_ru/cspell-ext.json'
+  - "@cspell/dict-ru_ru/cspell-ext.json"
 useGitignore: true
 enableGlobDot: true
 words:
@@ -10,21 +10,25 @@ words:
   - healthcheck
   - isready
   - Kubb
-  - segmentless
-  - healthcheck
-  - isready
   - nosniff
+  - Redocly
+  - segmentless
   - Stageby
   - Steiger
-  - Trixie
   - tanstack
-  - Stageby
+  - Trixie
+  - автораспределения
+  - Автосоздание
+  - Купидом
+  - Межполевые
+  - фотоподтверждения
+  - Штро
 ignorePaths:
-  - '**/node_modules/**'
-  - '**/dist/**'
-  - '**/coverage/**'
-  - '**/pnpm-lock.yaml'
-  - '**/*.tsbuildinfo'
-  - 'api/src/generated/**'
-  - 'web/src/generated/**'
-  - 'api/src/db/migrations/**'
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/coverage/**"
+  - "**/pnpm-lock.yaml"
+  - "**/*.tsbuildinfo"
+  - api/src/generated/**
+  - web/src/generated/**
+  - api/src/db/migrations/**

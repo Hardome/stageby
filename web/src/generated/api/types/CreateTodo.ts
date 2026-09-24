@@ -8,11 +8,19 @@ import type { Todo } from './Todo'
 
 export type CreateTodo = {
     /**
+     * @description Название задачи.
      * @minLength 1
      * @maxLength 255
+     * @example Подготовить список задач
      * @type string
     */
     title: string;
+    /**
+     * @description Подробное описание задачи; null — описание отсутствует.
+     * @example Составить список задач на следующую неделю.
+     * @example null
+     * @type string | undefined
+    */
     description?: string | null;
 };
 

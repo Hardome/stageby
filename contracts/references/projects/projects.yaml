@@ -1,0 +1,587 @@
+paths:
+  /projects:
+    get:
+      operationId: listProjects
+      tags:
+        - Projects
+      summary: Список объектов строительства
+      description: Руководитель и инженер-сметчик. Мастер и приёмщик работают через /stages без доступа к полной
+        карточке клиента. Сортировка createdAt DESC, id ASC. Фильтры AND.
+      parameters:
+        - $ref: ../common/common.yaml#/components/parameters/Limit
+        - $ref: ../common/common.yaml#/components/parameters/Offset
+        - name: isArchived
+          in: query
+          required: false
+          description: По умолчанию только активные проекты.
+          schema:
+            type: boolean
+            default: false
+        - name: search
+          in: query
+          required: false
+          description: Подстрока названия, имени клиента, адреса или кадастрового номера без учёта регистра.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectPage"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+    post:
+      operationId: createProject
+      tags:
+        - Projects
+      summary: Создать проект с восемью этапами
+      description: "Только руководитель. Атомарно создаёт проект, по одному этапу каждого фиксированного типа и
+        пустой чек-лист каждого этапа. Статусы created, назначения и даты этапов null, зависимости пустые, все
+        четыре суммы null. Получить этапы: GET /projects/{projectId}/stages. Необязательные поля проекта по
+        умолчанию null; isArchived=false."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProject"
+      responses:
+        "201":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+  /projects/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getProject
+      tags:
+        - Projects
+      summary: Карточка проекта
+      description: Руководитель и инженер-сметчик. Финансы выдаются отдельным методом.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+    patch:
+      operationId: updateProject
+      tags:
+        - Projects
+      summary: Изменить или архивировать проект
+      description: Только руководитель. Архивирование не удаляет историю, делает этапы, чек-листы и финансы проекта
+        доступными только для чтения. Разархивирование — isArchived=false. Физического удаления проекта и
+        фиксированных этапов нет.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProject"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+  /projects/{projectId}/finance:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getProjectFinance
+      tags:
+        - Finance
+      summary: План-факт по проекту
+      description: Только руководитель. Итоги вычисляются по восьми этапам, независимо от пагинации. Не являются
+        прогнозом платежей по датам.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectFinance"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+components:
+  schemas:
+    Coordinates:
+      type: object
+      additionalProperties: false
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          examples:
+            - 56.8389
+          description: "Географическая широта в десятичных градусах, от −90 до 90."
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          examples:
+            - 60.6057
+          description: "Географическая долгота в десятичных градусах, от −180 до 180."
+          type: number
+          minimum: -180
+          maximum: 180
+    Project:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - ownerName
+        - address
+        - coordinates
+        - cadastralNumber
+        - houseDesign
+        - contractLabel
+        - dueDate
+        - notes
+        - isArchived
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          examples:
+            - 101
+          description: "Стабильный ID проекта — объекта строительства."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        title:
+          examples:
+            - "Дом на Лесной"
+          description: "Название объекта строительства для отображения."
+          type: string
+          minLength: 1
+          maxLength: 255
+        ownerName:
+          examples:
+            - "Анна Смирнова"
+          description: "Имя клиента или собственника объекта строительства."
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          examples:
+            - "Екатеринбург, ул. Лесная, д. 10"
+            - null
+          description: "Адрес объекта строительства; null — не указан."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
+        coordinates:
+          description: "Географические координаты объекта для отображения на карте; null — не указаны."
+          anyOf:
+            - $ref: "#/components/schemas/Coordinates"
+            - type: "null"
+        cadastralNumber:
+          examples:
+            - "66:41:0000000:123"
+            - null
+          description: "Кадастровый номер объекта в текстовом виде; null — не указан."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 100
+        houseDesign:
+          examples:
+            - "Семья 67"
+            - null
+          description: "Название варианта дома, например «Семья 67»; null — не указан."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        contractLabel:
+          examples:
+            - "Договор по объекту «Дом на Лесной»"
+            - null
+          description: "Текстовый реквизит «договор» из исходной ведомости; null — не указан. Не является идентификатором пользователя."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        dueDate:
+          examples:
+            - "2026-12-01"
+            - null
+          description: "Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана."
+          type:
+            - string
+            - "null"
+          format: date
+        notes:
+          examples:
+            - "Въезд на участок со стороны Лесной улицы."
+            - null
+          description: "Примечания к проекту; null — отсутствуют."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 5000
+        isArchived:
+          examples:
+            - false
+          description: "Признак архивного проекта. Архивный проект и его этапы доступны только для чтения."
+          type: boolean
+        createdAt:
+          examples:
+            - "2026-09-20T08:00:00Z"
+          description: "Дата и время создания записи в UTC, формат RFC 3339."
+          type: string
+          format: date-time
+        updatedAt:
+          examples:
+            - "2026-09-24T10:00:00Z"
+          description: "Дата и время последнего изменения записи в UTC, формат RFC 3339."
+          type: string
+          format: date-time
+    CreateProject:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - ownerName
+      properties:
+        title:
+          examples:
+            - "Дом на Лесной"
+          description: "Название объекта строительства для отображения."
+          type: string
+          minLength: 1
+          maxLength: 255
+        ownerName:
+          examples:
+            - "Анна Смирнова"
+          description: "Имя клиента или собственника объекта строительства."
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          examples:
+            - "Екатеринбург, ул. Лесная, д. 10"
+            - null
+          description: "Адрес объекта строительства; null — не указан."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
+        coordinates:
+          description: "Географические координаты объекта для отображения на карте; null — не указаны."
+          anyOf:
+            - $ref: "#/components/schemas/Coordinates"
+            - type: "null"
+        cadastralNumber:
+          examples:
+            - "66:41:0000000:123"
+            - null
+          description: "Кадастровый номер объекта в текстовом виде; null — не указан."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 100
+        houseDesign:
+          examples:
+            - "Семья 67"
+            - null
+          description: "Название варианта дома, например «Семья 67»; null — не указан."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        contractLabel:
+          examples:
+            - "Договор по объекту «Дом на Лесной»"
+            - null
+          description: "Текстовый реквизит «договор» из исходной ведомости; null — не указан. Не является идентификатором пользователя."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        dueDate:
+          examples:
+            - "2026-12-01"
+            - null
+          description: "Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана."
+          type:
+            - string
+            - "null"
+          format: date
+        notes:
+          examples:
+            - "Въезд на участок со стороны Лесной улицы."
+            - null
+          description: "Примечания к проекту; null — отсутствуют."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 5000
+    UpdateProject:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          examples:
+            - "Дом на Лесной"
+          description: "Название объекта строительства для отображения."
+          type: string
+          minLength: 1
+          maxLength: 255
+        ownerName:
+          examples:
+            - "Анна Смирнова"
+          description: "Имя клиента или собственника объекта строительства."
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          examples:
+            - "Екатеринбург, ул. Лесная, д. 10"
+            - null
+          description: "Адрес объекта строительства; null очищает сохранённое значение."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
+        coordinates:
+          description: "Географические координаты объекта; null очищает сохранённое значение."
+          anyOf:
+            - $ref: "#/components/schemas/Coordinates"
+            - type: "null"
+        cadastralNumber:
+          examples:
+            - "66:41:0000000:123"
+            - null
+          description: "Кадастровый номер объекта; null очищает сохранённое значение."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 100
+        houseDesign:
+          examples:
+            - "Семья 67"
+            - null
+          description: "Название варианта дома; null очищает сохранённое значение."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        contractLabel:
+          examples:
+            - "Договор по объекту «Дом на Лесной»"
+            - null
+          description: "Текстовый реквизит «договор» из исходной ведомости; null очищает сохранённое значение."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        dueDate:
+          examples:
+            - "2026-12-01"
+            - null
+          description: "Плановая дата сдачи объекта в формате YYYY-MM-DD; null очищает сохранённое значение."
+          type:
+            - string
+            - "null"
+          format: date
+        notes:
+          examples:
+            - "Въезд на участок со стороны Лесной улицы."
+            - null
+          description: "Примечания к проекту; null очищает сохранённое значение."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 5000
+        isArchived:
+          examples:
+            - false
+          description: "Признак архивного проекта. Архивный проект и его этапы доступны только для чтения."
+          type: boolean
+      minProperties: 1
+    ProjectPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          description: "Проекты текущей страницы с учётом фильтров и прав доступа."
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        total:
+          examples:
+            - 1
+          description: "Общее количество записей с учётом фильтров и прав доступа до применения limit и offset."
+          type: integer
+          minimum: 0
+        limit:
+          examples:
+            - 20
+          description: "Применённый размер страницы; количество items может быть меньше."
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          examples:
+            - 0
+          description: "Количество пропущенных записей после фильтрации и проверки доступа."
+          type: integer
+          minimum: 0
+    ProjectFinance:
+      type: object
+      additionalProperties: false
+      required:
+        - projectId
+        - currency
+        - plannedMaterialCost
+        - actualMaterialCost
+        - plannedLaborCost
+        - actualLaborCost
+        - updatedAt
+      properties:
+        projectId:
+          examples:
+            - 101
+          description: "Стабильный ID проекта, по этапам которого рассчитаны финансовые итоги."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        currency:
+          examples:
+            - "RUB"
+          description: "Валюта сумм — российский рубль (RUB). Денежные значения передаются в целых копейках."
+          type: string
+          enum:
+            - RUB
+        plannedMaterialCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 7999999999992
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        actualMaterialCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 7999999999992
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        plannedLaborCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 7999999999992
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        actualLaborCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 7999999999992
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        updatedAt:
+          examples:
+            - "2026-09-24T10:00:00Z"
+            - null
+          description: "Дата и время последнего изменения финансов этапов проекта в UTC, формат RFC 3339; null — суммы ещё не вводились."
+          type:
+            - string
+            - "null"
+          format: date-time
+      description: Каждый показатель — сумма по восьми этапам. Если хотя бы на одном этапе этот показатель null,
+        итог также null. updatedAt — последнее изменение финансов этапов, либо null, если суммы ещё не
+        вводили.

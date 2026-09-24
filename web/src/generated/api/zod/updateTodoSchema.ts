@@ -8,9 +8,9 @@ import { errorSchema } from './errorSchema'
 import { todoSchema } from './todoSchema'
 
 export const updateTodoSchema = z.object({
-  title: z.string().min(1).max(255).optional(),
-  description: z.string().nullish(),
-  completed: z.boolean().optional(),
+  title: z.string().min(1).max(255).optional().describe('Название задачи.').meta({ examples: ['Подготовить список задач'] }),
+  description: z.string().nullish().describe('Подробное описание задачи; null — описание отсутствует.').meta({ examples: ['Составить список задач на следующую неделю.', ] }),
+  completed: z.boolean().optional().describe('Признак завершённой задачи.').meta({ examples: [false] }),
 }).strict()
 
 export type UpdateTodoSchemaType = z.infer<typeof updateTodoSchema>

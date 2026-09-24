@@ -4,7 +4,17 @@
 */
 
 export type Error = {
+    /**
+     * @description Краткое название ошибки HTTP, соответствующее статусу ответа.
+     * @example Не найдено
+     * @type string
+    */
     error: string;
+    /**
+     * @description Описание причины ошибки для человека.
+     * @example Задача не найдена
+     * @type string
+    */
     message: string;
     [key: string]: unknown;
 };

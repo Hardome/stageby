@@ -1,0 +1,970 @@
+paths:
+  /stages:
+    get:
+      operationId: listStages
+      tags:
+        - Stages
+      summary: Список доступных этапов
+      description: Руководитель и инженер видят все этапы; мастер — только где assigneeId равен его ID; приёмщик —
+        только где inspectorId равен его ID. Фильтры AND применяются после ограничения доступа, total не
+        раскрывает чужие записи. По умолчанию без архивных проектов. Сортировка projectId ASC, position ASC,
+        id ASC.
+      parameters:
+        - $ref: ../common/common.yaml#/components/parameters/Limit
+        - $ref: ../common/common.yaml#/components/parameters/Offset
+        - name: projectId
+          in: query
+          required: false
+          description: Фильтр проекта.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+        - name: assigneeId
+          in: query
+          required: false
+          description: Фильтр мастера; не расширяет доступ.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+        - name: status
+          in: query
+          required: false
+          description: Рабочий статус.
+          schema:
+            $ref: "#/components/schemas/StageStatus"
+        - name: includeArchived
+          in: query
+          required: false
+          description: Включить этапы архивных проектов.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StagePage"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+  /projects/{projectId}/stages:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: listProjectStages
+      tags:
+        - Stages
+      summary: Этапы одного проекта
+      description: "Без пагинации: максимум восемь записей, position ASC. Руководитель и инженер видят все восемь;
+        мастер и приёмщик — только назначенные им. Для существующего проекта вне области доступа возвращается
+        404."
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectStages"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+  /stages/{stageId}:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getStage
+      tags:
+        - Stages
+      summary: Карточка этапа
+      description: Доступ как у /stages. Карточка содержит адрес и координаты для выезда, но не имя клиента, договор
+        и финансовые показатели. latestAcceptance хранит последнее решение, не журнал всех проверок.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stage"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+    patch:
+      operationId: updateStage
+      tags:
+        - Stages
+      summary: Настроить этап
+      description: Руководитель меняет все входные поля. Инженер — workSubtypes, плановые даты и notes. Назначенный
+        мастер — только notes. Приёмщик — чтение. Назначать можно только активного foreman и активного
+        inspector. Первое назначение автоматически переводит created в assigned; снятие допускается только из
+        assigned и возвращает created. В supplied/started/in_progress/acceptance мастер обязателен,
+        допускается его замена руководителем. completed неизменяем. После начала (started и далее) зависимости
+        не меняются. Плановое окончание не раньше начала, сравнивается результирующая запись после PATCH.
+        Предшественники — этапы того же проекта, без себя и циклов; проверка графа и запись выполняются
+        атомарно. Удаление назначенного приёмщика во время acceptance запрещено. Архив — 409 project_archived.
+        Передача запрещённого роли поля — 403, весь запрос отклоняется.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStage"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stage"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /stages/{stageId}/status:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    put:
+      operationId: changeStageStatus
+      tags:
+        - Stages
+      summary: Перевести этап в следующий рабочий статус
+      description: Руководитель или назначенный мастер. Разрешены assigned→supplied→started→in_progress→acceptance.
+        Повтор того же статуса с актуальной версией возвращает запись без изменения. Пропуск или обратный
+        переход — 409 invalid_transition. Для started нужны активный мастер, чек-лист из 3–4 пунктов и
+        completed у всех предшественников; actualStartDate устанавливает сервер. Для acceptance нужны все
+        выполненные пункты и активный назначенный приёмщик. supplied отмечается вручную, учёт материалов пока
+        отсутствует. Возврат на доработку и завершение выполняются только методами приёмки. Архив — 409
+        project_archived.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeStageStatus"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stage"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /stages/{stageId}/acceptance:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    post:
+      operationId: acceptStage
+      tags:
+        - Stages
+      summary: Принять этап
+      description: Назначенный приёмщик или руководитель. Только из acceptance, при всех выполненных пунктах.
+        Атомарно записывает latestAcceptance с decision=accepted, текущим пользователем, временем и
+        correctionDueDate=null; переводит этап в completed и устанавливает actualEndDate. Это электронная
+        отметка приёмки, не PDF и не юридически значимая подпись. Архив — 409 project_archived.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptStage"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stage"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /stages/{stageId}/rework:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    post:
+      operationId: returnStageForRework
+      tags:
+        - Stages
+      summary: Вернуть этап на доработку
+      description: Назначенный приёмщик или руководитель. Только из acceptance. Замечание, дата исправления и
+        itemIds обязательны; дата не раньше текущей даты объекта. Интерфейс может предложить сегодня + 2
+        календарных дня, сервер не угадывает срок. Все itemIds должны принадлежать этому чек-листу, иначе 400
+        invalid_request. Переводит в in_progress, пишет latestAcceptance с decision=rejected и сбрасывает
+        только указанные пункты для повторной проверки (completedAt/completedBy=null), остальные отметки
+        сохраняет. Увеличивает версии этапа и чек-листа атомарно. Архив — 409 project_archived.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectStage"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stage"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /stages/{stageId}/finance:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор записи.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getStageFinance
+      tags:
+        - Finance
+      summary: Четыре суммы план-факт этапа
+      description: Только руководитель. Отсутствующая оценка возвращается как null. Версия финансов независима от
+        публичной версии этапа.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StageFinance"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+    patch:
+      operationId: updateStageFinance
+      tags:
+        - Finance
+      summary: Внести плановые и фактические затраты
+      description: Только руководитель. Вручную задаёт четыре суммы в копейках RUB. null очищает неизвестную сумму,
+        0 означает введённый ноль. Не формирует платежи, не меняет рабочий статус и публичную версию этапа.
+        Разрешено после приёмки; архив — 409 project_archived. Все изменения атомарны, версия финансов
+        увеличивается.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStageFinance"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StageFinance"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+components:
+  schemas:
+    StageType:
+      examples:
+        - "foundation"
+      type: string
+      enum:
+        - foundation
+        - walls
+        - roof
+        - windows
+        - facade
+        - electrical
+        - plaster
+        - heating
+      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical —
+        Электрика; plaster — Штукатурка; heating — Отопление.
+    StageStatus:
+      examples:
+        - "in_progress"
+      type: string
+      enum:
+        - created
+        - assigned
+        - supplied
+        - started
+        - in_progress
+        - acceptance
+        - completed
+      description: created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В
+        работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту
+        версию.
+    Acceptance:
+      type: object
+      additionalProperties: false
+      required:
+        - decision
+        - comment
+        - correctionDueDate
+        - decidedBy
+        - decidedAt
+      properties:
+        decision:
+          examples:
+            - "rejected"
+          description: "Решение по этапу: accepted — принят, rejected — возвращён на доработку."
+          type: string
+          enum:
+            - accepted
+            - rejected
+        comment:
+          examples:
+            - "Устранить замечания по качеству выполнения контрольной точки."
+            - null
+          description: "Комментарий к решению. Для возврата на доработку содержит обязательное замечание; при приёмке может быть null."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 5000
+        correctionDueDate:
+          examples:
+            - "2026-09-27"
+            - null
+          description: "Срок исправления замечаний в формате YYYY-MM-DD при возврате на доработку; null — этап принят."
+          type:
+            - string
+            - "null"
+          format: date
+        decidedBy:
+          $ref: ../users/users.yaml#/components/schemas/UserBrief
+        decidedAt:
+          examples:
+            - "2026-09-24T10:00:00Z"
+          description: "Дата и время принятия решения в UTC, формат RFC 3339. Устанавливается сервером."
+          type: string
+          format: date-time
+    Stage:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - projectId
+        - projectTitle
+        - projectAddress
+        - projectCoordinates
+        - projectIsArchived
+        - type
+        - title
+        - position
+        - workSubtypes
+        - assignee
+        - inspector
+        - status
+        - plannedStartDate
+        - plannedEndDate
+        - actualStartDate
+        - actualEndDate
+        - predecessorStageIds
+        - notes
+        - progressPercent
+        - latestAcceptance
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          examples:
+            - 1001
+          description: "Стабильный ID этапа строительства."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        projectId:
+          examples:
+            - 101
+          description: "Стабильный ID проекта, которому принадлежит запись."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        projectTitle:
+          examples:
+            - "Дом на Лесной"
+          description: "Название проекта, которому принадлежит этап."
+          type: string
+          minLength: 1
+          maxLength: 255
+        projectAddress:
+          examples:
+            - "Екатеринбург, ул. Лесная, д. 10"
+            - null
+          description: "Адрес объекта строительства для выезда на этап; null — не указан."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
+        projectCoordinates:
+          description: "Координаты объекта строительства для выезда на этап; null — не указаны."
+          anyOf:
+            - $ref: ../projects/projects.yaml#/components/schemas/Coordinates
+            - type: "null"
+        projectIsArchived:
+          examples:
+            - false
+          description: "Признак архивного проекта. Если true, изменения этапа запрещены."
+          type: boolean
+        type:
+          $ref: "#/components/schemas/StageType"
+        title:
+          examples:
+            - "Фундамент"
+          type: string
+          enum:
+            - Фундамент
+            - Стены
+            - Крыша
+            - Окна
+            - Фасад
+            - Электрика
+            - Штукатурка
+            - Отопление
+          description: Название однозначно определяется type и не меняется.
+        position:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          maximum: 8
+          description: Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
+        workSubtypes:
+          description: "Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов."
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 255
+          maxItems: 30
+          uniqueItems: true
+        assignee:
+          description: "Назначенный ответственный мастер; null — мастер не назначен."
+          anyOf:
+            - $ref: ../users/users.yaml#/components/schemas/UserBrief
+            - type: "null"
+        inspector:
+          description: "Назначенный приёмщик этапа; null — приёмщик не назначен."
+          anyOf:
+            - $ref: ../users/users.yaml#/components/schemas/UserBrief
+            - type: "null"
+        status:
+          $ref: "#/components/schemas/StageStatus"
+        plannedStartDate:
+          examples:
+            - "2026-09-21"
+            - null
+          description: "Плановая дата начала этапа в формате YYYY-MM-DD; null — не задана."
+          type:
+            - string
+            - "null"
+          format: date
+        plannedEndDate:
+          examples:
+            - "2026-09-28"
+            - null
+          description: "Плановая дата окончания этапа в формате YYYY-MM-DD; null — не задана. Не раньше планового начала, если обе даты заданы."
+          type:
+            - string
+            - "null"
+          format: date
+        actualStartDate:
+          examples:
+            - "2026-09-21"
+            - null
+          description: "Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал."
+          type:
+            - string
+            - "null"
+          format: date
+        actualEndDate:
+          examples:
+            - "2026-09-28"
+            - null
+          description: "Фактическая дата завершения в формате YYYY-MM-DD. Устанавливается сервером при приёмке; null — этап ещё не принят."
+          type:
+            - string
+            - "null"
+          format: date
+        predecessorStageIds:
+          description: "ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены."
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+          maxItems: 7
+          uniqueItems: true
+        notes:
+          examples:
+            - "Согласовать время доставки бетона."
+            - null
+          description: "Примечания к этапу; null — отсутствуют."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 5000
+        progressPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 100 × выполненные пункты / все пункты, округление до двух знаков. Пустой чек-лист — 0. Только
+            вычисляется сервером.
+          examples:
+            - 33.33
+        latestAcceptance:
+          description: "Последнее решение о приёмке или доработке; null — решений ещё не было. Полная история проверок не возвращается."
+          anyOf:
+            - $ref: "#/components/schemas/Acceptance"
+            - type: "null"
+        version:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия записи. Увеличивается при каждом изменении.
+        createdAt:
+          examples:
+            - "2026-09-20T08:00:00Z"
+          description: "Дата и время создания записи в UTC, формат RFC 3339."
+          type: string
+          format: date-time
+        updatedAt:
+          examples:
+            - "2026-09-24T10:00:00Z"
+          description: "Дата и время последнего изменения записи в UTC, формат RFC 3339."
+          type: string
+          format: date-time
+    StagePage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          description: "Этапы текущей страницы с учётом фильтров и прав доступа."
+          type: array
+          items:
+            $ref: "#/components/schemas/Stage"
+        total:
+          examples:
+            - 1
+          description: "Общее количество записей с учётом фильтров и прав доступа до применения limit и offset."
+          type: integer
+          minimum: 0
+        limit:
+          examples:
+            - 20
+          description: "Применённый размер страницы; количество items может быть меньше."
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          examples:
+            - 0
+          description: "Количество пропущенных записей после фильтрации и проверки доступа."
+          type: integer
+          minimum: 0
+    ProjectStages:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          description: "Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации."
+          type: array
+          items:
+            $ref: "#/components/schemas/Stage"
+          maxItems: 8
+    UpdateStage:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        assigneeId:
+          examples:
+            - 1
+            - null
+          description: "ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа."
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 2147483647
+        inspectorId:
+          examples:
+            - 2
+            - null
+          description: "ID назначаемого приёмщика; null снимает назначение. Снятие приёмщика во время приёмки запрещено."
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 2147483647
+        workSubtypes:
+          description: "Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы."
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 255
+          maxItems: 30
+          uniqueItems: true
+        plannedStartDate:
+          examples:
+            - "2026-09-21"
+            - null
+          description: "Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату."
+          type:
+            - string
+            - "null"
+          format: date
+        plannedEndDate:
+          examples:
+            - "2026-09-28"
+            - null
+          description: "Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. После изменения не может быть раньше планового начала, если обе даты заданы."
+          type:
+            - string
+            - "null"
+          format: date
+        predecessorStageIds:
+          description: "ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены."
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+          maxItems: 7
+          uniqueItems: true
+        notes:
+          examples:
+            - "Согласовать время доставки бетона."
+            - null
+          description: "Новые примечания к этапу; null очищает сохранённые примечания."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 5000
+      minProperties: 2
+    ChangeStageStatus:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - status
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        status:
+          examples:
+            - "in_progress"
+          description: "Следующий рабочий статус в цепочке assigned → supplied → started → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены."
+          type: string
+          enum:
+            - supplied
+            - started
+            - in_progress
+            - acceptance
+    AcceptStage:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        comment:
+          examples:
+            - "Работы проверены и приняты без замечаний."
+            - null
+          description: "Необязательный комментарий к приёмке этапа; null — без комментария."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 5000
+    RejectStage:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - comment
+        - correctionDueDate
+        - itemIds
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        comment:
+          examples:
+            - "Устранить замечания по качеству выполнения контрольной точки."
+          description: "Обязательное замечание с причиной возврата этапа на доработку."
+          type: string
+          minLength: 1
+          maxLength: 5000
+        correctionDueDate:
+          examples:
+            - "2026-09-27"
+          description: "Обязательный срок исправления в формате YYYY-MM-DD, не раньше текущей даты объекта в часовом поясе Asia/Yekaterinburg."
+          type: string
+          format: date
+        itemIds:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          description: Пункты текущего чек-листа, требующие повторного выполнения.
+    StageFinance:
+      type: object
+      additionalProperties: false
+      required:
+        - stageId
+        - currency
+        - plannedMaterialCost
+        - actualMaterialCost
+        - plannedLaborCost
+        - actualLaborCost
+        - version
+        - updatedAt
+      properties:
+        stageId:
+          examples:
+            - 1001
+          description: "Стабильный ID этапа, которому принадлежит запись."
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        currency:
+          examples:
+            - "RUB"
+          description: "Валюта сумм — российский рубль (RUB). Денежные значения передаются в целых копейках."
+          type: string
+          enum:
+            - RUB
+        plannedMaterialCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 999999999999
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        actualMaterialCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 999999999999
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        plannedLaborCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 999999999999
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        actualLaborCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 999999999999
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        version:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия записи. Увеличивается при каждом изменении.
+        updatedAt:
+          examples:
+            - "2026-09-24T10:00:00Z"
+            - null
+          description: "Дата и время последнего изменения финансов этапа в UTC, формат RFC 3339; null — суммы ещё не вводились."
+          type:
+            - string
+            - "null"
+          format: date-time
+    UpdateStageFinance:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+        plannedMaterialCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 999999999999
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        actualMaterialCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 999999999999
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        plannedLaborCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 999999999999
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+        actualLaborCost:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 999999999999
+          description: Сумма в копейках RUB. null — не введено, 0 — подтверждённый ноль.
+          examples:
+            - 15000000
+            - null
+      minProperties: 2

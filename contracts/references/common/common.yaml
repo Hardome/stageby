@@ -1,0 +1,160 @@
+components:
+  schemas:
+    ApiError:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+        - code
+        - message
+      properties:
+        error:
+          examples:
+            - "Bad Request"
+          description: "Краткое название ошибки HTTP, соответствующее статусу ответа."
+          type: string
+          minLength: 1
+          maxLength: 255
+        code:
+          examples:
+            - "invalid_request"
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: "Машинный код: invalid_request, unauthenticated, forbidden, not_found, version_conflict,
+            invalid_transition, login_taken и т. д."
+        message:
+          examples:
+            - "Плановое окончание не может быть раньше планового начала."
+          description: "Описание причины ошибки для человека."
+          type: string
+          minLength: 1
+          maxLength: 2000
+        details:
+          description: "Подробности ошибок отдельных полей запроса; могут отсутствовать."
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - path
+              - message
+            properties:
+              path:
+                examples:
+                  - "body.plannedEndDate"
+                type: string
+                minLength: 1
+                maxLength: 255
+                description: "Путь к полю: body.plannedEndDate, query.limit и т. п."
+              message:
+                examples:
+                  - "Плановое окончание не может быть раньше планового начала."
+                description: "Описание ошибки в поле запроса, указанном в path."
+                type: string
+                minLength: 1
+                maxLength: 1000
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Размер страницы, от 1 до 100.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Количество пропущенных записей после фильтрации и проверки доступа.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+  responses:
+    ApiBadRequest:
+      description: Некорректные поля, формат, даты или неизвестные параметры.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+          example:
+            error: Bad Request
+            code: invalid_request
+            message: Плановое окончание не может быть раньше планового начала.
+            details:
+              - path: body.plannedEndDate
+                message: Плановое окончание не может быть раньше планового начала.
+    ApiUnauthorized:
+      description: Токен отсутствует, недействителен, истёк или отозван. При входе — одинаковая ошибка для
+        неизвестного логина, неверного пароля и неактивной учётной записи.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+          example:
+            error: Unauthorized
+            code: unauthenticated
+            message: Не удалось подтвердить авторизацию.
+      headers:
+        WWW-Authenticate:
+          description: Схема аутентификации.
+          schema:
+            type: string
+            examples:
+              - Bearer
+    ApiForbidden:
+      description: Роль не разрешает эту операцию или изменение поля.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+          example:
+            error: Forbidden
+            code: forbidden
+            message: Недостаточно прав для выполнения операции.
+    ApiNotFound:
+      description: Запись не существует либо находится вне доступной пользователю области.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+          example:
+            error: Not Found
+            code: not_found
+            message: Запись не найдена или недоступна.
+    ApiConflict:
+      description: Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+          example:
+            error: Conflict
+            code: version_conflict
+            message: Запись была изменена; обновите данные и повторите запрос.
+    ApiTooManyRequests:
+      description: Превышен лимит запросов. Повторите через Retry-After секунд.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+          example:
+            error: Too Many Requests
+            code: rate_limited
+            message: Превышен лимит запросов. Повторите попытку позже.
+      headers:
+        Retry-After:
+          description: Число секунд до следующей попытки.
+          schema:
+            type: integer
+            minimum: 1
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: "Токен сессии из POST /auth/login. Передаётся только в Authorization: Bearer <token>. Сервер
+        проверяет срок, отзыв, активность пользователя и актуальную роль при каждом запросе."

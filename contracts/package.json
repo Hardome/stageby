@@ -1,0 +1,19 @@
+{
+  "name": "@stageby/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "lint": "redocly lint --lint-config=error",
+    "bundle": "redocly bundle --lint-config=error",
+    "generate": "pnpm run lint && pnpm run bundle",
+    "docs": "redocly build-docs stageby --output=dist/index.html --disableGoogleFont --lint-config=error",
+    "build": "pnpm run generate && pnpm run docs"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.37.0"
+  }
+}

@@ -1,0 +1,79 @@
+openapi: 3.1.0
+info:
+  title: Stageby API
+  version: 0.1.0
+  description: "Контракт первой версии управления строительством: пользователи, проекты, этапы, чек-листы и
+    ручной план-факт. Фото, материалы, инструмент и платежи отложены. Реализация новых маршрутов выполняется
+    отдельно. ID новых сущностей — положительные целые числа int32, назначаемые БД автоматически. Даты работ YYYY-MM-DD; timestamps — RFC 3339 UTC. Календарный часовой пояс
+    первой версии Asia/Yekaterinburg. PATCH меняет только переданные поля, null очищает только nullable-поле,
+    пустое тело запрещено; массив заменяется целиком. Все изменения атомарны. Неизвестные поля и
+    query-параметры — 400. Непустые текстовые значения обрезаются по краям и не могут состоять только из
+    пробелов; пароли не обрезаются. Политики доступа обязательны на сервере, включая списки, total и вложенные
+    записи. Документ описывает целевой API; демонстрационные /todos временно сохранены для совместимости
+    текущих приложений и сохраняют строковые UUID."
+servers:
+  - url: http://127.0.0.1:3001
+    description: Локальная разработка. Вне локальной среды только HTTPS.
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+    description: Логин, пароль и сессии. Первого руководителя создаёт административная команда при развёртывании,
+      публичной регистрации нет.
+  - name: Users
+    description: Сотрудники и исполнители. Управление только руководителем.
+  - name: Projects
+    description: Объекты строительства и данные клиента.
+  - name: Stages
+    description: Фиксированные виды работ, назначения, зависимости и приёмка.
+  - name: Checklists
+    description: Один чек-лист с контрольными точками на этап. В текущей версии без фото.
+  - name: Finance
+    description: Четыре суммы на этап и итоги проекта. Доступ только руководителю.
+  - name: Todos
+    description: Существующий демонстрационный модуль. Не входит в предметную модель строительства.
+paths:
+  /users:
+    $ref: ../users/users.yaml#/paths/~1users
+  /users/{userId}:
+    $ref: ../users/users.yaml#/paths/~1users~1{userId}
+  /users/{userId}/password:
+    $ref: ../users/users.yaml#/paths/~1users~1{userId}~1password
+  /auth/login:
+    $ref: ../auth/auth.yaml#/paths/~1auth~1login
+  /auth/logout:
+    $ref: ../auth/auth.yaml#/paths/~1auth~1logout
+  /auth/me:
+    $ref: ../auth/auth.yaml#/paths/~1auth~1me
+  /projects:
+    $ref: ../projects/projects.yaml#/paths/~1projects
+  /projects/{projectId}:
+    $ref: ../projects/projects.yaml#/paths/~1projects~1{projectId}
+  /projects/{projectId}/finance:
+    $ref: ../projects/projects.yaml#/paths/~1projects~1{projectId}~1finance
+  /stages:
+    $ref: ../stages/stages.yaml#/paths/~1stages
+  /projects/{projectId}/stages:
+    $ref: ../stages/stages.yaml#/paths/~1projects~1{projectId}~1stages
+  /stages/{stageId}:
+    $ref: ../stages/stages.yaml#/paths/~1stages~1{stageId}
+  /stages/{stageId}/status:
+    $ref: ../stages/stages.yaml#/paths/~1stages~1{stageId}~1status
+  /stages/{stageId}/acceptance:
+    $ref: ../stages/stages.yaml#/paths/~1stages~1{stageId}~1acceptance
+  /stages/{stageId}/rework:
+    $ref: ../stages/stages.yaml#/paths/~1stages~1{stageId}~1rework
+  /stages/{stageId}/finance:
+    $ref: ../stages/stages.yaml#/paths/~1stages~1{stageId}~1finance
+  /stages/{stageId}/checklist:
+    $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist
+  /stages/{stageId}/checklist/items/{itemId}:
+    $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist~1items~1{itemId}
+  /todos:
+    $ref: ../todos/todos.yaml#/paths/~1todos
+  /todos/{id}:
+    $ref: ../todos/todos.yaml#/paths/~1todos~1{id}
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ../common/common.yaml#/components/securitySchemes/bearerAuth

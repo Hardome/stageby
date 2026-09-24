@@ -5,28 +5,47 @@
 
 export type Todo = {
     /**
-     * @description
+     * @description Стабильный UUID задачи.
+     *
      * Format: `uuid`
+     * @example 123e4567-e89b-42d3-a456-426614174000
      * @type string
     */
     id: string;
     /**
+     * @description Название задачи.
      * @minLength 1
      * @maxLength 255
+     * @example Подготовить список задач
      * @type string
     */
     title: string;
+    /**
+     * @description Подробное описание задачи; null — описание отсутствует.
+     * @example Составить список задач на следующую неделю.
+     * @example null
+     * @type string
+    */
     description: string | null;
+    /**
+     * @description Признак завершённой задачи.
+     * @example false
+     * @type boolean
+    */
     completed: boolean;
     /**
-     * @description
+     * @description Дата и время создания записи в UTC, формат RFC 3339.
+     *
      * Format: `date-time`
+     * @example 2026-09-20T08:00:00Z
      * @type string
     */
     createdAt: string;
     /**
-     * @description
+     * @description Дата и время последнего изменения записи в UTC, формат RFC 3339.
+     *
      * Format: `date-time`
+     * @example 2026-09-24T10:00:00Z
      * @type string
     */
     updatedAt: string;
