@@ -1,8 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 
-import { listTodosQueryKey } from '@entities/todo';
-
 import { useUpdateTodo } from '@api/mutations/useUpdateTodo';
+import { listTodosQueryKey } from '@api/queries/useListTodos';
 
 type ToggleTodoCheckboxProperties = {
   completed: boolean;
