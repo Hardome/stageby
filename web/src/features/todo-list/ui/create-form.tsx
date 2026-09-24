@@ -2,9 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 
-import { listTodosQueryKey } from '@entities/todo';
-
 import { useCreateTodo } from '@api/mutations/useCreateTodo';
+import { listTodosQueryKey } from '@api/queries/useListTodos';
 import type { CreateTodoSchemaType } from '@api/zod/createTodoSchema';
 import { createTodoSchema as todoCreationSchema } from '@api/zod/createTodoSchema';
 

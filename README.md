@@ -81,12 +81,10 @@ stageby/
 Источник истины для HTTP API — `contracts/references/stageby/stageby.yaml`, который объединяет маршруты сущностей из `contracts/references/`. Описаны пользователи, проекты, этапы, чек-листы и вход по логину/паролю. Финансовый модуль отложен. Это целевой контракт: новые серверные маршруты ещё не реализованы; демонстрационный модуль `todos` сохранён. Redocly проверяет исходники и собирает `contracts/openapi.yaml`, который читают приложения. После изменения контракта соберите его и обновите сгенерированный код обоих приложений:
 
 ```sh
-pnpm --dir contracts run build
-pnpm --dir api run codegen
-pnpm --dir web run codegen
+pnpm run codegen
 ```
 
-Результаты сборки — `contracts/openapi.yaml` и `contracts/dist/index.html`. Собранный `openapi.yaml` хранится в Git и вручную не редактируется. Подробности — в [руководстве по контрактам](contracts/README.md).
+Команда обновляет `contracts/openapi.yaml` и сгенерированный код API и web. Собранный `openapi.yaml` хранится в Git и вручную не редактируется. Подробности — в [руководстве по контрактам](contracts/README.md).
 
 Файлы в `api/src/generated` и `web/src/generated` вручную не редактируются.
 
