@@ -3,6 +3,7 @@ import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fas
 
 import type { Environment } from '#app/config/env';
 import { todoModule } from '#app/modules/todos/index';
+import { registerAuthentication } from '#app/plugins/authentication';
 import { registerDatabase } from '#app/plugins/database';
 import { registerDocumentation } from '#app/plugins/documentation';
 import { registerErrorHandler } from '#app/plugins/error-handler';
@@ -38,6 +39,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   registerErrorHandler(app, options.environment);
   await registerSecurity(app, options.environment);
   await registerDatabase(app, options.environment);
+  await registerAuthentication(app);
   await registerDocumentation(app);
 
   /* Модули */
