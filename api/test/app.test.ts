@@ -45,7 +45,7 @@ describe('Приложение', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       openapi: '3.1.0',
-      info: { title: 'Stageby API', version: '0.0.0' },
+      info: { title: 'Stageby API', version: '0.1.0' },
       paths: { '/todos': {}, '/todos/{id}': {} },
     });
   });

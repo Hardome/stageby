@@ -5,6 +5,7 @@ import:
 useGitignore: true
 enableGlobDot: true
 words:
+  - btrim
   - codegen
   - Filenaming
   - healthcheck
@@ -17,6 +18,10 @@ words:
   - Steiger
   - tanstack
   - Trixie
+  - автоинкремент
+  - валидировать
+  - неаутентифицированный
+  - хешировать
   - автораспределения
   - Автосоздание
   - Купидом
