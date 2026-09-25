@@ -12,7 +12,7 @@ pnpm run bootstrap
 pnpm run dev
 ```
 
-Для отдельного запуска API нужны Node.js 24+, pnpm 11+ и доступный PostgreSQL:
+Для отдельного запуска API нужны Node.js 24.7+, pnpm 11+ и доступный PostgreSQL:
 
 1. Скопируйте `.env.example` в `.env` и при необходимости измените настройки.
 2. Выполните команды из каталога `api`:
@@ -38,6 +38,7 @@ pnpm run dev
 | `CORS_ORIGIN` | `http://localhost:3000` | Разрешённые источники CORS через запятую |
 | `RATE_LIMIT_MAX` | `100` | Максимум запросов за заданное окно |
 | `RATE_LIMIT_TIME_WINDOW` | `1 minute` | Окно ограничения частоты запросов |
+| `SESSION_TTL_HOURS` | `12` | Срок действия сессии в часах, от 1 до 12 |
 
 ## Команды
 
