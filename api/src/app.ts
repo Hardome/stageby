@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
 
 import type { Environment } from '#app/config/env';
+import { authModule } from '#app/modules/auth/index';
 import { todoModule } from '#app/modules/todos/index';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerDatabase } from '#app/plugins/database';
@@ -43,6 +44,11 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await registerDocumentation(app);
 
   /* Модули */
+  await app.register(authModule, {
+    SESSION_TTL_HOURS: options.environment.SESSION_TTL_HOURS,
+    LOGIN_RATE_LIMIT_MAX: options.environment.LOGIN_RATE_LIMIT_MAX,
+    LOGIN_RATE_LIMIT_TIME_WINDOW: options.environment.LOGIN_RATE_LIMIT_TIME_WINDOW,
+  });
   await app.register(todoModule);
 
   return app;

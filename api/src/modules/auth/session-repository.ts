@@ -48,6 +48,16 @@ export class SessionRepository {
     return revoked.length > 0;
   }
 
+  async revokeById(id: number, revokedAt = new Date()): Promise<boolean> {
+    const revoked = await this.#database
+      .update(sessions)
+      .set({ revokedAt })
+      .where(and(eq(sessions.id, id), isNull(sessions.revokedAt)))
+      .returning({ id: sessions.id });
+
+    return revoked.length > 0;
+  }
+
   async revokeAllForUser(userId: number, revokedAt = new Date()): Promise<number> {
     const revoked = await this.#database
       .update(sessions)

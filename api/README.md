@@ -38,6 +38,8 @@ pnpm run dev
 | `CORS_ORIGIN` | `http://localhost:3000` | Разрешённые источники CORS через запятую |
 | `RATE_LIMIT_MAX` | `100` | Максимум запросов за заданное окно |
 | `RATE_LIMIT_TIME_WINDOW` | `1 minute` | Окно ограничения частоты запросов |
+| `LOGIN_RATE_LIMIT_MAX` | `5` | Максимум попыток входа отдельно для IP и логина за заданное окно |
+| `LOGIN_RATE_LIMIT_TIME_WINDOW` | `1 minute` | Окно ограничения попыток входа |
 | `SESSION_TTL_HOURS` | `12` | Срок действия сессии в часах, от 1 до 12 |
 
 ## Команды

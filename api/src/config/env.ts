@@ -23,6 +23,8 @@ const environmentSchema = z.object({
     .pipe(z.array(z.url()).min(1)),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   RATE_LIMIT_TIME_WINDOW: z.string().min(1).default('1 minute'),
+  LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  LOGIN_RATE_LIMIT_TIME_WINDOW: z.string().min(1).default('1 minute'),
   SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(12).default(12),
 });
 
