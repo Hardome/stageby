@@ -7,6 +7,10 @@ enableGlobDot: true
 words:
   - btrim
   - codegen
+  - conname
+  - connamespace
+  - contype
+  - datname
   - Filenaming
   - healthcheck
   - ilike
@@ -14,11 +18,17 @@ words:
   - Kubb
   - nosniff
   - Redocly
+  - regnamespace
+  - schemaname
   - segmentless
   - Stageby
   - Steiger
   - tanstack
+  - tablename
   - Trixie
+  - typname
+  - typnamespace
+  - typtype
   - автоинкремент
   - валидировать
   - неаутентифицированный

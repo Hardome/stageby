@@ -1,3 +1,5 @@
+import type { Writable } from 'node:stream';
+
 import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
 
@@ -13,14 +15,22 @@ import { registerSecurity } from '#app/plugins/security';
 
 interface BuildAppOptions {
   environment: Environment;
+  loggerStream?: Writable;
 }
 
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
+  const loggerSecurity = {
+    level: options.environment.LOG_LEVEL,
+    redact: {
+      paths: ['req.headers.cookie', 'req.headers.authorization', 'req.body.password', 'res.headers["set-cookie"]'],
+      censor: '[REDACTED]',
+    },
+  };
   const app = Fastify({
     logger:
       options.environment.NODE_ENV === 'development'
         ? {
-            level: options.environment.LOG_LEVEL,
+            ...loggerSecurity,
             transport: {
               target: 'pino-pretty',
               options: {
@@ -30,7 +40,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
               },
             },
           }
-        : { level: options.environment.LOG_LEVEL },
+        : { ...loggerSecurity, ...(options.loggerStream ? { stream: options.loggerStream } : {}) },
   }).withTypeProvider<ZodTypeProvider>();
 
   /* Валидация запросов и ответов через zod */

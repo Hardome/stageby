@@ -1,11 +1,15 @@
 import { randomUUID } from 'node:crypto';
+import { Writable } from 'node:stream';
 
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from '#app/app';
 import { type Environment, parseEnvironment } from '#app/config/env';
 import { todos } from '#app/db/schema/todos';
+import { users } from '#app/db/schema/users';
+import { hashPassword } from '#app/modules/auth/password-hasher';
+import { UserRepository } from '#app/modules/users/repository';
 
 let app: Awaited<ReturnType<typeof buildApp>>;
 let environment: Environment;
@@ -112,6 +116,50 @@ describe('Приложение', () => {
       });
     } finally {
       await limitedApp.close();
+    }
+  });
+
+  it('не пишет пароль, хеш и сессионный токен в журналы', async () => {
+    const logChunks: string[] = [];
+    const loggerStream = new Writable({
+      write(chunk, _encoding, callback) {
+        logChunks.push(String(chunk));
+        callback();
+      },
+    });
+    const loggedApp = await buildApp({
+      environment: { ...environment, NODE_ENV: 'production', LOG_LEVEL: 'info' },
+      loggerStream,
+    });
+    const password = 'Log-safety-password-123!';
+    const passwordHash = await hashPassword(password);
+    const user = await new UserRepository(loggedApp.db).create({
+      login: `logs.${randomUUID().replaceAll('-', '').slice(0, 20)}`,
+      passwordHash,
+      fullName: 'Проверка журналов',
+      role: 'manager',
+    });
+
+    try {
+      const response = await loggedApp.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { login: user.login, password },
+      });
+      const cookieHeader = response.headers['set-cookie'];
+      const cookie = (Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader)?.split(';', 1)[0] ?? '';
+      const token = cookie.slice(cookie.indexOf('=') + 1);
+      const logs = logChunks.join('');
+
+      expect(response.statusCode).toBe(200);
+      expect(token).not.toBe('');
+      expect(logs).not.toContain(password);
+      expect(logs).not.toContain(passwordHash);
+      expect(logs).not.toContain(token);
+      expect(logs).not.toContain('tokenHash');
+    } finally {
+      await loggedApp.db.delete(users).where(eq(users.id, user.id));
+      await loggedApp.close();
     }
   });
 });

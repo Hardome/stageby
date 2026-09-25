@@ -278,4 +278,40 @@ describe('Users API', () => {
       sessionRepository.findActiveByTokenHash(hashSessionToken(secondSession.accessToken)),
     ).resolves.toBeNull();
   });
+
+  it('отзывает все сессии при смене роли и деактивации пользователя', async () => {
+    const manager = await createIdentity();
+    const roleTarget = await createIdentity('foreman');
+    const inactiveTarget = await createIdentity('estimator');
+    const sessionService = new SessionService(new SessionRepository(getApp().db), 12);
+    const roleTargetSecondSession = await sessionService.issue(roleTarget.user.id);
+    const inactiveTargetSecondSession = await sessionService.issue(inactiveTarget.user.id);
+    const headers = authentication(manager.cookie);
+
+    const roleResponse = await getApp().inject({
+      method: 'PATCH',
+      url: `/users/${roleTarget.user.id}`,
+      headers,
+      payload: { role: 'inspector' },
+    });
+    const inactiveResponse = await getApp().inject({
+      method: 'PATCH',
+      url: `/users/${inactiveTarget.user.id}`,
+      headers,
+      payload: { isActive: false },
+    });
+
+    expect(roleResponse.statusCode).toBe(200);
+    expect(inactiveResponse.statusCode).toBe(200);
+
+    const sessionRepository = new SessionRepository(getApp().db);
+    for (const token of [
+      roleTarget.accessToken,
+      roleTargetSecondSession.accessToken,
+      inactiveTarget.accessToken,
+      inactiveTargetSecondSession.accessToken,
+    ]) {
+      await expect(sessionRepository.findActiveByTokenHash(hashSessionToken(token))).resolves.toBeNull();
+    }
+  });
 });
