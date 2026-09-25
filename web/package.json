@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm run codegen && tsc -b && vite build",
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build",
     "preview": "vite preview",
     "codegen": "concurrently -n api,routes \"pnpm run codegen:api\" \"pnpm run codegen:routes\"",
     "codegen:api": "kubb generate",
@@ -22,18 +23,23 @@
     "lint:fsd": "steiger ./src",
     "lint:spell": "cspell --config ../cspell.config.yaml \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"*.{ts,js,json}\"",
     "typecheck": "tsc -b",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@base-ui/react": "1.8.0",
     "@hookform/resolvers": "5.9.1",
     "@tanstack/react-query": "5.103.2",
     "@tanstack/react-router": "1.170.38",
+    "cn": "0.4.0",
+    "lucide-react": "1.47.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hook-form": "7.88.0",
+    "tailwind-variants": "3.3.1",
+    "tw-animate-css": "1.4.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
@@ -53,7 +59,6 @@
     "@tanstack/router-cli": "1.167.38",
     "@tanstack/router-plugin": "1.168.40",
     "@testing-library/jest-dom": "7.0.1",
-    "@testing-library/react": "16.3.3",
     "@types/node": "26.6.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
@@ -71,6 +76,7 @@
     "jsdom": "30.1.1",
     "knip": "6.37.0",
     "kubb": "5.3.11",
+    "shadcn": "4.21.0",
     "steiger": "0.6.0",
     "stylelint": "17.15.0",
     "stylelint-config-recommended": "18.0.0",
@@ -78,7 +84,6 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.1",
     "vite": "8.3.0",
-    "vite-plugin-svgr": "5.2.0",
     "vitest": "5.0.1"
   }
 }

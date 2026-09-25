@@ -20,6 +20,7 @@ words:
   - Redocly
   - regnamespace
   - schemaname
+  - shadcn
   - segmentless
   - Stageby
   - Steiger
@@ -39,6 +40,7 @@ words:
   - Межполевые
   - фотоподтверждения
   - Штро
+  - автоинкремент
 ignorePaths:
   - "**/node_modules/**"
   - "**/dist/**"

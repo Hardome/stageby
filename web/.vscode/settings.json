@@ -1,0 +1,35 @@
+{
+  "files.readonlyInclude": {
+    "**/route-tree.gen.ts": true,
+    "src/generated/**": true,
+    "api-specs/**": true
+  },
+  "files.watcherExclude": {
+    "**/route-tree.gen.ts": true
+  },
+  "search.exclude": {
+    "**/route-tree.gen.ts": true
+  },
+  "files.eol": "\n",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.biome": "explicit",
+    "source.fixAll.stylelint": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["clsx\\(.*?\\)(?!\\])", "(?:'|\"|`)([^\"'`]*)(?:'|\"|`)"]
+  ],
+  "tailwindCSS.classAttributes": ["class", "className", "ngClass", ".*ClassName"],
+  "tailwindCSS.classFunctions": ["cn", "cva", "cx", "clsx", "tw", "tv"],
+  "tailwindCSS.experimental.configFile": "src/app/styles/index.css"
+}

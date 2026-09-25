@@ -4,7 +4,6 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
-import svgr from 'vite-plugin-svgr';
 
 export default defineConfig(({ mode }) => ({
   plugins: [
@@ -17,13 +16,6 @@ export default defineConfig(({ mode }) => ({
       presets: [reactCompilerPreset()],
     }),
     tailwindcss(),
-    svgr({
-      svgrOptions: {
-        icon: true,
-        exportType: 'named',
-        namedExport: 'ReactComponent',
-      },
-    }),
   ],
   resolve: {
     alias: {
@@ -46,6 +38,10 @@ export default defineConfig(({ mode }) => ({
     port: 3000,
     strictPort: true,
     proxy: {
+      '/auth': {
+        target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
+        changeOrigin: true,
+      },
       '/todos': {
         target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
         changeOrigin: true,

@@ -29,7 +29,7 @@
 
 ## Создание или изменение сущности
 
-1. Опишите или обновите маршруты в [OpenAPI](../contracts/references/stageby/stageby.yaml), затем из корня Stageby выполните `pnpm --dir contracts run generate` и из `api` запустите `pnpm run codegen`.
+1. Опишите или обновите маршруты в [OpenAPI](../contracts/references/stageby/stageby.yaml), затем из корня Stageby выполните `pnpm run codegen`.
 2. Если меняется хранение, следуйте [руководству по БД и миграциям](database-guidelines.md): обновите схему, проверьте созданный SQL и примените миграцию.
 3. Создайте файлы модуля по таблице выше. Операции с данными держите в `repository.ts`, HTTP-логику — в `routes.ts`; модуль подключите в [app.ts](../api/src/app.ts).
 4. Добавьте интеграционный тест модуля по образцу [todos.test.ts](../api/src/modules/todos/todos.test.ts). Общую настройку Fastify и соединения с БД берите из [test/setup-module-test.ts](../api/test/setup-module-test.ts), не повторяйте её в каждом модуле. Тесты требуют запущенного PostgreSQL с применёнными миграциями; созданные тестом записи удаляйте по их ID, не очищая всю таблицу. Один экземпляр приложения используется повторно внутри тестового файла, но не между модулями; сборку всего приложения проверяет [app.test.ts](../api/src/app.test.ts).

@@ -40,7 +40,7 @@ pnpm run db:studio
 1. Измените нужный файл в `api/src/db/schema/` — например, [todos.ts](../api/src/db/schema/todos.ts). Новую таблицу экспортируйте из [index.ts](../api/src/db/schema/index.ts).
 2. Запустите `pnpm run db:generate`. Проверьте новый SQL в [db/migrations](../api/src/db/migrations): соответствует ли он намерению и сохранит ли нужные данные. Если требуется перенос данных, продумайте его **до** применения миграции.
 3. Запустите `pnpm run db:migrate`.
-4. Обновите [репозиторий](../api/src/modules/todos/repository.ts) и [mapper.ts](../api/src/modules/todos/mapper.ts), если изменились поля, которые использует API. Если меняется HTTP-контракт, обновите [OpenAPI](../contracts/references/stageby/stageby.yaml), выполните из корня Stageby `pnpm --dir contracts run generate`, затем из `api` — `pnpm run codegen`.
+4. Обновите [репозиторий](../api/src/modules/todos/repository.ts) и [mapper.ts](../api/src/modules/todos/mapper.ts), если изменились поля, которые использует API. Если меняется HTTP-контракт, обновите [OpenAPI](../contracts/references/stageby/stageby.yaml) и выполните из корня Stageby `pnpm run codegen`.
 5. Проверьте путь от запроса до БД и ответа через [интеграционный тест](../api/src/modules/todos/todos.test.ts): `pnpm run test`. Затем выполните `pnpm run typecheck`.
 
 Не меняйте уже применённый SQL-файл: на других базах он может быть выполнен, а история перестанет соответствовать коду.
