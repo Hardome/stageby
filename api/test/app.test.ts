@@ -50,6 +50,7 @@ describe('Приложение', () => {
     expect(response.json()).toMatchObject({
       openapi: '3.1.0',
       info: { title: 'Stageby API', version: '0.1.0' },
+      servers: [{ url: '/' }],
       paths: { '/todos': {}, '/todos/{id}': {} },
     });
   });
@@ -77,6 +78,18 @@ describe('Приложение', () => {
 
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({ code: 'forbidden' });
+  });
+
+  it('разрешает изменяющие запросы из Swagger UI на том же host', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      headers: { host: '127.0.0.1:3001', origin: 'http://127.0.0.1:3001' },
+      payload: { login: 'swagger.missing', password: 'wrong' },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ code: 'unauthenticated' });
   });
 
   it('подключает БД к модулю', async () => {

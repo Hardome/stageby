@@ -6,6 +6,14 @@ import type { FastifyInstance } from 'fastify';
 
 import type { Environment } from '#app/config/env';
 
+function hasSameHost(origin: string, host: string): boolean {
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
 export async function registerSecurity(app: FastifyInstance, environment: Environment): Promise<void> {
   await app.register(fastifyCookie);
 
@@ -28,8 +36,9 @@ export async function registerSecurity(app: FastifyInstance, environment: Enviro
 
   app.addHook('onRequest', async (request, reply) => {
     const origin = request.headers.origin;
+    const isSameHost = origin !== undefined && hasSameHost(origin, request.host);
 
-    if (!safeMethods.has(request.method) && origin !== undefined && !allowedOrigins.has(origin)) {
+    if (!safeMethods.has(request.method) && origin !== undefined && !allowedOrigins.has(origin) && !isSameHost) {
       return reply.status(403).send({
         error: 'Forbidden',
         code: 'forbidden',
