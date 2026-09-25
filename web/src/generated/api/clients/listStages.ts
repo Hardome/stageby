@@ -16,5 +16,5 @@ import { listStagesResponseSchema, listStagesErrorSchema } from '../zod/listStag
 export function listStages<ThrowOnError extends boolean = true>(options: Options<ListStagesOptions, ThrowOnError> = {}): Unwrappable<RequestResult<ListStagesResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/stages', security: [{ type: 'http', scheme: 'bearer' }], validator: { response: listStagesResponseSchema, error: listStagesErrorSchema }, ...config }) as Promise<RequestResult<ListStagesResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/stages', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listStagesResponseSchema, error: listStagesErrorSchema }, ...config }) as Promise<RequestResult<ListStagesResponses, ThrowOnError>>)
 }

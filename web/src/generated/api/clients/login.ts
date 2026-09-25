@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { loginResponseSchema, loginErrorSchema } from '../zod/loginSchema'
 
 /**
- * @description Публичный вход. Токен действует до expiresAt (максимум 12 часов) либо отзыва. Refresh-токенов в первой версии нет; после истечения нужен повторный вход. Обязателен лимит попыток по IP и логину. Ответ не кэшируется (Cache-Control: no-store).
+ * @description Публичный вход. Сервер устанавливает защищённую HttpOnly cookie stageby_session, которая действует до expiresAt (максимум 12 часов) либо отзыва. После истечения нужен повторный вход. Обязателен лимит попыток по IP и логину. Ответ не кэшируется (Cache-Control: no-store).
  * @summary Войти по логину и паролю
  * {@link /auth/login}
  */

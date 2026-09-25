@@ -9,6 +9,8 @@ export type LogoutStatus204 = unknown;
 
 export type LogoutStatus401 = ApiError;
 
+export type LogoutStatus403 = ApiError;
+
 export type LogoutOptions = {
     body?: never;
     path?: never;
@@ -19,9 +21,10 @@ export type LogoutOptions = {
 export type LogoutResponses = {
     "204": LogoutStatus204;
     "401": LogoutStatus401;
+    "403": LogoutStatus403;
 };
 
 /**
  * @description Union of all possible responses
 */
-export type LogoutResponse = (LogoutStatus204 | LogoutStatus401);
+export type LogoutResponse = (LogoutStatus204 | LogoutStatus401 | LogoutStatus403);

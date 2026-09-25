@@ -20,6 +20,10 @@ export const loginStatus401Schema = apiErrorSchema
 
 export type LoginStatus401SchemaType = z.infer<typeof loginStatus401Schema>
 
+export const loginStatus403Schema = apiErrorSchema
+
+export type LoginStatus403SchemaType = z.infer<typeof loginStatus403Schema>
+
 export const loginStatus429Schema = apiErrorSchema
 
 export type LoginStatus429SchemaType = z.infer<typeof loginStatus429Schema>
@@ -28,7 +32,7 @@ export const loginResponseSchema = loginStatus200Schema
 
 export type LoginResponseSchemaType = z.infer<typeof loginResponseSchema>
 
-export const loginErrorSchema = z.union([loginStatus400Schema, loginStatus401Schema, loginStatus429Schema])
+export const loginErrorSchema = z.union([loginStatus400Schema, loginStatus401Schema, loginStatus403Schema, loginStatus429Schema])
 
 export type LoginErrorSchemaType = z.infer<typeof loginErrorSchema>
 
@@ -49,6 +53,7 @@ export const loginResponsesSchema = z.object({
   '200': loginStatus200Schema,
   '400': loginStatus400Schema,
   '401': loginStatus401Schema,
+  '403': loginStatus403Schema,
   '429': loginStatus429Schema,
 })
 

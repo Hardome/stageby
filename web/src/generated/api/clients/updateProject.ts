@@ -16,5 +16,5 @@ import { updateProjectResponseSchema, updateProjectErrorSchema } from '../zod/up
 export function updateProject<ThrowOnError extends boolean = true>(options: Options<UpdateProjectOptions, ThrowOnError>): Unwrappable<RequestResult<UpdateProjectResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'PATCH', url: '/projects/{projectId}', security: [{ type: 'http', scheme: 'bearer' }], validator: { response: updateProjectResponseSchema, error: updateProjectErrorSchema }, ...config }) as Promise<RequestResult<UpdateProjectResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'PATCH', url: '/projects/{projectId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateProjectResponseSchema, error: updateProjectErrorSchema }, ...config }) as Promise<RequestResult<UpdateProjectResponses, ThrowOnError>>)
 }

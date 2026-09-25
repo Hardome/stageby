@@ -12,10 +12,11 @@
     "#test/*": "./test/*.ts"
   },
   "engines": {
-    "node": ">=24.0.0",
+    "node": ">=24.7.0",
     "pnpm": ">=11.0.0"
   },
   "scripts": {
+    "admin:create-first-manager": "node --conditions=development src/commands/create-first-manager.ts",
     "build": "pnpm run codegen && tsc -p tsconfig.build.json",
     "check": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build",
     "codegen": "openapi-ts && pnpm run typecheck",
@@ -33,6 +34,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@fastify/cookie": "11.1.2",
     "@fastify/cors": "11.3.0",
     "@fastify/helmet": "13.1.1",
     "@fastify/rate-limit": "11.2.0",
