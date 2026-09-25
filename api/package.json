@@ -16,6 +16,7 @@
     "pnpm": ">=11.0.0"
   },
   "scripts": {
+    "admin:create-first-manager": "node --conditions=development src/commands/create-first-manager.ts",
     "build": "pnpm run codegen && tsc -p tsconfig.build.json",
     "codegen": "openapi-ts && pnpm run typecheck",
     "db:generate": "drizzle-kit generate",
@@ -32,6 +33,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@fastify/cookie": "11.1.2",
     "@fastify/cors": "11.3.0",
     "@fastify/helmet": "13.1.1",
     "@fastify/rate-limit": "11.2.0",

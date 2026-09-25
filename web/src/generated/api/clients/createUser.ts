@@ -16,5 +16,5 @@ import { createUserResponseSchema, createUserErrorSchema } from '../zod/createUs
 export function createUser<ThrowOnError extends boolean = true>(options: Options<CreateUserOptions, ThrowOnError>): Unwrappable<RequestResult<CreateUserResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/users', security: [{ type: 'http', scheme: 'bearer' }], validator: { response: createUserResponseSchema, error: createUserErrorSchema }, ...config }) as Promise<RequestResult<CreateUserResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/users', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createUserResponseSchema, error: createUserErrorSchema }, ...config }) as Promise<RequestResult<CreateUserResponses, ThrowOnError>>)
 }

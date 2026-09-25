@@ -4,12 +4,18 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { RouteHandlers } from '#app/generated/fastify.gen';
 import { zApiError, zGetCurrentUserResponse, zLoginBody, zLoginResponse } from '#app/generated/zod.gen';
 import type { LoginService } from '#app/modules/auth/login-service';
+import {
+  expiredSessionCookieOptions,
+  SESSION_COOKIE_NAME,
+  sessionCookieOptions,
+} from '#app/modules/auth/session-cookie';
 import type { SessionRepository } from '#app/modules/auth/session-repository';
 import { toUser } from '#app/modules/users/mapper';
 
 interface AuthRouteOptions {
   loginRateLimitMax: number;
   loginRateLimitTimeWindow: string;
+  secureCookie: boolean;
 }
 
 const unauthorizedResponse = {
@@ -34,15 +40,18 @@ export function registerAuthRoutes(
     const result = await loginService.login(request.body.login, request.body.password);
 
     if (!result) {
-      return reply.header('WWW-Authenticate', 'Bearer').status(401).send(unauthorizedResponse);
+      return reply.status(401).send(unauthorizedResponse);
     }
 
     return reply
       .header('Cache-Control', 'no-store')
+      .setCookie(
+        SESSION_COOKIE_NAME,
+        result.issuedSession.accessToken,
+        sessionCookieOptions(result.issuedSession.expiresAt, options.secureCookie),
+      )
       .status(200)
       .send({
-        accessToken: result.issuedSession.accessToken,
-        tokenType: 'Bearer',
         expiresAt: result.issuedSession.expiresAt.toISOString(),
         user: toUser(result.user),
       });
@@ -52,16 +61,16 @@ export function registerAuthRoutes(
     const sessionId = request.auth?.session.id;
 
     if (sessionId === undefined) {
-      return reply.header('WWW-Authenticate', 'Bearer').status(401).send(unauthorizedResponse);
+      return reply.status(401).send(unauthorizedResponse);
     }
 
     await sessions.revokeById(sessionId);
-    return reply.status(204).send();
+    return reply.clearCookie(SESSION_COOKIE_NAME, expiredSessionCookieOptions(options.secureCookie)).status(204).send();
   };
 
   const getCurrentUser: RouteHandlers['getCurrentUser'] = async (request, reply) => {
     if (!request.auth) {
-      return reply.header('WWW-Authenticate', 'Bearer').status(401).send(unauthorizedResponse);
+      return reply.status(401).send(unauthorizedResponse);
     }
 
     return reply.status(200).send(toUser(request.auth.user));

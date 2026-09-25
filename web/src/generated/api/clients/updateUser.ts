@@ -16,5 +16,5 @@ import { updateUserResponseSchema, updateUserErrorSchema } from '../zod/updateUs
 export function updateUser<ThrowOnError extends boolean = true>(options: Options<UpdateUserOptions, ThrowOnError>): Unwrappable<RequestResult<UpdateUserResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'PATCH', url: '/users/{userId}', security: [{ type: 'http', scheme: 'bearer' }], validator: { response: updateUserResponseSchema, error: updateUserErrorSchema }, ...config }) as Promise<RequestResult<UpdateUserResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'PATCH', url: '/users/{userId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateUserResponseSchema, error: updateUserErrorSchema }, ...config }) as Promise<RequestResult<UpdateUserResponses, ThrowOnError>>)
 }

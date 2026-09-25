@@ -16,5 +16,5 @@ import { getUserResponseSchema, getUserErrorSchema } from '../zod/getUserSchema'
 export function getUser<ThrowOnError extends boolean = true>(options: Options<GetUserOptions, ThrowOnError>): Unwrappable<RequestResult<GetUserResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/users/{userId}', security: [{ type: 'http', scheme: 'bearer' }], validator: { response: getUserResponseSchema, error: getUserErrorSchema }, ...config }) as Promise<RequestResult<GetUserResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/users/{userId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getUserResponseSchema, error: getUserErrorSchema }, ...config }) as Promise<RequestResult<GetUserResponses, ThrowOnError>>)
 }

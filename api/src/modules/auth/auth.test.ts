@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { eq, inArray } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
@@ -29,9 +30,11 @@ function createTestModule(loginRateLimitMax: number): FastifyPluginAsync {
     });
 
     registerErrorHandler(app, environment);
+    await app.register(fastifyCookie);
     await app.register(fastifyRateLimit, { global: false });
     await registerAuthentication(app);
     await app.register(authModule, {
+      NODE_ENV: 'test',
       SESSION_TTL_HOURS: 12,
       LOGIN_RATE_LIMIT_MAX: loginRateLimitMax,
       LOGIN_RATE_LIMIT_TIME_WINDOW: '1 minute',
@@ -79,6 +82,17 @@ const unauthorizedResponse = {
   message: 'Не удалось подтвердить авторизацию.',
 };
 
+function getSessionCookie(response: Awaited<ReturnType<ReturnType<typeof getApp>['inject']>>): string {
+  const header = response.headers['set-cookie'];
+  const serializedCookie = Array.isArray(header) ? header[0] : header;
+
+  if (!serializedCookie) {
+    throw new Error('Ответ не установил сессионную cookie');
+  }
+
+  return serializedCookie.split(';', 1)[0] ?? '';
+}
+
 describe('Auth API', () => {
   it('создаёт сессию только при верном пароле активного пользователя', async () => {
     const user = await createUser();
@@ -91,13 +105,14 @@ describe('Auth API', () => {
     expect(response.statusCode).toBe(200);
     expect(response.headers['cache-control']).toBe('no-store');
     const session = response.json<Session>();
-    expect(session).toMatchObject({
-      tokenType: 'Bearer',
-      user: { id: user.id, login: user.login, isActive: true },
-    });
-    expect(session.accessToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(session).toMatchObject({ user: { id: user.id, login: user.login, isActive: true } });
+    expect(response.headers['set-cookie']).toContain('stageby_session=');
+    expect(response.headers['set-cookie']).toContain('HttpOnly');
+    expect(response.headers['set-cookie']).toContain('SameSite=Lax');
+    expect(response.headers['set-cookie']).toContain('Path=/');
     expect(new Date(session.expiresAt).getTime()).toBeGreaterThan(Date.now());
     expect(response.body).not.toContain('password');
+    expect(response.body).not.toContain('accessToken');
     expect(response.body).not.toContain('tokenHash');
   });
 
@@ -113,7 +128,6 @@ describe('Auth API', () => {
     for (const payload of attempts) {
       const response = await getApp().inject({ method: 'POST', url: '/auth/login', payload });
       expect(response.statusCode).toBe(401);
-      expect(response.headers['www-authenticate']).toBe('Bearer');
       expect(response.json()).toEqual(unauthorizedResponse);
     }
   });
@@ -132,13 +146,13 @@ describe('Auth API', () => {
       url: '/auth/login',
       payload: { login: user.login, password: PASSWORD },
     });
-    const { accessToken } = loginResponse.json<Session>();
+    const cookie = getSessionCookie(loginResponse);
 
     await getApp().db.update(users).set({ fullName: 'Обновлённое имя' }).where(eq(users.id, user.id));
     const response = await getApp().inject({
       method: 'GET',
       url: '/auth/me',
-      headers: { authorization: `Bearer ${accessToken}` },
+      headers: { cookie },
     });
 
     expect(response.statusCode).toBe(200);
@@ -155,30 +169,31 @@ describe('Auth API', () => {
         url: '/auth/login',
         payload: { login: user.login, password: PASSWORD },
       });
-      return response.json<Session>().accessToken;
+      return getSessionCookie(response);
     };
-    const firstToken = await issue();
-    const secondToken = await issue();
+    const firstCookie = await issue();
+    const secondCookie = await issue();
 
     const logoutResponse = await getApp().inject({
       method: 'POST',
       url: '/auth/logout',
-      headers: { authorization: `Bearer ${firstToken}` },
+      headers: { cookie: firstCookie },
     });
     expect(logoutResponse.statusCode).toBe(204);
     expect(logoutResponse.body).toBe('');
+    expect(logoutResponse.headers['set-cookie']).toContain('stageby_session=;');
 
     const revokedResponse = await getApp().inject({
       method: 'GET',
       url: '/auth/me',
-      headers: { authorization: `Bearer ${firstToken}` },
+      headers: { cookie: firstCookie },
     });
     expect(revokedResponse.statusCode).toBe(401);
 
     const activeResponse = await getApp().inject({
       method: 'GET',
       url: '/auth/me',
-      headers: { authorization: `Bearer ${secondToken}` },
+      headers: { cookie: secondCookie },
     });
     expect(activeResponse.statusCode).toBe(200);
   });

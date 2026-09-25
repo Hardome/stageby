@@ -66,8 +66,6 @@ export const zLoginRequest = z.object({
 });
 
 export const zSession = z.object({
-    accessToken: z.string().min(1).max(4096),
-    tokenType: z.enum(['Bearer']),
     expiresAt: z.iso.datetime(),
     user: zUser
 });

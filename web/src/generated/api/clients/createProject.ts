@@ -16,5 +16,5 @@ import { createProjectResponseSchema, createProjectErrorSchema } from '../zod/cr
 export function createProject<ThrowOnError extends boolean = true>(options: Options<CreateProjectOptions, ThrowOnError>): Unwrappable<RequestResult<CreateProjectResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/projects', security: [{ type: 'http', scheme: 'bearer' }], validator: { response: createProjectResponseSchema, error: createProjectErrorSchema }, ...config }) as Promise<RequestResult<CreateProjectResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/projects', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createProjectResponseSchema, error: createProjectErrorSchema }, ...config }) as Promise<RequestResult<CreateProjectResponses, ThrowOnError>>)
 }

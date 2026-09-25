@@ -59,7 +59,20 @@ describe('Приложение', () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
     expect(response.headers['x-content-type-options']).toBe('nosniff');
+  });
+
+  it('отклоняет изменяющие запросы с посторонним Origin', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/todos',
+      headers: { origin: 'https://attacker.example' },
+      payload: { title: 'CSRF' },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toMatchObject({ code: 'forbidden' });
   });
 
   it('подключает БД к модулю', async () => {

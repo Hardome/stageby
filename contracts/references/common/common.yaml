@@ -89,7 +89,7 @@ components:
               - path: body.plannedEndDate
                 message: Плановое окончание не может быть раньше планового начала.
     ApiUnauthorized:
-      description: Токен отсутствует, недействителен, истёк или отозван. При входе — одинаковая ошибка для
+      description: Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для
         неизвестного логина, неверного пароля и неактивной учётной записи.
       content:
         application/json:
@@ -99,13 +99,6 @@ components:
             error: Unauthorized
             code: unauthenticated
             message: Не удалось подтвердить авторизацию.
-      headers:
-        WWW-Authenticate:
-          description: Схема аутентификации.
-          schema:
-            type: string
-            examples:
-              - Bearer
     ApiForbidden:
       description: Роль не разрешает эту операцию или изменение поля.
       content:
@@ -153,8 +146,9 @@ components:
             type: integer
             minimum: 1
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      description: "Токен сессии из POST /auth/login. Передаётся только в Authorization: Bearer <token>. Сервер
-        проверяет срок, отзыв, активность пользователя и актуальную роль при каждом запросе."
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: stageby_session
+      description: "Защищённая HttpOnly cookie серверной сессии из POST /auth/login. Браузер передаёт её автоматически.
+        Сервер проверяет срок, отзыв, активность пользователя и актуальную роль при каждом запросе."

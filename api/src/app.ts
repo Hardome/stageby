@@ -4,6 +4,7 @@ import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fas
 import type { Environment } from '#app/config/env';
 import { authModule } from '#app/modules/auth/index';
 import { todoModule } from '#app/modules/todos/index';
+import { userModule } from '#app/modules/users/index';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerDatabase } from '#app/plugins/database';
 import { registerDocumentation } from '#app/plugins/documentation';
@@ -45,10 +46,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
 
   /* Модули */
   await app.register(authModule, {
+    NODE_ENV: options.environment.NODE_ENV,
     SESSION_TTL_HOURS: options.environment.SESSION_TTL_HOURS,
     LOGIN_RATE_LIMIT_MAX: options.environment.LOGIN_RATE_LIMIT_MAX,
     LOGIN_RATE_LIMIT_TIME_WINDOW: options.environment.LOGIN_RATE_LIMIT_TIME_WINDOW,
   });
+  await app.register(userModule);
   await app.register(todoModule);
 
   return app;

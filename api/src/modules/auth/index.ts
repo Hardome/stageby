@@ -9,7 +9,7 @@ import { UserRepository } from '#app/modules/users/repository';
 
 type AuthModuleOptions = Pick<
   Environment,
-  'SESSION_TTL_HOURS' | 'LOGIN_RATE_LIMIT_MAX' | 'LOGIN_RATE_LIMIT_TIME_WINDOW'
+  'NODE_ENV' | 'SESSION_TTL_HOURS' | 'LOGIN_RATE_LIMIT_MAX' | 'LOGIN_RATE_LIMIT_TIME_WINDOW'
 >;
 
 export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (app, options) => {
@@ -22,5 +22,6 @@ export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (app, opt
   registerAuthRoutes(app, loginService, sessions, {
     loginRateLimitMax: options.LOGIN_RATE_LIMIT_MAX,
     loginRateLimitTimeWindow: options.LOGIN_RATE_LIMIT_TIME_WINDOW,
+    secureCookie: options.NODE_ENV === 'production',
   });
 };

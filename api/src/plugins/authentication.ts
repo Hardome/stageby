@@ -5,6 +5,7 @@ import type { UserRow } from '#app/db/schema/users';
 import type { AuthenticationContext } from '#app/modules/auth/authentication-context';
 import { AuthenticationRepository } from '#app/modules/auth/authentication-repository';
 import { AuthenticationService } from '#app/modules/auth/authentication-service';
+import { SESSION_COOKIE_NAME } from '#app/modules/auth/session-cookie';
 
 type UserRole = UserRow['role'];
 type AuthorizationHookFactory = (...roles: UserRole[]) => preHandlerAsyncHookHandler;
@@ -20,18 +21,8 @@ declare module 'fastify' {
   }
 }
 
-const bearerHeaderPattern = /^Bearer ([A-Za-z0-9_-]{43})$/i;
-
-function getBearerToken(authorizationHeader: string | undefined): string | null {
-  if (!authorizationHeader) {
-    return null;
-  }
-
-  return bearerHeaderPattern.exec(authorizationHeader)?.[1] ?? null;
-}
-
 function sendUnauthorized(reply: FastifyReply) {
-  return reply.header('WWW-Authenticate', 'Bearer').status(401).send({
+  return reply.status(401).send({
     error: 'Unauthorized',
     code: 'unauthenticated',
     message: 'Не удалось подтвердить авторизацию.',
@@ -52,7 +43,7 @@ const authenticationPluginCallback: FastifyPluginAsync = async (app) => {
   app.decorateRequest('auth', null);
 
   app.decorate('authenticate', async (request, reply) => {
-    const accessToken = getBearerToken(request.headers.authorization);
+    const accessToken = request.cookies[SESSION_COOKIE_NAME];
 
     if (!accessToken) {
       return sendUnauthorized(reply);
@@ -88,7 +79,7 @@ const authenticationPluginCallback: FastifyPluginAsync = async (app) => {
 
 const authenticationPlugin = fastifyPlugin(authenticationPluginCallback, {
   name: 'authentication',
-  dependencies: ['database'],
+  dependencies: ['database', '@fastify/cookie'],
 });
 
 export async function registerAuthentication(app: FastifyInstance): Promise<void> {

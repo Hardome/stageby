@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import fastifyCookie from '@fastify/cookie';
 import { eq, inArray } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -12,6 +13,7 @@ import { registerAuthentication } from '#app/plugins/authentication';
 import { setupModuleTest } from '#test/setup-module-test';
 
 const authenticationTestModule: FastifyPluginAsync = async (app) => {
+  await app.register(fastifyCookie);
   await registerAuthentication(app);
 
   app.get('/test/public', async (request) => ({ auth: request.auth }));
@@ -63,18 +65,17 @@ describe('Плагин аутентификации', () => {
     expect(response.json()).toEqual({ auth: null });
   });
 
-  it('отклоняет отсутствующий или некорректный Bearer-токен единым ответом', async () => {
-    const headers = [undefined, 'Basic credentials', 'Bearer invalid', 'Bearer  token', 'Bearer token extra'];
+  it('отклоняет отсутствующую или некорректную сессионную cookie единым ответом', async () => {
+    const cookies = [undefined, 'stageby_session=invalid', 'another_cookie=value'];
 
-    for (const authorization of headers) {
+    for (const cookie of cookies) {
       const response = await getApp().inject({
         method: 'GET',
         url: '/test/protected',
-        ...(authorization ? { headers: { authorization } } : {}),
+        ...(cookie ? { headers: { cookie } } : {}),
       });
 
       expect(response.statusCode).toBe(401);
-      expect(response.headers['www-authenticate']).toBe('Bearer');
       expect(response.json()).toEqual({
         error: 'Unauthorized',
         code: 'unauthenticated',
@@ -88,7 +89,7 @@ describe('Плагин аутентификации', () => {
     const response = await getApp().inject({
       method: 'GET',
       url: '/test/protected',
-      headers: { authorization: `bEaReR ${issued.accessToken}` },
+      headers: { cookie: `stageby_session=${issued.accessToken}` },
     });
 
     expect(response.statusCode).toBe(200);
@@ -123,7 +124,7 @@ describe('Плагин аутентификации', () => {
       const response = await getApp().inject({
         method: 'GET',
         url: '/test/protected',
-        headers: { authorization: `Bearer ${accessToken}` },
+        headers: { cookie: `stageby_session=${accessToken}` },
       });
 
       expect(response.statusCode).toBe(401);
@@ -133,7 +134,7 @@ describe('Плагин аутентификации', () => {
 
   it('проверяет актуальную роль пользователя при каждом запросе', async () => {
     const identity = await createAuthenticatedUser('manager');
-    const headers = { authorization: `Bearer ${identity.issued.accessToken}` };
+    const headers = { cookie: `stageby_session=${identity.issued.accessToken}` };
 
     const managerResponse = await getApp().inject({ method: 'GET', url: '/test/manager', headers });
     expect(managerResponse.statusCode).toBe(200);

@@ -1,8 +1,14 @@
-import { eq } from 'drizzle-orm';
+import { and, asc, count, eq, ilike, isNull, ne, or } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 import type * as databaseSchema from '#app/db/schema/index';
+import { sessions } from '#app/db/schema/sessions';
+import { stages } from '#app/db/schema/stages';
 import { type UserRow, users } from '#app/db/schema/users';
+import type { UpdateUser } from '#app/generated/types.gen';
+
+type Database = NodePgDatabase<typeof databaseSchema>;
+type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 export interface CreateUserRecord {
   login: string;
@@ -12,11 +18,148 @@ export interface CreateUserRecord {
   phone?: string | null;
 }
 
+export interface ListUsersInput {
+  limit: number;
+  offset: number;
+  role?: UserRow['role'];
+  isActive?: boolean;
+  search?: string;
+}
+
+export interface UserPageRecord {
+  items: UserRow[];
+  total: number;
+}
+
+export class LoginTakenError extends Error {
+  constructor() {
+    super('Логин уже занят');
+    this.name = 'LoginTakenError';
+  }
+}
+
+function hasLoginConstraint(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+
+  if ('code' in error && error.code === '23505' && 'constraint' in error && error.constraint === 'users_login_unique') {
+    return true;
+  }
+
+  return 'cause' in error && hasLoginConstraint(error.cause);
+}
+
+async function lockActiveManagers(transaction: Transaction, shouldLock: boolean): Promise<number[] | null> {
+  if (!shouldLock) {
+    return null;
+  }
+
+  const activeManagers = await transaction
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.role, 'manager'), eq(users.isActive, true)))
+    .orderBy(asc(users.id))
+    .for('update');
+  return activeManagers.map((manager) => manager.id);
+}
+
+async function findForUpdate(transaction: Transaction, id: number): Promise<UserRow | null> {
+  const [user] = await transaction.select().from(users).where(eq(users.id, id)).limit(1).for('update');
+  return user ?? null;
+}
+
+async function hasUnfinishedAssignment(transaction: Transaction, userId: number): Promise<boolean> {
+  const [assignment] = await transaction
+    .select({ id: stages.id })
+    .from(stages)
+    .where(and(ne(stages.status, 'completed'), or(eq(stages.assigneeId, userId), eq(stages.inspectorId, userId))))
+    .limit(1);
+  return assignment !== undefined;
+}
+
+function mayRemoveActiveManager(input: UpdateUser): boolean {
+  return input.isActive === false || (input.role !== undefined && input.role !== 'manager');
+}
+
+interface ChangeEffects {
+  roleChanges: boolean;
+  deactivates: boolean;
+  removesActiveManager: boolean;
+}
+
+function getChangeEffects(current: UserRow, input: UpdateUser): ChangeEffects {
+  const roleChanges = input.role !== undefined && input.role !== current.role;
+  const deactivates = input.isActive === false && current.isActive;
+  return {
+    roleChanges,
+    deactivates,
+    removesActiveManager: current.role === 'manager' && current.isActive && (roleChanges || deactivates),
+  };
+}
+
+async function getSecurityConflict(
+  transaction: Transaction,
+  current: UserRow,
+  input: UpdateUser,
+  activeManagerIds: number[] | null,
+): Promise<'last_manager' | 'user_in_use' | null> {
+  const effects = getChangeEffects(current, input);
+
+  if (effects.removesActiveManager && activeManagerIds?.length === 1) {
+    return 'last_manager';
+  }
+
+  if ((effects.roleChanges || effects.deactivates) && (await hasUnfinishedAssignment(transaction, current.id))) {
+    return 'user_in_use';
+  }
+
+  return null;
+}
+
+export type UpdateUserResult =
+  | { status: 'updated'; user: UserRow }
+  | { status: 'not_found' }
+  | { status: 'last_manager' }
+  | { status: 'user_in_use' };
+
 export class UserRepository {
-  readonly #database: NodePgDatabase<typeof databaseSchema>;
+  readonly #database: Database;
 
   constructor(database: NodePgDatabase<typeof databaseSchema>) {
     this.#database = database;
+  }
+
+  async list(input: ListUsersInput): Promise<UserPageRecord> {
+    const conditions = [];
+
+    if (input.role !== undefined) {
+      conditions.push(eq(users.role, input.role));
+    }
+
+    if (input.isActive !== undefined) {
+      conditions.push(eq(users.isActive, input.isActive));
+    }
+
+    if (input.search !== undefined) {
+      const escapedSearch = input.search.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+      const pattern = `%${escapedSearch}%`;
+      conditions.push(or(ilike(users.fullName, pattern), ilike(users.login, pattern))!);
+    }
+
+    const filter = conditions.length > 0 ? and(...conditions) : undefined;
+    const [items, [totalRow]] = await Promise.all([
+      this.#database
+        .select()
+        .from(users)
+        .where(filter)
+        .orderBy(asc(users.fullName), asc(users.id))
+        .limit(input.limit)
+        .offset(input.offset),
+      this.#database.select({ value: count() }).from(users).where(filter),
+    ]);
+
+    return { items, total: totalRow?.value ?? 0 };
   }
 
   async findById(id: number): Promise<UserRow | null> {
@@ -30,12 +173,83 @@ export class UserRepository {
   }
 
   async create(input: CreateUserRecord): Promise<UserRow> {
-    const [user] = await this.#database.insert(users).values(input).returning();
+    try {
+      const [user] = await this.#database.insert(users).values(input).returning();
 
-    if (!user) {
+      if (user) {
+        return user;
+      }
+    } catch (error) {
+      if (hasLoginConstraint(error)) {
+        throw new LoginTakenError();
+      }
+
       throw new Error('Не удалось создать пользователя');
     }
 
-    return user;
+    throw new Error('Не удалось создать пользователя');
+  }
+
+  async updateAtomically(id: number, input: UpdateUser, changedAt = new Date()): Promise<UpdateUserResult> {
+    return this.#database.transaction(async (transaction) => {
+      const activeManagerIds = await lockActiveManagers(transaction, mayRemoveActiveManager(input));
+      const current = await findForUpdate(transaction, id);
+
+      if (!current) {
+        return { status: 'not_found' };
+      }
+
+      const securityConflict = await getSecurityConflict(transaction, current, input, activeManagerIds);
+      if (securityConflict) {
+        return { status: securityConflict };
+      }
+
+      const effects = getChangeEffects(current, input);
+
+      const [updated] = await transaction
+        .update(users)
+        .set({ ...input, updatedAt: changedAt })
+        .where(eq(users.id, id))
+        .returning();
+
+      if (!updated) {
+        return { status: 'not_found' };
+      }
+
+      if (effects.roleChanges || effects.deactivates) {
+        await transaction
+          .update(sessions)
+          .set({ revokedAt: changedAt })
+          .where(and(eq(sessions.userId, id), isNull(sessions.revokedAt)));
+      }
+
+      return { status: 'updated', user: updated };
+    });
+  }
+
+  async setPasswordAtomically(id: number, passwordHash: string, changedAt = new Date()): Promise<boolean> {
+    try {
+      return await this.#database.transaction(async (transaction) => {
+        const [user] = await transaction
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, id))
+          .limit(1)
+          .for('update');
+
+        if (!user) {
+          return false;
+        }
+
+        await transaction.update(users).set({ passwordHash, updatedAt: changedAt }).where(eq(users.id, id));
+        await transaction
+          .update(sessions)
+          .set({ revokedAt: changedAt })
+          .where(and(eq(sessions.userId, id), isNull(sessions.revokedAt)));
+        return true;
+      });
+    } catch {
+      throw new Error('Не удалось изменить пароль пользователя');
+    }
   }
 }

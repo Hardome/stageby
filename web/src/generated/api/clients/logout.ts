@@ -9,12 +9,12 @@ import { client, withUnwrap } from '../.kubb/client'
 import { logoutResponseSchema, logoutErrorSchema } from '../zod/logoutSchema'
 
 /**
- * @description Отзывает предъявленный токен. При последующих запросах с ним возвращается 401.
+ * @description Отзывает предъявленную через cookie сессию и удаляет cookie в браузере. При последующих запросах возвращается 401.
  * @summary Завершить текущую сессию
  * {@link /auth/logout}
  */
 export function logout<ThrowOnError extends boolean = true>(options: Options<LogoutOptions, ThrowOnError> = {}): Unwrappable<RequestResult<LogoutResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/auth/logout', security: [{ type: 'http', scheme: 'bearer' }], validator: { response: logoutResponseSchema, error: logoutErrorSchema }, ...config }) as Promise<RequestResult<LogoutResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/auth/logout', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: logoutResponseSchema, error: logoutErrorSchema }, ...config }) as Promise<RequestResult<LogoutResponses, ThrowOnError>>)
 }
