@@ -46,6 +46,10 @@ export default defineConfig(({ mode }) => ({
     port: 3000,
     strictPort: true,
     proxy: {
+      '/auth': {
+        target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
+        changeOrigin: true,
+      },
       '/todos': {
         target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
         changeOrigin: true,
