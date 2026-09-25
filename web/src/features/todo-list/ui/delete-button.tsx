@@ -1,4 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { Trash2Icon } from 'lucide-react';
+
+import { Button } from '@shared/ui/button';
 
 import { useDeleteTodo } from '@api/mutations/useDeleteTodo';
 import { listTodosQueryKey } from '@api/queries/useListTodos';
@@ -19,15 +22,16 @@ export function DeleteTodoButton({ id, title }: DeleteTodoButtonProperties) {
   });
 
   return (
-    <button
+    <Button
       aria-label={`Удалить задачу «${title}»`}
-      className="grid size-9 place-items-center rounded-xl bg-transparent text-2xl text-stone-400 leading-none transition hover:bg-red-50 hover:text-red-700 focus-visible:bg-red-50 focus-visible:text-red-700 disabled:cursor-wait disabled:opacity-50"
       disabled={mutation.isPending}
       onClick={() => mutation.mutate({ path: { id } })}
+      size="icon"
       title="Удалить задачу"
       type="button"
+      variant="destructive"
     >
-      <span aria-hidden="true">×</span>
-    </button>
+      <Trash2Icon data-icon="inline-start" />
+    </Button>
   );
 }

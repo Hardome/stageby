@@ -12,6 +12,7 @@ words:
   - Kubb
   - nosniff
   - Redocly
+  - shadcn
   - segmentless
   - Stageby
   - Steiger
@@ -23,6 +24,7 @@ words:
   - Межполевые
   - фотоподтверждения
   - Штро
+  - автоинкремент
 ignorePaths:
   - "**/node_modules/**"
   - "**/dist/**"

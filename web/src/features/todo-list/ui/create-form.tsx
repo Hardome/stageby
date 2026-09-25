@@ -1,93 +1,109 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { PlusIcon } from 'lucide-react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import { Alert, AlertDescription } from '@shared/ui/alert';
+import { Button } from '@shared/ui/button';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@shared/ui/field';
+import { Input } from '@shared/ui/input';
+import { Spinner } from '@shared/ui/spinner';
 
 import { useCreateTodo } from '@api/mutations/useCreateTodo';
 import { listTodosQueryKey } from '@api/queries/useListTodos';
 import type { CreateTodoSchemaType } from '@api/zod/createTodoSchema';
 import { createTodoSchema as todoCreationSchema } from '@api/zod/createTodoSchema';
 
-const inputClassName =
-  'h-12 w-full rounded-xl border border-stone-200 bg-stone-50 px-4 text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-emerald-700 focus:bg-white focus:ring-4 focus:ring-emerald-700/10 disabled:cursor-wait disabled:opacity-60';
+const formSchema = todoCreationSchema.safeExtend({
+  title: z.string().trim().min(1).max(255),
+});
 
 export function CreateTodoForm() {
   const queryClient = useQueryClient();
   const {
-    register,
+    control,
     handleSubmit,
     reset,
-    setError,
     formState: { errors },
   } = useForm<CreateTodoSchemaType>({
-    resolver: zodResolver(todoCreationSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: { title: '', description: '' },
+    mode: 'onChange',
   });
+
   const mutation = useCreateTodo<unknown>({
     mutation: {
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: listTodosQueryKey() });
+      onSuccess: () => {
+        reset();
+        void queryClient.invalidateQueries({ queryKey: listTodosQueryKey() });
       },
     },
   });
 
   const onSubmit = (values: CreateTodoSchemaType) => {
-    const title = values.title.trim();
-
-    if (!title) {
-      setError('title', { type: 'validate' });
-      return;
-    }
-
-    mutation.mutate({ body: { title, description: values.description?.trim() || null } }, { onSuccess: () => reset() });
+    mutation.mutate({ body: { title: values.title, description: values.description?.trim() || null } });
   };
 
   return (
-    <form
-      className="relative grid gap-3 border-stone-200 border-b pb-8 sm:grid-cols-[1fr_auto]"
-      noValidate
-      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
-    >
-      <div className="grid gap-2">
-        <label>
-          <span className="sr-only">Название задачи</span>
-          <input
-            aria-describedby={errors.title ? 'todo-title-error' : undefined}
-            aria-invalid={Boolean(errors.title)}
-            autoComplete="off"
-            className={inputClassName}
-            disabled={mutation.isPending}
-            maxLength={255}
-            placeholder="Что нужно сделать?"
-            {...register('title')}
-          />
-        </label>
-        {errors.title && (
-          <p className="m-0 text-red-700 text-xs" id="todo-title-error" role="alert">
-            Введите название задачи (до 255 символов).
-          </p>
-        )}
-        <label>
-          <span className="sr-only">Описание задачи</span>
-          <input
-            autoComplete="off"
-            className={`${inputClassName} h-10 text-sm`}
-            disabled={mutation.isPending}
-            placeholder="Короткое описание (необязательно)"
-            {...register('description')}
-          />
-        </label>
+    <form className="flex flex-col gap-4" noValidate onSubmit={(event) => void handleSubmit(onSubmit)(event)}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <FieldGroup className="gap-3">
+          <Field data-invalid={Boolean(errors.title)}>
+            <FieldLabel className="sr-only" htmlFor="todo-title">
+              Название задачи
+            </FieldLabel>
+            <Controller
+              control={control}
+              name="title"
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  aria-describedby={errors.title ? 'todo-title-error' : undefined}
+                  aria-invalid={Boolean(errors.title)}
+                  autoComplete="off"
+                  disabled={mutation.isPending}
+                  id="todo-title"
+                  maxLength={255}
+                  placeholder="Что нужно сделать?"
+                />
+              )}
+            />
+            {errors.title && <FieldError id="todo-title-error">Введите название задачи (до 255 символов).</FieldError>}
+          </Field>
+          <Field>
+            <FieldLabel className="sr-only" htmlFor="todo-description">
+              Описание задачи
+            </FieldLabel>
+            <Controller
+              control={control}
+              name="description"
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  autoComplete="off"
+                  disabled={mutation.isPending}
+                  id="todo-description"
+                  placeholder="Короткое описание (необязательно)"
+                />
+              )}
+            />
+          </Field>
+        </FieldGroup>
+        <Button className="w-full sm:w-auto" disabled={mutation.isPending} size="lg" type="submit">
+          {mutation.isPending ? (
+            <Spinner aria-label="Добавляем задачу" data-icon="inline-start" />
+          ) : (
+            <PlusIcon data-icon="inline-start" />
+          )}
+          {mutation.isPending ? 'Добавляем…' : 'Добавить'}
+        </Button>
       </div>
-      <button
-        className="h-12 rounded-xl bg-emerald-900 px-6 font-bold text-white transition hover:-translate-y-px hover:bg-emerald-950 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
-        disabled={mutation.isPending}
-        type="submit"
-      >
-        {mutation.isPending ? 'Добавляем…' : 'Добавить'}
-      </button>
       {mutation.isError && (
-        <p className="absolute bottom-2 left-0 m-0 text-red-700 text-xs" id="create-todo-error" role="alert">
-          Не удалось добавить задачу. Попробуйте ещё раз.
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>Не удалось добавить задачу. Попробуйте ещё раз.</AlertDescription>
+        </Alert>
       )}
     </form>
   );
