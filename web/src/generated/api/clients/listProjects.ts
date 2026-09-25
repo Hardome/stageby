@@ -16,5 +16,5 @@ import { listProjectsResponseSchema, listProjectsErrorSchema } from '../zod/list
 export function listProjects<ThrowOnError extends boolean = true>(options: Options<ListProjectsOptions, ThrowOnError> = {}): Unwrappable<RequestResult<ListProjectsResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/projects', security: [{ type: 'http', scheme: 'bearer' }], validator: { response: listProjectsResponseSchema, error: listProjectsErrorSchema }, ...config }) as Promise<RequestResult<ListProjectsResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/projects', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listProjectsResponseSchema, error: listProjectsErrorSchema }, ...config }) as Promise<RequestResult<ListProjectsResponses, ThrowOnError>>)
 }

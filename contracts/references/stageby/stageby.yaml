@@ -12,10 +12,10 @@ info:
     записи. Документ описывает целевой API; демонстрационные /todos временно сохранены для совместимости
     текущих приложений и сохраняют строковые UUID."
 servers:
-  - url: http://127.0.0.1:3001
-    description: Локальная разработка. Вне локальной среды только HTTPS.
+  - url: /
+    description: Тот же origin, с которого загружены API-документация или клиент.
 security:
-  - bearerAuth: []
+  - cookieAuth: []
 tags:
   - name: Auth
     description: Логин, пароль и сессии. Первого руководителя создаёт административная команда при развёртывании,
@@ -69,5 +69,5 @@ paths:
     $ref: ../todos/todos.yaml#/paths/~1todos~1{id}
 components:
   securitySchemes:
-    bearerAuth:
-      $ref: ../common/common.yaml#/components/securitySchemes/bearerAuth
+    cookieAuth:
+      $ref: ../common/common.yaml#/components/securitySchemes/cookieAuth

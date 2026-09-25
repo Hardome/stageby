@@ -4,7 +4,6 @@ import { useNavigate } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
-import { saveSession } from '@shared/lib/auth';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@shared/ui/field';
@@ -41,7 +40,6 @@ export function LoginForm() {
   const mutation = useLogin({
     mutation: {
       onSuccess: async (session) => {
-        saveSession(session);
         queryClient.clear();
         queryClient.setQueryData(getCurrentUserQueryKey(), session.user);
         await navigate({ to: '/' });

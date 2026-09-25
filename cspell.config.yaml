@@ -5,19 +5,35 @@ import:
 useGitignore: true
 enableGlobDot: true
 words:
+  - btrim
   - codegen
+  - conname
+  - connamespace
+  - contype
+  - datname
   - Filenaming
   - healthcheck
+  - ilike
   - isready
   - Kubb
   - nosniff
   - Redocly
+  - regnamespace
+  - schemaname
   - shadcn
   - segmentless
   - Stageby
   - Steiger
   - tanstack
+  - tablename
   - Trixie
+  - typname
+  - typnamespace
+  - typtype
+  - автоинкремент
+  - валидировать
+  - неаутентифицированный
+  - хешировать
   - автораспределения
   - Автосоздание
   - Купидом

@@ -7,20 +7,6 @@ import type { User } from './User'
 
 export type Session = {
     /**
-     * @description Непрозрачный секретный токен сессии.
-     * @minLength 1
-     * @maxLength 4096
-     * @example example-only-session-token-not-valid
-     * @type string
-    */
-    accessToken: string;
-    /**
-     * @description Схема передачи accessToken в заголовке Authorization — Bearer.
-     * @example Bearer
-     * @type string
-    */
-    tokenType: "Bearer";
-    /**
      * @description Дата и время истечения сессии в UTC, формат RFC 3339. После истечения требуется новый вход.
      *
      * Format: `date-time`

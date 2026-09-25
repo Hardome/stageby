@@ -13,6 +13,8 @@ export type LoginStatus400 = ApiError;
 
 export type LoginStatus401 = ApiError;
 
+export type LoginStatus403 = ApiError;
+
 export type LoginStatus429 = ApiError;
 
 export type LoginBody = LoginRequest;
@@ -28,10 +30,11 @@ export type LoginResponses = {
     "200": LoginStatus200;
     "400": LoginStatus400;
     "401": LoginStatus401;
+    "403": LoginStatus403;
     "429": LoginStatus429;
 };
 
 /**
  * @description Union of all possible responses
 */
-export type LoginResponse = (LoginStatus200 | LoginStatus400 | LoginStatus401 | LoginStatus429);
+export type LoginResponse = (LoginStatus200 | LoginStatus400 | LoginStatus401 | LoginStatus403 | LoginStatus429);

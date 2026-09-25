@@ -14,11 +14,15 @@ export const logoutStatus401Schema = apiErrorSchema
 
 export type LogoutStatus401SchemaType = z.infer<typeof logoutStatus401Schema>
 
+export const logoutStatus403Schema = apiErrorSchema
+
+export type LogoutStatus403SchemaType = z.infer<typeof logoutStatus403Schema>
+
 export const logoutResponseSchema = logoutStatus204Schema
 
 export type LogoutResponseSchemaType = z.infer<typeof logoutResponseSchema>
 
-export const logoutErrorSchema = logoutStatus401Schema
+export const logoutErrorSchema = z.union([logoutStatus401Schema, logoutStatus403Schema])
 
 export type LogoutErrorSchemaType = z.infer<typeof logoutErrorSchema>
 
@@ -34,6 +38,7 @@ export type LogoutOptionsSchemaType = z.infer<typeof logoutOptionsSchema>
 export const logoutResponsesSchema = z.object({
   '204': logoutStatus204Schema,
   '401': logoutStatus401Schema,
+  '403': logoutStatus403Schema,
 })
 
 export type LogoutResponsesSchemaType = z.infer<typeof logoutResponsesSchema>

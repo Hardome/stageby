@@ -16,5 +16,5 @@ import { listProjectStagesResponseSchema, listProjectStagesErrorSchema } from '.
 export function listProjectStages<ThrowOnError extends boolean = true>(options: Options<ListProjectStagesOptions, ThrowOnError>): Unwrappable<RequestResult<ListProjectStagesResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/projects/{projectId}/stages', security: [{ type: 'http', scheme: 'bearer' }], validator: { response: listProjectStagesResponseSchema, error: listProjectStagesErrorSchema }, ...config }) as Promise<RequestResult<ListProjectStagesResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/projects/{projectId}/stages', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listProjectStagesResponseSchema, error: listProjectStagesErrorSchema }, ...config }) as Promise<RequestResult<ListProjectStagesResponses, ThrowOnError>>)
 }

@@ -14,6 +14,17 @@ const errorTitles: Record<number, string> = {
   503: 'Сервис недоступен',
 };
 
+const errorCodes: Record<number, string> = {
+  400: 'invalid_request',
+  401: 'unauthenticated',
+  403: 'forbidden',
+  404: 'not_found',
+  409: 'conflict',
+  429: 'rate_limited',
+  500: 'internal_error',
+  503: 'service_unavailable',
+};
+
 function getStatusCode(error: unknown): number {
   if (
     typeof error === 'object' &&
@@ -32,6 +43,7 @@ export function registerErrorHandler(app: FastifyInstance, environment: Environm
   app.setNotFoundHandler((_request, reply) => {
     return reply.status(404).send({
       error: errorTitles[404],
+      code: errorCodes[404],
       message: 'Маршрут не найден',
     });
   });
@@ -40,8 +52,12 @@ export function registerErrorHandler(app: FastifyInstance, environment: Environm
     if (hasZodFastifySchemaValidationErrors(error)) {
       return reply.status(400).send({
         error: errorTitles[400],
+        code: errorCodes[400],
         message: 'Ошибка проверки данных запроса',
-        details: error.validation,
+        details: error.validation.map((issue) => ({
+          path: `${error.validationContext ?? 'request'}${issue.instancePath.replaceAll('/', '.')}`,
+          message: issue.message ?? 'Некорректное значение',
+        })),
       });
     }
 
@@ -49,6 +65,7 @@ export function registerErrorHandler(app: FastifyInstance, environment: Environm
       request.log.error({ error }, 'Ошибка формирования ответа');
       return reply.status(500).send({
         error: errorTitles[500],
+        code: errorCodes[500],
         message: 'Ошибка формирования ответа',
       });
     }
@@ -66,6 +83,7 @@ export function registerErrorHandler(app: FastifyInstance, environment: Environm
 
     return reply.status(statusCode).send({
       error: errorTitles[statusCode] ?? 'Ошибка',
+      code: errorCodes[statusCode] ?? 'unknown_error',
       message,
     });
   });

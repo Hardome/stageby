@@ -20,6 +20,6 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "*.config.ts", "test/app.test.ts"],
+  "include": ["src/**/*.ts", "*.config.ts", "test/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
