@@ -11,8 +11,12 @@
 import { Route as rootRouteImport } from './../../app/routes/__root';
 import { Route as AuthRouteImport } from './../../app/routes/_auth';
 import { Route as AuthIndexRouteImport } from './../../app/routes/_auth/index';
+import { Route as AuthUsersRouteImport } from './../../app/routes/_auth/users';
 import { Route as AuthUsersIndexRouteImport } from './../../app/routes/_auth/users/index';
+import { Route as AuthUsersNewRouteImport } from './../../app/routes/_auth/users/new';
 import { Route as PublicLoginIndexRouteImport } from './../../app/routes/_public/login/index';
+import { Route as AuthUsersUserIdEditRouteImport } from './../../app/routes/_auth/users/$userId/edit';
+import { Route as AuthUsersUserIdPasswordRouteImport } from './../../app/routes/_auth/users/$userId/password';
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -23,40 +27,93 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthRoute,
 } as any);
-const AuthUsersIndexRoute = AuthUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
+const AuthUsersRoute = AuthUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AuthRoute,
+} as any);
+const AuthUsersIndexRoute = AuthUsersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthUsersRoute,
+} as any);
+const AuthUsersNewRoute = AuthUsersNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthUsersRoute,
 } as any);
 const PublicLoginIndexRoute = PublicLoginIndexRouteImport.update({
   id: '/_public/login/',
   path: '/login/',
   getParentRoute: () => rootRouteImport,
 } as any);
+const AuthUsersUserIdEditRoute = AuthUsersUserIdEditRouteImport.update({
+  id: '/$userId/edit',
+  path: '/$userId/edit',
+  getParentRoute: () => AuthUsersRoute,
+} as any);
+const AuthUsersUserIdPasswordRoute = AuthUsersUserIdPasswordRouteImport.update({
+  id: '/$userId/password',
+  path: '/$userId/password',
+  getParentRoute: () => AuthUsersRoute,
+} as any);
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute;
+  '/users': typeof AuthUsersRouteWithChildren;
+  '/users/new': typeof AuthUsersNewRoute;
   '/users/': typeof AuthUsersIndexRoute;
   '/login/': typeof PublicLoginIndexRoute;
+  '/users/$userId/edit': typeof AuthUsersUserIdEditRoute;
+  '/users/$userId/password': typeof AuthUsersUserIdPasswordRoute;
 }
 export interface FileRoutesByTo {
   '/': typeof AuthIndexRoute;
+  '/users/new': typeof AuthUsersNewRoute;
   '/users': typeof AuthUsersIndexRoute;
   '/login': typeof PublicLoginIndexRoute;
+  '/users/$userId/edit': typeof AuthUsersUserIdEditRoute;
+  '/users/$userId/password': typeof AuthUsersUserIdPasswordRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   '/_auth': typeof AuthRouteWithChildren;
+  '/_auth/users': typeof AuthUsersRouteWithChildren;
   '/_auth/': typeof AuthIndexRoute;
+  '/_auth/users/new': typeof AuthUsersNewRoute;
   '/_auth/users/': typeof AuthUsersIndexRoute;
   '/_public/login/': typeof PublicLoginIndexRoute;
+  '/_auth/users/$userId/edit': typeof AuthUsersUserIdEditRoute;
+  '/_auth/users/$userId/password': typeof AuthUsersUserIdPasswordRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: '/' | '/users/' | '/login/';
+  fullPaths:
+    | '/'
+    | '/users'
+    | '/users/new'
+    | '/users/'
+    | '/login/'
+    | '/users/$userId/edit'
+    | '/users/$userId/password';
   fileRoutesByTo: FileRoutesByTo;
-  to: '/' | '/users' | '/login';
-  id: '__root__' | '/_auth' | '/_auth/' | '/_auth/users/' | '/_public/login/';
+  to:
+    | '/'
+    | '/users/new'
+    | '/users'
+    | '/login'
+    | '/users/$userId/edit'
+    | '/users/$userId/password';
+  id:
+    | '__root__'
+    | '/_auth'
+    | '/_auth/users'
+    | '/_auth/'
+    | '/_auth/users/new'
+    | '/_auth/users/'
+    | '/_public/login/'
+    | '/_auth/users/$userId/edit'
+    | '/_auth/users/$userId/password';
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -80,12 +137,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIndexRouteImport;
       parentRoute: typeof AuthRoute;
     };
+    '/_auth/users': {
+      id: '/_auth/users';
+      path: '/users';
+      fullPath: '/users';
+      preLoaderRoute: typeof AuthUsersRouteImport;
+      parentRoute: typeof AuthRoute;
+    };
     '/_auth/users/': {
       id: '/_auth/users/';
-      path: '/users';
+      path: '/';
       fullPath: '/users/';
       preLoaderRoute: typeof AuthUsersIndexRouteImport;
-      parentRoute: typeof AuthRoute;
+      parentRoute: typeof AuthUsersRoute;
+    };
+    '/_auth/users/new': {
+      id: '/_auth/users/new';
+      path: '/new';
+      fullPath: '/users/new';
+      preLoaderRoute: typeof AuthUsersNewRouteImport;
+      parentRoute: typeof AuthUsersRoute;
     };
     '/_public/login/': {
       id: '/_public/login/';
@@ -94,17 +165,49 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicLoginIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    '/_auth/users/$userId/edit': {
+      id: '/_auth/users/$userId/edit';
+      path: '/$userId/edit';
+      fullPath: '/users/$userId/edit';
+      preLoaderRoute: typeof AuthUsersUserIdEditRouteImport;
+      parentRoute: typeof AuthUsersRoute;
+    };
+    '/_auth/users/$userId/password': {
+      id: '/_auth/users/$userId/password';
+      path: '/$userId/password';
+      fullPath: '/users/$userId/password';
+      preLoaderRoute: typeof AuthUsersUserIdPasswordRouteImport;
+      parentRoute: typeof AuthUsersRoute;
+    };
   }
 }
 
-interface AuthRouteChildren {
-  AuthIndexRoute: typeof AuthIndexRoute;
+interface AuthUsersRouteChildren {
+  AuthUsersNewRoute: typeof AuthUsersNewRoute;
   AuthUsersIndexRoute: typeof AuthUsersIndexRoute;
+  AuthUsersUserIdEditRoute: typeof AuthUsersUserIdEditRoute;
+  AuthUsersUserIdPasswordRoute: typeof AuthUsersUserIdPasswordRoute;
+}
+
+const AuthUsersRouteChildren: AuthUsersRouteChildren = {
+  AuthUsersNewRoute: AuthUsersNewRoute,
+  AuthUsersIndexRoute: AuthUsersIndexRoute,
+  AuthUsersUserIdEditRoute: AuthUsersUserIdEditRoute,
+  AuthUsersUserIdPasswordRoute: AuthUsersUserIdPasswordRoute,
+};
+
+const AuthUsersRouteWithChildren = AuthUsersRoute._addFileChildren(
+  AuthUsersRouteChildren,
+);
+
+interface AuthRouteChildren {
+  AuthUsersRoute: typeof AuthUsersRouteWithChildren;
+  AuthIndexRoute: typeof AuthIndexRoute;
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthUsersRoute: AuthUsersRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
-  AuthUsersIndexRoute: AuthUsersIndexRoute,
 };
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
