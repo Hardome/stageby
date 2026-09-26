@@ -4,6 +4,12 @@ import { defineConfig } from 'steiger';
 export default defineConfig([
   ...fsd.configs.recommended,
   {
+    files: ['src/shared/context', 'src/shared/context/**'],
+    rules: {
+      'fsd/segments-by-purpose': 'off',
+    },
+  },
+  {
     ignores: ['**/.gitkeep', 'src/assets/**', 'src/generated/**', 'src/app/routes/**', 'src/app/providers/**'],
   },
   {

@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
+import { useAuth } from '@shared/context';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@shared/ui/field';
@@ -25,8 +26,10 @@ function getLoginErrorMessage(status?: number): string {
 }
 
 export function LoginForm() {
+  const { clearSession } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
   const {
     register,
     handleSubmit,
@@ -40,8 +43,10 @@ export function LoginForm() {
   const mutation = useLogin({
     mutation: {
       onSuccess: async (session) => {
-        queryClient.clear();
+        await clearSession();
+
         queryClient.setQueryData(getCurrentUserQueryKey(), session.user);
+
         await navigate({ to: '/' });
       },
     },

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export function HomePage() {
   return (
-    <main className="min-h-dvh bg-muted/40 px-3 py-8 sm:px-5 sm:py-16">
+    <main className="flex-1 bg-muted/40 px-3 py-8 sm:px-5 sm:py-16">
       <Card className="mx-auto w-full max-w-2xl shadow-sm">
         <CardHeader>
           <CardTitle>
