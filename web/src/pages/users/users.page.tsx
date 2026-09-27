@@ -1,23 +1,36 @@
-import { Link } from '@tanstack/react-router';
+import { useCallback } from 'react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+
+import { UsersList, type UsersSearch } from '@features/users';
 
 export function UsersPage() {
+  const search = useSearch({ from: '/_auth/users' });
+  const navigate = useNavigate();
+
+  const changeFilters = useCallback(
+    (values: Partial<UsersSearch>) => {
+      void navigate({
+        to: '/users',
+        search: (previous) => ({ ...previous, ...values, offset: 0 }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  const changePage = useCallback(
+    (offset: number, shouldReplace = false) => {
+      void navigate({ to: '/users', search: (previous) => ({ ...previous, offset }), replace: shouldReplace });
+    },
+    [navigate],
+  );
+
   return (
-    <main className="flex-1 bg-muted/40 px-3 py-8 sm:px-5 sm:py-16">
-      <Card className="mx-auto max-w-2xl">
-        <CardHeader>
-          <CardTitle>
-            <h1>Пользователи</h1>
-          </CardTitle>
-          <CardDescription>Список пользователей появится позже.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link to="/" className="underline underline-offset-4">
-            На главную
-          </Link>
-        </CardContent>
-      </Card>
+    <main className="flex-1 bg-muted/40 px-3 py-6 sm:px-5 sm:py-10">
+      <div className="mx-auto max-w-7xl">
+        <UsersList search={search} onFilterChange={changeFilters} onPageChange={changePage} />
+      </div>
     </main>
   );
 }

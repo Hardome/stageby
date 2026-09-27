@@ -30,6 +30,7 @@ export default defineConfig(
       },
     },
     rules: {
+      'max-len': ['error', { code: 120, tabWidth: 2 }],
       '@typescript-eslint/no-unused-vars': 'off',
       'react-hooks/exhaustive-deps': 'off',
       'react-hooks/rules-of-hooks': 'off',

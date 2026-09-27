@@ -1,3 +1,4 @@
+import { cn } from 'cn';
 import { ListTodoIcon } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@shared/ui/alert';
@@ -15,14 +16,23 @@ import { CreateTodoForm } from './create-form';
 import { DeleteTodoButton } from './delete-button';
 import { ToggleTodoCheckbox } from './toggle-todo-checkbox';
 
-function TodoListItem({ todo }: { todo: Todo }) {
+interface TodoListItemProperties {
+  todo: Todo;
+}
+
+function TodoListItem({ todo }: TodoListItemProperties) {
   return (
     <Item data-completed={todo.completed} render={<li />} variant="outline">
       <ItemMedia>
         <ToggleTodoCheckbox completed={todo.completed} id={todo.id} title={todo.title} />
       </ItemMedia>
       <ItemContent className="min-w-0">
-        <ItemTitle className="group-data-[completed=true]/item:text-muted-foreground group-data-[completed=true]/item:line-through">
+        <ItemTitle
+          className={cn([
+            'group-data-[completed=true]/item:text-muted-foreground',
+            'group-data-[completed=true]/item:line-through',
+          ])}
+        >
           {todo.title}
         </ItemTitle>
         {todo.description && <ItemDescription>{todo.description}</ItemDescription>}
