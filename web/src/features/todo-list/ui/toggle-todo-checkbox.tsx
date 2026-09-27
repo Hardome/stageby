@@ -5,11 +5,11 @@ import { Checkbox } from '@shared/ui/checkbox';
 import { useUpdateTodo } from '@api/mutations/useUpdateTodo';
 import { listTodosQueryKey } from '@api/queries/useListTodos';
 
-type ToggleTodoCheckboxProperties = {
+interface ToggleTodoCheckboxProperties {
   completed: boolean;
   id: string;
   title: string;
-};
+}
 
 export function ToggleTodoCheckbox({ completed, id, title }: ToggleTodoCheckboxProperties) {
   const queryClient = useQueryClient();

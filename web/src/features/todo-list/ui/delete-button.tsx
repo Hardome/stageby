@@ -6,10 +6,10 @@ import { Button } from '@shared/ui/button';
 import { useDeleteTodo } from '@api/mutations/useDeleteTodo';
 import { listTodosQueryKey } from '@api/queries/useListTodos';
 
-type DeleteTodoButtonProperties = {
+interface DeleteTodoButtonProperties {
   id: string;
   title: string;
-};
+}
 
 export function DeleteTodoButton({ id, title }: DeleteTodoButtonProperties) {
   const queryClient = useQueryClient();

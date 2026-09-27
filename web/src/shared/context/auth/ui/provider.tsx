@@ -1,6 +1,8 @@
-import type { PropsWithChildren } from 'react';
+import { type PropsWithChildren, useCallback } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
+
+import { clearSessionDrafts } from '@shared/lib';
 
 import { getCurrentUserQueryKey, useGetCurrentUser } from '@api/queries/useGetCurrentUser';
 
@@ -11,7 +13,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const query = useGetCurrentUser({ query: { retry: false, staleTime: 30_000 } });
   const isUnauthorized = query.error?.status === 401;
 
-  async function clearSession() {
+  const clearSession = useCallback(async () => {
+    clearSessionDrafts();
     await queryClient.cancelQueries();
 
     queryClient.setQueryData(getCurrentUserQueryKey(), null);
@@ -20,7 +23,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     queryClient.removeQueries({ predicate: (cachedQuery) => cachedQuery !== authQuery });
     queryClient.getMutationCache().clear();
-  }
+  }, [queryClient]);
 
   return (
     <AuthContext

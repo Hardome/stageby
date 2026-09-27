@@ -7,6 +7,7 @@ import { AuthStatus } from '../../../providers/auth-status';
 
 export const Route = createFileRoute('/_public/login/')({
   component: LoginRoute,
+  head: () => ({ meta: [{ title: 'Вход' }] }),
 });
 
 function LoginRoute() {
