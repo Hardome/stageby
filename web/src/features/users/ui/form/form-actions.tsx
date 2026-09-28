@@ -15,7 +15,7 @@ interface FormActionsProperties {
 export function FormActions({ pending, disabled = false, search, label = 'Сохранить' }: FormActionsProperties) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
-      <Button className="min-h-11" type="submit" disabled={pending || disabled}>
+      <Button variant="success" className="min-h-11" type="submit" disabled={pending || disabled}>
         {pending && <Spinner data-icon="inline-start" />}
         {pending ? 'Сохраняем…' : label}
       </Button>

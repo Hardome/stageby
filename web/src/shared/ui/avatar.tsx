@@ -35,13 +35,20 @@ function AvatarImage({ className, ...properties }: AvatarPrimitive.Image.Props) 
   );
 }
 
-function AvatarFallback({ className, ...properties }: AvatarPrimitive.Fallback.Props) {
+function AvatarFallback({
+  className,
+  variant = 'default',
+  ...properties
+}: AvatarPrimitive.Fallback.Props & { variant?: 'default' | 'inverse' }) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        'flex size-full items-center justify-center rounded-full bg-muted text-muted-foreground',
+        'flex size-full items-center justify-center rounded-full',
         'text-sm group-data-[size=sm]/avatar:text-xs',
+        variant === 'inverse'
+          ? 'bg-surface-inverse-accent text-surface-inverse-foreground'
+          : 'bg-muted text-muted-foreground',
         className,
       )}
       {...properties}

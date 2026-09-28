@@ -16,7 +16,7 @@ interface UserFormLayoutProperties extends PropsWithChildren {
 
 export function UserFormLayout({ title, description, search, children }: UserFormLayoutProperties) {
   return (
-    <main className="flex-1 bg-muted/40 px-3 py-6 sm:px-5 sm:py-10">
+    <main className="flex-1 bg-background px-3 py-6 sm:px-5 sm:py-10">
       <div className="mx-auto flex max-w-2xl flex-col gap-4">
         <Button
           className="min-h-11 self-start"
@@ -29,7 +29,7 @@ export function UserFormLayout({ title, description, search, children }: UserFor
         <Card>
           <CardHeader>
             <CardTitle>
-              <h1>{title}</h1>
+              <h1 className="font-bold text-2xl">{title}</h1>
             </CardTitle>
             <CardDescription>{description}</CardDescription>
           </CardHeader>
