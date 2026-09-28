@@ -35,7 +35,10 @@ function ToastList() {
               data-type={item.type}
               className={cn(
                 'pointer-events-auto flex items-start gap-3 rounded-lg border bg-popover p-3',
-                'text-popover-foreground shadow-lg data-[type=error]:border-destructive',
+                'text-popover-foreground shadow-lg data-[type=error]:border-destructive-border',
+                'data-[type=error]:bg-destructive-subtle data-[type=error]:text-destructive',
+                'data-[type=success]:border-success-border data-[type=success]:bg-success-subtle',
+                'data-[type=success]:text-success',
                 '[transform:translateX(var(--toast-swipe-movement-x))_translateY(var(--toast-swipe-movement-y))]',
               )}
             >
@@ -46,9 +49,7 @@ function ToastList() {
               />
               <ToastPrimitive.Content className="min-w-0 flex-1">
                 <ToastPrimitive.Title className="wrap-anywhere font-medium text-sm" />
-                {item.description && (
-                  <ToastPrimitive.Description className="wrap-anywhere text-muted-foreground text-sm" />
-                )}
+                {item.description && <ToastPrimitive.Description className="wrap-anywhere text-current text-sm" />}
                 {item.actionProps && (
                   <ToastPrimitive.Action render={<Button variant="outline" size="sm" />} className="mt-2" />
                 )}

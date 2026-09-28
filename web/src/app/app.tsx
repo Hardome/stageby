@@ -1,7 +1,7 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 
 import { routeTree } from '@route-tree';
-import { AuthProvider } from '@shared/context';
+import { AuthProvider, ThemeProvider } from '@shared/context';
 import { Toaster } from '@shared/ui/toast';
 
 import { ReactQueryProvider } from './providers/react-query-provider';
@@ -16,11 +16,13 @@ declare module '@tanstack/react-router' {
 
 export function App() {
   return (
-    <ReactQueryProvider>
-      <AuthProvider>
-        <RouterProvider router={router} />
-        <Toaster />
-      </AuthProvider>
-    </ReactQueryProvider>
+    <ThemeProvider>
+      <ReactQueryProvider>
+        <AuthProvider>
+          <RouterProvider router={router} />
+          <Toaster />
+        </AuthProvider>
+      </ReactQueryProvider>
+    </ThemeProvider>
   );
 }

@@ -52,7 +52,7 @@ export function UsersList({ search, onFilterChange, onPageChange }: UsersListPro
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-semibold text-2xl">Пользователи</h1>
+          <h1 className="font-bold text-2xl">Пользователи</h1>
           <p className="text-muted-foreground text-sm">Сотрудники, роли и доступ к системе</p>
         </div>
         <Button className="min-h-11" nativeButton={false} render={<Link to="/users/new" search={search} />}>

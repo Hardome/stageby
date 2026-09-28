@@ -4,7 +4,10 @@ import { cn } from 'cn';
 
 function Table({ className, ...properties }: React.ComponentProps<'table'>) {
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto rounded-(--radius-card) border bg-card text-card-foreground"
+    >
       <table data-slot="table" className={cn('w-full caption-bottom text-sm', className)} {...properties} />
     </div>
   );
@@ -46,7 +49,8 @@ function TableHead({ className, ...properties }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        'h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0',
+        'h-10 whitespace-nowrap px-5 text-left align-middle font-semibold',
+        'text-muted-foreground [&:has([role=checkbox])]:pr-0',
         className,
       )}
       {...properties}
@@ -58,7 +62,7 @@ function TableCell({ className, ...properties }: React.ComponentProps<'td'>) {
   return (
     <td
       data-slot="table-cell"
-      className={cn('whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0', className)}
+      className={cn('whitespace-nowrap px-5 py-4.5 align-middle [&:has([role=checkbox])]:pr-0', className)}
       {...properties}
     />
   );

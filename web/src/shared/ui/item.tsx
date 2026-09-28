@@ -139,7 +139,7 @@ function ItemDescription({ className, ...properties }: React.ComponentProps<'p'>
       data-slot="item-description"
       className={cn(
         'line-clamp-2 text-left font-normal text-muted-foreground text-sm leading-normal',
-        'group-data-[size=xs]/item:text-xs [&>a:hover]:text-primary [&>a]:underline',
+        'group-data-[size=xs]/item:text-xs [&>a:hover]:text-primary-text [&>a]:underline',
         '[&>a]:underline-offset-4',
         className,
       )}

@@ -10,9 +10,9 @@ export function AuthStatus() {
     <main className="flex min-h-dvh items-center justify-center p-4">
       {error ? (
         <Alert variant="destructive" className="max-w-md">
-          <AlertDescription>
+          <AlertDescription className="flex flex-col items-start gap-3">
             Не удалось проверить авторизацию.
-            <Button variant="outline" onClick={() => void refetch()}>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
               Повторить
             </Button>
           </AlertDescription>

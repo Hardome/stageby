@@ -15,10 +15,11 @@ interface UserActionsProperties {
 export function UserActions({ user, search }: UserActionsProperties) {
   const parameters = { userId: String(user.id) };
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-2">
       <Button
-        className="min-h-11"
+        className="md:size-12 md:p-0 md:has-data-[icon=inline-start]:pl-0"
         variant="outline"
+        size="sm"
         nativeButton={false}
         aria-label={`Редактировать: ${user.fullName}`}
         render={<Link to="/users/$userId/edit" params={parameters} search={search} />}
@@ -27,8 +28,9 @@ export function UserActions({ user, search }: UserActionsProperties) {
         <span className="md:sr-only">Редактировать</span>
       </Button>
       <Button
-        className="min-h-11"
+        className="md:size-12 md:p-0 md:has-data-[icon=inline-start]:pl-0"
         variant="outline"
+        size="sm"
         nativeButton={false}
         aria-label={`Сменить пароль: ${user.fullName}`}
         render={<Link to="/users/$userId/password" params={parameters} search={search} />}
