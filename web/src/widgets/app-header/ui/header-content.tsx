@@ -1,8 +1,8 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { cn } from 'cn';
-import { LogOutIcon, MenuIcon, UsersIcon } from 'lucide-react';
+import { LogOutIcon, MenuIcon, MonitorIcon, MoonIcon, SunIcon, UsersIcon } from 'lucide-react';
 
-import { useAuth } from '@shared/context';
+import { isTheme, useAuth, useTheme } from '@shared/context';
 import { formatDisplayName } from '@shared/lib';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Avatar, AvatarFallback } from '@shared/ui/avatar';
@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@shared/ui/dropdown-menu';
 import { Spinner } from '@shared/ui/spinner';
+import { ToggleGroup, ToggleGroupItem } from '@shared/ui/toggle-group';
 
 import { useLogout } from '@api/mutations/useLogout';
 import type { User } from '@api/types';
@@ -26,6 +27,7 @@ interface HeaderContentProperties {
 
 export function HeaderContent({ user }: HeaderContentProperties) {
   const { clearSession } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   async function finishLogout() {
@@ -44,7 +46,7 @@ export function HeaderContent({ user }: HeaderContentProperties) {
   const name = formatDisplayName(user.fullName, user.login);
 
   return (
-    <header className="border-b bg-background">
+    <header className="border-surface-inverse-border border-b bg-surface-inverse text-surface-inverse-foreground">
       <div
         className={cn([
           'mx-auto flex min-h-16 max-w-7xl items-center gap-2 px-3 sm:grid',
@@ -58,8 +60,8 @@ export function HeaderContent({ user }: HeaderContentProperties) {
           {user.role === 'manager' && (
             <Link
               to="/users"
-              className="rounded-lg px-3 py-3 text-sm hover:bg-muted focus-visible:outline-ring"
-              activeProps={{ className: 'bg-muted font-medium', 'aria-current': 'page' }}
+              className="rounded-lg px-3 py-3 text-sm hover:bg-surface-inverse-accent focus-visible:outline-primary"
+              activeProps={{ className: 'bg-surface-inverse-accent font-semibold', 'aria-current': 'page' }}
             >
               Пользователи
             </Link>
@@ -67,7 +69,7 @@ export function HeaderContent({ user }: HeaderContentProperties) {
         </nav>
         <div className="ml-auto flex min-w-0 items-center justify-end gap-2 sm:flex-1">
           <Avatar aria-label={user.fullName || user.login}>
-            <AvatarFallback>{name.initials}</AvatarFallback>
+            <AvatarFallback variant="inverse">{name.initials}</AvatarFallback>
           </Avatar>
           <span className="hidden max-w-48 truncate text-sm sm:block" title={user.fullName}>
             {name.label}
@@ -76,7 +78,7 @@ export function HeaderContent({ user }: HeaderContentProperties) {
             <DropdownMenuTrigger
               render={
                 <Button
-                  variant="ghost"
+                  variant="inverse"
                   size="icon"
                   className="size-11"
                   aria-label="Меню пользователя"
@@ -101,6 +103,30 @@ export function HeaderContent({ user }: HeaderContentProperties) {
                   <DropdownMenuSeparator className="sm:hidden" />
                 </>
               )}
+              <DropdownMenuGroup className="-mx-1 -mt-1">
+                <ToggleGroup
+                  className="w-full"
+                  aria-label="Тема"
+                  value={[theme]}
+                  spacing={0}
+                  square
+                  variant="ghost"
+                  onValueChange={([value]) => {
+                    if (isTheme(value)) setTheme(value);
+                  }}
+                >
+                  <ToggleGroupItem value="light" className="h-11 flex-1" aria-label="Светлая" title="Светлая">
+                    <SunIcon />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="dark" className="h-11 flex-1" aria-label="Тёмная" title="Тёмная">
+                    <MoonIcon />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="system" className="h-11 flex-1" aria-label="Системная" title="Системная">
+                    <MonitorIcon />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator className="mt-0" />
               <DropdownMenuGroup>
                 <DropdownMenuItem
                   className="min-h-11"

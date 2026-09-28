@@ -7,5 +7,5 @@ interface UserStatusProperties {
 }
 
 export function UserStatus({ user }: UserStatusProperties) {
-  return <Badge variant={user.isActive ? 'secondary' : 'outline'}>{user.isActive ? 'Активен' : 'Неактивен'}</Badge>;
+  return <Badge variant={user.isActive ? 'success' : 'outline'}>{user.isActive ? 'Активен' : 'Неактивен'}</Badge>;
 }

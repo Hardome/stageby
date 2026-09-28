@@ -5,15 +5,22 @@ import { tv, type VariantProps } from 'tailwind-variants';
 
 const alertVariants = tv({
   base: [
-    'group/alert relative grid w-full gap-0.5 rounded-lg border px-2.5 py-2 text-left text-sm',
+    'group/alert relative grid w-full gap-1 rounded-(--radius-status-panel) border p-4.5 text-left text-sm',
     'has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18',
     'has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2 *:[svg]:row-span-2',
     "*:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4",
   ],
   variants: {
     variant: {
+      success: [
+        'border-success-border bg-success-subtle text-success',
+        '*:data-[slot=alert-description]:text-success *:[svg]:text-current',
+      ],
       default: 'bg-card text-card-foreground',
-      destructive: 'bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current',
+      destructive: [
+        'border-destructive-border bg-destructive-subtle text-destructive',
+        '*:data-[slot=alert-description]:text-destructive *:[svg]:text-current',
+      ],
     },
   },
   defaultVariants: {
@@ -34,7 +41,7 @@ function AlertTitle({ className, ...properties }: React.ComponentProps<'div'>) {
     <div
       data-slot="alert-title"
       className={cn(
-        'font-medium group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3',
+        'font-bold group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3',
         '[&_a]:hover:text-foreground',
         className,
       )}

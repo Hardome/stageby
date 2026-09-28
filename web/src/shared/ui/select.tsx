@@ -35,12 +35,12 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        'flex w-fit select-none items-center justify-between gap-1.5 whitespace-nowrap rounded-lg',
-        'border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm outline-none',
+        'flex w-fit select-none items-center justify-between gap-1.5 whitespace-nowrap rounded-(--radius-control)',
+        'border border-control-border bg-control-background py-3 pr-3 pl-3.5 text-base outline-none',
         'transition-colors focus-visible:border-ring focus-visible:ring-3',
         'focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
         'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20',
-        'data-[size=default]:h-8 data-[size=sm]:h-7',
+        'data-[size=default]:h-12 data-[size=sm]:h-10',
         'data-[size=sm]:rounded-[min(var(--radius-md),10px)]',
         'data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1',
         '*:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center',
@@ -65,7 +65,7 @@ function SelectContent({
   sideOffset = 4,
   align = 'center',
   alignOffset = 0,
-  alignItemWithTrigger = true,
+  alignItemWithTrigger = false,
   ...properties
 }: SelectPrimitive.Popup.Props &
   Pick<SelectPrimitive.Positioner.Props, 'align' | 'alignOffset' | 'side' | 'sideOffset' | 'alignItemWithTrigger'>) {
@@ -89,7 +89,7 @@ function SelectContent({
             'data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95',
             'relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36',
             'origin-(--transform-origin) overflow-y-auto overflow-x-hidden rounded-lg bg-popover',
-            'text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100',
+            'text-popover-foreground shadow-md ring-1 ring-border duration-100',
             'data-[align-trigger=true]:animate-none data-closed:animate-out data-open:animate-in',
             className,
           )}
