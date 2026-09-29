@@ -1,7 +1,10 @@
 export { acceptanceDecisionEnum, acceptanceItems, acceptances } from './acceptances.ts';
 export { checklistItems, checklists, checklistTemplateItems, checklistTemplates } from './checklists.ts';
+export { checklistItemPhotos, fileStatusEnum, files } from './files.ts';
+export { materialInvoices, materialOrders } from './materials.ts';
 export { projects } from './projects.ts';
 export { sessions } from './sessions.ts';
 export { stageTypes } from './stage-types.ts';
 export { stagePredecessors, stageStatusEnum, stages } from './stages.ts';
 export { userRoleEnum, users } from './users.ts';
+export { workPayments } from './work-payments.ts';

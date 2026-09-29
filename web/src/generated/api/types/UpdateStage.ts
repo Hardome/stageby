@@ -25,15 +25,6 @@ export type UpdateStage = {
     */
     assigneeId?: number | null;
     /**
-     * @description ID назначаемого приёмщика; null снимает назначение. Снятие приёмщика во время приёмки запрещено.
-     * @minLength 1
-     * @maxLength 2147483647
-     * @example 2
-     * @example null
-     * @type integer | undefined
-    */
-    inspectorId?: number | null;
-    /**
      * @description Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
      * @type array | undefined
     */

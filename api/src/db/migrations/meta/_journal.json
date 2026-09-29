@@ -57,6 +57,13 @@
       "when": 1790684957763,
       "tag": "0007_remove-todos",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790695622176,
+      "tag": "0008_kind_rhodey",
+      "breakpoints": true
     }
   ]
 }

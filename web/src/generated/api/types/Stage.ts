@@ -103,10 +103,6 @@ export type Stage = {
     */
     assignee: (UserBrief | null);
     /**
-     * @description Назначенный приёмщик этапа; null — приёмщик не назначен.
-    */
-    inspector: (UserBrief | null);
-    /**
      * @description Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
      * @example in_progress
      * @type string
@@ -183,11 +179,11 @@ export type Stage = {
     */
     notes: string | null;
     /**
-     * @description 100 × выполненные пункты / все пункты, округление до двух знаков. Пустой чек-лист — 0. Только вычисляется сервером.
+     * @description 100 × выполненные пункты / все пункты, округление до целого. Пустой чек-лист — 0. Только вычисляется сервером.
      * @minLength 0
      * @maxLength 100
-     * @example 33.33
-     * @type number
+     * @example 33
+     * @type integer
     */
     progressPercent: number;
     /**

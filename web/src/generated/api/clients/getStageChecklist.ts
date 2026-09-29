@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { getStageChecklistResponseSchema, getStageChecklistErrorSchema } from '../zod/getStageChecklistSchema'
 
 /**
- * @description Один чек-лист на этап, создаётся вместе с проектом. Доступ как к этапу. Первоначально items=[], progressPercent=0, version=1.
+ * @description Один чек-лист на этап, создаётся вместе с проектом. Руководитель видит любой чек-лист, мастер — только чек-лист назначенного ему этапа.
  * @summary Чек-лист этапа
  * {@link /stages/:stageId/checklist}
  */
