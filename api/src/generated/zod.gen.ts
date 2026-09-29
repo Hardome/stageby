@@ -333,6 +333,84 @@ export const zUpdateChecklistItem = z.object({
     isCompleted: z.boolean()
 });
 
+/**
+ * Назначение файла, определяющее MIME, размер и правила доступа.
+ */
+export const zFilePurpose = z.enum([
+    'project_document',
+    'checklist_photo',
+    'material_invoice'
+]);
+
+/**
+ * SHA-256 содержимого в нижнем регистре, шестнадцатеричная запись.
+ */
+export const zSha256 = z.string().regex(/^[a-f0-9]{64}$/);
+
+export const zCreateFileUpload = z.object({
+    purpose: zFilePurpose,
+    originalName: z.string().min(1).max(255),
+    mimeType: z.string().min(1).max(255),
+    sizeBytes: z.int().gte(1).lte(52428800),
+    checksumSha256: zSha256
+});
+
+/**
+ * Стабильный положительный идентификатор записи.
+ */
+export const zEntityId = z.int().gte(1).lte(2147483647);
+
+/**
+ * Состояние upload-сессии и объекта в файловом хранилище.
+ */
+export const zFileStatus = z.enum([
+    'pending',
+    'uploaded',
+    'failed',
+    'deleted'
+]);
+
+export const zFileUpload = z.object({
+    fileId: zEntityId,
+    status: zFileStatus,
+    method: z.literal('PUT'),
+    uploadUrl: z.url(),
+    headers: z.record(z.string(), z.string()),
+    expiresAt: z.iso.datetime()
+});
+
+export const zCompleteFileUpload = z.object({
+    checksumSha256: zSha256
+});
+
+export const zFile = z.object({
+    id: zEntityId,
+    purpose: zFilePurpose,
+    status: zFileStatus,
+    originalName: z.string(),
+    mimeType: z.string(),
+    sizeBytes: z.int().gte(1),
+    checksumSha256: zSha256,
+    uploadedAt: z.iso.datetime()
+});
+
+export const zFileDownload = z.object({
+    downloadUrl: z.url(),
+    expiresAt: z.iso.datetime()
+});
+
+export const zChecklistItemPhoto = z.object({
+    id: zEntityId,
+    itemId: zEntityId,
+    fileId: zEntityId,
+    position: z.int().gte(1).lte(20),
+    uploadedBy: z.object({
+        id: zEntityId,
+        fullName: z.string().min(1).max(255)
+    }),
+    uploadedAt: z.iso.datetime()
+});
+
 export const zCreateUserWritable = z.object({
     login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
     password: z.string().min(8).max(128),
@@ -355,6 +433,14 @@ export const zLimit = z.int().gte(1).lte(100).default(20);
  * Количество пропущенных записей после фильтрации и проверки доступа.
  */
 export const zOffset = z.int().gte(0).default(0);
+
+export const zUploadId = zEntityId;
+
+export const zFileId = zEntityId;
+
+export const zItemId = zEntityId;
+
+export const zPhotoId = zEntityId;
 
 export const zListUsersQuery = z.object({
     limit: z.int().gte(1).lte(100).optional().default(20),
@@ -570,3 +656,65 @@ export const zUpdateChecklistItemPath = z.object({
  * Успешный ответ
  */
 export const zUpdateChecklistItemResponse = zChecklist;
+
+export const zCreateFileUploadBody = zCreateFileUpload;
+
+/**
+ * Upload-сессия создана.
+ */
+export const zCreateFileUploadResponse = zFileUpload;
+
+export const zCompleteFileUploadBody = zCompleteFileUpload;
+
+export const zCompleteFileUploadHeaders = z.object({
+    'Idempotency-Key': z.string().min(16).max(100)
+});
+
+export const zCompleteFileUploadPath = z.object({
+    uploadId: zEntityId
+});
+
+/**
+ * Файл успешно загружен.
+ */
+export const zCompleteFileUploadResponse = zFile;
+
+export const zGetFileContentPath = z.object({
+    fileId: zEntityId
+});
+
+/**
+ * Подписанные данные скачивания.
+ */
+export const zGetFileContentResponse = zFileDownload;
+
+export const zListChecklistItemPhotosPath = z.object({
+    itemId: zEntityId
+});
+
+/**
+ * Активные фотографии по порядку.
+ */
+export const zListChecklistItemPhotosResponse = z.array(zChecklistItemPhoto);
+
+export const zCreateChecklistItemPhotoBody = z.object({
+    fileId: zEntityId
+});
+
+export const zCreateChecklistItemPhotoPath = z.object({
+    itemId: zEntityId
+});
+
+/**
+ * Фотография привязана.
+ */
+export const zCreateChecklistItemPhotoResponse = zChecklistItemPhoto;
+
+export const zDeleteChecklistItemPhotoPath = z.object({
+    photoId: zEntityId
+});
+
+/**
+ * Фотография удалена.
+ */
+export const zDeleteChecklistItemPhotoResponse = z.void();

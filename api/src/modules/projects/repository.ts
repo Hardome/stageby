@@ -2,6 +2,7 @@ import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 import { checklistItems, checklists, checklistTemplateItems, checklistTemplates } from '#app/db/schema/checklists';
+import { files, projectDocuments } from '#app/db/schema/files';
 import type * as databaseSchema from '#app/db/schema/index';
 import { projects } from '#app/db/schema/projects';
 import { stageTypes } from '#app/db/schema/stage-types';
@@ -63,6 +64,28 @@ async function validateAssignees(transaction: Transaction, input: CreateProject)
   });
 }
 
+async function validateDocuments(transaction: Transaction, input: CreateProject): Promise<ValidationDetail[]> {
+  if (input.documentFileIds.length === 0) return [];
+  const selectedFiles = await transaction.select().from(files).where(inArray(files.id, input.documentFileIds));
+  const existingDocuments = await transaction
+    .select({ fileId: projectDocuments.fileId })
+    .from(projectDocuments)
+    .where(inArray(projectDocuments.fileId, input.documentFileIds));
+  const alreadyAttached = new Set(existingDocuments.map(({ fileId }) => fileId));
+  const fileById = new Map(selectedFiles.map((file) => [file.id, file]));
+  return input.documentFileIds.flatMap((fileId, index): ValidationDetail[] => {
+    const file = fileById.get(fileId);
+    return file?.status === 'uploaded' && file.purpose === 'project_document' && !alreadyAttached.has(fileId)
+      ? []
+      : [
+          {
+            path: `body.documentFileIds.${index}`,
+            message: 'Файл отсутствует, не загружен или не является PDF-документом проекта.',
+          },
+        ];
+  });
+}
+
 async function loadTemplates(transaction: Transaction, input: CreateProject) {
   const stagesUsingTemplate = input.stages.filter((stage) => stage.checklistItems === undefined);
   const templates =
@@ -118,7 +141,6 @@ async function insertProject(transaction: Transaction, input: CreateProject) {
       contractLabel: input.contractLabel,
       plannedStartDate: input.plannedStartDate,
       plannedEndDate: input.plannedEndDate,
-      documentFileIds: input.documentFileIds,
       notes: input.notes,
     })
     .returning();
@@ -185,14 +207,25 @@ export class ProjectRepository {
     return this.#database.transaction(async (transaction) => {
       const typeData = await loadStageTypes(transaction, input);
       const assigneeDetails = await validateAssignees(transaction, input);
+      const documentDetails = await validateDocuments(transaction, input);
       const templateData = await loadTemplates(transaction, input);
-      const details = [...typeData.details, ...assigneeDetails, ...templateData.details];
+      const details = [...typeData.details, ...assigneeDetails, ...documentDetails, ...templateData.details];
 
       if (details.length > 0) {
         return { status: 'invalid', details };
       }
 
       const project = await insertProject(transaction, input);
+
+      if (input.documentFileIds.length > 0) {
+        await transaction.insert(projectDocuments).values(
+          input.documentFileIds.map((fileId, index) => ({
+            projectId: project.id,
+            fileId,
+            position: index + 1,
+          })),
+        );
+      }
 
       for (const stageInput of input.stages) {
         const stageType = typeData.typeByCode.get(stageInput.type);

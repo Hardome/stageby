@@ -2,7 +2,7 @@
 
 import type { RouteHandler } from 'fastify';
 
-import type { AcceptStageData, AcceptStageErrors, AcceptStageResponses, ChangeStageStatusData, ChangeStageStatusErrors, ChangeStageStatusResponses, ConfigureStageChecklistData, ConfigureStageChecklistErrors, ConfigureStageChecklistResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateUserData, CreateUserErrors, CreateUserResponses, GetCurrentUserErrors, GetCurrentUserResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetStageChecklistData, GetStageChecklistErrors, GetStageChecklistResponses, GetStageData, GetStageErrors, GetStageResponses, GetUserData, GetUserErrors, GetUserResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListProjectStagesData, ListProjectStagesErrors, ListProjectStagesResponses, ListStagesData, ListStagesErrors, ListStagesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutErrors, LogoutResponses, ReturnStageForReworkData, ReturnStageForReworkErrors, ReturnStageForReworkResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, UpdateChecklistItemData, UpdateChecklistItemErrors, UpdateChecklistItemResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateStageData, UpdateStageErrors, UpdateStageResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen.js';
+import type { AcceptStageData, AcceptStageErrors, AcceptStageResponses, ChangeStageStatusData, ChangeStageStatusErrors, ChangeStageStatusResponses, CompleteFileUploadData, CompleteFileUploadErrors, CompleteFileUploadResponses, ConfigureStageChecklistData, ConfigureStageChecklistErrors, ConfigureStageChecklistResponses, CreateChecklistItemPhotoData, CreateChecklistItemPhotoErrors, CreateChecklistItemPhotoResponses, CreateFileUploadData, CreateFileUploadErrors, CreateFileUploadResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteChecklistItemPhotoData, DeleteChecklistItemPhotoErrors, DeleteChecklistItemPhotoResponses, GetCurrentUserErrors, GetCurrentUserResponses, GetFileContentData, GetFileContentErrors, GetFileContentResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetStageChecklistData, GetStageChecklistErrors, GetStageChecklistResponses, GetStageData, GetStageErrors, GetStageResponses, GetUserData, GetUserErrors, GetUserResponses, ListChecklistItemPhotosData, ListChecklistItemPhotosErrors, ListChecklistItemPhotosResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListProjectStagesData, ListProjectStagesErrors, ListProjectStagesResponses, ListStagesData, ListStagesErrors, ListStagesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutErrors, LogoutResponses, ReturnStageForReworkData, ReturnStageForReworkErrors, ReturnStageForReworkResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, UpdateChecklistItemData, UpdateChecklistItemErrors, UpdateChecklistItemResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateStageData, UpdateStageErrors, UpdateStageResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen.js';
 
 export type RouteHandlers = {
     listUsers: RouteHandler<{
@@ -99,5 +99,32 @@ export type RouteHandlers = {
         Body: UpdateChecklistItemData['body'];
         Params: UpdateChecklistItemData['path'];
         Reply: UpdateChecklistItemErrors & UpdateChecklistItemResponses;
+    }>;
+    createFileUpload: RouteHandler<{
+        Body: CreateFileUploadData['body'];
+        Reply: CreateFileUploadErrors & CreateFileUploadResponses;
+    }>;
+    completeFileUpload: RouteHandler<{
+        Body: CompleteFileUploadData['body'];
+        Headers: CompleteFileUploadData['headers'];
+        Params: CompleteFileUploadData['path'];
+        Reply: CompleteFileUploadErrors & CompleteFileUploadResponses;
+    }>;
+    getFileContent: RouteHandler<{
+        Params: GetFileContentData['path'];
+        Reply: GetFileContentErrors & GetFileContentResponses;
+    }>;
+    listChecklistItemPhotos: RouteHandler<{
+        Params: ListChecklistItemPhotosData['path'];
+        Reply: ListChecklistItemPhotosErrors & ListChecklistItemPhotosResponses;
+    }>;
+    createChecklistItemPhoto: RouteHandler<{
+        Body: CreateChecklistItemPhotoData['body'];
+        Params: CreateChecklistItemPhotoData['path'];
+        Reply: CreateChecklistItemPhotoErrors & CreateChecklistItemPhotoResponses;
+    }>;
+    deleteChecklistItemPhoto: RouteHandler<{
+        Params: DeleteChecklistItemPhotoData['path'];
+        Reply: DeleteChecklistItemPhotoErrors & DeleteChecklistItemPhotoResponses;
     }>;
 };

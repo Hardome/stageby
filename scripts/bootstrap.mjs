@@ -76,7 +76,7 @@ for (const directory of ['.', 'contracts', 'api', 'web']) {
 run('pnpm', ['exec', 'lefthook', 'install']);
 
 run('pnpm', ['run', 'codegen']);
-run('docker', ['compose', 'up', '-d', '--wait', 'postgres']);
+run('docker', ['compose', 'up', '-d', '--build', '--wait', 'postgres', 'minio']);
 run('pnpm', ['--dir', 'api', 'run', 'db:migrate']);
 
 console.log('Stageby development environment is ready.');

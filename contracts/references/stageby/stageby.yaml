@@ -2,8 +2,8 @@ openapi: 3.1.0
 info:
   title: Stageby API
   version: 0.1.0
-  description: "Контракт первой версии управления строительством: пользователи, проекты, этапы и чек-листы.
-    Финансовый модуль, фото, материалы, инструмент и платежи отложены. Реализация новых маршрутов выполняется
+  description: "Контракт первой версии управления строительством: пользователи, проекты, этапы, чек-листы и файлы.
+    Финансовый модуль, материалы, инструмент и платежи отложены. Реализация новых маршрутов выполняется
     отдельно. ID новых сущностей — положительные целые числа int32, назначаемые БД автоматически. Даты работ YYYY-MM-DD; timestamps — RFC 3339 UTC. Календарный часовой пояс
     первой версии Asia/Yekaterinburg. PATCH меняет только переданные поля, null очищает только nullable-поле,
     пустое тело запрещено; массив заменяется целиком. Все изменения атомарны. Неизвестные поля и
@@ -26,7 +26,9 @@ tags:
   - name: Stages
     description: Фиксированные виды работ, назначения, зависимости и приёмка.
   - name: Checklists
-    description: Один чек-лист с контрольными точками на этап. В текущей версии без фото.
+    description: Один чек-лист с контрольными точками и фотографиями на этап.
+  - name: Files
+    description: Устойчивые upload-сессии, закрытое файловое хранилище и типизированные связи файлов.
 paths:
   /users:
     $ref: ../users/users.yaml#/paths/~1users
@@ -60,6 +62,16 @@ paths:
     $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist
   /stages/{stageId}/checklist/items/{itemId}:
     $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist~1items~1{itemId}
+  /file-uploads:
+    $ref: ../files/files.yaml#/paths/~1file-uploads
+  /file-uploads/{uploadId}/completion:
+    $ref: ../files/files.yaml#/paths/~1file-uploads~1{uploadId}~1completion
+  /files/{fileId}/content:
+    $ref: ../files/files.yaml#/paths/~1files~1{fileId}~1content
+  /checklist/items/{itemId}/photos:
+    $ref: ../files/files.yaml#/paths/~1checklist~1items~1{itemId}~1photos
+  /checklist/photos/{photoId}:
+    $ref: ../files/files.yaml#/paths/~1checklist~1photos~1{photoId}
 components:
   schemas:
     ExpectedVersion:

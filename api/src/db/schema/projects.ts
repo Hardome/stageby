@@ -25,7 +25,6 @@ export const projects = pgTable(
     contractLabel: varchar({ length: 255 }),
     plannedStartDate: date().notNull(),
     plannedEndDate: date().notNull(),
-    documentFileIds: integer().array().notNull().default(sql`'{}'::integer[]`),
     notes: text(),
     isArchived: boolean().notNull().default(false),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -38,7 +37,6 @@ export const projects = pgTable(
     check('projects_latitude_range_check', sql`${table.latitude} between -90 and 90`),
     check('projects_longitude_range_check', sql`${table.longitude} between -180 and 180`),
     check('projects_planned_dates_check', sql`${table.plannedEndDate} >= ${table.plannedStartDate}`),
-    check('projects_document_file_ids_positive_check', sql`0 < all(${table.documentFileIds})`),
     check(
       'projects_cadastral_number_not_blank_check',
       sql`${table.cadastralNumber} is null or btrim(${table.cadastralNumber}) <> ''`,
