@@ -20,7 +20,6 @@ const expectedTables = [
   'stage_predecessors',
   'stage_types',
   'stages',
-  'todos',
   'users',
 ];
 
@@ -170,7 +169,7 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('7');
+      expect(firstJournal.rows[0]?.count).toBe('8');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);

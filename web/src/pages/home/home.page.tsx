@@ -1,5 +1,4 @@
-import { TodoList } from '@features/todo-list';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
 
 export function HomePage() {
   return (
@@ -7,13 +6,10 @@ export function HomePage() {
       <Card className="mx-auto w-full max-w-2xl">
         <CardHeader>
           <CardTitle>
-            <h1 className="font-bold text-2xl">Мои задачи</h1>
+            <h1 className="font-bold text-2xl">Stageby</h1>
           </CardTitle>
-          <CardDescription>Простой список дел на сегодня</CardDescription>
+          <CardDescription>Управление строительством</CardDescription>
         </CardHeader>
-        <CardContent>
-          <TodoList />
-        </CardContent>
         <CardFooter className="text-muted-foreground text-xs">Stageby</CardFooter>
       </Card>
     </main>

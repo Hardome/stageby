@@ -6,7 +6,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from '#app/app';
 import { type Environment, parseEnvironment } from '#app/config/env';
-import { todos } from '#app/db/schema/todos';
 import { users } from '#app/db/schema/users';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 import { UserRepository } from '#app/modules/users/repository';
@@ -51,18 +50,18 @@ describe('Приложение', () => {
       openapi: '3.1.0',
       info: { title: 'Stageby API', version: '0.1.0' },
       servers: [{ url: '/' }],
-      paths: { '/todos': {}, '/todos/{id}': {} },
+      paths: { '/auth/login': {}, '/auth/me': {}, '/users': {}, '/users/{userId}': {}, '/projects': {} },
     });
   });
 
   it('добавляет заголовки CORS и защиты', async () => {
     const response = await app.inject({
       method: 'GET',
-      url: `/todos/${randomUUID()}`,
+      url: '/auth/me',
       headers: { origin: 'http://localhost:5173' },
     });
 
-    expect(response.statusCode).toBe(404);
+    expect(response.statusCode).toBe(401);
     expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
     expect(response.headers['access-control-allow-credentials']).toBe('true');
     expect(response.headers['x-content-type-options']).toBe('nosniff');
@@ -71,9 +70,9 @@ describe('Приложение', () => {
   it('отклоняет изменяющие запросы с посторонним Origin', async () => {
     const response = await app.inject({
       method: 'POST',
-      url: '/todos',
+      url: '/auth/login',
       headers: { origin: 'https://attacker.example' },
-      payload: { title: 'CSRF' },
+      payload: { login: 'csrf.missing', password: 'wrong' },
     });
 
     expect(response.statusCode).toBe(403);
@@ -93,16 +92,20 @@ describe('Приложение', () => {
   });
 
   it('подключает БД к модулю', async () => {
-    const rows = await app.db.select().from(todos).limit(1);
+    const rows = await app.db.select().from(users).limit(1);
     expect(Array.isArray(rows)).toBe(true);
 
-    const response = await app.inject({ method: 'GET', url: `/todos/${randomUUID()}` });
-    expect(response.statusCode).toBe(404);
-    expect(response.json()).toEqual({ error: 'Not Found', code: 'not_found', message: 'Задача не найдена' });
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { login: 'database.missing', password: 'wrong' },
+    });
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ code: 'unauthenticated' });
   });
 
   it('оформляет ошибки проверки данных через общий обработчик', async () => {
-    const response = await app.inject({ method: 'POST', url: '/todos', payload: {} });
+    const response = await app.inject({ method: 'POST', url: '/auth/login', payload: {} });
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({
@@ -117,11 +120,11 @@ describe('Приложение', () => {
     });
 
     try {
-      const url = `/todos/${randomUUID()}`;
+      const url = '/auth/me';
       const first = await limitedApp.inject({ method: 'GET', url });
       const second = await limitedApp.inject({ method: 'GET', url });
 
-      expect(first.statusCode).toBe(404);
+      expect(first.statusCode).toBe(401);
       expect(second.statusCode).toBe(429);
       expect(second.json()).toMatchObject({
         error: 'Слишком много запросов',

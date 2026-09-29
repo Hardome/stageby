@@ -9,8 +9,7 @@ info:
     пустое тело запрещено; массив заменяется целиком. Все изменения атомарны. Неизвестные поля и
     query-параметры — 400. Непустые текстовые значения обрезаются по краям и не могут состоять только из
     пробелов; пароли не обрезаются. Политики доступа обязательны на сервере, включая списки, total и вложенные
-    записи. Документ описывает целевой API; демонстрационные /todos временно сохранены для совместимости
-    текущих приложений и сохраняют строковые UUID."
+    записи. Документ описывает целевой API."
 servers:
   - url: /
     description: Тот же origin, с которого загружены API-документация или клиент.
@@ -28,8 +27,6 @@ tags:
     description: Фиксированные виды работ, назначения, зависимости и приёмка.
   - name: Checklists
     description: Один чек-лист с контрольными точками на этап. В текущей версии без фото.
-  - name: Todos
-    description: Существующий демонстрационный модуль. Не входит в предметную модель строительства.
 paths:
   /users:
     $ref: ../users/users.yaml#/paths/~1users
@@ -63,10 +60,6 @@ paths:
     $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist
   /stages/{stageId}/checklist/items/{itemId}:
     $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist~1items~1{itemId}
-  /todos:
-    $ref: ../todos/todos.yaml#/paths/~1todos
-  /todos/{id}:
-    $ref: ../todos/todos.yaml#/paths/~1todos~1{id}
 components:
   schemas:
     ExpectedVersion:

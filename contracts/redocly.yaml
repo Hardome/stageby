@@ -9,8 +9,6 @@ apis:
 rules:
   # У внутреннего API пока нет опубликованной лицензии.
   info-license: off
-  # GET /todos не принимает параметры и не объявляет прикладных ошибок 4xx.
-  operation-4xx-response: off
   no-unused-components: error
   scalar-property-missing-example: error
   rule/schema-properties-description:

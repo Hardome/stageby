@@ -338,26 +338,6 @@ export const zUpdateChecklistItem = z.object({
     isCompleted: z.boolean()
 });
 
-export const zTodo = z.object({
-    id: z.uuid(),
-    title: z.string().min(1).max(255),
-    description: z.string().nullable(),
-    completed: z.boolean(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime()
-});
-
-export const zCreateTodo = z.object({
-    title: z.string().min(1).max(255),
-    description: z.string().nullish()
-});
-
-export const zUpdateTodo = z.object({
-    title: z.string().min(1).max(255).optional(),
-    description: z.string().nullish(),
-    completed: z.boolean().optional()
-});
-
 export const zCreateUserWritable = z.object({
     login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
     password: z.string().min(8).max(128),
@@ -380,8 +360,6 @@ export const zLimit = z.int().gte(1).lte(100).default(20);
  * Количество пропущенных записей после фильтрации и проверки доступа.
  */
 export const zOffset = z.int().gte(0).default(0);
-
-export const zTodoId = z.uuid();
 
 export const zListUsersQuery = z.object({
     limit: z.int().gte(1).lte(100).optional().default(20),
@@ -597,44 +575,3 @@ export const zUpdateChecklistItemPath = z.object({
  * Успешный ответ
  */
 export const zUpdateChecklistItemResponse = zChecklist;
-
-/**
- * Todo list
- */
-export const zListTodosResponse = z.array(zTodo);
-
-export const zCreateTodoBody = zCreateTodo;
-
-/**
- * Todo created
- */
-export const zCreateTodoResponse = zTodo;
-
-export const zDeleteTodoPath = z.object({
-    id: z.uuid()
-});
-
-/**
- * Todo deleted
- */
-export const zDeleteTodoResponse = z.void();
-
-export const zGetTodoPath = z.object({
-    id: z.uuid()
-});
-
-/**
- * Todo found
- */
-export const zGetTodoResponse = zTodo;
-
-export const zUpdateTodoBody = zUpdateTodo;
-
-export const zUpdateTodoPath = z.object({
-    id: z.uuid()
-});
-
-/**
- * Todo updated
- */
-export const zUpdateTodoResponse = zTodo;
