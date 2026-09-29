@@ -3,14 +3,16 @@
 * Do not edit manually.
 */
 
+import type { ExpectedVersion } from './ExpectedVersion'
+
 export type ConfigureChecklist = {
     /**
-     * @description Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+     * @description Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
      * @minLength 1
      * @example 1
      * @type integer
     */
-    expectedVersion: number;
+    expectedVersion: ExpectedVersion;
     /**
      * @description Порядок массива определяет position. Равный вес каждого пункта.
      * @type array
@@ -24,5 +26,14 @@ export type ConfigureChecklist = {
          * @type string
         */
         title: string;
+        /**
+         * @description Необязательная фотоподсказка; null удаляет подсказку.
+         * @minLength 1
+         * @maxLength 1000
+         * @example Фото перевязки углов и перехлёста арматуры
+         * @example null
+         * @type string | undefined
+        */
+        photoHint?: string | null;
     }[];
 };

@@ -3,6 +3,63 @@
 import * as z from 'zod';
 
 /**
+ * Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
+ */
+export const zExpectedVersion = z.int().gte(1);
+
+/**
+ * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
+ */
+export const zStageType = z.enum([
+    'foundation',
+    'walls',
+    'roof',
+    'windows',
+    'facade',
+    'electrical',
+    'finishing',
+    'heating'
+]);
+
+/**
+ * Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
+ */
+export const zStageStatus = z.enum([
+    'created',
+    'assigned',
+    'supplied',
+    'in_progress',
+    'acceptance',
+    'rework',
+    'completed',
+    'paid'
+]);
+
+/**
+ * Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.
+ */
+export const zApiErrorCode = z.enum([
+    'invalid_request',
+    'unauthenticated',
+    'forbidden',
+    'not_found',
+    'version_conflict',
+    'invalid_transition',
+    'idempotency_conflict',
+    'login_taken',
+    'last_manager',
+    'user_in_use',
+    'project_archived',
+    'unsupported_mime_type',
+    'file_too_large',
+    'checksum_mismatch',
+    'upload_incomplete',
+    'upload_expired',
+    'photo_limit_exceeded',
+    'rate_limited'
+]);
+
+/**
  * manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
  */
 export const zUserRole = z.enum([
@@ -35,7 +92,7 @@ export const zUserPage = z.object({
 
 export const zApiError = z.object({
     error: z.string().min(1).max(255),
-    code: z.string().min(1).max(100),
+    code: zApiErrorCode,
     message: z.string().min(1).max(2000),
     details: z.array(z.object({
         path: z.string().min(1).max(255),
@@ -124,33 +181,6 @@ export const zUpdateProject = z.object({
 });
 
 /**
- * created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту версию.
- */
-export const zStageStatus = z.enum([
-    'created',
-    'assigned',
-    'supplied',
-    'started',
-    'in_progress',
-    'acceptance',
-    'completed'
-]);
-
-/**
- * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; plaster — Штукатурка; heating — Отопление.
- */
-export const zStageType = z.enum([
-    'foundation',
-    'walls',
-    'roof',
-    'windows',
-    'facade',
-    'electrical',
-    'plaster',
-    'heating'
-]);
-
-/**
  * Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
  */
 export const zUserBrief = z.object({
@@ -181,7 +211,7 @@ export const zStage = z.object({
         'Окна',
         'Фасад',
         'Электрика',
-        'Штукатурка',
+        'Отделка',
         'Отопление'
     ]),
     position: z.int().gte(1).lte(8),
@@ -214,7 +244,7 @@ export const zProjectStages = z.object({
 });
 
 export const zUpdateStage = z.object({
-    expectedVersion: z.int().gte(1),
+    expectedVersion: zExpectedVersion,
     assigneeId: z.int().gte(1).lte(2147483647).nullish(),
     inspectorId: z.int().gte(1).lte(2147483647).nullish(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30).optional(),
@@ -225,32 +255,33 @@ export const zUpdateStage = z.object({
 });
 
 export const zChangeStageStatus = z.object({
-    expectedVersion: z.int().gte(1),
+    expectedVersion: zExpectedVersion,
     status: z.enum([
         'supplied',
-        'started',
         'in_progress',
         'acceptance'
     ])
 });
 
 export const zAcceptStage = z.object({
-    expectedVersion: z.int().gte(1),
+    expectedVersion: zExpectedVersion,
     comment: z.string().min(1).max(5000).nullish()
 });
 
 export const zRejectStage = z.object({
-    expectedVersion: z.int().gte(1),
+    expectedVersion: zExpectedVersion,
     comment: z.string().min(1).max(5000),
     correctionDueDate: z.iso.date(),
-    itemIds: z.array(z.int().gte(1).lte(2147483647)).min(1).max(4)
+    itemIds: z.array(z.int().gte(1).lte(2147483647)).min(1)
 });
 
 export const zChecklistItem = z.object({
     id: z.int().gte(1).lte(2147483647),
     title: z.string().min(1).max(500),
-    position: z.int().gte(1).lte(4),
+    photoHint: z.string().min(1).max(1000).nullable(),
+    position: z.int().gte(1),
     isCompleted: z.boolean(),
+    requiresRework: z.boolean(),
     completedAt: z.iso.datetime().nullable(),
     completedBy: zUserBrief.nullable()
 });
@@ -258,7 +289,7 @@ export const zChecklistItem = z.object({
 export const zChecklist = z.object({
     id: z.int().gte(1).lte(2147483647),
     stageId: z.int().gte(1).lte(2147483647),
-    items: z.array(zChecklistItem).max(4),
+    items: z.array(zChecklistItem),
     progressPercent: z.number().gte(0).lte(100),
     version: z.int().gte(1),
     createdAt: z.iso.datetime(),
@@ -266,14 +297,15 @@ export const zChecklist = z.object({
 });
 
 export const zConfigureChecklist = z.object({
-    expectedVersion: z.int().gte(1),
+    expectedVersion: zExpectedVersion,
     items: z.array(z.object({
-        title: z.string().min(1).max(500)
-    })).min(3).max(4)
+        title: z.string().min(1).max(500),
+        photoHint: z.string().min(1).max(1000).nullish()
+    })).min(1)
 });
 
 export const zUpdateChecklistItem = z.object({
-    expectedVersion: z.int().gte(1),
+    expectedVersion: zExpectedVersion,
     isCompleted: z.boolean()
 });
 
@@ -289,11 +321,6 @@ export const zTodo = z.object({
 export const zCreateTodo = z.object({
     title: z.string().min(1).max(255),
     description: z.string().nullish()
-});
-
-export const zError = z.object({
-    error: z.string(),
-    message: z.string()
 });
 
 export const zUpdateTodo = z.object({

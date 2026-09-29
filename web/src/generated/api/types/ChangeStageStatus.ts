@@ -4,11 +4,11 @@
 */
 
 import type { ApiError } from './ApiError'
+import type { ExpectedVersion } from './ExpectedVersion'
 import type { Stage } from './Stage'
 
 export const changeStageStatusStatusEnum = {
     supplied: "supplied",
-    started: "started",
     in_progress: "in_progress",
     acceptance: "acceptance"
 } as const;
@@ -17,14 +17,14 @@ export type ChangeStageStatusStatusEnumKey = (typeof changeStageStatusStatusEnum
 
 export type ChangeStageStatus = {
     /**
-     * @description Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+     * @description Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
      * @minLength 1
      * @example 1
      * @type integer
     */
-    expectedVersion: number;
+    expectedVersion: ExpectedVersion;
     /**
-     * @description Следующий рабочий статус в цепочке assigned → supplied → started → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.
+     * @description Следующий рабочий статус в цепочке assigned → supplied → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.
      * @example in_progress
      * @type string
     */

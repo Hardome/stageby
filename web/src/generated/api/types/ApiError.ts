@@ -3,6 +3,8 @@
 * Do not edit manually.
 */
 
+import type { ApiErrorCodeKey } from './ApiErrorCode'
+
 export type ApiError = {
     /**
      * @description Краткое название ошибки HTTP, соответствующее статусу ответа.
@@ -13,13 +15,11 @@ export type ApiError = {
     */
     error: string;
     /**
-     * @description Машинный код: invalid_request, unauthenticated, forbidden, not_found, version_conflict, invalid_transition, login_taken и т. д.
-     * @minLength 1
-     * @maxLength 100
+     * @description Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.
      * @example invalid_request
      * @type string
     */
-    code: string;
+    code: ApiErrorCodeKey;
     /**
      * @description Описание причины ошибки для человека.
      * @minLength 1

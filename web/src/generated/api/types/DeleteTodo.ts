@@ -3,7 +3,7 @@
 * Do not edit manually.
 */
 
-import type { Error } from './Error'
+import type { ApiError } from './ApiError'
 
 export type DeleteTodoPath = {
     /**
@@ -16,7 +16,7 @@ export type DeleteTodoPath = {
 
 export type DeleteTodoStatus204 = unknown;
 
-export type DeleteTodoStatus404 = Error;
+export type DeleteTodoStatus404 = ApiError;
 
 export type DeleteTodoOptions = {
     body?: never;

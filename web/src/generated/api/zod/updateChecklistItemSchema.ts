@@ -6,9 +6,10 @@
 import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 import { checklistSchema } from './checklistSchema'
+import { expectedVersionSchema } from './expectedVersionSchema'
 
 export const updateChecklistItemSchema = z.object({
-  expectedVersion: z.int().min(1).describe('Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.').meta({ examples: [1] }),
+  expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   isCompleted: z.boolean().describe('Новое состояние пункта. true отмечает выполнение, false снимает отметку; сервер заполняет или очищает completedAt и completedBy и пересчитывает прогресс.').meta({ examples: [true] }),
 }).strict()
 

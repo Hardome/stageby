@@ -3,7 +3,7 @@
 * Do not edit manually.
 */
 
-import type { Error } from './Error'
+import type { ApiError } from './ApiError'
 import type { Todo } from './Todo'
 
 export type CreateTodo = {
@@ -26,7 +26,7 @@ export type CreateTodo = {
 
 export type CreateTodoStatus201 = Todo;
 
-export type CreateTodoStatus400 = Error;
+export type CreateTodoStatus400 = ApiError;
 
 export type CreateTodoBody = CreateTodo;
 

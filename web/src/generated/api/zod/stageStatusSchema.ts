@@ -5,6 +5,6 @@
 
 import * as z from 'zod'
 
-export const stageStatusSchema = z.enum(['created', 'assigned', 'supplied', 'started', 'in_progress', 'acceptance', 'completed']).describe('created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту версию.').meta({ examples: ['in_progress'] })
+export const stageStatusSchema = z.enum(['created', 'assigned', 'supplied', 'in_progress', 'acceptance', 'rework', 'completed', 'paid']).describe('Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.').meta({ examples: ['in_progress'] })
 
 export type StageStatusSchemaType = z.infer<typeof stageStatusSchema>

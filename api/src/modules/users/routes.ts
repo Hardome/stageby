@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import type { RouteHandlers } from '#app/generated/fastify.gen';
+import type { ApiError } from '#app/generated/types.gen';
 import {
   zApiError,
   zCreateUserBody,
@@ -64,7 +65,7 @@ const errors = {
     code: 'user_in_use',
     message: 'Пользователь назначен на незавершённый этап.',
   },
-};
+} satisfies Record<string, ApiError>;
 
 export function registerUserRoutes(app: FastifyInstance, service: UserService): void {
   const managerOnly = [app.authenticate, app.requireRoles('manager')];

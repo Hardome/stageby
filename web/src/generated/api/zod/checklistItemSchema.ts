@@ -9,8 +9,10 @@ import { userBriefSchema } from './userBriefSchema'
 export const checklistItemSchema = z.object({
   id: z.int().min(1).max(2147483647).describe('ID пункта чек-листа. При замене состава чек-листа создаются новые идентификаторы пунктов.').meta({ examples: [3001] }),
   title: z.string().min(1).max(500).describe('Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.').meta({ examples: ['Проверить соответствие выполненных работ проекту'] }),
-  position: z.int().min(1).max(4).describe('Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.').meta({ examples: [1] }),
+  photoHint: z.string().min(1).max(1000).nullable().describe('Необязательная подсказка из шаблона о том, что должно быть видно на фотографии.').meta({ examples: ['Фото перевязки углов и перехлёста арматуры', ] }),
+  position: z.int().min(1).describe('Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.').meta({ examples: [1] }),
   isCompleted: z.boolean().describe('Признак выполнения контрольной точки.').meta({ examples: [true] }),
+  requiresRework: z.boolean().describe('Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.').meta({ examples: [false] }),
   completedAt: z.iso.datetime().nullable().describe('Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.').meta({ examples: ['2026-09-24T09:30:00Z', ] }),
   completedBy: z.union([userBriefSchema, z.null()]).describe('Пользователь, отметивший выполнение; null — пункт не выполнен. Устанавливается сервером.'),
 }).strict()

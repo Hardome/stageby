@@ -210,7 +210,14 @@ describe('Users API', () => {
     const foreman = await createIdentity('foreman');
     const [project] = await getApp()
       .db.insert(projects)
-      .values({ title: 'Проект проверки занятости', ownerName: 'Заказчик' })
+      .values({
+        ownerName: 'Заказчик',
+        address: 'Екатеринбург, ул. Тестовая, д. 1',
+        latitude: 56.8389,
+        longitude: 60.6057,
+        plannedStartDate: '2026-01-01',
+        plannedEndDate: '2026-12-31',
+      })
       .returning();
     if (!project) {
       throw new Error('Не удалось создать тестовый проект');
@@ -220,8 +227,10 @@ describe('Users API', () => {
       .db.insert(stages)
       .values({
         projectId: project.id,
-        type: 'foundation',
+        stageTypeCode: 'foundation',
         position: 1,
+        plannedStartDate: '2026-01-01',
+        plannedEndDate: '2026-01-31',
         assigneeId: foreman.user.id,
         status: 'in_progress',
       })

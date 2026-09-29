@@ -123,8 +123,10 @@ components:
       required:
         - id
         - title
+        - photoHint
         - position
         - isCompleted
+        - requiresRework
         - completedAt
         - completedBy
       properties:
@@ -142,17 +144,31 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+        photoHint:
+          examples:
+            - "Фото перевязки углов и перехлёста арматуры"
+            - null
+          description: "Необязательная подсказка из шаблона о том, что должно быть видно на фотографии."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
         position:
           examples:
             - 1
           description: "Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке."
           type: integer
           minimum: 1
-          maximum: 4
         isCompleted:
           examples:
             - true
           description: "Признак выполнения контрольной точки."
+          type: boolean
+        requiresRework:
+          examples:
+            - false
+          description: "Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку."
           type: boolean
         completedAt:
           examples:
@@ -198,8 +214,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ChecklistItem"
-          maxItems: 4
-          description: Пустой новый чек-лист либо 3–4 пункта. Порядок position ASC.
+          description: Пункты индивидуального чек-листа в порядке position ASC; верхнего ограничения нет.
         progressPercent:
           type: number
           minimum: 0
@@ -250,8 +265,17 @@ components:
                 type: string
                 minLength: 1
                 maxLength: 500
-          minItems: 3
-          maxItems: 4
+              photoHint:
+                examples:
+                  - "Фото перевязки углов и перехлёста арматуры"
+                  - null
+                description: "Необязательная фотоподсказка; null удаляет подсказку."
+                type:
+                  - string
+                  - "null"
+                minLength: 1
+                maxLength: 1000
+          minItems: 1
           description: Порядок массива определяет position. Равный вес каждого пункта.
     UpdateChecklistItem:
       type: object

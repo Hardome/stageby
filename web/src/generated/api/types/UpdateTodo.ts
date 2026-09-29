@@ -3,7 +3,7 @@
 * Do not edit manually.
 */
 
-import type { Error } from './Error'
+import type { ApiError } from './ApiError'
 import type { Todo } from './Todo'
 
 export type UpdateTodo = {
@@ -41,9 +41,9 @@ export type UpdateTodoPath = {
 
 export type UpdateTodoStatus200 = Todo;
 
-export type UpdateTodoStatus400 = Error;
+export type UpdateTodoStatus400 = ApiError;
 
-export type UpdateTodoStatus404 = Error;
+export type UpdateTodoStatus404 = ApiError;
 
 export type UpdateTodoBody = UpdateTodo;
 

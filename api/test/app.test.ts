@@ -98,7 +98,7 @@ describe('Приложение', () => {
 
     const response = await app.inject({ method: 'GET', url: `/todos/${randomUUID()}` });
     expect(response.statusCode).toBe(404);
-    expect(response.json()).toEqual({ error: 'Не найдено', message: 'Задача не найдена' });
+    expect(response.json()).toEqual({ error: 'Not Found', code: 'not_found', message: 'Задача не найдена' });
   });
 
   it('оформляет ошибки проверки данных через общий обработчик', async () => {
