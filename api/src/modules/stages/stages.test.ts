@@ -120,12 +120,25 @@ async function createFixture(
 }
 
 async function attachUploadedPhoto(itemId: number) {
+  const uploadedAt = new Date();
   const [file] = await getApp()
     .db.insert(files)
-    .values({ status: 'uploaded', mimeType: 'image/jpeg', sizeBytes: 1024 })
+    .values({
+      status: 'uploaded',
+      purpose: 'checklist_photo',
+      storageKey: `tests/stages/${randomUUID()}`,
+      originalName: 'photo.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 1024,
+      checksumSha256: '0'.repeat(64),
+      uploadedByUserId: createdUserIds[0]!,
+      uploadExpiresAt: uploadedAt,
+      uploadedAt,
+      expiresAt: new Date(uploadedAt.getTime() + 365 * 24 * 60 * 60 * 1000),
+    })
     .returning();
   createdFileIds.push(file!.id);
-  await getApp().db.insert(checklistItemPhotos).values({ checklistItemId: itemId, fileId: file!.id });
+  await getApp().db.insert(checklistItemPhotos).values({ checklistItemId: itemId, fileId: file!.id, position: 1 });
 }
 
 async function updateItem(

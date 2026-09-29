@@ -692,6 +692,167 @@ export type UpdateChecklistItem = {
     isCompleted: boolean;
 };
 
+/**
+ * Назначение файла, определяющее MIME, размер и правила доступа.
+ */
+export type FilePurpose = 'project_document' | 'checklist_photo' | 'material_invoice';
+
+/**
+ * SHA-256 содержимого в нижнем регистре, шестнадцатеричная запись.
+ */
+export type Sha256 = string;
+
+export type CreateFileUpload = {
+    /**
+     * Назначение загружаемого файла.
+     */
+    purpose: FilePurpose;
+    /**
+     * Исходное имя файла без пути на устройстве пользователя.
+     */
+    originalName: string;
+    /**
+     * Заявленный MIME-тип содержимого.
+     */
+    mimeType: string;
+    /**
+     * Заявленный размер содержимого в байтах.
+     */
+    sizeBytes: number;
+    /**
+     * Ожидаемая контрольная сумма содержимого.
+     */
+    checksumSha256: Sha256;
+};
+
+/**
+ * Стабильный положительный идентификатор записи.
+ */
+export type EntityId = number;
+
+/**
+ * Состояние upload-сессии и объекта в файловом хранилище.
+ */
+export type FileStatus = 'pending' | 'uploaded' | 'failed' | 'deleted';
+
+export type FileUpload = {
+    /**
+     * Идентификатор созданной upload-сессии и будущего файла.
+     */
+    fileId: EntityId;
+    /**
+     * Начальное состояние upload-сессии.
+     */
+    status: FileStatus;
+    /**
+     * HTTP-метод прямой загрузки в storage.
+     */
+    method: 'PUT';
+    /**
+     * Короткоживущий подписанный URL загрузки.
+     */
+    uploadUrl: string;
+    /**
+     * Заголовки, которые клиент обязан передать при загрузке.
+     */
+    headers: {
+        [key: string]: string;
+    };
+    /**
+     * Время истечения подписанного URL и upload-сессии.
+     */
+    expiresAt: string;
+};
+
+export type CompleteFileUpload = {
+    /**
+     * Контрольная сумма отправленного содержимого.
+     */
+    checksumSha256: Sha256;
+};
+
+export type File = {
+    /**
+     * Идентификатор файла.
+     */
+    id: EntityId;
+    /**
+     * Назначение файла.
+     */
+    purpose: FilePurpose;
+    /**
+     * Текущее состояние файла.
+     */
+    status: FileStatus;
+    /**
+     * Исходное имя файла.
+     */
+    originalName: string;
+    /**
+     * Проверенный MIME-тип файла.
+     */
+    mimeType: string;
+    /**
+     * Проверенный размер файла в байтах.
+     */
+    sizeBytes: number;
+    /**
+     * Проверенная контрольная сумма файла.
+     */
+    checksumSha256: Sha256;
+    /**
+     * Серверное время успешного подтверждения загрузки.
+     */
+    uploadedAt: string;
+};
+
+export type FileDownload = {
+    /**
+     * Короткоживущий подписанный URL скачивания.
+     */
+    downloadUrl: string;
+    /**
+     * Время истечения URL скачивания.
+     */
+    expiresAt: string;
+};
+
+export type ChecklistItemPhoto = {
+    /**
+     * Идентификатор связи фотографии с пунктом.
+     */
+    id: EntityId;
+    /**
+     * Идентификатор пункта чек-листа.
+     */
+    itemId: EntityId;
+    /**
+     * Идентификатор физического файла.
+     */
+    fileId: EntityId;
+    /**
+     * Порядок фотографии внутри пункта.
+     */
+    position: number;
+    /**
+     * Пользователь, создавший upload-сессию фотографии.
+     */
+    uploadedBy: {
+        /**
+         * Идентификатор автора загрузки.
+         */
+        id: EntityId;
+        /**
+         * Отображаемое имя автора загрузки.
+         */
+        fullName: string;
+    };
+    /**
+     * Серверное время подтверждения загрузки файла.
+     */
+    uploadedAt: string;
+};
+
 export type CreateUserWritable = {
     /**
      * Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
@@ -732,6 +893,14 @@ export type Limit = number;
  * Количество пропущенных записей после фильтрации и проверки доступа.
  */
 export type Offset = number;
+
+export type UploadId = EntityId;
+
+export type FileId = EntityId;
+
+export type ItemId = EntityId;
+
+export type PhotoId = EntityId;
 
 export type ListUsersData = {
     body?: never;
@@ -1671,3 +1840,230 @@ export type UpdateChecklistItemResponses = {
 };
 
 export type UpdateChecklistItemResponse = UpdateChecklistItemResponses[keyof UpdateChecklistItemResponses];
+
+export type CreateFileUploadData = {
+    body: CreateFileUpload;
+    path?: never;
+    query?: never;
+    url: '/file-uploads';
+};
+
+export type CreateFileUploadErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Файл превышает допустимый для его назначения размер. Upload-сессия не завершается.
+     */
+    413: ApiError;
+};
+
+export type CreateFileUploadError = CreateFileUploadErrors[keyof CreateFileUploadErrors];
+
+export type CreateFileUploadResponses = {
+    /**
+     * Upload-сессия создана.
+     */
+    201: FileUpload;
+};
+
+export type CreateFileUploadResponse = CreateFileUploadResponses[keyof CreateFileUploadResponses];
+
+export type CompleteFileUploadData = {
+    body: CompleteFileUpload;
+    headers: {
+        /**
+         * Уникальный ключ завершения загрузки.
+         */
+        'Idempotency-Key': string;
+    };
+    path: {
+        uploadId: EntityId;
+    };
+    query?: never;
+    url: '/file-uploads/{uploadId}/completion';
+};
+
+export type CompleteFileUploadErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+    /**
+     * Файл превышает допустимый для его назначения размер. Upload-сессия не завершается.
+     */
+    413: ApiError;
+};
+
+export type CompleteFileUploadError = CompleteFileUploadErrors[keyof CompleteFileUploadErrors];
+
+export type CompleteFileUploadResponses = {
+    /**
+     * Файл успешно загружен.
+     */
+    200: File;
+};
+
+export type CompleteFileUploadResponse = CompleteFileUploadResponses[keyof CompleteFileUploadResponses];
+
+export type GetFileContentData = {
+    body?: never;
+    path: {
+        fileId: EntityId;
+    };
+    query?: never;
+    url: '/files/{fileId}/content';
+};
+
+export type GetFileContentErrors = {
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+};
+
+export type GetFileContentError = GetFileContentErrors[keyof GetFileContentErrors];
+
+export type GetFileContentResponses = {
+    /**
+     * Подписанные данные скачивания.
+     */
+    200: FileDownload;
+};
+
+export type GetFileContentResponse = GetFileContentResponses[keyof GetFileContentResponses];
+
+export type ListChecklistItemPhotosData = {
+    body?: never;
+    path: {
+        itemId: EntityId;
+    };
+    query?: never;
+    url: '/checklist/items/{itemId}/photos';
+};
+
+export type ListChecklistItemPhotosErrors = {
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+};
+
+export type ListChecklistItemPhotosError = ListChecklistItemPhotosErrors[keyof ListChecklistItemPhotosErrors];
+
+export type ListChecklistItemPhotosResponses = {
+    /**
+     * Активные фотографии по порядку.
+     */
+    200: Array<ChecklistItemPhoto>;
+};
+
+export type ListChecklistItemPhotosResponse = ListChecklistItemPhotosResponses[keyof ListChecklistItemPhotosResponses];
+
+export type CreateChecklistItemPhotoData = {
+    body: {
+        /**
+         * Идентификатор предварительно загруженного файла-фотографии.
+         */
+        fileId: EntityId;
+    };
+    path: {
+        itemId: EntityId;
+    };
+    query?: never;
+    url: '/checklist/items/{itemId}/photos';
+};
+
+export type CreateChecklistItemPhotoErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type CreateChecklistItemPhotoError = CreateChecklistItemPhotoErrors[keyof CreateChecklistItemPhotoErrors];
+
+export type CreateChecklistItemPhotoResponses = {
+    /**
+     * Фотография привязана.
+     */
+    201: ChecklistItemPhoto;
+};
+
+export type CreateChecklistItemPhotoResponse = CreateChecklistItemPhotoResponses[keyof CreateChecklistItemPhotoResponses];
+
+export type DeleteChecklistItemPhotoData = {
+    body?: never;
+    path: {
+        photoId: EntityId;
+    };
+    query?: never;
+    url: '/checklist/photos/{photoId}';
+};
+
+export type DeleteChecklistItemPhotoErrors = {
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type DeleteChecklistItemPhotoError = DeleteChecklistItemPhotoErrors[keyof DeleteChecklistItemPhotoErrors];
+
+export type DeleteChecklistItemPhotoResponses = {
+    /**
+     * Фотография удалена.
+     */
+    204: void;
+};
+
+export type DeleteChecklistItemPhotoResponse = DeleteChecklistItemPhotoResponses[keyof DeleteChecklistItemPhotoResponses];

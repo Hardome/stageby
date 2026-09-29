@@ -12,9 +12,9 @@
     "codegen": "pnpm --dir contracts run generate && pnpm --dir api run codegen && pnpm --dir web run codegen",
     "prepare": "lefthook install",
     "dev": "pnpm --dir web exec concurrently --raw -k \"pnpm --dir ../api run dev\" \"pnpm run dev\"",
-    "db:up": "docker compose up -d --wait postgres",
+    "db:up": "docker compose up -d --build --wait postgres minio",
     "db:down": "docker compose down",
-    "db:logs": "docker compose logs --follow postgres"
+    "db:logs": "docker compose logs --follow postgres minio"
   },
   "devDependencies": {
     "lefthook": "2.1.14",

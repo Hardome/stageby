@@ -1,0 +1,456 @@
+paths:
+  /file-uploads:
+    post:
+      operationId: createFileUpload
+      tags:
+        - Files
+      summary: Создать upload-сессию
+      description: Создаёт запись файла и возвращает короткоживущие подписанные данные для прямой загрузки в закрытое S3-совместимое хранилище.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFileUpload"
+      responses:
+        "201":
+          description: Upload-сессия создана.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileUpload"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "413":
+          $ref: ../common/common.yaml#/components/responses/ApiPayloadTooLarge
+  /file-uploads/{uploadId}/completion:
+    parameters:
+      - $ref: "#/components/parameters/UploadId"
+    post:
+      operationId: completeFileUpload
+      tags:
+        - Files
+      summary: Подтвердить загрузку файла
+      description: Проверяет объект в storage по MIME, размеру и SHA-256. Повтор с тем же Idempotency-Key и телом возвращает тот же результат.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Уникальный ключ завершения загрузки.
+          schema:
+            type: string
+            minLength: 16
+            maxLength: 100
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteFileUpload"
+      responses:
+        "200":
+          description: Файл успешно загружен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/File"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+        "413":
+          $ref: ../common/common.yaml#/components/responses/ApiPayloadTooLarge
+  /files/{fileId}/content:
+    parameters:
+      - $ref: "#/components/parameters/FileId"
+    get:
+      operationId: getFileContent
+      tags:
+        - Files
+      summary: Получить файл
+      description: Проверяет доступ и возвращает короткоживущий подписанный URL. Постоянный storage URL не раскрывается.
+      responses:
+        "200":
+          description: Подписанные данные скачивания.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileDownload"
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+  /checklist/items/{itemId}/photos:
+    parameters:
+      - $ref: "#/components/parameters/ItemId"
+    get:
+      operationId: listChecklistItemPhotos
+      tags:
+        - Files
+        - Checklists
+      summary: Фотографии пункта чек-листа
+      responses:
+        "200":
+          description: Активные фотографии по порядку.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChecklistItemPhoto"
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+    post:
+      operationId: createChecklistItemPhoto
+      tags:
+        - Files
+        - Checklists
+      summary: Привязать загруженную фотографию
+      description: Атомарно привязывает фотографию и проверяет лимит двадцать активных фото. Пункт автоматически не выполняется.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - fileId
+              properties:
+                fileId:
+                  description: Идентификатор предварительно загруженного файла-фотографии.
+                  examples:
+                    - 301
+                  $ref: "#/components/schemas/EntityId"
+      responses:
+        "201":
+          description: Фотография привязана.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistItemPhoto"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /checklist/photos/{photoId}:
+    parameters:
+      - $ref: "#/components/parameters/PhotoId"
+    delete:
+      operationId: deleteChecklistItemPhoto
+      tags:
+        - Files
+        - Checklists
+      summary: Удалить фотографию пункта
+      description: Помечает фото удалённым. Если это последнее активное фото выполненного пункта, отметка выполнения снимается в той же транзакции.
+      responses:
+        "204":
+          description: Фотография удалена.
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+components:
+  parameters:
+    UploadId:
+      name: uploadId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/EntityId"
+    FileId:
+      name: fileId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/EntityId"
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/EntityId"
+    PhotoId:
+      name: photoId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/EntityId"
+  schemas:
+    EntityId:
+      type: integer
+      minimum: 1
+      maximum: 2147483647
+      description: Стабильный положительный идентификатор записи.
+      examples:
+        - 301
+    FilePurpose:
+      type: string
+      enum:
+        - project_document
+        - checklist_photo
+        - material_invoice
+      description: Назначение файла, определяющее MIME, размер и правила доступа.
+      examples:
+        - checklist_photo
+    FileStatus:
+      type: string
+      enum:
+        - pending
+        - uploaded
+        - failed
+        - deleted
+      description: Состояние upload-сессии и объекта в файловом хранилище.
+      examples:
+        - uploaded
+    Sha256:
+      type: string
+      pattern: "^[a-f0-9]{64}$"
+      description: SHA-256 содержимого в нижнем регистре, шестнадцатеричная запись.
+      examples:
+        - 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    CreateFileUpload:
+      type: object
+      additionalProperties: false
+      required:
+        - purpose
+        - originalName
+        - mimeType
+        - sizeBytes
+        - checksumSha256
+      properties:
+        purpose:
+          description: Назначение загружаемого файла.
+          examples:
+            - checklist_photo
+          $ref: "#/components/schemas/FilePurpose"
+        originalName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Исходное имя файла без пути на устройстве пользователя.
+          examples:
+            - foundation.jpg
+        mimeType:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Заявленный MIME-тип содержимого.
+          examples:
+            - image/jpeg
+        sizeBytes:
+          type: integer
+          minimum: 1
+          maximum: 52428800
+          description: Заявленный размер содержимого в байтах.
+          examples:
+            - 1048576
+        checksumSha256:
+          description: Ожидаемая контрольная сумма содержимого.
+          examples:
+            - 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          $ref: "#/components/schemas/Sha256"
+    CompleteFileUpload:
+      type: object
+      additionalProperties: false
+      required:
+        - checksumSha256
+      properties:
+        checksumSha256:
+          description: Контрольная сумма отправленного содержимого.
+          examples:
+            - 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          $ref: "#/components/schemas/Sha256"
+    File:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - purpose
+        - status
+        - originalName
+        - mimeType
+        - sizeBytes
+        - checksumSha256
+        - uploadedAt
+      properties:
+        id:
+          description: Идентификатор файла.
+          examples:
+            - 301
+          $ref: "#/components/schemas/EntityId"
+        purpose:
+          description: Назначение файла.
+          examples:
+            - checklist_photo
+          $ref: "#/components/schemas/FilePurpose"
+        status:
+          description: Текущее состояние файла.
+          examples:
+            - uploaded
+          $ref: "#/components/schemas/FileStatus"
+        originalName:
+          type: string
+          description: Исходное имя файла.
+          examples:
+            - foundation.jpg
+        mimeType:
+          type: string
+          description: Проверенный MIME-тип файла.
+          examples:
+            - image/jpeg
+        sizeBytes:
+          type: integer
+          minimum: 1
+          description: Проверенный размер файла в байтах.
+          examples:
+            - 1048576
+        checksumSha256:
+          description: Проверенная контрольная сумма файла.
+          examples:
+            - 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          $ref: "#/components/schemas/Sha256"
+        uploadedAt:
+          type: string
+          format: date-time
+          description: Серверное время успешного подтверждения загрузки.
+          examples:
+            - "2026-09-29T08:15:00Z"
+    FileUpload:
+      type: object
+      additionalProperties: false
+      required:
+        - fileId
+        - status
+        - method
+        - uploadUrl
+        - headers
+        - expiresAt
+      properties:
+        fileId:
+          description: Идентификатор созданной upload-сессии и будущего файла.
+          examples:
+            - 301
+          $ref: "#/components/schemas/EntityId"
+        status:
+          description: Начальное состояние upload-сессии.
+          examples:
+            - pending
+          $ref: "#/components/schemas/FileStatus"
+        method:
+          type: string
+          const: PUT
+          description: HTTP-метод прямой загрузки в storage.
+          examples:
+            - PUT
+        uploadUrl:
+          type: string
+          format: uri
+          description: Короткоживущий подписанный URL загрузки.
+          examples:
+            - "http://localhost:9000/stageby/uploads/example?X-Amz-Signature=example"
+        headers:
+          type: object
+          description: Заголовки, которые клиент обязан передать при загрузке.
+          additionalProperties:
+            type: string
+        expiresAt:
+          type: string
+          format: date-time
+          description: Время истечения подписанного URL и upload-сессии.
+          examples:
+            - "2026-09-29T08:30:00Z"
+    FileDownload:
+      type: object
+      additionalProperties: false
+      required:
+        - downloadUrl
+        - expiresAt
+      properties:
+        downloadUrl:
+          type: string
+          format: uri
+          description: Короткоживущий подписанный URL скачивания.
+          examples:
+            - "http://localhost:9000/stageby/uploads/example?X-Amz-Signature=example"
+        expiresAt:
+          type: string
+          format: date-time
+          description: Время истечения URL скачивания.
+          examples:
+            - "2026-09-29T08:30:00Z"
+    ChecklistItemPhoto:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - itemId
+        - fileId
+        - position
+        - uploadedBy
+        - uploadedAt
+      properties:
+        id:
+          description: Идентификатор связи фотографии с пунктом.
+          examples:
+            - 501
+          $ref: "#/components/schemas/EntityId"
+        itemId:
+          description: Идентификатор пункта чек-листа.
+          examples:
+            - 201
+          $ref: "#/components/schemas/EntityId"
+        fileId:
+          description: Идентификатор физического файла.
+          examples:
+            - 301
+          $ref: "#/components/schemas/EntityId"
+        position:
+          type: integer
+          minimum: 1
+          maximum: 20
+          description: Порядок фотографии внутри пункта.
+          examples:
+            - 1
+        uploadedBy:
+          type: object
+          additionalProperties: false
+          description: Пользователь, создавший upload-сессию фотографии.
+          required:
+            - id
+            - fullName
+          properties:
+            id:
+              description: Идентификатор автора загрузки.
+              examples:
+                - 17
+              $ref: "#/components/schemas/EntityId"
+            fullName:
+              type: string
+              minLength: 1
+              maxLength: 255
+              description: Отображаемое имя автора загрузки.
+              examples:
+                - Иван Петров
+        uploadedAt:
+          type: string
+          format: date-time
+          description: Серверное время подтверждения загрузки файла.
+          examples:
+            - "2026-09-29T08:15:00Z"
