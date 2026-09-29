@@ -2,7 +2,7 @@
 
 import type { RouteHandler } from 'fastify';
 
-import type { AcceptStageData, AcceptStageErrors, AcceptStageResponses, ChangeStageStatusData, ChangeStageStatusErrors, ChangeStageStatusResponses, ConfigureStageChecklistData, ConfigureStageChecklistErrors, ConfigureStageChecklistResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateTodoData, CreateTodoErrors, CreateTodoResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteTodoData, DeleteTodoErrors, DeleteTodoResponses, GetCurrentUserErrors, GetCurrentUserResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetStageChecklistData, GetStageChecklistErrors, GetStageChecklistResponses, GetStageData, GetStageErrors, GetStageResponses, GetTodoData, GetTodoErrors, GetTodoResponses, GetUserData, GetUserErrors, GetUserResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListProjectStagesData, ListProjectStagesErrors, ListProjectStagesResponses, ListStagesData, ListStagesErrors, ListStagesResponses, ListTodosResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutErrors, LogoutResponses, ReturnStageForReworkData, ReturnStageForReworkErrors, ReturnStageForReworkResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, UpdateChecklistItemData, UpdateChecklistItemErrors, UpdateChecklistItemResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateStageData, UpdateStageErrors, UpdateStageResponses, UpdateTodoData, UpdateTodoErrors, UpdateTodoResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen.js';
+import type { AcceptStageData, AcceptStageErrors, AcceptStageResponses, ChangeStageStatusData, ChangeStageStatusErrors, ChangeStageStatusResponses, ConfigureStageChecklistData, ConfigureStageChecklistErrors, ConfigureStageChecklistResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateUserData, CreateUserErrors, CreateUserResponses, GetCurrentUserErrors, GetCurrentUserResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetStageChecklistData, GetStageChecklistErrors, GetStageChecklistResponses, GetStageData, GetStageErrors, GetStageResponses, GetUserData, GetUserErrors, GetUserResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListProjectStagesData, ListProjectStagesErrors, ListProjectStagesResponses, ListStagesData, ListStagesErrors, ListStagesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutErrors, LogoutResponses, ReturnStageForReworkData, ReturnStageForReworkErrors, ReturnStageForReworkResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, UpdateChecklistItemData, UpdateChecklistItemErrors, UpdateChecklistItemResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateStageData, UpdateStageErrors, UpdateStageResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen.js';
 
 export type RouteHandlers = {
     listUsers: RouteHandler<{
@@ -99,25 +99,5 @@ export type RouteHandlers = {
         Body: UpdateChecklistItemData['body'];
         Params: UpdateChecklistItemData['path'];
         Reply: UpdateChecklistItemErrors & UpdateChecklistItemResponses;
-    }>;
-    listTodos: RouteHandler<{
-        Reply: ListTodosResponses;
-    }>;
-    createTodo: RouteHandler<{
-        Body: CreateTodoData['body'];
-        Reply: CreateTodoErrors & CreateTodoResponses;
-    }>;
-    deleteTodo: RouteHandler<{
-        Params: DeleteTodoData['path'];
-        Reply: DeleteTodoErrors & DeleteTodoResponses;
-    }>;
-    getTodo: RouteHandler<{
-        Params: GetTodoData['path'];
-        Reply: GetTodoErrors & GetTodoResponses;
-    }>;
-    updateTodo: RouteHandler<{
-        Body: UpdateTodoData['body'];
-        Params: UpdateTodoData['path'];
-        Reply: UpdateTodoErrors & UpdateTodoResponses;
     }>;
 };

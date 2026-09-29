@@ -43,10 +43,6 @@ export default defineConfig(({ mode }) => ({
         target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
-      '/todos': {
-        target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
-        changeOrigin: true,
-      },
       '/users': {
         bypass: (request) => (request.headers.accept?.includes('text/html') ? '/index.html' : undefined),
         target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',

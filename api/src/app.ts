@@ -6,7 +6,6 @@ import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fas
 import type { Environment } from '#app/config/env';
 import { authModule } from '#app/modules/auth/index';
 import { projectModule } from '#app/modules/projects/index';
-import { todoModule } from '#app/modules/todos/index';
 import { userModule } from '#app/modules/users/index';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerDatabase } from '#app/plugins/database';
@@ -64,7 +63,6 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   });
   await app.register(userModule);
   await app.register(projectModule);
-  await app.register(todoModule);
 
   return app;
 }

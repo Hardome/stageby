@@ -29,17 +29,6 @@ overriding system value
 values
   (1, 1, repeat('a', 64), '2027-01-01 08:00:00+00', '2026-01-01 08:00:00+00');
 
-insert into "todos" (
-  "id",
-  "title",
-  "description",
-  "completed",
-  "createdAt",
-  "updatedAt"
-)
-values
-  ('00000000-0000-4000-8000-000000000001', 'Baseline todo', 'Record from the pre-contracts-rework schema', false, '2026-01-01 09:00:00+00', '2026-01-01 09:00:00+00');
-
 insert into "projects" (
   "id",
   "title",
