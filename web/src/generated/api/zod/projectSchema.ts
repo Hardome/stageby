@@ -8,14 +8,14 @@ import { coordinatesSchema } from './coordinatesSchema'
 
 export const projectSchema = z.object({
   id: z.int().min(1).max(2147483647).describe('Стабильный ID проекта — объекта строительства.').meta({ examples: [101] }),
-  title: z.string().min(1).max(255).describe('Название объекта строительства для отображения.').meta({ examples: ['Дом на Лесной'] }),
   ownerName: z.string().min(1).max(255).describe('Имя клиента или собственника объекта строительства.').meta({ examples: ['Анна Смирнова'] }),
-  address: z.string().min(1).max(1000).nullable().describe('Адрес объекта строительства; null — не указан.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10', ] }),
-  coordinates: z.union([coordinatesSchema, z.null()]).describe('Географические координаты объекта для отображения на карте; null — не указаны.'),
+  address: z.string().min(1).max(1000).describe('Обязательный адрес объекта строительства.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10'] }),
+  coordinates: coordinatesSchema.describe('Обязательные географические координаты объекта для отображения на карте.'),
   cadastralNumber: z.string().min(1).max(100).nullable().describe('Кадастровый номер объекта в текстовом виде; null — не указан.').meta({ examples: ['66:41:0000000:123', ] }),
   houseDesign: z.string().min(1).max(255).nullable().describe('Название варианта дома, например «Семья 67»; null — не указан.').meta({ examples: ['Семья 67', ] }),
   contractLabel: z.string().min(1).max(255).nullable().describe('Текстовый реквизит «договор» из исходной ведомости; null — не указан. Не является идентификатором пользователя.').meta({ examples: ['Договор по объекту «Дом на Лесной»', ] }),
-  dueDate: z.iso.date().nullable().describe('Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана.').meta({ examples: ['2026-12-01', ] }),
+  plannedStartDate: z.iso.date().describe('Плановая дата начала проекта в формате YYYY-MM-DD.').meta({ examples: ['2026-10-05'] }),
+  plannedEndDate: z.iso.date().describe('Плановая дата окончания проекта в формате YYYY-MM-DD, не раньше даты начала.').meta({ examples: ['2027-05-28'] }),
   notes: z.string().min(1).max(5000).nullable().describe('Примечания к проекту; null — отсутствуют.').meta({ examples: ['Въезд на участок со стороны Лесной улицы.', ] }),
   isArchived: z.boolean().describe('Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.').meta({ examples: [false] }),
   createdAt: z.iso.datetime().describe('Дата и время создания записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-20T08:00:00Z'] }),

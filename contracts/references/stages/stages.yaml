@@ -341,19 +341,22 @@ components:
       required:
         - id
         - projectId
-        - projectTitle
+        - projectOwnerName
         - projectAddress
         - projectCoordinates
         - projectIsArchived
         - type
         - title
         - position
+        - canRunInParallel
         - workSubtypes
         - assignee
         - inspector
         - status
         - plannedStartDate
         - plannedEndDate
+        - plannedWorkAmountMinor
+        - plannedMaterialAmountMinor
         - actualStartDate
         - actualEndDate
         - predecessorStageIds
@@ -378,28 +381,23 @@ components:
           type: integer
           minimum: 1
           maximum: 2147483647
-        projectTitle:
+        projectOwnerName:
           examples:
-            - "Дом на Лесной"
-          description: "Название проекта, которому принадлежит этап."
+            - "Анна Смирнова"
+          description: "Имя клиента объекта, необходимое странице «Мои этапы»."
           type: string
           minLength: 1
           maxLength: 255
         projectAddress:
           examples:
             - "Екатеринбург, ул. Лесная, д. 10"
-            - null
-          description: "Адрес объекта строительства для выезда на этап; null — не указан."
-          type:
-            - string
-            - "null"
+          description: "Адрес объекта строительства для выезда на этап."
+          type: string
           minLength: 1
           maxLength: 1000
         projectCoordinates:
-          description: "Координаты объекта строительства для выезда на этап; null — не указаны."
-          anyOf:
-            - $ref: ../projects/projects.yaml#/components/schemas/Coordinates
-            - type: "null"
+          description: "Координаты объекта строительства для выезда на этап."
+          $ref: ../projects/projects.yaml#/components/schemas/Coordinates
         projectIsArchived:
           examples:
             - false
@@ -428,6 +426,11 @@ components:
           minimum: 1
           maximum: 8
           description: Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
+        canRunInParallel:
+          examples:
+            - false
+          type: boolean
+          description: "Признак допустимости параллельного выполнения этапа."
         workSubtypes:
           description: "Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов."
           type: array
@@ -452,21 +455,19 @@ components:
         plannedStartDate:
           examples:
             - "2026-09-21"
-            - null
-          description: "Плановая дата начала этапа в формате YYYY-MM-DD; null — не задана."
-          type:
-            - string
-            - "null"
+          description: "Плановая дата начала этапа в формате YYYY-MM-DD."
+          type: string
           format: date
         plannedEndDate:
           examples:
             - "2026-09-28"
-            - null
-          description: "Плановая дата окончания этапа в формате YYYY-MM-DD; null — не задана. Не раньше планового начала, если обе даты заданы."
-          type:
-            - string
-            - "null"
+          description: "Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала."
+          type: string
           format: date
+        plannedWorkAmountMinor:
+          $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
+        plannedMaterialAmountMinor:
+          $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
         actualStartDate:
           examples:
             - "2026-09-21"

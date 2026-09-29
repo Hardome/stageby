@@ -127,6 +127,9 @@ export const zSession = z.object({
     user: zUser
 });
 
+/**
+ * Географические координаты объекта в десятичных градусах.
+ */
 export const zCoordinates = z.object({
     latitude: z.number().gte(-90).lte(90),
     longitude: z.number().gte(-180).lte(180)
@@ -134,14 +137,14 @@ export const zCoordinates = z.object({
 
 export const zProject = z.object({
     id: z.int().gte(1).lte(2147483647),
-    title: z.string().min(1).max(255),
     ownerName: z.string().min(1).max(255),
-    address: z.string().min(1).max(1000).nullable(),
-    coordinates: zCoordinates.nullable(),
+    address: z.string().min(1).max(1000),
+    coordinates: zCoordinates,
     cadastralNumber: z.string().min(1).max(100).nullable(),
     houseDesign: z.string().min(1).max(255).nullable(),
     contractLabel: z.string().min(1).max(255).nullable(),
-    dueDate: z.iso.date().nullable(),
+    plannedStartDate: z.iso.date(),
+    plannedEndDate: z.iso.date(),
     notes: z.string().min(1).max(5000).nullable(),
     isArchived: z.boolean(),
     createdAt: z.iso.datetime(),
@@ -155,27 +158,50 @@ export const zProjectPage = z.object({
     offset: z.int().gte(0)
 });
 
+/**
+ * Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
+ */
+export const zPlannedMoneyAmountMinor = z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }).nullable();
+
+export const zCreateProjectChecklistItem = z.object({
+    title: z.string().min(1).max(500),
+    photoHint: z.string().min(1).max(1000).nullish()
+});
+
+export const zCreateProjectStage = z.object({
+    type: zStageType,
+    plannedStartDate: z.iso.date(),
+    plannedEndDate: z.iso.date(),
+    canRunInParallel: z.boolean(),
+    assigneeId: z.int().gte(1).lte(2147483647).nullable(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
+    checklistItems: z.array(zCreateProjectChecklistItem).min(1).optional()
+});
+
 export const zCreateProject = z.object({
-    title: z.string().min(1).max(255),
     ownerName: z.string().min(1).max(255),
-    address: z.string().min(1).max(1000).nullish(),
-    coordinates: zCoordinates.nullish(),
+    address: z.string().min(1).max(1000),
+    coordinates: zCoordinates,
     cadastralNumber: z.string().min(1).max(100).nullish(),
     houseDesign: z.string().min(1).max(255).nullish(),
     contractLabel: z.string().min(1).max(255).nullish(),
-    dueDate: z.iso.date().nullish(),
+    plannedStartDate: z.iso.date(),
+    plannedEndDate: z.iso.date(),
+    documentFileIds: z.array(z.int().gte(1).lte(2147483647)),
+    stages: z.array(zCreateProjectStage).min(1).max(8),
     notes: z.string().min(1).max(5000).nullish()
 });
 
 export const zUpdateProject = z.object({
-    title: z.string().min(1).max(255).optional(),
     ownerName: z.string().min(1).max(255).optional(),
-    address: z.string().min(1).max(1000).nullish(),
-    coordinates: zCoordinates.nullish(),
+    address: z.string().min(1).max(1000).optional(),
+    coordinates: zCoordinates.optional(),
     cadastralNumber: z.string().min(1).max(100).nullish(),
     houseDesign: z.string().min(1).max(255).nullish(),
     contractLabel: z.string().min(1).max(255).nullish(),
-    dueDate: z.iso.date().nullish(),
+    plannedStartDate: z.iso.date().optional(),
+    plannedEndDate: z.iso.date().optional(),
     notes: z.string().min(1).max(5000).nullish(),
     isArchived: z.boolean().optional()
 });
@@ -199,9 +225,9 @@ export const zAcceptance = z.object({
 export const zStage = z.object({
     id: z.int().gte(1).lte(2147483647),
     projectId: z.int().gte(1).lte(2147483647),
-    projectTitle: z.string().min(1).max(255),
-    projectAddress: z.string().min(1).max(1000).nullable(),
-    projectCoordinates: zCoordinates.nullable(),
+    projectOwnerName: z.string().min(1).max(255),
+    projectAddress: z.string().min(1).max(1000),
+    projectCoordinates: zCoordinates,
     projectIsArchived: z.boolean(),
     type: zStageType,
     title: z.enum([
@@ -215,12 +241,15 @@ export const zStage = z.object({
         'Отопление'
     ]),
     position: z.int().gte(1).lte(8),
+    canRunInParallel: z.boolean(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30),
     assignee: zUserBrief.nullable(),
     inspector: zUserBrief.nullable(),
     status: zStageStatus,
-    plannedStartDate: z.iso.date().nullable(),
-    plannedEndDate: z.iso.date().nullable(),
+    plannedStartDate: z.iso.date(),
+    plannedEndDate: z.iso.date(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
     actualStartDate: z.iso.date().nullable(),
     actualEndDate: z.iso.date().nullable(),
     predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7),

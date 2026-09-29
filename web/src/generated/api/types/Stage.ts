@@ -5,6 +5,7 @@
 
 import type { Acceptance } from './Acceptance'
 import type { Coordinates } from './Coordinates'
+import type { PlannedMoneyAmountMinor } from './PlannedMoneyAmountMinor'
 import type { StageStatusKey } from './StageStatus'
 import type { StageTypeKey } from './StageType'
 import type { UserBrief } from './UserBrief'
@@ -40,26 +41,26 @@ export type Stage = {
     */
     projectId: number;
     /**
-     * @description Название проекта, которому принадлежит этап.
+     * @description Имя клиента объекта, необходимое странице «Мои этапы».
      * @minLength 1
      * @maxLength 255
-     * @example Дом на Лесной
+     * @example Анна Смирнова
      * @type string
     */
-    projectTitle: string;
+    projectOwnerName: string;
     /**
-     * @description Адрес объекта строительства для выезда на этап; null — не указан.
+     * @description Адрес объекта строительства для выезда на этап.
      * @minLength 1
      * @maxLength 1000
      * @example Екатеринбург, ул. Лесная, д. 10
-     * @example null
      * @type string
     */
-    projectAddress: string | null;
+    projectAddress: string;
     /**
-     * @description Координаты объекта строительства для выезда на этап; null — не указаны.
+     * @description Координаты объекта строительства для выезда на этап.
+     * @type object
     */
-    projectCoordinates: (Coordinates | null);
+    projectCoordinates: Coordinates;
     /**
      * @description Признак архивного проекта. Если true, изменения этапа запрещены.
      * @example false
@@ -87,6 +88,12 @@ export type Stage = {
     */
     position: number;
     /**
+     * @description Признак допустимости параллельного выполнения этапа.
+     * @example false
+     * @type boolean
+    */
+    canRunInParallel: boolean;
+    /**
      * @description Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.
      * @type array
     */
@@ -106,23 +113,43 @@ export type Stage = {
     */
     status: StageStatusKey;
     /**
-     * @description Плановая дата начала этапа в формате YYYY-MM-DD; null — не задана.
+     * @description Плановая дата начала этапа в формате YYYY-MM-DD.
      *
      * Format: `date`
      * @example 2026-09-21
-     * @example null
      * @type string
     */
-    plannedStartDate: string | null;
+    plannedStartDate: string;
     /**
-     * @description Плановая дата окончания этапа в формате YYYY-MM-DD; null — не задана. Не раньше планового начала, если обе даты заданы.
+     * @description Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.
      *
      * Format: `date`
      * @example 2026-09-28
-     * @example null
      * @type string
     */
-    plannedEndDate: string | null;
+    plannedEndDate: string;
+    /**
+     * @description Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
+     *
+     * Format: `int64`
+     * @minLength 0
+     * @example 12500000
+     * @example 0
+     * @example null
+     * @type integer
+    */
+    plannedWorkAmountMinor: PlannedMoneyAmountMinor | null;
+    /**
+     * @description Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
+     *
+     * Format: `int64`
+     * @minLength 0
+     * @example 12500000
+     * @example 0
+     * @example null
+     * @type integer
+    */
+    plannedMaterialAmountMinor: PlannedMoneyAmountMinor | null;
     /**
      * @description Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.
      *

@@ -162,6 +162,9 @@ export type Session = {
     user: User;
 };
 
+/**
+ * Географические координаты объекта в десятичных градусах.
+ */
 export type Coordinates = {
     /**
      * Географическая широта в десятичных градусах, от −90 до 90.
@@ -179,21 +182,17 @@ export type Project = {
      */
     id: number;
     /**
-     * Название объекта строительства для отображения.
-     */
-    title: string;
-    /**
      * Имя клиента или собственника объекта строительства.
      */
     ownerName: string;
     /**
-     * Адрес объекта строительства; null — не указан.
+     * Обязательный адрес объекта строительства.
      */
-    address: string | null;
+    address: string;
     /**
-     * Географические координаты объекта для отображения на карте; null — не указаны.
+     * Обязательные географические координаты объекта для отображения на карте.
      */
-    coordinates: Coordinates | null;
+    coordinates: Coordinates;
     /**
      * Кадастровый номер объекта в текстовом виде; null — не указан.
      */
@@ -207,9 +206,13 @@ export type Project = {
      */
     contractLabel: string | null;
     /**
-     * Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана.
+     * Плановая дата начала проекта в формате YYYY-MM-DD.
      */
-    dueDate: string | null;
+    plannedStartDate: string;
+    /**
+     * Плановая дата окончания проекта в формате YYYY-MM-DD, не раньше даты начала.
+     */
+    plannedEndDate: string;
     /**
      * Примечания к проекту; null — отсутствуют.
      */
@@ -247,23 +250,61 @@ export type ProjectPage = {
     offset: number;
 };
 
-export type CreateProject = {
+/**
+ * Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
+ */
+export type PlannedMoneyAmountMinor = number | null;
+
+export type CreateProjectChecklistItem = {
     /**
-     * Название объекта строительства для отображения.
+     * Название индивидуального пункта чек-листа.
      */
     title: string;
+    /**
+     * Необязательная подсказка о том, что должно быть видно на фотографии.
+     */
+    photoHint?: string | null;
+};
+
+export type CreateProjectStage = {
+    type: StageType;
+    /**
+     * Плановое начало этапа внутри срока проекта.
+     */
+    plannedStartDate: string;
+    /**
+     * Плановое окончание этапа внутри срока проекта, не раньше начала этапа.
+     */
+    plannedEndDate: string;
+    /**
+     * Может ли этап выполняться параллельно с соседними этапами.
+     */
+    canRunInParallel: boolean;
+    /**
+     * Активный мастер этапа; null — мастер пока не назначен.
+     */
+    assigneeId: number | null;
+    plannedWorkAmountMinor: PlannedMoneyAmountMinor;
+    plannedMaterialAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Изменённый индивидуальный список. Если поле отсутствует, копируется активный шаблон типа этапа.
+     */
+    checklistItems?: Array<CreateProjectChecklistItem>;
+};
+
+export type CreateProject = {
     /**
      * Имя клиента или собственника объекта строительства.
      */
     ownerName: string;
     /**
-     * Адрес объекта строительства; null — не указан.
+     * Обязательный адрес объекта строительства.
      */
-    address?: string | null;
+    address: string;
     /**
-     * Географические координаты объекта для отображения на карте; null — не указаны.
+     * Обязательные географические координаты объекта.
      */
-    coordinates?: Coordinates | null;
+    coordinates: Coordinates;
     /**
      * Кадастровый номер объекта в текстовом виде; null — не указан.
      */
@@ -277,9 +318,21 @@ export type CreateProject = {
      */
     contractLabel?: string | null;
     /**
-     * Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана.
+     * Плановая дата начала проекта в формате YYYY-MM-DD.
      */
-    dueDate?: string | null;
+    plannedStartDate: string;
+    /**
+     * Плановая дата окончания проекта в формате YYYY-MM-DD, не раньше даты начала.
+     */
+    plannedEndDate: string;
+    /**
+     * Идентификаторы предварительно успешно загруженных PDF проекта. Пустой список разрешён.
+     */
+    documentFileIds: Array<number>;
+    /**
+     * Выбранные этапы объекта. Типы этапов не повторяются, порядок массива не влияет на position.
+     */
+    stages: Array<CreateProjectStage>;
     /**
      * Примечания к проекту; null — отсутствуют.
      */
@@ -288,21 +341,17 @@ export type CreateProject = {
 
 export type UpdateProject = {
     /**
-     * Название объекта строительства для отображения.
-     */
-    title?: string;
-    /**
      * Имя клиента или собственника объекта строительства.
      */
     ownerName?: string;
     /**
-     * Адрес объекта строительства; null очищает сохранённое значение.
+     * Новый обязательный адрес объекта строительства.
      */
-    address?: string | null;
+    address?: string;
     /**
-     * Географические координаты объекта; null очищает сохранённое значение.
+     * Новые обязательные географические координаты объекта.
      */
-    coordinates?: Coordinates | null;
+    coordinates?: Coordinates;
     /**
      * Кадастровый номер объекта; null очищает сохранённое значение.
      */
@@ -316,9 +365,13 @@ export type UpdateProject = {
      */
     contractLabel?: string | null;
     /**
-     * Плановая дата сдачи объекта в формате YYYY-MM-DD; null очищает сохранённое значение.
+     * Новая плановая дата начала проекта. Все этапы должны остаться внутри срока проекта.
      */
-    dueDate?: string | null;
+    plannedStartDate?: string;
+    /**
+     * Новая плановая дата окончания проекта, не раньше даты начала.
+     */
+    plannedEndDate?: string;
     /**
      * Примечания к проекту; null очищает сохранённое значение.
      */
@@ -373,17 +426,17 @@ export type Stage = {
      */
     projectId: number;
     /**
-     * Название проекта, которому принадлежит этап.
+     * Имя клиента объекта, необходимое странице «Мои этапы».
      */
-    projectTitle: string;
+    projectOwnerName: string;
     /**
-     * Адрес объекта строительства для выезда на этап; null — не указан.
+     * Адрес объекта строительства для выезда на этап.
      */
-    projectAddress: string | null;
+    projectAddress: string;
     /**
-     * Координаты объекта строительства для выезда на этап; null — не указаны.
+     * Координаты объекта строительства для выезда на этап.
      */
-    projectCoordinates: Coordinates | null;
+    projectCoordinates: Coordinates;
     /**
      * Признак архивного проекта. Если true, изменения этапа запрещены.
      */
@@ -398,6 +451,10 @@ export type Stage = {
      */
     position: number;
     /**
+     * Признак допустимости параллельного выполнения этапа.
+     */
+    canRunInParallel: boolean;
+    /**
      * Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.
      */
     workSubtypes: Array<string>;
@@ -411,13 +468,15 @@ export type Stage = {
     inspector: UserBrief | null;
     status: StageStatus;
     /**
-     * Плановая дата начала этапа в формате YYYY-MM-DD; null — не задана.
+     * Плановая дата начала этапа в формате YYYY-MM-DD.
      */
-    plannedStartDate: string | null;
+    plannedStartDate: string;
     /**
-     * Плановая дата окончания этапа в формате YYYY-MM-DD; null — не задана. Не раньше планового начала, если обе даты заданы.
+     * Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.
      */
-    plannedEndDate: string | null;
+    plannedEndDate: string;
+    plannedWorkAmountMinor: PlannedMoneyAmountMinor;
+    plannedMaterialAmountMinor: PlannedMoneyAmountMinor;
     /**
      * Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.
      */

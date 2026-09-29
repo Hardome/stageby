@@ -9,8 +9,8 @@ import { client, withUnwrap } from '../.kubb/client'
 import { createProjectResponseSchema, createProjectErrorSchema } from '../zod/createProjectSchema'
 
 /**
- * @description Только руководитель. Атомарно создаёт проект, по одному этапу каждого фиксированного типа и пустой чек-лист каждого этапа. Статусы created, назначения и даты этапов null, зависимости пустые. Получить этапы: GET /projects/{projectId}/stages. Необязательные поля проекта по умолчанию null; isArchived=false.
- * @summary Создать проект с восемью этапами
+ * @description Только руководитель. В одной транзакции создаёт проект, выбранные этапы и индивидуальные чек-листы. Если checklistItems этапа отсутствует, сервер копирует активный шаблон его типа. Ошибка любого этапа откатывает всю операцию. Защита интерфейса от повторной отправки будет реализована на фронтенде. Идентификаторы файлов относятся к предварительно успешно загруженным PDF проекта.
+ * @summary Составное создание объекта
  * {@link /projects}
  */
 export function createProject<ThrowOnError extends boolean = true>(options: Options<CreateProjectOptions, ThrowOnError>): Unwrappable<RequestResult<CreateProjectResponses, ThrowOnError>> {

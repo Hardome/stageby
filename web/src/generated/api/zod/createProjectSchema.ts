@@ -6,17 +6,20 @@
 import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 import { coordinatesSchema } from './coordinatesSchema'
+import { createProjectStageSchema } from './createProjectStageSchema'
 import { projectSchema } from './projectSchema'
 
 export const createProjectSchema = z.object({
-  title: z.string().min(1).max(255).describe('Название объекта строительства для отображения.').meta({ examples: ['Дом на Лесной'] }),
   ownerName: z.string().min(1).max(255).describe('Имя клиента или собственника объекта строительства.').meta({ examples: ['Анна Смирнова'] }),
-  address: z.string().min(1).max(1000).nullish().describe('Адрес объекта строительства; null — не указан.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10', ] }),
-  coordinates: z.union([coordinatesSchema, z.null()]).optional().describe('Географические координаты объекта для отображения на карте; null — не указаны.'),
+  address: z.string().min(1).max(1000).describe('Обязательный адрес объекта строительства.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10'] }),
+  coordinates: coordinatesSchema.describe('Обязательные географические координаты объекта.'),
   cadastralNumber: z.string().min(1).max(100).nullish().describe('Кадастровый номер объекта в текстовом виде; null — не указан.').meta({ examples: ['66:41:0000000:123', ] }),
   houseDesign: z.string().min(1).max(255).nullish().describe('Название варианта дома, например «Семья 67»; null — не указан.').meta({ examples: ['Семья 67', ] }),
   contractLabel: z.string().min(1).max(255).nullish().describe('Текстовый реквизит «договор» из исходной ведомости; null — не указан. Не является идентификатором пользователя.').meta({ examples: ['Договор по объекту «Дом на Лесной»', ] }),
-  dueDate: z.iso.date().nullish().describe('Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана.').meta({ examples: ['2026-12-01', ] }),
+  plannedStartDate: z.iso.date().describe('Плановая дата начала проекта в формате YYYY-MM-DD.').meta({ examples: ['2026-10-05'] }),
+  plannedEndDate: z.iso.date().describe('Плановая дата окончания проекта в формате YYYY-MM-DD, не раньше даты начала.').meta({ examples: ['2027-05-28'] }),
+  documentFileIds: z.array(z.int().min(1).max(2147483647)).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).describe('Идентификаторы предварительно успешно загруженных PDF проекта. Пустой список разрешён.'),
+  stages: z.array(createProjectStageSchema).min(1).max(8).describe('Выбранные этапы объекта. Типы этапов не повторяются, порядок массива не влияет на position.'),
   notes: z.string().min(1).max(5000).nullish().describe('Примечания к проекту; null — отсутствуют.').meta({ examples: ['Въезд на участок со стороны Лесной улицы.', ] }),
 }).strict()
 
