@@ -68,6 +68,26 @@ paths:
   /todos/{id}:
     $ref: ../todos/todos.yaml#/paths/~1todos~1{id}
 components:
+  schemas:
+    ExpectedVersion:
+      $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
+    StageType:
+      $ref: ../common/common.yaml#/components/schemas/StageType
+    StageStatus:
+      $ref: ../common/common.yaml#/components/schemas/StageStatus
+    ApiErrorCode:
+      $ref: ../common/common.yaml#/components/schemas/ApiErrorCode
+  responses:
+    ApiBadRequest:
+      $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+    ApiUnauthorized:
+      $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+    ApiForbidden:
+      $ref: ../common/common.yaml#/components/responses/ApiForbidden
+    ApiNotFound:
+      $ref: ../common/common.yaml#/components/responses/ApiNotFound
+    ApiConflict:
+      $ref: ../common/common.yaml#/components/responses/ApiConflict
   securitySchemes:
     cookieAuth:
       $ref: ../common/common.yaml#/components/securitySchemes/cookieAuth

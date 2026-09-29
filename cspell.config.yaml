@@ -20,33 +20,33 @@ words:
   - Redocly
   - regnamespace
   - schemaname
-  - shadcn
   - segmentless
+  - shadcn
   - Stageby
   - Steiger
-  - tanstack
   - tablename
+  - tanstack
   - Trixie
   - typname
   - typnamespace
   - typtype
   - автоинкремент
+  - автораспределения
+  - Автосоздание
   - валидировать
   - инвалидируйте
+  - Купидом
+  - Межполевые
   - неаутентифицированный
+  - переиспользованию
   - рефакторинга
   - фичам
   - фиче
   - фичи
   - фичу
-  - хешировать
-  - автораспределения
-  - Автосоздание
-  - Купидом
-  - Межполевые
   - фотоподтверждения
+  - хешировать
   - Штро
-  - автоинкремент
 ignorePaths:
   - "**/node_modules/**"
   - "**/dist/**"

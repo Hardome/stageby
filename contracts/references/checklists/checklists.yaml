@@ -234,11 +234,7 @@ components:
         - items
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
         items:
           type: array
           items:
@@ -265,11 +261,7 @@ components:
         - isCompleted
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
         isCompleted:
           examples:
             - true
