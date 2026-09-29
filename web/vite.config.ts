@@ -37,6 +37,7 @@ export default defineConfig(({ mode }) => ({
     host: '0.0.0.0',
     port: 3000,
     strictPort: true,
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       '/auth': {
         target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
