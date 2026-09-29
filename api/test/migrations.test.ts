@@ -11,27 +11,35 @@ const migrationsFolder = fileURLToPath(new URL('../src/db/migrations', import.me
 const expectedTables = [
   'acceptance_items',
   'acceptances',
+  'checklist_item_photos',
   'checklist_items',
   'checklist_template_items',
   'checklist_templates',
   'checklists',
+  'files',
+  'material_invoices',
+  'material_orders',
   'projects',
   'sessions',
   'stage_predecessors',
   'stage_types',
   'stages',
   'users',
+  'work_payments',
 ];
 
 const expectedIndexes = [
   'acceptance_items_checklist_item_idx',
   'acceptances_decided_by_user_idx',
   'acceptances_stage_decided_at_idx',
+  'checklist_item_photos_file_unique',
   'checklist_items_checklist_position_unique',
   'checklist_items_completed_by_user_idx',
   'checklist_template_items_template_position_unique',
   'checklist_templates_active_stage_type_unique',
   'checklists_stage_id_unique',
+  'material_invoices_order_idx',
+  'material_orders_stage_idx',
   'projects_archived_created_at_idx',
   'sessions_expires_at_idx',
   'sessions_token_hash_unique',
@@ -45,6 +53,7 @@ const expectedIndexes = [
   'stages_status_idx',
   'users_login_unique',
   'users_role_active_idx',
+  'work_payments_stage_idx',
 ];
 
 const expectedForeignKeys = [
@@ -52,11 +61,15 @@ const expectedForeignKeys = [
   'acceptance_items_checklistItemId_checklist_items_id_fk',
   'acceptances_decidedByUserId_users_id_fk',
   'acceptances_stageId_stages_id_fk',
+  'checklist_item_photos_checklistItemId_checklist_items_id_fk',
+  'checklist_item_photos_fileId_files_id_fk',
   'checklist_items_checklistId_checklists_id_fk',
   'checklist_items_completedByUserId_users_id_fk',
   'checklist_template_items_checklistTemplateId_checklist_template',
   'checklist_templates_stageTypeCode_stage_types_code_fk',
   'checklists_stageId_stages_id_fk',
+  'material_invoices_orderId_material_orders_id_fk',
+  'material_orders_stageId_stages_id_fk',
   'sessions_userId_users_id_fk',
   'stage_predecessors_predecessor_fk',
   'stage_predecessors_stage_fk',
@@ -64,6 +77,7 @@ const expectedForeignKeys = [
   'stages_inspectorId_users_id_fk',
   'stages_projectId_projects_id_fk',
   'stages_stageTypeCode_stage_types_code_fk',
+  'work_payments_stageId_stages_id_fk',
 ];
 
 describe('миграции БД', () => {
@@ -169,14 +183,19 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('8');
+      expect(firstJournal.rows[0]?.count).toBe('9');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('41');
-      expect(enumTypes.rows.map((row) => row.name)).toEqual(['acceptance_decision', 'stage_status', 'user_role']);
+      expect(checkConstraints.rows[0]?.count).toBe('44');
+      expect(enumTypes.rows.map((row) => row.name)).toEqual([
+        'acceptance_decision',
+        'file_status',
+        'stage_status',
+        'user_role',
+      ]);
       expect(stageTypes.rows).toEqual([
         { code: 'foundation', title: 'Фундамент', position: 1 },
         { code: 'walls', title: 'Стены', position: 2 },

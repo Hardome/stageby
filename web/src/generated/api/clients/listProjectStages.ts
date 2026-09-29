@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { listProjectStagesResponseSchema, listProjectStagesErrorSchema } from '../zod/listProjectStagesSchema'
 
 /**
- * @description Без пагинации: максимум восемь записей, position ASC. Руководитель и инженер видят все восемь; мастер и приёмщик — только назначенные им. Для существующего проекта вне области доступа возвращается 404.
+ * @description Без пагинации: максимум восемь записей, position ASC. Руководитель видит все восемь; мастер — только назначенные ему. Для существующего проекта вне области доступа возвращается 404.
  * @summary Этапы одного проекта
  * {@link /projects/:projectId/stages}
  */

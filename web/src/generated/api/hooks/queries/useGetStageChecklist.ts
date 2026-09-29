@@ -21,7 +21,7 @@ export function getStageChecklistQueryOptions({ path }: GetStageChecklistOptions
 }
 
 /**
- * @description Один чек-лист на этап, создаётся вместе с проектом. Доступ как к этапу. Первоначально items=[], progressPercent=0, version=1.
+ * @description Один чек-лист на этап, создаётся вместе с проектом. Руководитель видит любой чек-лист, мастер — только чек-лист назначенного ему этапа.
  * @summary Чек-лист этапа
  * {@link /stages/:stageId/checklist}
  */

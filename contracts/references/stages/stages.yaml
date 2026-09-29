@@ -5,8 +5,7 @@ paths:
       tags:
         - Stages
       summary: Список доступных этапов
-      description: Руководитель и инженер видят все этапы; мастер — только где assigneeId равен его ID; приёмщик —
-        только где inspectorId равен его ID. Фильтры AND применяются после ограничения доступа, total не
+      description: Руководитель видит все этапы; мастер — только где assigneeId равен его ID. Фильтры AND применяются после ограничения доступа, total не
         раскрывает чужие записи. По умолчанию без архивных проектов. Сортировка projectId ASC, position ASC,
         id ASC.
       parameters:
@@ -67,8 +66,8 @@ paths:
       tags:
         - Stages
       summary: Этапы одного проекта
-      description: "Без пагинации: максимум восемь записей, position ASC. Руководитель и инженер видят все восемь;
-        мастер и приёмщик — только назначенные им. Для существующего проекта вне области доступа возвращается
+      description: "Без пагинации: максимум восемь записей, position ASC. Руководитель видит все восемь;
+        мастер — только назначенные ему. Для существующего проекта вне области доступа возвращается
         404."
       responses:
         "200":
@@ -121,9 +120,7 @@ paths:
       tags:
         - Stages
       summary: Настроить этап
-      description: Руководитель меняет все входные поля. Инженер — workSubtypes, плановые даты и notes. Назначенный
-        мастер — только notes. Приёмщик — чтение. Назначать можно только активного foreman и активного
-        inspector. Первое назначение автоматически переводит created в assigned; снятие допускается только из
+      description: Руководитель меняет все входные поля. Назначенный мастер — только notes. Назначать можно только активного foreman. Первое назначение автоматически переводит created в assigned; снятие допускается только из
         assigned и возвращает created. В supplied/in_progress/acceptance/rework мастер обязателен,
         допускается его замена руководителем. completed и paid неизменяемы. После начала работ зависимости
         не меняются. Плановое окончание не раньше начала, сравнивается результирующая запись после PATCH.
@@ -168,13 +165,11 @@ paths:
       tags:
         - Stages
       summary: Перевести этап в следующий рабочий статус
-      description: Руководитель или назначенный мастер. Разрешены assigned→supplied→in_progress→acceptance.
-        Повтор того же статуса с актуальной версией возвращает запись без изменения. Пропуск или обратный
-        переход — 409 invalid_transition. Для in_progress нужны активный мастер, непустой чек-лист и
-        completed у всех предшественников; actualStartDate устанавливает сервер. Для acceptance нужны все
-        выполненные пункты и активный назначенный приёмщик. supplied отмечается вручную, учёт материалов пока
-        отсутствует. Возврат на доработку и завершение выполняются только методами приёмки. Архив — 409
-        project_archived.
+      description: Только руководитель. Явно разрешены assigned→supplied при наличии хотя бы одного заказа,
+        хотя бы одного счёта в каждом заказе и доставке всех счетов, а также completed→paid при нулевом остатке
+        по работам. Старт, переход на приёмку и возврат с доработки выполняются автоматически изменением пунктов.
+        Повтор текущего статуса с актуальной версией возвращает запись без изменения. Остальные переходы —
+        409 invalid_transition. Архив — 409 project_archived.
       requestBody:
         required: true
         content:
@@ -213,7 +208,7 @@ paths:
       tags:
         - Stages
       summary: Принять этап
-      description: Назначенный приёмщик или руководитель. Только из acceptance, при всех выполненных пунктах.
+      description: Только руководитель. Только из acceptance, при всех выполненных пунктах.
         Атомарно записывает latestAcceptance с decision=accepted, текущим пользователем, временем и
         correctionDueDate=null; переводит этап в completed и устанавливает actualEndDate. Это электронная
         отметка приёмки, не PDF и не юридически значимая подпись. Архив — 409 project_archived.
@@ -255,10 +250,10 @@ paths:
       tags:
         - Stages
       summary: Вернуть этап на доработку
-      description: Назначенный приёмщик или руководитель. Только из acceptance. Замечание, дата исправления и
+      description: Только руководитель. Только из acceptance. Замечание, дата исправления и
         itemIds обязательны; дата не раньше текущей даты объекта. Интерфейс может предложить сегодня + 2
         календарных дня, сервер не угадывает срок. Все itemIds должны принадлежать этому чек-листу, иначе 400
-        invalid_request. Переводит в in_progress, пишет latestAcceptance с decision=rejected и сбрасывает
+        invalid_request. Переводит в rework, пишет latestAcceptance с decision=rejected и сбрасывает
         только указанные пункты для повторной проверки (completedAt/completedBy=null), остальные отметки
         сохраняет. Увеличивает версии этапа и чек-листа атомарно. Архив — 409 project_archived.
       requestBody:
@@ -351,7 +346,6 @@ components:
         - canRunInParallel
         - workSubtypes
         - assignee
-        - inspector
         - status
         - plannedStartDate
         - plannedEndDate
@@ -445,11 +439,6 @@ components:
           anyOf:
             - $ref: ../users/users.yaml#/components/schemas/UserBrief
             - type: "null"
-        inspector:
-          description: "Назначенный приёмщик этапа; null — приёмщик не назначен."
-          anyOf:
-            - $ref: ../users/users.yaml#/components/schemas/UserBrief
-            - type: "null"
         status:
           $ref: "#/components/schemas/StageStatus"
         plannedStartDate:
@@ -506,13 +495,13 @@ components:
           minLength: 1
           maxLength: 5000
         progressPercent:
-          type: number
+          type: integer
           minimum: 0
           maximum: 100
-          description: 100 × выполненные пункты / все пункты, округление до двух знаков. Пустой чек-лист — 0. Только
+          description: 100 × выполненные пункты / все пункты, округление до целого. Пустой чек-лист — 0. Только
             вычисляется сервером.
           examples:
-            - 33.33
+            - 33
         latestAcceptance:
           description: "Последнее решение о приёмке или доработке; null — решений ещё не было. Полная история проверок не возвращается."
           anyOf:
@@ -599,16 +588,6 @@ components:
             - "null"
           minimum: 1
           maximum: 2147483647
-        inspectorId:
-          examples:
-            - 2
-            - null
-          description: "ID назначаемого приёмщика; null снимает назначение. Снятие приёмщика во время приёмки запрещено."
-          type:
-            - integer
-            - "null"
-          minimum: 1
-          maximum: 2147483647
         workSubtypes:
           description: "Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы."
           type: array
@@ -667,13 +646,12 @@ components:
           $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
         status:
           examples:
-            - "in_progress"
-          description: "Следующий рабочий статус в цепочке assigned → supplied → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены."
+            - "supplied"
+          description: "Явный переход в supplied после комплектации или в paid после полной выплаты работ. Повтор текущего статуса допустим; остальные переходы запрещены."
           type: string
           enum:
             - supplied
-            - in_progress
-            - acceptance
+            - paid
     AcceptStage:
       type: object
       additionalProperties: false

@@ -10,7 +10,7 @@ import { stageSchema } from './stageSchema'
 
 export const changeStageStatusSchema = z.object({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
-  status: z.enum(['supplied', 'in_progress', 'acceptance']).describe('Следующий рабочий статус в цепочке assigned → supplied → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.').meta({ examples: ['in_progress'] }),
+  status: z.enum(['supplied', 'paid']).describe('Явный переход в supplied после комплектации или в paid после полной выплаты работ. Повтор текущего статуса допустим; остальные переходы запрещены.').meta({ examples: ['supplied'] }),
 }).strict()
 
 export type ChangeStageStatusSchemaType = z.infer<typeof changeStageStatusSchema>
