@@ -498,7 +498,7 @@ paths:
       tags:
         - Stages
       summary: Настроить этап
-      description: Руководитель меняет все входные поля. Инженер — workSubtypes, плановые даты и notes. Назначенный мастер — только notes. Приёмщик — чтение. Назначать можно только активного foreman и активного inspector. Первое назначение автоматически переводит created в assigned; снятие допускается только из assigned и возвращает created. В supplied/started/in_progress/acceptance мастер обязателен, допускается его замена руководителем. completed неизменяем. После начала (started и далее) зависимости не меняются. Плановое окончание не раньше начала, сравнивается результирующая запись после PATCH. Предшественники — этапы того же проекта, без себя и циклов; проверка графа и запись выполняются атомарно. Удаление назначенного приёмщика во время acceptance запрещено. Архив — 409 project_archived. Передача запрещённого роли поля — 403, весь запрос отклоняется.
+      description: Руководитель меняет все входные поля. Инженер — workSubtypes, плановые даты и notes. Назначенный мастер — только notes. Приёмщик — чтение. Назначать можно только активного foreman и активного inspector. Первое назначение автоматически переводит created в assigned; снятие допускается только из assigned и возвращает created. В supplied/in_progress/acceptance/rework мастер обязателен, допускается его замена руководителем. completed и paid неизменяемы. После начала работ зависимости не меняются. Плановое окончание не раньше начала, сравнивается результирующая запись после PATCH. Предшественники — этапы того же проекта, без себя и циклов; проверка графа и запись выполняются атомарно. Удаление назначенного приёмщика во время acceptance запрещено. Архив — 409 project_archived. Передача запрещённого роли поля — 403, весь запрос отклоняется.
       requestBody:
         required: true
         content:
@@ -537,7 +537,7 @@ paths:
       tags:
         - Stages
       summary: Перевести этап в следующий рабочий статус
-      description: Руководитель или назначенный мастер. Разрешены assigned→supplied→started→in_progress→acceptance. Повтор того же статуса с актуальной версией возвращает запись без изменения. Пропуск или обратный переход — 409 invalid_transition. Для started нужны активный мастер, чек-лист из 3–4 пунктов и completed у всех предшественников; actualStartDate устанавливает сервер. Для acceptance нужны все выполненные пункты и активный назначенный приёмщик. supplied отмечается вручную, учёт материалов пока отсутствует. Возврат на доработку и завершение выполняются только методами приёмки. Архив — 409 project_archived.
+      description: Руководитель или назначенный мастер. Разрешены assigned→supplied→in_progress→acceptance. Повтор того же статуса с актуальной версией возвращает запись без изменения. Пропуск или обратный переход — 409 invalid_transition. Для in_progress нужны активный мастер, непустой чек-лист и completed у всех предшественников; actualStartDate устанавливает сервер. Для acceptance нужны все выполненные пункты и активный назначенный приёмщик. supplied отмечается вручную, учёт материалов пока отсутствует. Возврат на доработку и завершение выполняются только методами приёмки. Архив — 409 project_archived.
       requestBody:
         required: true
         content:
@@ -782,7 +782,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Todo'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/ApiBadRequest'
   /todos/{id}:
     parameters:
       - $ref: '#/components/parameters/TodoId'
@@ -800,7 +800,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Todo'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/ApiNotFound'
     patch:
       operationId: updateTodo
       tags:
@@ -821,9 +821,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Todo'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/ApiBadRequest'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/ApiNotFound'
     delete:
       operationId: deleteTodo
       tags:
@@ -834,42 +834,67 @@ paths:
         '204':
           description: Todo deleted
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/ApiNotFound'
 components:
-  securitySchemes:
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: stageby_session
-      description: Защищённая HttpOnly cookie серверной сессии из POST /auth/login. Браузер передаёт её автоматически. Сервер проверяет срок, отзыв, активность пользователя и актуальную роль при каждом запросе.
-  parameters:
-    Limit:
-      name: limit
-      in: query
-      required: false
-      description: Размер страницы, от 1 до 100.
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-    Offset:
-      name: offset
-      in: query
-      required: false
-      description: Количество пропущенных записей после фильтрации и проверки доступа.
-      schema:
-        type: integer
-        minimum: 0
-        default: 0
-    TodoId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
   schemas:
+    ExpectedVersion:
+      type: integer
+      minimum: 1
+      examples:
+        - 1
+      description: Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
+    StageType:
+      type: string
+      enum:
+        - foundation
+        - walls
+        - roof
+        - windows
+        - facade
+        - electrical
+        - finishing
+        - heating
+      examples:
+        - foundation
+      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
+    StageStatus:
+      type: string
+      enum:
+        - created
+        - assigned
+        - supplied
+        - in_progress
+        - acceptance
+        - rework
+        - completed
+        - paid
+      examples:
+        - in_progress
+      description: Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
+    ApiErrorCode:
+      type: string
+      enum:
+        - invalid_request
+        - unauthenticated
+        - forbidden
+        - not_found
+        - version_conflict
+        - invalid_transition
+        - idempotency_conflict
+        - login_taken
+        - last_manager
+        - user_in_use
+        - project_archived
+        - unsupported_mime_type
+        - file_too_large
+        - checksum_mismatch
+        - upload_incomplete
+        - upload_expired
+        - photo_limit_exceeded
+        - rate_limited
+      examples:
+        - invalid_request
+      description: Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.
     UserRole:
       examples:
         - foreman
@@ -994,12 +1019,7 @@ components:
           minLength: 1
           maxLength: 255
         code:
-          examples:
-            - invalid_request
-          type: string
-          minLength: 1
-          maxLength: 100
-          description: 'Машинный код: invalid_request, unauthenticated, forbidden, not_found, version_conflict, invalid_transition, login_taken и т. д.'
+          $ref: '#/components/schemas/ApiErrorCode'
         message:
           examples:
             - Плановое окончание не может быть раньше планового начала.
@@ -1503,33 +1523,6 @@ components:
           description: Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.
           type: boolean
       minProperties: 1
-    StageStatus:
-      examples:
-        - in_progress
-      type: string
-      enum:
-        - created
-        - assigned
-        - supplied
-        - started
-        - in_progress
-        - acceptance
-        - completed
-      description: created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту версию.
-    StageType:
-      examples:
-        - foundation
-      type: string
-      enum:
-        - foundation
-        - walls
-        - roof
-        - windows
-        - facade
-        - electrical
-        - plaster
-        - heating
-      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; plaster — Штукатурка; heating — Отопление.
     UserBrief:
       description: Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
       type: object
@@ -1680,7 +1673,7 @@ components:
             - Окна
             - Фасад
             - Электрика
-            - Штукатурка
+            - Отделка
             - Отопление
           description: Название однозначно определяется type и не меняется.
         position:
@@ -1848,11 +1841,7 @@ components:
         - expectedVersion
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: '#/components/schemas/ExpectedVersion'
         assigneeId:
           examples:
             - 1
@@ -1928,19 +1917,14 @@ components:
         - status
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: '#/components/schemas/ExpectedVersion'
         status:
           examples:
             - in_progress
-          description: Следующий рабочий статус в цепочке assigned → supplied → started → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.
+          description: Следующий рабочий статус в цепочке assigned → supplied → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.
           type: string
           enum:
             - supplied
-            - started
             - in_progress
             - acceptance
     AcceptStage:
@@ -1950,11 +1934,7 @@ components:
         - expectedVersion
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: '#/components/schemas/ExpectedVersion'
         comment:
           examples:
             - Работы проверены и приняты без замечаний.
@@ -1975,11 +1955,7 @@ components:
         - itemIds
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: '#/components/schemas/ExpectedVersion'
         comment:
           examples:
             - Устранить замечания по качеству выполнения контрольной точки.
@@ -2119,11 +2095,7 @@ components:
         - items
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: '#/components/schemas/ExpectedVersion'
         items:
           type: array
           items:
@@ -2150,11 +2122,7 @@ components:
         - isCompleted
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: '#/components/schemas/ExpectedVersion'
         isCompleted:
           examples:
             - true
@@ -2230,23 +2198,6 @@ components:
           type:
             - string
             - 'null'
-    Error:
-      type: object
-      additionalProperties: true
-      required:
-        - error
-        - message
-      properties:
-        error:
-          examples:
-            - Не найдено
-          description: Краткое название ошибки HTTP, соответствующее статусу ответа.
-          type: string
-        message:
-          examples:
-            - Задача не найдена
-          description: Описание причины ошибки для человека.
-          type: string
     UpdateTodo:
       type: object
       additionalProperties: false
@@ -2274,7 +2225,7 @@ components:
           type: boolean
   responses:
     ApiBadRequest:
-      description: Некорректные поля, формат, даты или неизвестные параметры.
+      description: Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
       content:
         application/json:
           schema:
@@ -2306,18 +2257,8 @@ components:
             error: Forbidden
             code: forbidden
             message: Недостаточно прав для выполнения операции.
-    ApiConflict:
-      description: Конфликт версии, логина, зависимости или состояния. Изменения не применены.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ApiError'
-          example:
-            error: Conflict
-            code: version_conflict
-            message: Запись была изменена; обновите данные и повторите запрос.
     ApiNotFound:
-      description: Запись не существует либо находится вне доступной пользователю области.
+      description: Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
       content:
         application/json:
           schema:
@@ -2326,6 +2267,16 @@ components:
             error: Not Found
             code: not_found
             message: Запись не найдена или недоступна.
+    ApiConflict:
+      description: Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error: Conflict
+            code: version_conflict
+            message: Запись была изменена; обновите данные и повторите запрос.
     ApiTooManyRequests:
       description: Превышен лимит запросов. Повторите через Retry-After секунд.
       content:
@@ -2342,15 +2293,36 @@ components:
           schema:
             type: integer
             minimum: 1
-    BadRequest:
-      description: Некорректный запрос
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Задача не найдена
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: stageby_session
+      description: Защищённая HttpOnly cookie серверной сессии из POST /auth/login. Браузер передаёт её автоматически. Сервер проверяет срок, отзыв, активность пользователя и актуальную роль при каждом запросе.
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Размер страницы, от 1 до 100.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Количество пропущенных записей после фильтрации и проверки доступа.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    TodoId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
