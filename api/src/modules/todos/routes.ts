@@ -1,10 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 
 import {
+  zApiError,
   zCreateTodoBody,
   zCreateTodoResponse,
   zDeleteTodoPath,
-  zError,
   zGetTodoPath,
   zGetTodoResponse,
   zListTodosResponse,
@@ -21,7 +21,8 @@ const updateTodoBodySchema = zUpdateTodoBody.refine((body) => Object.keys(body).
 });
 
 const notFoundResponse = {
-  error: 'Не найдено',
+  error: 'Not Found',
+  code: 'not_found' as const,
   message: 'Задача не найдена',
 };
 
@@ -80,7 +81,7 @@ export function registerTodoRoutes(app: FastifyInstance, repository: TodoReposit
       body: zCreateTodoBody,
       response: {
         201: zCreateTodoResponse,
-        400: zError,
+        400: zApiError,
       },
     },
     handler: createTodo,
@@ -91,7 +92,7 @@ export function registerTodoRoutes(app: FastifyInstance, repository: TodoReposit
       params: zGetTodoPath,
       response: {
         200: zGetTodoResponse,
-        404: zError,
+        404: zApiError,
       },
     },
     handler: getTodo,
@@ -103,8 +104,8 @@ export function registerTodoRoutes(app: FastifyInstance, repository: TodoReposit
       params: zUpdateTodoPath,
       response: {
         200: zUpdateTodoResponse,
-        400: zError,
-        404: zError,
+        400: zApiError,
+        404: zApiError,
       },
     },
     handler: updateTodo,
@@ -114,7 +115,7 @@ export function registerTodoRoutes(app: FastifyInstance, repository: TodoReposit
     schema: {
       params: zDeleteTodoPath,
       response: {
-        404: zError,
+        404: zApiError,
       },
     },
     handler: deleteTodo,

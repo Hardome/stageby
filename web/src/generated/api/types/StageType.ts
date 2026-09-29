@@ -10,7 +10,7 @@ export const stageType = {
     windows: "windows",
     facade: "facade",
     electrical: "electrical",
-    plaster: "plaster",
+    finishing: "finishing",
     heating: "heating"
 } as const;
 

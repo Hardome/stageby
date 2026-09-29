@@ -5,10 +5,11 @@
 
 import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
+import { expectedVersionSchema } from './expectedVersionSchema'
 import { stageSchema } from './stageSchema'
 
 export const acceptStageSchema = z.object({
-  expectedVersion: z.int().min(1).describe('Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.').meta({ examples: [1] }),
+  expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   comment: z.string().min(1).max(5000).nullish().describe('Необязательный комментарий к приёмке этапа; null — без комментария.').meta({ examples: ['Работы проверены и приняты без замечаний.', ] }),
 }).strict()
 

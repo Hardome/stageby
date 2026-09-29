@@ -4,10 +4,11 @@
 */
 
 import * as z from 'zod'
+import { apiErrorCodeSchema } from './apiErrorCodeSchema'
 
 export const apiErrorSchema = z.object({
   error: z.string().min(1).max(255).describe('Краткое название ошибки HTTP, соответствующее статусу ответа.').meta({ examples: ['Bad Request'] }),
-  code: z.string().min(1).max(100).describe('Машинный код: invalid_request, unauthenticated, forbidden, not_found, version_conflict, invalid_transition, login_taken и т. д.').meta({ examples: ['invalid_request'] }),
+  code: apiErrorCodeSchema.describe('Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.').meta({ examples: ['invalid_request'] }),
   message: z.string().min(1).max(2000).describe('Описание причины ошибки для человека.').meta({ examples: ['Плановое окончание не может быть раньше планового начала.'] }),
   details: z.array(z.object({
     path: z.string().min(1).max(255).describe('Путь к полю: body.plannedEndDate, query.limit и т. п.').meta({ examples: ['body.plannedEndDate'] }),

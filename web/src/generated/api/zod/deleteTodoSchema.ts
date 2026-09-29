@@ -4,7 +4,7 @@
 */
 
 import * as z from 'zod'
-import { errorSchema } from './errorSchema'
+import { apiErrorSchema } from './apiErrorSchema'
 
 export const deleteTodoPathIdSchema = z.uuid()
 
@@ -14,7 +14,7 @@ export const deleteTodoStatus204Schema = z.unknown()
 
 export type DeleteTodoStatus204SchemaType = z.infer<typeof deleteTodoStatus204Schema>
 
-export const deleteTodoStatus404Schema = errorSchema
+export const deleteTodoStatus404Schema = apiErrorSchema
 
 export type DeleteTodoStatus404SchemaType = z.infer<typeof deleteTodoStatus404Schema>
 

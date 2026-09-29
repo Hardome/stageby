@@ -1,5 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
+  boolean,
   check,
   date,
   foreignKey,
@@ -16,27 +18,18 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { projects } from './projects.ts';
+import { stageTypes } from './stage-types.ts';
 import { users } from './users.ts';
-
-export const stageTypeEnum = pgEnum('stage_type', [
-  'foundation',
-  'walls',
-  'roof',
-  'windows',
-  'facade',
-  'electrical',
-  'plaster',
-  'heating',
-]);
 
 export const stageStatusEnum = pgEnum('stage_status', [
   'created',
   'assigned',
   'supplied',
-  'started',
   'in_progress',
   'acceptance',
+  'rework',
   'completed',
+  'paid',
 ]);
 
 export const stages = pgTable(
@@ -46,14 +39,19 @@ export const stages = pgTable(
     projectId: integer()
       .notNull()
       .references(() => projects.id, { onDelete: 'cascade' }),
-    type: stageTypeEnum().notNull(),
+    stageTypeCode: varchar({ length: 50 })
+      .notNull()
+      .references(() => stageTypes.code, { onDelete: 'restrict' }),
     position: integer().notNull(),
+    canRunInParallel: boolean().notNull().default(false),
     workSubtypes: varchar({ length: 255 }).array().notNull().default(sql`'{}'::varchar[]`),
     assigneeId: integer().references(() => users.id, { onDelete: 'restrict' }),
     inspectorId: integer().references(() => users.id, { onDelete: 'restrict' }),
     status: stageStatusEnum().notNull().default('created'),
-    plannedStartDate: date(),
-    plannedEndDate: date(),
+    plannedStartDate: date().notNull(),
+    plannedEndDate: date().notNull(),
+    plannedWorkAmountMinor: bigint({ mode: 'number' }),
+    plannedMaterialAmountMinor: bigint({ mode: 'number' }),
     actualStartDate: date(),
     actualEndDate: date(),
     notes: text(),
@@ -62,22 +60,23 @@ export const stages = pgTable(
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex('stages_project_type_unique').on(table.projectId, table.type),
+    uniqueIndex('stages_project_type_unique').on(table.projectId, table.stageTypeCode),
     uniqueIndex('stages_project_position_unique').on(table.projectId, table.position),
     unique('stages_project_id_id_unique').on(table.projectId, table.id),
     index('stages_assignee_status_idx').on(table.assigneeId, table.status),
     index('stages_inspector_status_idx').on(table.inspectorId, table.status),
     index('stages_status_idx').on(table.status),
     check('stages_position_check', sql`${table.position} between 1 and 8`),
-    check(
-      'stages_type_position_check',
-      sql`(${table.type}, ${table.position}) in (('foundation', 1), ('walls', 2), ('roof', 3), ('windows', 4), ('facade', 5), ('electrical', 6), ('plaster', 7), ('heating', 8))`,
-    ),
     check('stages_work_subtypes_count_check', sql`cardinality(${table.workSubtypes}) <= 30`),
     check('stages_work_subtypes_no_null_check', sql`array_position(${table.workSubtypes}, null) is null`),
+    check('stages_planned_dates_check', sql`${table.plannedEndDate} >= ${table.plannedStartDate}`),
     check(
-      'stages_planned_dates_check',
-      sql`${table.plannedStartDate} is null or ${table.plannedEndDate} is null or ${table.plannedEndDate} >= ${table.plannedStartDate}`,
+      'stages_planned_work_amount_check',
+      sql`${table.plannedWorkAmountMinor} is null or ${table.plannedWorkAmountMinor} >= 0`,
+    ),
+    check(
+      'stages_planned_material_amount_check',
+      sql`${table.plannedMaterialAmountMinor} is null or ${table.plannedMaterialAmountMinor} >= 0`,
     ),
     check('stages_notes_not_blank_check', sql`${table.notes} is null or btrim(${table.notes}) <> ''`),
     check('stages_notes_length_check', sql`${table.notes} is null or char_length(${table.notes}) <= 5000`),

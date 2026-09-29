@@ -722,6 +722,5 @@ components:
             minimum: 1
             maximum: 2147483647
           minItems: 1
-          maxItems: 4
           uniqueItems: true
           description: Пункты текущего чек-листа, требующие повторного выполнения.

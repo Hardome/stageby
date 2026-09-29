@@ -3,7 +3,7 @@
 * Do not edit manually.
 */
 
-import type { Error } from './Error'
+import type { ApiError } from './ApiError'
 import type { Todo } from './Todo'
 
 export type GetTodoPath = {
@@ -17,7 +17,7 @@ export type GetTodoPath = {
 
 export type GetTodoStatus200 = Todo;
 
-export type GetTodoStatus404 = Error;
+export type GetTodoStatus404 = ApiError;
 
 export type GetTodoOptions = {
     body?: never;

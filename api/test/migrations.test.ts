@@ -12,10 +12,13 @@ const expectedTables = [
   'acceptance_items',
   'acceptances',
   'checklist_items',
+  'checklist_template_items',
+  'checklist_templates',
   'checklists',
   'projects',
   'sessions',
   'stage_predecessors',
+  'stage_types',
   'stages',
   'todos',
   'users',
@@ -27,12 +30,15 @@ const expectedIndexes = [
   'acceptances_stage_decided_at_idx',
   'checklist_items_checklist_position_unique',
   'checklist_items_completed_by_user_idx',
+  'checklist_template_items_template_position_unique',
+  'checklist_templates_active_stage_type_unique',
   'checklists_stage_id_unique',
   'projects_archived_created_at_idx',
   'sessions_expires_at_idx',
   'sessions_token_hash_unique',
   'sessions_user_id_idx',
   'stage_predecessors_predecessor_idx',
+  'stage_types_position_unique',
   'stages_assignee_status_idx',
   'stages_inspector_status_idx',
   'stages_project_position_unique',
@@ -49,6 +55,8 @@ const expectedForeignKeys = [
   'acceptances_stageId_stages_id_fk',
   'checklist_items_checklistId_checklists_id_fk',
   'checklist_items_completedByUserId_users_id_fk',
+  'checklist_template_items_checklistTemplateId_checklist_template',
+  'checklist_templates_stageTypeCode_stage_types_code_fk',
   'checklists_stageId_stages_id_fk',
   'sessions_userId_users_id_fk',
   'stage_predecessors_predecessor_fk',
@@ -56,6 +64,7 @@ const expectedForeignKeys = [
   'stages_assigneeId_users_id_fk',
   'stages_inspectorId_users_id_fk',
   'stages_projectId_projects_id_fk',
+  'stages_stageTypeCode_stage_types_code_fk',
 ];
 
 describe('миграции БД', () => {
@@ -107,19 +116,87 @@ describe('миграции БД', () => {
       const enumTypes = await temporaryPool.query<{ name: string }>(
         "select typname as name from pg_type where typtype = 'e' and typnamespace = 'public'::regnamespace order by typname",
       );
+      const stageTypes = await temporaryPool.query<{ code: string; title: string; position: number }>(
+        'select code, title, position from stage_types order by position',
+      );
+      const templateItemCounts = await temporaryPool.query<{ code: string; count: number }>(`
+        select stage_type."code", count(item."id")::int as count
+        from stage_types stage_type
+        join checklist_templates template on template."stageTypeCode" = stage_type."code" and template."isActive"
+        join checklist_template_items item on item."checklistTemplateId" = template."id"
+        group by stage_type."code", stage_type."position"
+        order by stage_type."position"
+      `);
+      const project = await temporaryPool.query<{ id: number }>(`
+        insert into projects (
+          "ownerName", "address", "latitude", "longitude", "plannedStartDate", "plannedEndDate"
+        ) values ('Клиент', 'Тестовый адрес', 56.84, 60.61, '2026-01-01', '2026-12-31')
+        returning id
+      `);
+      const projectId = project.rows[0]?.id;
+      await temporaryPool.query(`update stage_types set "isActive" = false where code = 'foundation'`);
+      await expect(
+        temporaryPool.query(
+          `insert into stages ("projectId", "stageTypeCode", position, "plannedStartDate", "plannedEndDate")
+           values ($1, 'foundation', 1, '2026-01-01', '2026-01-31')`,
+          [projectId],
+        ),
+      ).rejects.toMatchObject({ code: '23514' });
+      await temporaryPool.query(`update stage_types set "isActive" = true where code = 'foundation'`);
+      await temporaryPool.query(
+        `insert into stages ("projectId", "stageTypeCode", position, "plannedStartDate", "plannedEndDate")
+         values ($1, 'foundation', 1, '2026-01-01', '2026-01-31')`,
+        [projectId],
+      );
+      await temporaryPool.query(`update stage_types set "isActive" = false where code = 'foundation'`);
+      const retainedInactiveStage = await temporaryPool.query<{ count: number }>(
+        `select count(*)::int as count from stages where "projectId" = $1 and "stageTypeCode" = 'foundation'`,
+        [projectId],
+      );
+      expect(retainedInactiveStage.rows[0]?.count).toBe(1);
+      await expect(
+        temporaryPool.query(
+          `insert into stages ("projectId", "stageTypeCode", position, "plannedStartDate", "plannedEndDate")
+           values ($1, 'walls', 2, '2025-12-31', '2026-01-31')`,
+          [projectId],
+        ),
+      ).rejects.toMatchObject({ code: '23514' });
+      await expect(
+        temporaryPool.query(
+          `insert into stages (
+             "projectId", "stageTypeCode", position, "plannedStartDate", "plannedEndDate", "plannedWorkAmountMinor"
+           ) values ($1, 'walls', 2, '2026-02-01', '2026-02-28', -100)`,
+          [projectId],
+        ),
+      ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('4');
+      expect(firstJournal.rows[0]?.count).toBe('6');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('33');
-      expect(enumTypes.rows.map((row) => row.name)).toEqual([
-        'acceptance_decision',
-        'stage_status',
-        'stage_type',
-        'user_role',
+      expect(checkConstraints.rows[0]?.count).toBe('40');
+      expect(enumTypes.rows.map((row) => row.name)).toEqual(['acceptance_decision', 'stage_status', 'user_role']);
+      expect(stageTypes.rows).toEqual([
+        { code: 'foundation', title: 'Фундамент', position: 1 },
+        { code: 'walls', title: 'Стены', position: 2 },
+        { code: 'roof', title: 'Крыша', position: 3 },
+        { code: 'windows', title: 'Окна', position: 4 },
+        { code: 'facade', title: 'Фасад', position: 5 },
+        { code: 'electrical', title: 'Электрика', position: 6 },
+        { code: 'finishing', title: 'Отделка', position: 7 },
+        { code: 'heating', title: 'Отопление', position: 8 },
+      ]);
+      expect(templateItemCounts.rows.map(({ code, count }) => [code, count])).toEqual([
+        ['foundation', 4],
+        ['walls', 5],
+        ['roof', 7],
+        ['windows', 2],
+        ['facade', 3],
+        ['electrical', 1],
+        ['finishing', 2],
+        ['heating', 1],
       ]);
     } finally {
       await temporaryPool?.end();

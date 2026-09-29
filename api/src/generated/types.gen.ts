@@ -5,6 +5,26 @@ export type ClientOptions = {
 };
 
 /**
+ * Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
+ */
+export type ExpectedVersion = number;
+
+/**
+ * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
+ */
+export type StageType = 'foundation' | 'walls' | 'roof' | 'windows' | 'facade' | 'electrical' | 'finishing' | 'heating';
+
+/**
+ * Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
+ */
+export type StageStatus = 'created' | 'assigned' | 'supplied' | 'in_progress' | 'acceptance' | 'rework' | 'completed' | 'paid';
+
+/**
+ * Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.
+ */
+export type ApiErrorCode = 'invalid_request' | 'unauthenticated' | 'forbidden' | 'not_found' | 'version_conflict' | 'invalid_transition' | 'idempotency_conflict' | 'login_taken' | 'last_manager' | 'user_in_use' | 'project_archived' | 'unsupported_mime_type' | 'file_too_large' | 'checksum_mismatch' | 'upload_incomplete' | 'upload_expired' | 'photo_limit_exceeded' | 'rate_limited';
+
+/**
  * manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
  */
 export type UserRole = 'manager' | 'estimator' | 'foreman' | 'inspector';
@@ -68,10 +88,7 @@ export type ApiError = {
      * Краткое название ошибки HTTP, соответствующее статусу ответа.
      */
     error: string;
-    /**
-     * Машинный код: invalid_request, unauthenticated, forbidden, not_found, version_conflict, invalid_transition, login_taken и т. д.
-     */
-    code: string;
+    code: ApiErrorCode;
     /**
      * Описание причины ошибки для человека.
      */
@@ -313,16 +330,6 @@ export type UpdateProject = {
 };
 
 /**
- * created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту версию.
- */
-export type StageStatus = 'created' | 'assigned' | 'supplied' | 'started' | 'in_progress' | 'acceptance' | 'completed';
-
-/**
- * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; plaster — Штукатурка; heating — Отопление.
- */
-export type StageType = 'foundation' | 'walls' | 'roof' | 'windows' | 'facade' | 'electrical' | 'plaster' | 'heating';
-
-/**
  * Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
  */
 export type UserBrief = {
@@ -385,7 +392,7 @@ export type Stage = {
     /**
      * Название однозначно определяется type и не меняется.
      */
-    title: 'Фундамент' | 'Стены' | 'Крыша' | 'Окна' | 'Фасад' | 'Электрика' | 'Штукатурка' | 'Отопление';
+    title: 'Фундамент' | 'Стены' | 'Крыша' | 'Окна' | 'Фасад' | 'Электрика' | 'Отделка' | 'Отопление';
     /**
      * Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
      */
@@ -476,10 +483,7 @@ export type ProjectStages = {
 };
 
 export type UpdateStage = {
-    /**
-     * Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
-     */
-    expectedVersion: number;
+    expectedVersion: ExpectedVersion;
     /**
      * ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
      */
@@ -511,21 +515,15 @@ export type UpdateStage = {
 };
 
 export type ChangeStageStatus = {
+    expectedVersion: ExpectedVersion;
     /**
-     * Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+     * Следующий рабочий статус в цепочке assigned → supplied → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.
      */
-    expectedVersion: number;
-    /**
-     * Следующий рабочий статус в цепочке assigned → supplied → started → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.
-     */
-    status: 'supplied' | 'started' | 'in_progress' | 'acceptance';
+    status: 'supplied' | 'in_progress' | 'acceptance';
 };
 
 export type AcceptStage = {
-    /**
-     * Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
-     */
-    expectedVersion: number;
+    expectedVersion: ExpectedVersion;
     /**
      * Необязательный комментарий к приёмке этапа; null — без комментария.
      */
@@ -533,10 +531,7 @@ export type AcceptStage = {
 };
 
 export type RejectStage = {
-    /**
-     * Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
-     */
-    expectedVersion: number;
+    expectedVersion: ExpectedVersion;
     /**
      * Обязательное замечание с причиной возврата этапа на доработку.
      */
@@ -561,6 +556,10 @@ export type ChecklistItem = {
      */
     title: string;
     /**
+     * Необязательная подсказка из шаблона о том, что должно быть видно на фотографии.
+     */
+    photoHint: string | null;
+    /**
      * Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.
      */
     position: number;
@@ -568,6 +567,10 @@ export type ChecklistItem = {
      * Признак выполнения контрольной точки.
      */
     isCompleted: boolean;
+    /**
+     * Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.
+     */
+    requiresRework: boolean;
     /**
      * Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.
      */
@@ -588,7 +591,7 @@ export type Checklist = {
      */
     stageId: number;
     /**
-     * Пустой новый чек-лист либо 3–4 пункта. Порядок position ASC.
+     * Пункты индивидуального чек-листа в порядке position ASC; верхнего ограничения нет.
      */
     items: Array<ChecklistItem>;
     /**
@@ -610,10 +613,7 @@ export type Checklist = {
 };
 
 export type ConfigureChecklist = {
-    /**
-     * Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
-     */
-    expectedVersion: number;
+    expectedVersion: ExpectedVersion;
     /**
      * Порядок массива определяет position. Равный вес каждого пункта.
      */
@@ -622,14 +622,15 @@ export type ConfigureChecklist = {
          * Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
          */
         title: string;
+        /**
+         * Необязательная фотоподсказка; null удаляет подсказку.
+         */
+        photoHint?: string | null;
     }>;
 };
 
 export type UpdateChecklistItem = {
-    /**
-     * Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
-     */
-    expectedVersion: number;
+    expectedVersion: ExpectedVersion;
     /**
      * Новое состояние пункта. true отмечает выполнение, false снимает отметку; сервер заполняет или очищает completedAt и completedBy и пересчитывает прогресс.
      */
@@ -672,18 +673,6 @@ export type CreateTodo = {
      * Подробное описание задачи; null — описание отсутствует.
      */
     description?: string | null;
-};
-
-export type Error = {
-    /**
-     * Краткое название ошибки HTTP, соответствующее статусу ответа.
-     */
-    error: string;
-    /**
-     * Описание причины ошибки для человека.
-     */
-    message: string;
-    [key: string]: unknown;
 };
 
 export type UpdateTodo = {
@@ -774,7 +763,7 @@ export type ListUsersData = {
 
 export type ListUsersErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -807,7 +796,7 @@ export type CreateUserData = {
 
 export type CreateUserErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -819,7 +808,7 @@ export type CreateUserErrors = {
      */
     403: ApiError;
     /**
-     * Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -849,7 +838,7 @@ export type GetUserData = {
 
 export type GetUserErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -861,7 +850,7 @@ export type GetUserErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
 };
@@ -891,7 +880,7 @@ export type UpdateUserData = {
 
 export type UpdateUserErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -903,11 +892,11 @@ export type UpdateUserErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -937,7 +926,7 @@ export type SetUserPasswordData = {
 
 export type SetUserPasswordErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -949,7 +938,7 @@ export type SetUserPasswordErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
 };
@@ -974,7 +963,7 @@ export type LoginData = {
 
 export type LoginErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1082,7 +1071,7 @@ export type ListProjectsData = {
 
 export type ListProjectsErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1115,7 +1104,7 @@ export type CreateProjectData = {
 
 export type CreateProjectErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1153,7 +1142,7 @@ export type GetProjectData = {
 
 export type GetProjectErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1165,7 +1154,7 @@ export type GetProjectErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
 };
@@ -1195,7 +1184,7 @@ export type UpdateProjectData = {
 
 export type UpdateProjectErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1207,7 +1196,7 @@ export type UpdateProjectErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
 };
@@ -1257,7 +1246,7 @@ export type ListStagesData = {
 
 export type ListStagesErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1291,7 +1280,7 @@ export type ListProjectStagesData = {
 
 export type ListProjectStagesErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1303,7 +1292,7 @@ export type ListProjectStagesErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
 };
@@ -1333,7 +1322,7 @@ export type GetStageData = {
 
 export type GetStageErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1345,7 +1334,7 @@ export type GetStageErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
 };
@@ -1375,7 +1364,7 @@ export type UpdateStageData = {
 
 export type UpdateStageErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1387,11 +1376,11 @@ export type UpdateStageErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -1421,7 +1410,7 @@ export type ChangeStageStatusData = {
 
 export type ChangeStageStatusErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1433,11 +1422,11 @@ export type ChangeStageStatusErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -1467,7 +1456,7 @@ export type AcceptStageData = {
 
 export type AcceptStageErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1479,11 +1468,11 @@ export type AcceptStageErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -1513,7 +1502,7 @@ export type ReturnStageForReworkData = {
 
 export type ReturnStageForReworkErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1525,11 +1514,11 @@ export type ReturnStageForReworkErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -1559,7 +1548,7 @@ export type GetStageChecklistData = {
 
 export type GetStageChecklistErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1571,7 +1560,7 @@ export type GetStageChecklistErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
 };
@@ -1601,7 +1590,7 @@ export type ConfigureStageChecklistData = {
 
 export type ConfigureStageChecklistErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1613,11 +1602,11 @@ export type ConfigureStageChecklistErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -1651,7 +1640,7 @@ export type UpdateChecklistItemData = {
 
 export type UpdateChecklistItemErrors = {
     /**
-     * Некорректные поля, формат, даты или неизвестные параметры.
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
     400: ApiError;
     /**
@@ -1663,11 +1652,11 @@ export type UpdateChecklistItemErrors = {
      */
     403: ApiError;
     /**
-     * Запись не существует либо находится вне доступной пользователю области.
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости или состояния. Изменения не применены.
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -1708,9 +1697,9 @@ export type CreateTodoData = {
 
 export type CreateTodoErrors = {
     /**
-     * Некорректный запрос
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
-    400: Error;
+    400: ApiError;
 };
 
 export type CreateTodoError = CreateTodoErrors[keyof CreateTodoErrors];
@@ -1735,9 +1724,9 @@ export type DeleteTodoData = {
 
 export type DeleteTodoErrors = {
     /**
-     * Задача не найдена
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
-    404: Error;
+    404: ApiError;
 };
 
 export type DeleteTodoError = DeleteTodoErrors[keyof DeleteTodoErrors];
@@ -1762,9 +1751,9 @@ export type GetTodoData = {
 
 export type GetTodoErrors = {
     /**
-     * Задача не найдена
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
-    404: Error;
+    404: ApiError;
 };
 
 export type GetTodoError = GetTodoErrors[keyof GetTodoErrors];
@@ -1789,13 +1778,13 @@ export type UpdateTodoData = {
 
 export type UpdateTodoErrors = {
     /**
-     * Некорректный запрос
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
      */
-    400: Error;
+    400: ApiError;
     /**
-     * Задача не найдена
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
-    404: Error;
+    404: ApiError;
 };
 
 export type UpdateTodoError = UpdateTodoErrors[keyof UpdateTodoErrors];
