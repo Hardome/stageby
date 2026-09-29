@@ -42,7 +42,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Todo'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
   /todos/{id}:
     parameters:
       - $ref: '#/components/parameters/TodoId'
@@ -59,7 +59,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Todo'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
     patch:
       operationId: updateTodo
       tags: [Todos]
@@ -79,9 +79,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Todo'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
     delete:
       operationId: deleteTodo
       tags: [Todos]
@@ -91,7 +91,7 @@ paths:
         '204':
           description: Todo deleted
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
 components:
   parameters:
     TodoId:
@@ -101,19 +101,6 @@ components:
       schema:
         type: string
         format: uuid
-  responses:
-    BadRequest:
-      description: Некорректный запрос
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Задача не найдена
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
     Todo:
       type: object
@@ -210,20 +197,3 @@ components:
             - false
           description: "Признак завершённой задачи."
           type: boolean
-    Error:
-      type: object
-      additionalProperties: true
-      required:
-        - error
-        - message
-      properties:
-        error:
-          examples:
-            - "Не найдено"
-          description: "Краткое название ошибки HTTP, соответствующее статусу ответа."
-          type: string
-        message:
-          examples:
-            - "Задача не найдена"
-          description: "Описание причины ошибки для человека."
-          type: string

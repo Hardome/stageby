@@ -124,8 +124,8 @@ paths:
       description: Руководитель меняет все входные поля. Инженер — workSubtypes, плановые даты и notes. Назначенный
         мастер — только notes. Приёмщик — чтение. Назначать можно только активного foreman и активного
         inspector. Первое назначение автоматически переводит created в assigned; снятие допускается только из
-        assigned и возвращает created. В supplied/started/in_progress/acceptance мастер обязателен,
-        допускается его замена руководителем. completed неизменяем. После начала (started и далее) зависимости
+        assigned и возвращает created. В supplied/in_progress/acceptance/rework мастер обязателен,
+        допускается его замена руководителем. completed и paid неизменяемы. После начала работ зависимости
         не меняются. Плановое окончание не раньше начала, сравнивается результирующая запись после PATCH.
         Предшественники — этапы того же проекта, без себя и циклов; проверка графа и запись выполняются
         атомарно. Удаление назначенного приёмщика во время acceptance запрещено. Архив — 409 project_archived.
@@ -168,9 +168,9 @@ paths:
       tags:
         - Stages
       summary: Перевести этап в следующий рабочий статус
-      description: Руководитель или назначенный мастер. Разрешены assigned→supplied→started→in_progress→acceptance.
+      description: Руководитель или назначенный мастер. Разрешены assigned→supplied→in_progress→acceptance.
         Повтор того же статуса с актуальной версией возвращает запись без изменения. Пропуск или обратный
-        переход — 409 invalid_transition. Для started нужны активный мастер, чек-лист из 3–4 пунктов и
+        переход — 409 invalid_transition. Для in_progress нужны активный мастер, непустой чек-лист и
         completed у всех предшественников; actualStartDate устанавливает сервер. Для acceptance нужны все
         выполненные пункты и активный назначенный приёмщик. supplied отмечается вручную, учёт материалов пока
         отсутствует. Возврат на доработку и завершение выполняются только методами приёмки. Архив — 409
@@ -287,35 +287,9 @@ paths:
 components:
   schemas:
     StageType:
-      examples:
-        - "foundation"
-      type: string
-      enum:
-        - foundation
-        - walls
-        - roof
-        - windows
-        - facade
-        - electrical
-        - plaster
-        - heating
-      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical —
-        Электрика; plaster — Штукатурка; heating — Отопление.
+      $ref: ../common/common.yaml#/components/schemas/StageType
     StageStatus:
-      examples:
-        - "in_progress"
-      type: string
-      enum:
-        - created
-        - assigned
-        - supplied
-        - started
-        - in_progress
-        - acceptance
-        - completed
-      description: created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В
-        работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту
-        версию.
+      $ref: ../common/common.yaml#/components/schemas/StageStatus
     Acceptance:
       type: object
       additionalProperties: false
@@ -444,7 +418,7 @@ components:
             - Окна
             - Фасад
             - Электрика
-            - Штукатурка
+            - Отделка
             - Отопление
           description: Название однозначно определяется type и не меняется.
         position:
@@ -613,11 +587,7 @@ components:
         - expectedVersion
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
         assigneeId:
           examples:
             - 1
@@ -693,19 +663,14 @@ components:
         - status
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
         status:
           examples:
             - "in_progress"
-          description: "Следующий рабочий статус в цепочке assigned → supplied → started → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены."
+          description: "Следующий рабочий статус в цепочке assigned → supplied → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены."
           type: string
           enum:
             - supplied
-            - started
             - in_progress
             - acceptance
     AcceptStage:
@@ -715,11 +680,7 @@ components:
         - expectedVersion
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
         comment:
           examples:
             - "Работы проверены и приняты без замечаний."
@@ -740,11 +701,7 @@ components:
         - itemIds
       properties:
         expectedVersion:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
         comment:
           examples:
             - "Устранить замечания по качеству выполнения контрольной точки."
