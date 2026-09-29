@@ -7,6 +7,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { parseEnvironment } from '#app/config/env';
 import { checklistItems, checklists } from '#app/db/schema/checklists';
+import { files, projectDocuments } from '#app/db/schema/files';
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
@@ -33,6 +34,7 @@ const stageTypes: StageType[] = [
 ];
 const createdUserIds: number[] = [];
 const createdProjectIds: number[] = [];
+const createdFileIds: number[] = [];
 let passwordHash: string;
 
 const projectsTestModule: FastifyPluginAsync = async (app) => {
@@ -59,6 +61,10 @@ afterEach(async () => {
   if (createdProjectIds.length > 0) {
     await app.db.delete(projects).where(inArray(projects.id, createdProjectIds));
     createdProjectIds.length = 0;
+  }
+  if (createdFileIds.length > 0) {
+    await app.db.delete(files).where(inArray(files.id, createdFileIds));
+    createdFileIds.length = 0;
   }
   if (createdUserIds.length > 0) {
     await app.db.delete(users).where(inArray(users.id, createdUserIds));
@@ -158,8 +164,27 @@ describe('Composite project creation', () => {
   it('создаёт только выбранные этапы и сохраняет назначение, параллельность и планы', async () => {
     const manager = await createIdentity();
     const foreman = await createIdentity('foreman');
+    const uploadedAt = new Date();
+    const storedFiles = await getApp()
+      .db.insert(files)
+      .values(
+        [1, 2].map((position) => ({
+          status: 'uploaded' as const,
+          purpose: 'project_document' as const,
+          storageKey: `tests/projects/${randomUUID()}`,
+          originalName: `document-${position}.pdf`,
+          mimeType: 'application/pdf',
+          sizeBytes: 1024,
+          checksumSha256: String(position).repeat(64),
+          uploadedByUserId: manager.user.id,
+          uploadExpiresAt: uploadedAt,
+          uploadedAt,
+        })),
+      )
+      .returning({ id: files.id });
+    createdFileIds.push(...storedFiles.map(({ id }) => id));
     const body = payload({
-      documentFileIds: [41, 42],
+      documentFileIds: storedFiles.map(({ id }) => id),
       stages: [
         stage('walls', {
           canRunInParallel: true,
@@ -172,9 +197,12 @@ describe('Composite project creation', () => {
     const response = await createProject(manager.cookie, body);
     expect(response.statusCode, response.body).toBe(201);
     const project = response.json<Project>();
-    const [storedProject] = await getApp().db.select().from(projects).where(eq(projects.id, project.id));
+    const storedDocuments = await getApp()
+      .db.select()
+      .from(projectDocuments)
+      .where(eq(projectDocuments.projectId, project.id));
     const [storedStage] = await getApp().db.select().from(stages).where(eq(stages.projectId, project.id));
-    expect(storedProject?.documentFileIds).toEqual([41, 42]);
+    expect(storedDocuments.map(({ fileId }) => fileId)).toEqual(body.documentFileIds);
     expect(storedStage).toMatchObject({
       stageTypeCode: 'walls',
       assigneeId: foreman.user.id,

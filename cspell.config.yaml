@@ -31,6 +31,7 @@ words:
   - typname
   - typnamespace
   - typtype
+  - xact
   - автоинкремент
   - автораспределения
   - Автосоздание

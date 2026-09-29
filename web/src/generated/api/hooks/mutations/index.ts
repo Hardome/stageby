@@ -2,9 +2,13 @@
 
 export { acceptStageMutationKey, acceptStageMutationOptions, useAcceptStage } from './useAcceptStage'
 export { changeStageStatusMutationKey, changeStageStatusMutationOptions, useChangeStageStatus } from './useChangeStageStatus'
+export { completeFileUploadMutationKey, completeFileUploadMutationOptions, useCompleteFileUpload } from './useCompleteFileUpload'
 export { configureStageChecklistMutationKey, configureStageChecklistMutationOptions, useConfigureStageChecklist } from './useConfigureStageChecklist'
+export { createChecklistItemPhotoMutationKey, createChecklistItemPhotoMutationOptions, useCreateChecklistItemPhoto } from './useCreateChecklistItemPhoto'
+export { createFileUploadMutationKey, createFileUploadMutationOptions, useCreateFileUpload } from './useCreateFileUpload'
 export { createProjectMutationKey, createProjectMutationOptions, useCreateProject } from './useCreateProject'
 export { createUserMutationKey, createUserMutationOptions, useCreateUser } from './useCreateUser'
+export { deleteChecklistItemPhotoMutationKey, deleteChecklistItemPhotoMutationOptions, useDeleteChecklistItemPhoto } from './useDeleteChecklistItemPhoto'
 export { loginMutationKey, loginMutationOptions, useLogin } from './useLogin'
 export { logoutMutationKey, logoutMutationOptions, useLogout } from './useLogout'
 export { returnStageForReworkMutationKey, returnStageForReworkMutationOptions, useReturnStageForRework } from './useReturnStageForRework'

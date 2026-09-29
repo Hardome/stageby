@@ -5,6 +5,7 @@ import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fas
 
 import type { Environment } from '#app/config/env';
 import { authModule } from '#app/modules/auth/index';
+import { fileModule } from '#app/modules/files/index';
 import { projectModule } from '#app/modules/projects/index';
 import { stageModule } from '#app/modules/stages/index';
 import { userModule } from '#app/modules/users/index';
@@ -13,6 +14,7 @@ import { registerDatabase } from '#app/plugins/database';
 import { registerDocumentation } from '#app/plugins/documentation';
 import { registerErrorHandler } from '#app/plugins/error-handler';
 import { registerSecurity } from '#app/plugins/security';
+import { S3FileStorage } from '#app/storage/s3-file-storage';
 
 interface BuildAppOptions {
   environment: Environment;
@@ -63,6 +65,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     LOGIN_RATE_LIMIT_TIME_WINDOW: options.environment.LOGIN_RATE_LIMIT_TIME_WINDOW,
   });
   await app.register(userModule);
+  const fileStorage = new S3FileStorage(options.environment);
+  if (options.environment.S3_CREATE_BUCKET) await fileStorage.ensureBucket();
+  await app.register(fileModule, {
+    storage: fileStorage,
+    signedUrlTtlSeconds: options.environment.S3_SIGNED_URL_TTL_SECONDS,
+    cleanupIntervalSeconds: options.environment.FILE_CLEANUP_INTERVAL_SECONDS,
+  });
   await app.register(projectModule);
   await app.register(stageModule);
 

@@ -19,6 +19,7 @@ const expectedTables = [
   'files',
   'material_invoices',
   'material_orders',
+  'project_documents',
   'projects',
   'sessions',
   'stage_predecessors',
@@ -33,6 +34,8 @@ const expectedIndexes = [
   'acceptances_decided_by_user_idx',
   'acceptances_stage_decided_at_idx',
   'checklist_item_photos_file_unique',
+  'checklist_item_photos_active_position_unique',
+  'checklist_item_photos_item_idx',
   'checklist_items_checklist_position_unique',
   'checklist_items_completed_by_user_idx',
   'checklist_template_items_template_position_unique',
@@ -40,6 +43,12 @@ const expectedIndexes = [
   'checklists_stage_id_unique',
   'material_invoices_order_idx',
   'material_orders_stage_idx',
+  'files_completion_idempotency_key_unique',
+  'files_expiration_cleanup_idx',
+  'files_pending_cleanup_idx',
+  'files_storage_key_unique',
+  'project_documents_file_unique',
+  'project_documents_project_position_unique',
   'projects_archived_created_at_idx',
   'sessions_expires_at_idx',
   'sessions_token_hash_unique',
@@ -70,6 +79,9 @@ const expectedForeignKeys = [
   'checklists_stageId_stages_id_fk',
   'material_invoices_orderId_material_orders_id_fk',
   'material_orders_stageId_stages_id_fk',
+  'files_uploadedByUserId_users_id_fk',
+  'project_documents_fileId_files_id_fk',
+  'project_documents_projectId_projects_id_fk',
   'sessions_userId_users_id_fk',
   'stage_predecessors_predecessor_fk',
   'stage_predecessors_stage_fk',
@@ -183,15 +195,16 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('9');
+      expect(firstJournal.rows[0]?.count).toBe('10');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('44');
+      expect(checkConstraints.rows[0]?.count).toBe('49');
       expect(enumTypes.rows.map((row) => row.name)).toEqual([
         'acceptance_decision',
+        'file_purpose',
         'file_status',
         'stage_status',
         'user_role',
