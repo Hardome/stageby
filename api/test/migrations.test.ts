@@ -170,13 +170,13 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('6');
+      expect(firstJournal.rows[0]?.count).toBe('7');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('40');
+      expect(checkConstraints.rows[0]?.count).toBe('41');
       expect(enumTypes.rows.map((row) => row.name)).toEqual(['acceptance_decision', 'stage_status', 'user_role']);
       expect(stageTypes.rows).toEqual([
         { code: 'foundation', title: 'Фундамент', position: 1 },

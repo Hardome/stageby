@@ -9,14 +9,14 @@ import { coordinatesSchema } from './coordinatesSchema'
 import { projectSchema } from './projectSchema'
 
 export const updateProjectSchema = z.object({
-  title: z.string().min(1).max(255).optional().describe('Название объекта строительства для отображения.').meta({ examples: ['Дом на Лесной'] }),
   ownerName: z.string().min(1).max(255).optional().describe('Имя клиента или собственника объекта строительства.').meta({ examples: ['Анна Смирнова'] }),
-  address: z.string().min(1).max(1000).nullish().describe('Адрес объекта строительства; null очищает сохранённое значение.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10', ] }),
-  coordinates: z.union([coordinatesSchema, z.null()]).optional().describe('Географические координаты объекта; null очищает сохранённое значение.'),
+  address: z.string().min(1).max(1000).optional().describe('Новый обязательный адрес объекта строительства.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10'] }),
+  coordinates: coordinatesSchema.optional().describe('Новые обязательные географические координаты объекта.'),
   cadastralNumber: z.string().min(1).max(100).nullish().describe('Кадастровый номер объекта; null очищает сохранённое значение.').meta({ examples: ['66:41:0000000:123', ] }),
   houseDesign: z.string().min(1).max(255).nullish().describe('Название варианта дома; null очищает сохранённое значение.').meta({ examples: ['Семья 67', ] }),
   contractLabel: z.string().min(1).max(255).nullish().describe('Текстовый реквизит «договор» из исходной ведомости; null очищает сохранённое значение.').meta({ examples: ['Договор по объекту «Дом на Лесной»', ] }),
-  dueDate: z.iso.date().nullish().describe('Плановая дата сдачи объекта в формате YYYY-MM-DD; null очищает сохранённое значение.').meta({ examples: ['2026-12-01', ] }),
+  plannedStartDate: z.iso.date().optional().describe('Новая плановая дата начала проекта. Все этапы должны остаться внутри срока проекта.').meta({ examples: ['2026-10-05'] }),
+  plannedEndDate: z.iso.date().optional().describe('Новая плановая дата окончания проекта, не раньше даты начала.').meta({ examples: ['2027-05-28'] }),
   notes: z.string().min(1).max(5000).nullish().describe('Примечания к проекту; null очищает сохранённое значение.').meta({ examples: ['Въезд на участок со стороны Лесной улицы.', ] }),
   isArchived: z.boolean().optional().describe('Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.').meta({ examples: [false] }),
 }).strict()

@@ -5,17 +5,10 @@
 
 import type { ApiError } from './ApiError'
 import type { Coordinates } from './Coordinates'
+import type { CreateProjectStage } from './CreateProjectStage'
 import type { Project } from './Project'
 
 export type CreateProject = {
-    /**
-     * @description Название объекта строительства для отображения.
-     * @minLength 1
-     * @maxLength 255
-     * @example Дом на Лесной
-     * @type string
-    */
-    title: string;
     /**
      * @description Имя клиента или собственника объекта строительства.
      * @minLength 1
@@ -25,18 +18,18 @@ export type CreateProject = {
     */
     ownerName: string;
     /**
-     * @description Адрес объекта строительства; null — не указан.
+     * @description Обязательный адрес объекта строительства.
      * @minLength 1
      * @maxLength 1000
      * @example Екатеринбург, ул. Лесная, д. 10
-     * @example null
-     * @type string | undefined
+     * @type string
     */
-    address?: string | null;
+    address: string;
     /**
-     * @description Географические координаты объекта для отображения на карте; null — не указаны.
+     * @description Обязательные географические координаты объекта.
+     * @type object
     */
-    coordinates?: (Coordinates | null);
+    coordinates: Coordinates;
     /**
      * @description Кадастровый номер объекта в текстовом виде; null — не указан.
      * @minLength 1
@@ -65,14 +58,31 @@ export type CreateProject = {
     */
     contractLabel?: string | null;
     /**
-     * @description Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана.
+     * @description Плановая дата начала проекта в формате YYYY-MM-DD.
      *
      * Format: `date`
-     * @example 2026-12-01
-     * @example null
-     * @type string | undefined
+     * @example 2026-10-05
+     * @type string
     */
-    dueDate?: string | null;
+    plannedStartDate: string;
+    /**
+     * @description Плановая дата окончания проекта в формате YYYY-MM-DD, не раньше даты начала.
+     *
+     * Format: `date`
+     * @example 2027-05-28
+     * @type string
+    */
+    plannedEndDate: string;
+    /**
+     * @description Идентификаторы предварительно успешно загруженных PDF проекта. Пустой список разрешён.
+     * @type array
+    */
+    documentFileIds: number[];
+    /**
+     * @description Выбранные этапы объекта. Типы этапов не повторяются, порядок массива не влияет на position.
+     * @type array
+    */
+    stages: CreateProjectStage[];
     /**
      * @description Примечания к проекту; null — отсутствуют.
      * @minLength 1

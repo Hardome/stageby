@@ -8,6 +8,6 @@ import * as z from 'zod'
 export const coordinatesSchema = z.object({
   latitude: z.number().min(-90).max(90).describe('Географическая широта в десятичных градусах, от −90 до 90.').meta({ examples: [56.8389] }),
   longitude: z.number().min(-180).max(180).describe('Географическая долгота в десятичных градусах, от −180 до 180.').meta({ examples: [60.6057] }),
-}).strict()
+}).strict().describe('Географические координаты объекта в десятичных градусах.')
 
 export type CoordinatesSchemaType = z.infer<typeof coordinatesSchema>

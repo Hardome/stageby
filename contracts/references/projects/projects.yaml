@@ -42,10 +42,11 @@ paths:
       operationId: createProject
       tags:
         - Projects
-      summary: Создать проект с восемью этапами
-      description: "Только руководитель. Атомарно создаёт проект, по одному этапу каждого фиксированного типа и
-        пустой чек-лист каждого этапа. Статусы created, назначения и даты этапов null, зависимости пустые. Получить этапы: GET /projects/{projectId}/stages. Необязательные поля проекта по
-        умолчанию null; isArchived=false."
+      summary: Составное создание объекта
+      description: "Только руководитель. В одной транзакции создаёт проект, выбранные этапы и индивидуальные
+        чек-листы. Если checklistItems этапа отсутствует, сервер копирует активный шаблон его типа. Ошибка любого
+        этапа откатывает всю операцию. Защита интерфейса от повторной отправки будет реализована на фронтенде.
+        Идентификаторы файлов относятся к предварительно успешно загруженным PDF проекта."
       requestBody:
         required: true
         content:
@@ -130,6 +131,7 @@ components:
     Coordinates:
       type: object
       additionalProperties: false
+      description: "Географические координаты объекта в десятичных градусах."
       required:
         - latitude
         - longitude
@@ -153,14 +155,14 @@ components:
       additionalProperties: false
       required:
         - id
-        - title
         - ownerName
         - address
         - coordinates
         - cadastralNumber
         - houseDesign
         - contractLabel
-        - dueDate
+        - plannedStartDate
+        - plannedEndDate
         - notes
         - isArchived
         - createdAt
@@ -173,13 +175,6 @@ components:
           type: integer
           minimum: 1
           maximum: 2147483647
-        title:
-          examples:
-            - "Дом на Лесной"
-          description: "Название объекта строительства для отображения."
-          type: string
-          minLength: 1
-          maxLength: 255
         ownerName:
           examples:
             - "Анна Смирнова"
@@ -190,18 +185,13 @@ components:
         address:
           examples:
             - "Екатеринбург, ул. Лесная, д. 10"
-            - null
-          description: "Адрес объекта строительства; null — не указан."
-          type:
-            - string
-            - "null"
+          description: "Обязательный адрес объекта строительства."
+          type: string
           minLength: 1
           maxLength: 1000
         coordinates:
-          description: "Географические координаты объекта для отображения на карте; null — не указаны."
-          anyOf:
-            - $ref: "#/components/schemas/Coordinates"
-            - type: "null"
+          description: "Обязательные географические координаты объекта для отображения на карте."
+          $ref: "#/components/schemas/Coordinates"
         cadastralNumber:
           examples:
             - "66:41:0000000:123"
@@ -232,14 +222,17 @@ components:
             - "null"
           minLength: 1
           maxLength: 255
-        dueDate:
+        plannedStartDate:
           examples:
-            - "2026-12-01"
-            - null
-          description: "Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана."
-          type:
-            - string
-            - "null"
+            - "2026-10-05"
+          description: "Плановая дата начала проекта в формате YYYY-MM-DD."
+          type: string
+          format: date
+        plannedEndDate:
+          examples:
+            - "2027-05-28"
+          description: "Плановая дата окончания проекта в формате YYYY-MM-DD, не раньше даты начала."
+          type: string
           format: date
         notes:
           examples:
@@ -272,16 +265,14 @@ components:
       type: object
       additionalProperties: false
       required:
-        - title
         - ownerName
+        - address
+        - coordinates
+        - plannedStartDate
+        - plannedEndDate
+        - documentFileIds
+        - stages
       properties:
-        title:
-          examples:
-            - "Дом на Лесной"
-          description: "Название объекта строительства для отображения."
-          type: string
-          minLength: 1
-          maxLength: 255
         ownerName:
           examples:
             - "Анна Смирнова"
@@ -292,18 +283,13 @@ components:
         address:
           examples:
             - "Екатеринбург, ул. Лесная, д. 10"
-            - null
-          description: "Адрес объекта строительства; null — не указан."
-          type:
-            - string
-            - "null"
+          description: "Обязательный адрес объекта строительства."
+          type: string
           minLength: 1
           maxLength: 1000
         coordinates:
-          description: "Географические координаты объекта для отображения на карте; null — не указаны."
-          anyOf:
-            - $ref: "#/components/schemas/Coordinates"
-            - type: "null"
+          description: "Обязательные географические координаты объекта."
+          $ref: "#/components/schemas/Coordinates"
         cadastralNumber:
           examples:
             - "66:41:0000000:123"
@@ -334,15 +320,33 @@ components:
             - "null"
           minLength: 1
           maxLength: 255
-        dueDate:
+        plannedStartDate:
           examples:
-            - "2026-12-01"
-            - null
-          description: "Плановая дата сдачи объекта в формате YYYY-MM-DD без времени; null — не задана."
-          type:
-            - string
-            - "null"
+            - "2026-10-05"
+          description: "Плановая дата начала проекта в формате YYYY-MM-DD."
+          type: string
           format: date
+        plannedEndDate:
+          examples:
+            - "2027-05-28"
+          description: "Плановая дата окончания проекта в формате YYYY-MM-DD, не раньше даты начала."
+          type: string
+          format: date
+        documentFileIds:
+          description: "Идентификаторы предварительно успешно загруженных PDF проекта. Пустой список разрешён."
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+        stages:
+          description: "Выбранные этапы объекта. Типы этапов не повторяются, порядок массива не влияет на position."
+          type: array
+          minItems: 1
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/CreateProjectStage"
         notes:
           examples:
             - "Въезд на участок со стороны Лесной улицы."
@@ -357,13 +361,6 @@ components:
       type: object
       additionalProperties: false
       properties:
-        title:
-          examples:
-            - "Дом на Лесной"
-          description: "Название объекта строительства для отображения."
-          type: string
-          minLength: 1
-          maxLength: 255
         ownerName:
           examples:
             - "Анна Смирнова"
@@ -374,18 +371,13 @@ components:
         address:
           examples:
             - "Екатеринбург, ул. Лесная, д. 10"
-            - null
-          description: "Адрес объекта строительства; null очищает сохранённое значение."
-          type:
-            - string
-            - "null"
+          description: "Новый обязательный адрес объекта строительства."
+          type: string
           minLength: 1
           maxLength: 1000
         coordinates:
-          description: "Географические координаты объекта; null очищает сохранённое значение."
-          anyOf:
-            - $ref: "#/components/schemas/Coordinates"
-            - type: "null"
+          description: "Новые обязательные географические координаты объекта."
+          $ref: "#/components/schemas/Coordinates"
         cadastralNumber:
           examples:
             - "66:41:0000000:123"
@@ -416,14 +408,17 @@ components:
             - "null"
           minLength: 1
           maxLength: 255
-        dueDate:
+        plannedStartDate:
           examples:
-            - "2026-12-01"
-            - null
-          description: "Плановая дата сдачи объекта в формате YYYY-MM-DD; null очищает сохранённое значение."
-          type:
-            - string
-            - "null"
+            - "2026-10-05"
+          description: "Новая плановая дата начала проекта. Все этапы должны остаться внутри срока проекта."
+          type: string
+          format: date
+        plannedEndDate:
+          examples:
+            - "2027-05-28"
+          description: "Новая плановая дата окончания проекта, не раньше даты начала."
+          type: string
           format: date
         notes:
           examples:
@@ -441,6 +436,80 @@ components:
           description: "Признак архивного проекта. Архивный проект и его этапы доступны только для чтения."
           type: boolean
       minProperties: 1
+    CreateProjectStage:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - plannedStartDate
+        - plannedEndDate
+        - canRunInParallel
+        - assigneeId
+        - plannedWorkAmountMinor
+        - plannedMaterialAmountMinor
+      properties:
+        type:
+          $ref: ../common/common.yaml#/components/schemas/StageType
+        plannedStartDate:
+          examples:
+            - "2026-10-05"
+          type: string
+          format: date
+          description: "Плановое начало этапа внутри срока проекта."
+        plannedEndDate:
+          examples:
+            - "2026-10-30"
+          type: string
+          format: date
+          description: "Плановое окончание этапа внутри срока проекта, не раньше начала этапа."
+        canRunInParallel:
+          examples:
+            - false
+          type: boolean
+          description: "Может ли этап выполняться параллельно с соседними этапами."
+        assigneeId:
+          examples:
+            - 17
+            - null
+          description: "Активный мастер этапа; null — мастер пока не назначен."
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 2147483647
+        plannedWorkAmountMinor:
+          $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
+        plannedMaterialAmountMinor:
+          $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
+        checklistItems:
+          description: "Изменённый индивидуальный список. Если поле отсутствует, копируется активный шаблон типа этапа."
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CreateProjectChecklistItem"
+    CreateProjectChecklistItem:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+      properties:
+        title:
+          examples:
+            - "Армирование"
+          description: "Название индивидуального пункта чек-листа."
+          type: string
+          minLength: 1
+          maxLength: 500
+        photoHint:
+          examples:
+            - "Фото перевязки углов и перехлёста арматуры"
+            - null
+          description: "Необязательная подсказка о том, что должно быть видно на фотографии."
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
     ProjectPage:
       type: object
       additionalProperties: false

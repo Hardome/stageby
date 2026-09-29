@@ -3,6 +3,10 @@
 * Do not edit manually.
 */
 
+/**
+ * @description Географические координаты объекта в десятичных градусах.
+ * @type object
+*/
 export type Coordinates = {
     /**
      * @description Географическая широта в десятичных градусах, от −90 до 90.

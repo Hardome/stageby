@@ -9,14 +9,6 @@ import type { Project } from './Project'
 
 export type UpdateProject = {
     /**
-     * @description Название объекта строительства для отображения.
-     * @minLength 1
-     * @maxLength 255
-     * @example Дом на Лесной
-     * @type string | undefined
-    */
-    title?: string;
-    /**
      * @description Имя клиента или собственника объекта строительства.
      * @minLength 1
      * @maxLength 255
@@ -25,18 +17,18 @@ export type UpdateProject = {
     */
     ownerName?: string;
     /**
-     * @description Адрес объекта строительства; null очищает сохранённое значение.
+     * @description Новый обязательный адрес объекта строительства.
      * @minLength 1
      * @maxLength 1000
      * @example Екатеринбург, ул. Лесная, д. 10
-     * @example null
      * @type string | undefined
     */
-    address?: string | null;
+    address?: string;
     /**
-     * @description Географические координаты объекта; null очищает сохранённое значение.
+     * @description Новые обязательные географические координаты объекта.
+     * @type object | undefined
     */
-    coordinates?: (Coordinates | null);
+    coordinates?: Coordinates;
     /**
      * @description Кадастровый номер объекта; null очищает сохранённое значение.
      * @minLength 1
@@ -65,14 +57,21 @@ export type UpdateProject = {
     */
     contractLabel?: string | null;
     /**
-     * @description Плановая дата сдачи объекта в формате YYYY-MM-DD; null очищает сохранённое значение.
+     * @description Новая плановая дата начала проекта. Все этапы должны остаться внутри срока проекта.
      *
      * Format: `date`
-     * @example 2026-12-01
-     * @example null
+     * @example 2026-10-05
      * @type string | undefined
     */
-    dueDate?: string | null;
+    plannedStartDate?: string;
+    /**
+     * @description Новая плановая дата окончания проекта, не раньше даты начала.
+     *
+     * Format: `date`
+     * @example 2027-05-28
+     * @type string | undefined
+    */
+    plannedEndDate?: string;
     /**
      * @description Примечания к проекту; null очищает сохранённое значение.
      * @minLength 1
