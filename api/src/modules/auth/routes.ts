@@ -2,6 +2,7 @@ import { normalizeIP } from '@fastify/rate-limit';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import type { RouteHandlers } from '#app/generated/fastify.gen';
+import type { ApiError } from '#app/generated/types.gen';
 import { zApiError, zGetCurrentUserResponse, zLoginBody, zLoginResponse } from '#app/generated/zod.gen';
 import type { LoginService } from '#app/modules/auth/login-service';
 import {
@@ -22,7 +23,7 @@ const unauthorizedResponse = {
   error: 'Unauthorized',
   code: 'unauthenticated',
   message: 'Не удалось подтвердить авторизацию.',
-};
+} satisfies ApiError;
 
 function normalizedLoginKey(request: FastifyRequest): string {
   const body = request.body;

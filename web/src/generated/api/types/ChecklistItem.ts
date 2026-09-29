@@ -23,9 +23,17 @@ export type ChecklistItem = {
     */
     title: string;
     /**
+     * @description Необязательная подсказка из шаблона о том, что должно быть видно на фотографии.
+     * @minLength 1
+     * @maxLength 1000
+     * @example Фото перевязки углов и перехлёста арматуры
+     * @example null
+     * @type string
+    */
+    photoHint: string | null;
+    /**
      * @description Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.
      * @minLength 1
-     * @maxLength 4
      * @example 1
      * @type integer
     */
@@ -36,6 +44,12 @@ export type ChecklistItem = {
      * @type boolean
     */
     isCompleted: boolean;
+    /**
+     * @description Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.
+     * @example false
+     * @type boolean
+    */
+    requiresRework: boolean;
     /**
      * @description Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.
      *

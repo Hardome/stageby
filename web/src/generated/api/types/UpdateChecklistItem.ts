@@ -5,15 +5,16 @@
 
 import type { ApiError } from './ApiError'
 import type { Checklist } from './Checklist'
+import type { ExpectedVersion } from './ExpectedVersion'
 
 export type UpdateChecklistItem = {
     /**
-     * @description Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+     * @description Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
      * @minLength 1
      * @example 1
      * @type integer
     */
-    expectedVersion: number;
+    expectedVersion: ExpectedVersion;
     /**
      * @description Новое состояние пункта. true отмечает выполнение, false снимает отметку; сервер заполняет или очищает completedAt и completedBy и пересчитывает прогресс.
      * @example true

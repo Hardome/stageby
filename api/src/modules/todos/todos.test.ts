@@ -3,12 +3,25 @@ import { randomUUID } from 'node:crypto';
 import { eq, inArray } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { parseEnvironment } from '#app/config/env';
 import { todos } from '#app/db/schema/todos';
 import { todoModule } from '#app/modules/todos/index';
 import type { Todo } from '#app/modules/todos/types';
+import { registerErrorHandler } from '#app/plugins/error-handler';
 import { setupModuleTest } from '#test/setup-module-test';
 
-const getApp = setupModuleTest(todoModule);
+const getApp = setupModuleTest(async (app) => {
+  registerErrorHandler(
+    app,
+    parseEnvironment({
+      NODE_ENV: 'test',
+      DATABASE_URL: process.env.DATABASE_URL,
+      CORS_ORIGIN: 'http://localhost:5173',
+      LOG_LEVEL: 'silent',
+    }),
+  );
+  await app.register(todoModule);
+});
 const createdIds: string[] = [];
 
 afterEach(async () => {
@@ -64,7 +77,7 @@ describe('Модуль задач', () => {
 
     const missingResponse = await app.inject({ method: 'GET', url: `/todos/${created.id}` });
     expect(missingResponse.statusCode).toBe(404);
-    expect(missingResponse.json()).toEqual({ error: 'Не найдено', message: 'Задача не найдена' });
+    expect(missingResponse.json()).toEqual({ error: 'Not Found', code: 'not_found', message: 'Задача не найдена' });
   });
 
   it('проверяет запросы по схемам контракта', async () => {

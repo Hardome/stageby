@@ -16,7 +16,7 @@ export const stageTitleEnum = {
     Окна: "\u041E\u043A\u043D\u0430",
     Фасад: "\u0424\u0430\u0441\u0430\u0434",
     Электрика: "\u042D\u043B\u0435\u043A\u0442\u0440\u0438\u043A\u0430",
-    Штукатурка: "\u0428\u0442\u0443\u043A\u0430\u0442\u0443\u0440\u043A\u0430",
+    Отделка: "\u041E\u0442\u0434\u0435\u043B\u043A\u0430",
     Отопление: "\u041E\u0442\u043E\u043F\u043B\u0435\u043D\u0438\u0435"
 } as const;
 
@@ -67,7 +67,7 @@ export type Stage = {
     */
     projectIsArchived: boolean;
     /**
-     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; plaster — Штукатурка; heating — Отопление.
+     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
      * @example foundation
      * @type string
     */
@@ -100,7 +100,7 @@ export type Stage = {
     */
     inspector: (UserBrief | null);
     /**
-     * @description created — Создан; assigned — Назначен; supplied — Укомплектован; started — Старт; in_progress — В работе; acceptance — Приёмка; completed — Выполнен. Выплаты и статус «Выплачен» не входят в эту версию.
+     * @description Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
      * @example in_progress
      * @type string
     */

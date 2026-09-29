@@ -4,7 +4,7 @@
 */
 
 import * as z from 'zod'
-import { errorSchema } from './errorSchema'
+import { apiErrorSchema } from './apiErrorSchema'
 import { todoSchema } from './todoSchema'
 
 export const updateTodoSchema = z.object({
@@ -23,11 +23,11 @@ export const updateTodoStatus200Schema = todoSchema
 
 export type UpdateTodoStatus200SchemaType = z.infer<typeof updateTodoStatus200Schema>
 
-export const updateTodoStatus400Schema = errorSchema
+export const updateTodoStatus400Schema = apiErrorSchema
 
 export type UpdateTodoStatus400SchemaType = z.infer<typeof updateTodoStatus400Schema>
 
-export const updateTodoStatus404Schema = errorSchema
+export const updateTodoStatus404Schema = apiErrorSchema
 
 export type UpdateTodoStatus404SchemaType = z.infer<typeof updateTodoStatus404Schema>
 

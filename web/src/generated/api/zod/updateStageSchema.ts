@@ -5,10 +5,11 @@
 
 import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
+import { expectedVersionSchema } from './expectedVersionSchema'
 import { stageSchema } from './stageSchema'
 
 export const updateStageSchema = z.object({
-  expectedVersion: z.int().min(1).describe('Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.').meta({ examples: [1] }),
+  expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   assigneeId: z.int().min(1).max(2147483647).nullish().describe('ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.').meta({ examples: [1, ] }),
   inspectorId: z.int().min(1).max(2147483647).nullish().describe('ID назначаемого приёмщика; null снимает назначение. Снятие приёмщика во время приёмки запрещено.').meta({ examples: [2, ] }),
   workSubtypes: z.array(z.string().min(1).max(255)).max(30).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).optional().describe('Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.'),

@@ -5,11 +5,12 @@
 
 import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
+import { expectedVersionSchema } from './expectedVersionSchema'
 import { stageSchema } from './stageSchema'
 
 export const changeStageStatusSchema = z.object({
-  expectedVersion: z.int().min(1).describe('Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.').meta({ examples: [1] }),
-  status: z.enum(['supplied', 'started', 'in_progress', 'acceptance']).describe('Следующий рабочий статус в цепочке assigned → supplied → started → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.').meta({ examples: ['in_progress'] }),
+  expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
+  status: z.enum(['supplied', 'in_progress', 'acceptance']).describe('Следующий рабочий статус в цепочке assigned → supplied → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.').meta({ examples: ['in_progress'] }),
 }).strict()
 
 export type ChangeStageStatusSchemaType = z.infer<typeof changeStageStatusSchema>

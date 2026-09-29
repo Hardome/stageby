@@ -23,7 +23,7 @@ export type Checklist = {
     */
     stageId: number;
     /**
-     * @description Пустой новый чек-лист либо 3–4 пункта. Порядок position ASC.
+     * @description Пункты индивидуального чек-листа в порядке position ASC; верхнего ограничения нет.
      * @type array
     */
     items: ChecklistItem[];

@@ -7,10 +7,11 @@ export const stageStatus = {
     created: "created",
     assigned: "assigned",
     supplied: "supplied",
-    started: "started",
     in_progress: "in_progress",
     acceptance: "acceptance",
-    completed: "completed"
+    rework: "rework",
+    completed: "completed",
+    paid: "paid"
 } as const;
 
 export type StageStatusKey = (typeof stageStatus)[keyof typeof stageStatus];

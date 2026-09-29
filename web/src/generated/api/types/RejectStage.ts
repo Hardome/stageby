@@ -3,14 +3,16 @@
 * Do not edit manually.
 */
 
+import type { ExpectedVersion } from './ExpectedVersion'
+
 export type RejectStage = {
     /**
-     * @description Версия из последнего GET. Несовпадение — 409 version_conflict, никаких частичных изменений.
+     * @description Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
      * @minLength 1
      * @example 1
      * @type integer
     */
-    expectedVersion: number;
+    expectedVersion: ExpectedVersion;
     /**
      * @description Обязательное замечание с причиной возврата этапа на доработку.
      * @minLength 1
