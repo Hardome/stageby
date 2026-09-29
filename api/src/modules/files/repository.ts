@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { and, asc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, lte, or, sql } from 'drizzle-orm';
 
 import { checklistItems, checklists } from '#app/db/schema/checklists';
 import { checklistItemPhotos, type FileRow, files } from '#app/db/schema/files';

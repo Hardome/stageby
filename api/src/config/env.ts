@@ -38,7 +38,7 @@ const environmentSchema = z
       .transform((value) => value === 'true'),
     S3_CREATE_BUCKET: z.enum(['true', 'false']).optional(),
     S3_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(900),
-    FILE_CLEANUP_INTERVAL_SECONDS: z.coerce.number().int().min(10).max(86_400).default(60),
+    FILE_CLEANUP_INTERVAL_SECONDS: z.coerce.number().int().min(10).max(86_400).default(86_400),
   })
   .superRefine((environment, context) => {
     if (environment.NODE_ENV !== 'production') return;
