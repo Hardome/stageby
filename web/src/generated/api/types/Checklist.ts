@@ -28,13 +28,18 @@ export type Checklist = {
     */
     items: ChecklistItem[];
     /**
-     * @description 100 × выполненные пункты / все пункты, округление до двух знаков. Пустой чек-лист — 0. Только вычисляется сервером.
+     * @description 100 × выполненные пункты / все пункты, округление до целого. Пустой чек-лист — 0. Только вычисляется сервером.
      * @minLength 0
      * @maxLength 100
-     * @example 33.33
-     * @type number
+     * @example 33
+     * @type integer
     */
     progressPercent: number;
+    /**
+     * @description Предупреждения текущего состояния. materials_incomplete означает, что работы начаты до полной комплектации материалами.
+     * @type array
+    */
+    warnings: "materials_incomplete"[];
     /**
      * @description Версия записи. Увеличивается при каждом изменении.
      * @minLength 1

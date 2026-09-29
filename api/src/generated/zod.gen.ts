@@ -244,7 +244,6 @@ export const zStage = z.object({
     canRunInParallel: z.boolean(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30),
     assignee: zUserBrief.nullable(),
-    inspector: zUserBrief.nullable(),
     status: zStageStatus,
     plannedStartDate: z.iso.date(),
     plannedEndDate: z.iso.date(),
@@ -254,7 +253,7 @@ export const zStage = z.object({
     actualEndDate: z.iso.date().nullable(),
     predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7),
     notes: z.string().min(1).max(5000).nullable(),
-    progressPercent: z.number().gte(0).lte(100),
+    progressPercent: z.int().gte(0).lte(100),
     latestAcceptance: zAcceptance.nullable(),
     version: z.int().gte(1),
     createdAt: z.iso.datetime(),
@@ -275,7 +274,6 @@ export const zProjectStages = z.object({
 export const zUpdateStage = z.object({
     expectedVersion: zExpectedVersion,
     assigneeId: z.int().gte(1).lte(2147483647).nullish(),
-    inspectorId: z.int().gte(1).lte(2147483647).nullish(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30).optional(),
     plannedStartDate: z.iso.date().nullish(),
     plannedEndDate: z.iso.date().nullish(),
@@ -285,11 +283,7 @@ export const zUpdateStage = z.object({
 
 export const zChangeStageStatus = z.object({
     expectedVersion: zExpectedVersion,
-    status: z.enum([
-        'supplied',
-        'in_progress',
-        'acceptance'
-    ])
+    status: z.enum(['supplied', 'paid'])
 });
 
 export const zAcceptStage = z.object({
@@ -319,7 +313,8 @@ export const zChecklist = z.object({
     id: z.int().gte(1).lte(2147483647),
     stageId: z.int().gte(1).lte(2147483647),
     items: z.array(zChecklistItem),
-    progressPercent: z.number().gte(0).lte(100),
+    progressPercent: z.int().gte(0).lte(100),
+    warnings: z.array(z.enum(['materials_incomplete'])),
     version: z.int().gte(1),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()

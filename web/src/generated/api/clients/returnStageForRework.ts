@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { returnStageForReworkResponseSchema, returnStageForReworkErrorSchema } from '../zod/returnStageForReworkSchema'
 
 /**
- * @description Назначенный приёмщик или руководитель. Только из acceptance. Замечание, дата исправления и itemIds обязательны; дата не раньше текущей даты объекта. Интерфейс может предложить сегодня + 2 календарных дня, сервер не угадывает срок. Все itemIds должны принадлежать этому чек-листу, иначе 400 invalid_request. Переводит в in_progress, пишет latestAcceptance с decision=rejected и сбрасывает только указанные пункты для повторной проверки (completedAt/completedBy=null), остальные отметки сохраняет. Увеличивает версии этапа и чек-листа атомарно. Архив — 409 project_archived.
+ * @description Только руководитель. Только из acceptance. Замечание, дата исправления и itemIds обязательны; дата не раньше текущей даты объекта. Интерфейс может предложить сегодня + 2 календарных дня, сервер не угадывает срок. Все itemIds должны принадлежать этому чек-листу, иначе 400 invalid_request. Переводит в rework, пишет latestAcceptance с decision=rejected и сбрасывает только указанные пункты для повторной проверки (completedAt/completedBy=null), остальные отметки сохраняет. Увеличивает версии этапа и чек-листа атомарно. Архив — 409 project_archived.
  * @summary Вернуть этап на доработку
  * {@link /stages/:stageId/rework}
  */

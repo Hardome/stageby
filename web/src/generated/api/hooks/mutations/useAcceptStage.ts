@@ -19,7 +19,7 @@ export function acceptStageMutationOptions<TContext = unknown>(config: Partial<O
 }
 
 /**
- * @description Назначенный приёмщик или руководитель. Только из acceptance, при всех выполненных пунктах. Атомарно записывает latestAcceptance с decision=accepted, текущим пользователем, временем и correctionDueDate=null; переводит этап в completed и устанавливает actualEndDate. Это электронная отметка приёмки, не PDF и не юридически значимая подпись. Архив — 409 project_archived.
+ * @description Только руководитель. Только из acceptance, при всех выполненных пунктах. Атомарно записывает latestAcceptance с decision=accepted, текущим пользователем, временем и correctionDueDate=null; переводит этап в completed и устанавливает actualEndDate. Это электронная отметка приёмки, не PDF и не юридически значимая подпись. Архив — 409 project_archived.
  * @summary Принять этап
  * {@link /stages/:stageId/acceptance}
  */

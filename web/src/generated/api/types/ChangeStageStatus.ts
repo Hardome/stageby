@@ -9,8 +9,7 @@ import type { Stage } from './Stage'
 
 export const changeStageStatusStatusEnum = {
     supplied: "supplied",
-    in_progress: "in_progress",
-    acceptance: "acceptance"
+    paid: "paid"
 } as const;
 
 export type ChangeStageStatusStatusEnumKey = (typeof changeStageStatusStatusEnum)[keyof typeof changeStageStatusStatusEnum];
@@ -24,8 +23,8 @@ export type ChangeStageStatus = {
     */
     expectedVersion: ExpectedVersion;
     /**
-     * @description Следующий рабочий статус в цепочке assigned → supplied → in_progress → acceptance. Повтор текущего статуса допустим; пропуск и обратный переход запрещены.
-     * @example in_progress
+     * @description Явный переход в supplied после комплектации или в paid после полной выплаты работ. Повтор текущего статуса допустим; остальные переходы запрещены.
+     * @example supplied
      * @type string
     */
     status: ChangeStageStatusStatusEnumKey;

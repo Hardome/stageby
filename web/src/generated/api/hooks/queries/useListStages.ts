@@ -21,7 +21,7 @@ export function listStagesQueryOptions({ query }: ListStagesOptions = {}, config
 }
 
 /**
- * @description Руководитель и инженер видят все этапы; мастер — только где assigneeId равен его ID; приёмщик — только где inspectorId равен его ID. Фильтры AND применяются после ограничения доступа, total не раскрывает чужие записи. По умолчанию без архивных проектов. Сортировка projectId ASC, position ASC, id ASC.
+ * @description Руководитель видит все этапы; мастер — только где assigneeId равен его ID. Фильтры AND применяются после ограничения доступа, total не раскрывает чужие записи. По умолчанию без архивных проектов. Сортировка projectId ASC, position ASC, id ASC.
  * @summary Список доступных этапов
  * {@link /stages}
  */
