@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Stageby API
   version: 0.1.0
-  description: 'Контракт первой версии управления строительством: пользователи, проекты, этапы и чек-листы. Финансовый модуль, фото, материалы, инструмент и платежи отложены. Реализация новых маршрутов выполняется отдельно. ID новых сущностей — положительные целые числа int32, назначаемые БД автоматически. Даты работ YYYY-MM-DD; timestamps — RFC 3339 UTC. Календарный часовой пояс первой версии Asia/Yekaterinburg. PATCH меняет только переданные поля, null очищает только nullable-поле, пустое тело запрещено; массив заменяется целиком. Все изменения атомарны. Неизвестные поля и query-параметры — 400. Непустые текстовые значения обрезаются по краям и не могут состоять только из пробелов; пароли не обрезаются. Политики доступа обязательны на сервере, включая списки, total и вложенные записи. Документ описывает целевой API; демонстрационные /todos временно сохранены для совместимости текущих приложений и сохраняют строковые UUID.'
+  description: 'Контракт первой версии управления строительством: пользователи, проекты, этапы и чек-листы. Финансовый модуль, фото, материалы, инструмент и платежи отложены. Реализация новых маршрутов выполняется отдельно. ID новых сущностей — положительные целые числа int32, назначаемые БД автоматически. Даты работ YYYY-MM-DD; timestamps — RFC 3339 UTC. Календарный часовой пояс первой версии Asia/Yekaterinburg. PATCH меняет только переданные поля, null очищает только nullable-поле, пустое тело запрещено; массив заменяется целиком. Все изменения атомарны. Неизвестные поля и query-параметры — 400. Непустые текстовые значения обрезаются по краям и не могут состоять только из пробелов; пароли не обрезаются. Политики доступа обязательны на сервере, включая списки, total и вложенные записи. Документ описывает целевой API.'
 servers:
   - url: /
     description: Тот же origin, с которого загружены API-документация или клиент.
@@ -19,8 +19,6 @@ tags:
     description: Фиксированные виды работ, назначения, зависимости и приёмка.
   - name: Checklists
     description: Один чек-лист с контрольными точками на этап. В текущей версии без фото.
-  - name: Todos
-    description: Существующий демонстрационный модуль. Не входит в предметную модель строительства.
 paths:
   /users:
     get:
@@ -746,95 +744,6 @@ paths:
           $ref: '#/components/responses/ApiNotFound'
         '409':
           $ref: '#/components/responses/ApiConflict'
-  /todos:
-    get:
-      operationId: listTodos
-      tags:
-        - Todos
-      security: []
-      summary: List todos
-      responses:
-        '200':
-          description: Todo list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Todo'
-    post:
-      operationId: createTodo
-      tags:
-        - Todos
-      security: []
-      summary: Create a todo
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateTodo'
-      responses:
-        '201':
-          description: Todo created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Todo'
-        '400':
-          $ref: '#/components/responses/ApiBadRequest'
-  /todos/{id}:
-    parameters:
-      - $ref: '#/components/parameters/TodoId'
-    get:
-      operationId: getTodo
-      tags:
-        - Todos
-      security: []
-      summary: Get a todo
-      responses:
-        '200':
-          description: Todo found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Todo'
-        '404':
-          $ref: '#/components/responses/ApiNotFound'
-    patch:
-      operationId: updateTodo
-      tags:
-        - Todos
-      security: []
-      summary: Update a todo
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateTodo'
-      responses:
-        '200':
-          description: Todo updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Todo'
-        '400':
-          $ref: '#/components/responses/ApiBadRequest'
-        '404':
-          $ref: '#/components/responses/ApiNotFound'
-    delete:
-      operationId: deleteTodo
-      tags:
-        - Todos
-      security: []
-      summary: Delete a todo
-      responses:
-        '204':
-          description: Todo deleted
-        '404':
-          $ref: '#/components/responses/ApiNotFound'
 components:
   schemas:
     ExpectedVersion:
@@ -2232,101 +2141,6 @@ components:
             - true
           description: Новое состояние пункта. true отмечает выполнение, false снимает отметку; сервер заполняет или очищает completedAt и completedBy и пересчитывает прогресс.
           type: boolean
-    Todo:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - description
-        - completed
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          examples:
-            - 123e4567-e89b-42d3-a456-426614174000
-          description: Стабильный UUID задачи.
-          type: string
-          format: uuid
-        title:
-          examples:
-            - Подготовить список задач
-          description: Название задачи.
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          examples:
-            - Составить список задач на следующую неделю.
-            - null
-          description: Подробное описание задачи; null — описание отсутствует.
-          type:
-            - string
-            - 'null'
-        completed:
-          examples:
-            - false
-          description: Признак завершённой задачи.
-          type: boolean
-        createdAt:
-          examples:
-            - '2026-09-20T08:00:00Z'
-          description: Дата и время создания записи в UTC, формат RFC 3339.
-          type: string
-          format: date-time
-        updatedAt:
-          examples:
-            - '2026-09-24T10:00:00Z'
-          description: Дата и время последнего изменения записи в UTC, формат RFC 3339.
-          type: string
-          format: date-time
-    CreateTodo:
-      type: object
-      additionalProperties: false
-      required:
-        - title
-      properties:
-        title:
-          examples:
-            - Подготовить список задач
-          description: Название задачи.
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          examples:
-            - Составить список задач на следующую неделю.
-            - null
-          description: Подробное описание задачи; null — описание отсутствует.
-          type:
-            - string
-            - 'null'
-    UpdateTodo:
-      type: object
-      additionalProperties: false
-      minProperties: 1
-      properties:
-        title:
-          examples:
-            - Подготовить список задач
-          description: Название задачи.
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          examples:
-            - Составить список задач на следующую неделю.
-            - null
-          description: Подробное описание задачи; null — описание отсутствует.
-          type:
-            - string
-            - 'null'
-        completed:
-          examples:
-            - false
-          description: Признак завершённой задачи.
-          type: boolean
   responses:
     ApiBadRequest:
       description: Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
@@ -2423,10 +2237,3 @@ components:
         type: integer
         minimum: 0
         default: 0
-    TodoId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid

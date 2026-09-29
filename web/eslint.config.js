@@ -36,7 +36,6 @@ export default defineConfig(
       'react-hooks/rules-of-hooks': 'off',
       'sonarjs/cognitive-complexity': 'off',
       'sonarjs/no-skipped-tests': 'off',
-      'sonarjs/todo-tag': 'off',
       'unicorn/filename-case': 'off',
       'unicorn/no-array-for-each': 'off',
       'unicorn/no-null': 'off',

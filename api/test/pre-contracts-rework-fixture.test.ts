@@ -9,13 +9,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import { describe, expect, it } from 'vitest';
 
-// cspell:ignore annihilus
-const migrationFiles = [
-  '0000_useful_annihilus.sql',
-  '0001_thin_iron_man.sql',
-  '0002_harsh_maelstrom.sql',
-  '0003_tan_shiver_man.sql',
-];
+const migrationFiles = ['0001_thin_iron_man.sql', '0002_harsh_maelstrom.sql', '0003_tan_shiver_man.sql'];
 const migrationsFolder = fileURLToPath(new URL('../src/db/migrations', import.meta.url));
 const fixturePath = fileURLToPath(new URL('./fixtures/pre-contracts-rework.sql', import.meta.url));
 
@@ -38,7 +32,7 @@ async function createFrozenMigrationsFolder(): Promise<string> {
 }
 
 describe('набор данных до переработки контрактов', () => {
-  it('загружается поверх миграций 0000–0003 и покрывает прежние enum', { timeout: 30_000 }, async () => {
+  it('загружается поверх миграций 0001–0003 и покрывает прежние enum', { timeout: 30_000 }, async () => {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
       throw new Error('Для проверки fixture требуется DATABASE_URL');
@@ -62,7 +56,6 @@ describe('набор данных до переработки контракто
       const tables = await temporaryPool.query<{ table_name: string; rows: string }>(`
         select 'users' as table_name, count(*)::text as rows from users
         union all select 'sessions', count(*)::text from sessions
-        union all select 'todos', count(*)::text from todos
         union all select 'projects', count(*)::text from projects
         union all select 'stages', count(*)::text from stages
         union all select 'stage_predecessors', count(*)::text from stage_predecessors
@@ -87,7 +80,6 @@ describe('набор данных до переработки контракто
       expect(Object.fromEntries(tables.rows.map((row) => [row.table_name, Number(row.rows)]))).toEqual({
         users: 4,
         sessions: 1,
-        todos: 1,
         projects: 2,
         stages: 8,
         stage_predecessors: 7,

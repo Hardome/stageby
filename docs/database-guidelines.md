@@ -1,22 +1,21 @@
 # Работа с базой данных и миграциями
 
-API использует PostgreSQL, Drizzle ORM и SQL-миграции. Команды ниже запускаются из папки `api`; PostgreSQL должен быть доступен. Текущая схема `todos` — пример для новых таблиц.
+API использует PostgreSQL, Drizzle ORM и SQL-миграции. Команды ниже запускаются из папки `api`; PostgreSQL должен быть доступен. Схема `users` — пример для новых таблиц.
 
 Для новых предметных сущностей используйте `integer().primaryKey().generatedAlwaysAsIdentity()`:
 БД назначает положительный ID автоматически, API передаёт его числом (`int32`, от 1 до 2147483647).
-Внешние ключи используют тот же целочисленный тип. Существующие `todos` сохраняют UUID до удаления
-демонстрационного модуля; их способ создания ID не переносится в новые таблицы.
+Внешние ключи используют тот же целочисленный тип.
 
 ## Где что лежит
 
 | Файл | Назначение |
 | --- | --- |
-| [db/schema/todos.ts](../api/src/db/schema/todos.ts) | Описание таблицы `todos` и вывод типа `TodoRow`. Для новой таблицы создайте соседний файл. |
+| [db/schema/users.ts](../api/src/db/schema/users.ts) | Описание таблицы `users` и вывод типа `UserRow`. Для новой таблицы создайте соседний файл. |
 | [db/schema/index.ts](../api/src/db/schema/index.ts) | Экспорт всех таблиц; новую таблицу добавьте сюда. |
 | [drizzle.config.ts](../api/drizzle.config.ts) | Пути к схеме и миграциям, настройки Drizzle Kit. |
 | [db/migrations](../api/src/db/migrations) | SQL-файлы, снимки схемы и журнал генерации миграций; храните их вместе с кодом. |
 | [plugins/database.ts](../api/src/plugins/database.ts) | Подключение БД к Fastify как `app.db`. |
-| [modules/todos/repository.ts](../api/src/modules/todos/repository.ts) | Запросы приложения к таблице `todos`. |
+| [modules/users/repository.ts](../api/src/modules/users/repository.ts) | Запросы приложения к таблице `users`. |
 
 Схема в TypeScript и история миграций — части одного изменения. Не редактируйте сгенерированные файлы в `db/migrations/meta` вручную.
 
@@ -37,11 +36,11 @@ pnpm run db:studio
 
 ## Изменение схемы
 
-1. Измените нужный файл в `api/src/db/schema/` — например, [todos.ts](../api/src/db/schema/todos.ts). Новую таблицу экспортируйте из [index.ts](../api/src/db/schema/index.ts).
+1. Измените нужный файл в `api/src/db/schema/` — например, [users.ts](../api/src/db/schema/users.ts). Новую таблицу экспортируйте из [index.ts](../api/src/db/schema/index.ts).
 2. Запустите `pnpm run db:generate`. Проверьте новый SQL в [db/migrations](../api/src/db/migrations): соответствует ли он намерению и сохранит ли нужные данные. Если требуется перенос данных, продумайте его **до** применения миграции.
 3. Запустите `pnpm run db:migrate`.
-4. Обновите [репозиторий](../api/src/modules/todos/repository.ts) и [mapper.ts](../api/src/modules/todos/mapper.ts), если изменились поля, которые использует API. Если меняется HTTP-контракт, обновите [OpenAPI](../contracts/references/stageby/stageby.yaml) и выполните из корня Stageby `pnpm run codegen`.
-5. Проверьте путь от запроса до БД и ответа через [интеграционный тест](../api/src/modules/todos/todos.test.ts): `pnpm run test`. Затем выполните `pnpm run typecheck`.
+4. Обновите [репозиторий](../api/src/modules/users/repository.ts) и [mapper.ts](../api/src/modules/users/mapper.ts), если изменились поля, которые использует API. Если меняется HTTP-контракт, обновите [OpenAPI](../contracts/references/stageby/stageby.yaml) и выполните из корня Stageby `pnpm run codegen`.
+5. Проверьте путь от запроса до БД и ответа через [интеграционный тест](../api/src/modules/users/users.test.ts): `pnpm run test`. Затем выполните `pnpm run typecheck`.
 
 Не меняйте уже применённый SQL-файл: на других базах он может быть выполнен, а история перестанет соответствовать коду.
 
