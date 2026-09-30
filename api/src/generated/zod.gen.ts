@@ -214,6 +214,16 @@ export const zUserBrief = z.object({
     fullName: z.string().min(1).max(255)
 });
 
+/**
+ * Неотрицательная денежная сумма в копейках.
+ */
+export const zMoneyAmountMinor = z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' });
+
+/**
+ * Вычисляемая разница в копейках: положительное значение — остаток, отрицательное — переплата, null — план не задан.
+ */
+export const zSignedMoneyAmountMinor = z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }).nullable();
+
 export const zAcceptance = z.object({
     decision: z.enum(['accepted', 'rejected']),
     comment: z.string().min(1).max(5000).nullable(),
@@ -248,6 +258,8 @@ export const zStage = z.object({
     plannedStartDate: z.iso.date(),
     plannedEndDate: z.iso.date(),
     plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
+    actualWorkAmountMinor: zMoneyAmountMinor.readonly(),
+    workBalanceAmountMinor: zSignedMoneyAmountMinor.readonly(),
     plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
     actualStartDate: z.iso.date().nullable(),
     actualEndDate: z.iso.date().nullable(),
@@ -274,6 +286,7 @@ export const zProjectStages = z.object({
 export const zUpdateStage = z.object({
     expectedVersion: zExpectedVersion,
     assigneeId: z.int().gte(1).lte(2147483647).nullish(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30).optional(),
     plannedStartDate: z.iso.date().nullish(),
     plannedEndDate: z.iso.date().nullish(),
@@ -326,6 +339,40 @@ export const zConfigureChecklist = z.object({
         title: z.string().min(1).max(500),
         photoHint: z.string().min(1).max(1000).nullish()
     })).min(1)
+});
+
+/**
+ * Положительная сумма платежа или счёта в копейках. В первой версии минимум 100 копеек и только целые рубли.
+ */
+export const zPositiveMoneyAmountMinor = z.coerce.bigint().gte(BigInt(100)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' });
+
+export const zWorkPayment = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    stageId: z.int().gte(1).lte(2147483647),
+    paidAt: z.iso.date(),
+    amountMinor: zPositiveMoneyAmountMinor,
+    comment: z.string().min(1).max(1000).nullable(),
+    createdBy: zUserBrief,
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zCreateWorkPayment = z.object({
+    paidAt: z.iso.date(),
+    amountMinor: zPositiveMoneyAmountMinor,
+    comment: z.string().min(1).max(1000).nullish()
+});
+
+export const zDeleteWorkPayment = z.object({
+    expectedVersion: zExpectedVersion
+});
+
+export const zUpdateWorkPayment = z.object({
+    expectedVersion: zExpectedVersion,
+    paidAt: z.iso.date().optional(),
+    amountMinor: zPositiveMoneyAmountMinor.optional(),
+    comment: z.string().min(1).max(1000).nullish()
 });
 
 export const zUpdateChecklistItem = z.object({
@@ -422,6 +469,55 @@ export const zCreateUserWritable = z.object({
 export const zLoginRequestWritable = z.object({
     login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
     password: z.string().min(1).max(128)
+});
+
+export const zStageWritable = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    projectId: z.int().gte(1).lte(2147483647),
+    projectOwnerName: z.string().min(1).max(255),
+    projectAddress: z.string().min(1).max(1000),
+    projectCoordinates: zCoordinates,
+    projectIsArchived: z.boolean(),
+    type: zStageType,
+    title: z.enum([
+        'Фундамент',
+        'Стены',
+        'Крыша',
+        'Окна',
+        'Фасад',
+        'Электрика',
+        'Отделка',
+        'Отопление'
+    ]),
+    position: z.int().gte(1).lte(8),
+    canRunInParallel: z.boolean(),
+    workSubtypes: z.array(z.string().min(1).max(255)).max(30),
+    assignee: zUserBrief.nullable(),
+    status: zStageStatus,
+    plannedStartDate: z.iso.date(),
+    plannedEndDate: z.iso.date(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
+    actualStartDate: z.iso.date().nullable(),
+    actualEndDate: z.iso.date().nullable(),
+    predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7),
+    notes: z.string().min(1).max(5000).nullable(),
+    progressPercent: z.int().gte(0).lte(100),
+    latestAcceptance: zAcceptance.nullable(),
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zStagePageWritable = z.object({
+    items: z.array(zStageWritable),
+    total: z.int().gte(0),
+    limit: z.int().gte(1).lte(100),
+    offset: z.int().gte(0)
+});
+
+export const zProjectStagesWritable = z.object({
+    items: z.array(zStageWritable).max(8)
 });
 
 /**
@@ -644,6 +740,48 @@ export const zConfigureStageChecklistPath = z.object({
  * Успешный ответ
  */
 export const zConfigureStageChecklistResponse = zChecklist;
+
+export const zListWorkPaymentsPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zListWorkPaymentsResponse = z.array(zWorkPayment);
+
+export const zCreateWorkPaymentBody = zCreateWorkPayment;
+
+export const zCreateWorkPaymentPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Платёж создан
+ */
+export const zCreateWorkPaymentResponse = zWorkPayment;
+
+export const zDeleteWorkPaymentBody = zDeleteWorkPayment;
+
+export const zDeleteWorkPaymentPath = z.object({
+    paymentId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Платёж удалён
+ */
+export const zDeleteWorkPaymentResponse = z.void();
+
+export const zUpdateWorkPaymentBody = zUpdateWorkPayment;
+
+export const zUpdateWorkPaymentPath = z.object({
+    paymentId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Платёж изменён
+ */
+export const zUpdateWorkPaymentResponse = zWorkPayment;
 
 export const zUpdateChecklistItemBody = zUpdateChecklistItem;
 

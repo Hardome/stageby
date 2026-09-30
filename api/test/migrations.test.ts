@@ -62,7 +62,7 @@ const expectedIndexes = [
   'stages_status_idx',
   'users_login_unique',
   'users_role_active_idx',
-  'work_payments_stage_idx',
+  'work_payments_stage_paid_at_idx',
 ];
 
 const expectedForeignKeys = [
@@ -90,6 +90,7 @@ const expectedForeignKeys = [
   'stages_projectId_projects_id_fk',
   'stages_stageTypeCode_stage_types_code_fk',
   'work_payments_stageId_stages_id_fk',
+  'work_payments_createdByUserId_users_id_fk',
 ];
 
 describe('миграции БД', () => {
@@ -195,13 +196,13 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('10');
+      expect(firstJournal.rows[0]?.count).toBe('11');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('49');
+      expect(checkConstraints.rows[0]?.count).toBe('51');
       expect(enumTypes.rows.map((row) => row.name)).toEqual([
         'acceptance_decision',
         'file_purpose',

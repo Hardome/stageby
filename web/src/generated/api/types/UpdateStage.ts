@@ -5,6 +5,7 @@
 
 import type { ApiError } from './ApiError'
 import type { ExpectedVersion } from './ExpectedVersion'
+import type { PlannedMoneyAmountMinor } from './PlannedMoneyAmountMinor'
 import type { Stage } from './Stage'
 
 export type UpdateStage = {
@@ -24,6 +25,17 @@ export type UpdateStage = {
      * @type integer | undefined
     */
     assigneeId?: number | null;
+    /**
+     * @description Новый план оплаты работ; null очищает план. Доступно только руководителю.
+     *
+     * Format: `int64`
+     * @minLength 0
+     * @example 12500000
+     * @example 0
+     * @example null
+     * @type integer | undefined
+    */
+    plannedWorkAmountMinor?: PlannedMoneyAmountMinor | null;
     /**
      * @description Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
      * @type array | undefined
