@@ -396,6 +396,16 @@ export type UserBrief = {
     fullName: string;
 };
 
+/**
+ * Неотрицательная денежная сумма в копейках.
+ */
+export type MoneyAmountMinor = number;
+
+/**
+ * Вычисляемая разница в копейках: положительное значение — остаток, отрицательное — переплата, null — план не задан.
+ */
+export type SignedMoneyAmountMinor = number | null;
+
 export type Acceptance = {
     /**
      * Решение по этапу: accepted — принят, rejected — возвращён на доработку.
@@ -472,6 +482,14 @@ export type Stage = {
      */
     plannedEndDate: string;
     plannedWorkAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Сумма всех платежей за работы этапа.
+     */
+    readonly actualWorkAmountMinor: MoneyAmountMinor;
+    /**
+     * План работ минус фактические платежи; отрицательное значение означает переплату, null — план не задан.
+     */
+    readonly workBalanceAmountMinor: SignedMoneyAmountMinor;
     plannedMaterialAmountMinor: PlannedMoneyAmountMinor;
     /**
      * Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.
@@ -543,6 +561,10 @@ export type UpdateStage = {
      * ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
      */
     assigneeId?: number | null;
+    /**
+     * Новый план оплаты работ; null очищает план. Доступно только руководителю.
+     */
+    plannedWorkAmountMinor?: PlannedMoneyAmountMinor;
     /**
      * Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
      */
@@ -682,6 +704,73 @@ export type ConfigureChecklist = {
          */
         photoHint?: string | null;
     }>;
+};
+
+/**
+ * Положительная сумма платежа или счёта в копейках. В первой версии минимум 100 копеек и только целые рубли.
+ */
+export type PositiveMoneyAmountMinor = number;
+
+export type WorkPayment = {
+    /**
+     * Стабильный идентификатор платежа.
+     */
+    id: number;
+    /**
+     * Идентификатор оплачиваемого этапа.
+     */
+    stageId: number;
+    /**
+     * Дата фактической оплаты в формате YYYY-MM-DD.
+     */
+    paidAt: string;
+    amountMinor: PositiveMoneyAmountMinor;
+    /**
+     * Комментарий руководителя; null — комментарий отсутствует.
+     */
+    comment: string | null;
+    createdBy: UserBrief;
+    /**
+     * Версия платежа для защиты от конкурентных изменений.
+     */
+    version: number;
+    /**
+     * Дата и время создания записи в UTC.
+     */
+    createdAt: string;
+    /**
+     * Дата и время последнего изменения записи в UTC.
+     */
+    updatedAt: string;
+};
+
+export type CreateWorkPayment = {
+    /**
+     * Дата фактической оплаты в формате YYYY-MM-DD.
+     */
+    paidAt: string;
+    amountMinor: PositiveMoneyAmountMinor;
+    /**
+     * Необязательный комментарий руководителя.
+     */
+    comment?: string | null;
+};
+
+export type DeleteWorkPayment = {
+    expectedVersion: ExpectedVersion;
+};
+
+export type UpdateWorkPayment = {
+    expectedVersion: ExpectedVersion;
+    /**
+     * Новая дата фактической оплаты.
+     */
+    paidAt?: string;
+    amountMinor?: PositiveMoneyAmountMinor;
+    /**
+     * Новый комментарий; null очищает комментарий.
+     */
+    comment?: string | null;
 };
 
 export type UpdateChecklistItem = {
@@ -882,6 +971,127 @@ export type LoginRequestWritable = {
      * Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.
      */
     password: string;
+};
+
+export type StageWritable = {
+    /**
+     * Стабильный ID этапа строительства.
+     */
+    id: number;
+    /**
+     * Стабильный ID проекта, которому принадлежит запись.
+     */
+    projectId: number;
+    /**
+     * Имя клиента объекта, необходимое странице «Мои этапы».
+     */
+    projectOwnerName: string;
+    /**
+     * Адрес объекта строительства для выезда на этап.
+     */
+    projectAddress: string;
+    /**
+     * Координаты объекта строительства для выезда на этап.
+     */
+    projectCoordinates: Coordinates;
+    /**
+     * Признак архивного проекта. Если true, изменения этапа запрещены.
+     */
+    projectIsArchived: boolean;
+    type: StageType;
+    /**
+     * Название однозначно определяется type и не меняется.
+     */
+    title: 'Фундамент' | 'Стены' | 'Крыша' | 'Окна' | 'Фасад' | 'Электрика' | 'Отделка' | 'Отопление';
+    /**
+     * Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
+     */
+    position: number;
+    /**
+     * Признак допустимости параллельного выполнения этапа.
+     */
+    canRunInParallel: boolean;
+    /**
+     * Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.
+     */
+    workSubtypes: Array<string>;
+    /**
+     * Назначенный ответственный мастер; null — мастер не назначен.
+     */
+    assignee: UserBrief | null;
+    status: StageStatus;
+    /**
+     * Плановая дата начала этапа в формате YYYY-MM-DD.
+     */
+    plannedStartDate: string;
+    /**
+     * Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.
+     */
+    plannedEndDate: string;
+    plannedWorkAmountMinor: PlannedMoneyAmountMinor;
+    plannedMaterialAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.
+     */
+    actualStartDate: string | null;
+    /**
+     * Фактическая дата завершения в формате YYYY-MM-DD. Устанавливается сервером при приёмке; null — этап ещё не принят.
+     */
+    actualEndDate: string | null;
+    /**
+     * ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.
+     */
+    predecessorStageIds: Array<number>;
+    /**
+     * Примечания к этапу; null — отсутствуют.
+     */
+    notes: string | null;
+    /**
+     * 100 × выполненные пункты / все пункты, округление до целого. Пустой чек-лист — 0. Только вычисляется сервером.
+     */
+    progressPercent: number;
+    /**
+     * Последнее решение о приёмке или доработке; null — решений ещё не было. Полная история проверок не возвращается.
+     */
+    latestAcceptance: Acceptance | null;
+    /**
+     * Версия записи. Увеличивается при каждом изменении.
+     */
+    version: number;
+    /**
+     * Дата и время создания записи в UTC, формат RFC 3339.
+     */
+    createdAt: string;
+    /**
+     * Дата и время последнего изменения записи в UTC, формат RFC 3339.
+     */
+    updatedAt: string;
+};
+
+export type StagePageWritable = {
+    /**
+     * Этапы текущей страницы с учётом фильтров и прав доступа.
+     */
+    items: Array<StageWritable>;
+    /**
+     * Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.
+     */
+    total: number;
+    /**
+     * Применённый размер страницы; количество items может быть меньше.
+     */
+    limit: number;
+    /**
+     * Количество пропущенных записей после фильтрации и проверки доступа.
+     */
+    offset: number;
+};
+
+export type ProjectStagesWritable = {
+    /**
+     * Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации.
+     */
+    items: Array<StageWritable>;
 };
 
 /**
@@ -1790,6 +2000,182 @@ export type ConfigureStageChecklistResponses = {
 };
 
 export type ConfigureStageChecklistResponse = ConfigureStageChecklistResponses[keyof ConfigureStageChecklistResponses];
+
+export type ListWorkPaymentsData = {
+    body?: never;
+    path: {
+        /**
+         * Стабильный идентификатор этапа.
+         */
+        stageId: number;
+    };
+    query?: never;
+    url: '/stages/{stageId}/work-payments';
+};
+
+export type ListWorkPaymentsErrors = {
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+};
+
+export type ListWorkPaymentsError = ListWorkPaymentsErrors[keyof ListWorkPaymentsErrors];
+
+export type ListWorkPaymentsResponses = {
+    /**
+     * Успешный ответ
+     */
+    200: Array<WorkPayment>;
+};
+
+export type ListWorkPaymentsResponse = ListWorkPaymentsResponses[keyof ListWorkPaymentsResponses];
+
+export type CreateWorkPaymentData = {
+    body: CreateWorkPayment;
+    path: {
+        /**
+         * Стабильный идентификатор этапа.
+         */
+        stageId: number;
+    };
+    query?: never;
+    url: '/stages/{stageId}/work-payments';
+};
+
+export type CreateWorkPaymentErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type CreateWorkPaymentError = CreateWorkPaymentErrors[keyof CreateWorkPaymentErrors];
+
+export type CreateWorkPaymentResponses = {
+    /**
+     * Платёж создан
+     */
+    201: WorkPayment;
+};
+
+export type CreateWorkPaymentResponse = CreateWorkPaymentResponses[keyof CreateWorkPaymentResponses];
+
+export type DeleteWorkPaymentData = {
+    body: DeleteWorkPayment;
+    path: {
+        /**
+         * Стабильный идентификатор платежа.
+         */
+        paymentId: number;
+    };
+    query?: never;
+    url: '/work-payments/{paymentId}';
+};
+
+export type DeleteWorkPaymentErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type DeleteWorkPaymentError = DeleteWorkPaymentErrors[keyof DeleteWorkPaymentErrors];
+
+export type DeleteWorkPaymentResponses = {
+    /**
+     * Платёж удалён
+     */
+    204: void;
+};
+
+export type DeleteWorkPaymentResponse = DeleteWorkPaymentResponses[keyof DeleteWorkPaymentResponses];
+
+export type UpdateWorkPaymentData = {
+    body: UpdateWorkPayment;
+    path: {
+        /**
+         * Стабильный идентификатор платежа.
+         */
+        paymentId: number;
+    };
+    query?: never;
+    url: '/work-payments/{paymentId}';
+};
+
+export type UpdateWorkPaymentErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type UpdateWorkPaymentError = UpdateWorkPaymentErrors[keyof UpdateWorkPaymentErrors];
+
+export type UpdateWorkPaymentResponses = {
+    /**
+     * Платёж изменён
+     */
+    200: WorkPayment;
+};
+
+export type UpdateWorkPaymentResponse = UpdateWorkPaymentResponses[keyof UpdateWorkPaymentResponses];
 
 export type UpdateChecklistItemData = {
     body: UpdateChecklistItem;

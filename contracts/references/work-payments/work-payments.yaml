@@ -1,0 +1,253 @@
+paths:
+  /stages/{stageId}/work-payments:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Стабильный идентификатор этапа.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: listWorkPayments
+      tags:
+        - Work payments
+      summary: Платежи за работы этапа
+      description: Только руководитель. Платежи отсортированы по paidAt DESC, id DESC.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkPayment"
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+    post:
+      operationId: createWorkPayment
+      tags:
+        - Work payments
+      summary: Добавить платёж за работы
+      description: Только руководитель. Сумма положительна и кратна 100 копейкам. Архивный проект изменить нельзя.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkPayment"
+      responses:
+        "201":
+          description: Платёж создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkPayment"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /work-payments/{paymentId}:
+    parameters:
+      - name: paymentId
+        in: path
+        required: true
+        description: Стабильный идентификатор платежа.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    patch:
+      operationId: updateWorkPayment
+      tags:
+        - Work payments
+      summary: Изменить платёж за работы
+      description: Только руководитель. expectedVersion защищает от конкурентного изменения. Архивный проект изменить нельзя.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkPayment"
+      responses:
+        "200":
+          description: Платёж изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkPayment"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+    delete:
+      operationId: deleteWorkPayment
+      tags:
+        - Work payments
+      summary: Удалить платёж за работы
+      description: Только руководитель. expectedVersion передаётся в теле и защищает от конкурентного удаления. Архивный проект изменить нельзя.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteWorkPayment"
+      responses:
+        "204":
+          description: Платёж удалён
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+components:
+  schemas:
+    WorkPayment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - stageId
+        - paidAt
+        - amountMinor
+        - comment
+        - createdBy
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          examples:
+            - 501
+          description: Стабильный идентификатор платежа.
+        stageId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          examples:
+            - 1001
+          description: Идентификатор оплачиваемого этапа.
+        paidAt:
+          type: string
+          format: date
+          examples:
+            - "2026-10-01"
+          description: Дата фактической оплаты в формате YYYY-MM-DD.
+        amountMinor:
+          $ref: ../common/common.yaml#/components/schemas/PositiveMoneyAmountMinor
+        comment:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
+          examples:
+            - Аванс
+            - null
+          description: Комментарий руководителя; null — комментарий отсутствует.
+        createdBy:
+          $ref: ../users/users.yaml#/components/schemas/UserBrief
+        version:
+          type: integer
+          minimum: 1
+          examples:
+            - 1
+          description: Версия платежа для защиты от конкурентных изменений.
+        createdAt:
+          type: string
+          format: date-time
+          examples:
+            - "2026-10-01T08:00:00Z"
+          description: Дата и время создания записи в UTC.
+        updatedAt:
+          type: string
+          format: date-time
+          examples:
+            - "2026-10-01T08:00:00Z"
+          description: Дата и время последнего изменения записи в UTC.
+    CreateWorkPayment:
+      type: object
+      additionalProperties: false
+      required:
+        - paidAt
+        - amountMinor
+      properties:
+        paidAt:
+          type: string
+          format: date
+          examples:
+            - "2026-10-01"
+          description: Дата фактической оплаты в формате YYYY-MM-DD.
+        amountMinor:
+          $ref: ../common/common.yaml#/components/schemas/PositiveMoneyAmountMinor
+        comment:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
+          examples:
+            - Аванс
+            - null
+          description: Необязательный комментарий руководителя.
+    UpdateWorkPayment:
+      type: object
+      additionalProperties: false
+      minProperties: 2
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
+        paidAt:
+          type: string
+          format: date
+          examples:
+            - "2026-10-02"
+          description: Новая дата фактической оплаты.
+        amountMinor:
+          $ref: ../common/common.yaml#/components/schemas/PositiveMoneyAmountMinor
+        comment:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 1000
+          examples:
+            - Окончательный расчёт
+            - null
+          description: Новый комментарий; null очищает комментарий.
+    DeleteWorkPayment:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion

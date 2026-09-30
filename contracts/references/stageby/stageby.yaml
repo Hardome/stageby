@@ -2,8 +2,8 @@ openapi: 3.1.0
 info:
   title: Stageby API
   version: 0.1.0
-  description: "Контракт первой версии управления строительством: пользователи, проекты, этапы, чек-листы и файлы.
-    Финансовый модуль, материалы, инструмент и платежи отложены. Реализация новых маршрутов выполняется
+  description: "Контракт первой версии управления строительством: пользователи, проекты, этапы, чек-листы, файлы и оплата работ.
+    Материалы, инструмент и остальные финансовые операции отложены. Реализация новых маршрутов выполняется
     отдельно. ID новых сущностей — положительные целые числа int32, назначаемые БД автоматически. Даты работ YYYY-MM-DD; timestamps — RFC 3339 UTC. Календарный часовой пояс
     первой версии Asia/Yekaterinburg. PATCH меняет только переданные поля, null очищает только nullable-поле,
     пустое тело запрещено; массив заменяется целиком. Все изменения атомарны. Неизвестные поля и
@@ -27,6 +27,8 @@ tags:
     description: Фиксированные виды работ, назначения, зависимости и приёмка.
   - name: Checklists
     description: Один чек-лист с контрольными точками и фотографиями на этап.
+  - name: Work payments
+    description: Фактические платежи за выполненные работы этапа. Изменение доступно только руководителю.
   - name: Files
     description: Устойчивые upload-сессии, закрытое файловое хранилище и типизированные связи файлов.
 paths:
@@ -60,6 +62,10 @@ paths:
     $ref: ../stages/stages.yaml#/paths/~1stages~1{stageId}~1rework
   /stages/{stageId}/checklist:
     $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist
+  /stages/{stageId}/work-payments:
+    $ref: ../work-payments/work-payments.yaml#/paths/~1stages~1{stageId}~1work-payments
+  /work-payments/{paymentId}:
+    $ref: ../work-payments/work-payments.yaml#/paths/~1work-payments~1{paymentId}
   /stages/{stageId}/checklist/items/{itemId}:
     $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist~1items~1{itemId}
   /file-uploads:

@@ -6,7 +6,9 @@
 import * as z from 'zod'
 import { acceptanceSchema } from './acceptanceSchema'
 import { coordinatesSchema } from './coordinatesSchema'
+import { moneyAmountMinorSchema } from './moneyAmountMinorSchema'
 import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
+import { signedMoneyAmountMinorSchema } from './signedMoneyAmountMinorSchema'
 import { stageStatusSchema } from './stageStatusSchema'
 import { stageTypeSchema } from './stageTypeSchema'
 import { userBriefSchema } from './userBriefSchema'
@@ -28,6 +30,8 @@ export const stageSchema = z.object({
   plannedStartDate: z.iso.date().describe('Плановая дата начала этапа в формате YYYY-MM-DD.').meta({ examples: ['2026-09-21'] }),
   plannedEndDate: z.iso.date().describe('Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.').meta({ examples: ['2026-09-28'] }),
   plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
+  actualWorkAmountMinor: moneyAmountMinorSchema.describe('Сумма всех платежей за работы этапа.').meta({ examples: [12500000] }),
+  workBalanceAmountMinor: signedMoneyAmountMinorSchema.nullable().describe('План работ минус фактические платежи; отрицательное значение означает переплату, null — план не задан.').meta({ examples: [250000, -100000, ] }),
   plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
   actualStartDate: z.iso.date().nullable().describe('Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.').meta({ examples: ['2026-09-21', ] }),
   actualEndDate: z.iso.date().nullable().describe('Фактическая дата завершения в формате YYYY-MM-DD. Устанавливается сервером при приёмке; null — этап ещё не принят.').meta({ examples: ['2026-09-28', ] }),

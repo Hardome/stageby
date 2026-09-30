@@ -11,3 +11,4 @@ export { listProjectStagesQueryKey, listProjectStagesQueryOptions, useListProjec
 export { listProjectsQueryKey, listProjectsQueryOptions, useListProjects } from './useListProjects'
 export { listStagesQueryKey, listStagesQueryOptions, useListStages } from './useListStages'
 export { listUsersQueryKey, listUsersQueryOptions, useListUsers } from './useListUsers'
+export { listWorkPaymentsQueryKey, listWorkPaymentsQueryOptions, useListWorkPayments } from './useListWorkPayments'

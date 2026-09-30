@@ -2,7 +2,7 @@
 
 import type { RouteHandler } from 'fastify';
 
-import type { AcceptStageData, AcceptStageErrors, AcceptStageResponses, ChangeStageStatusData, ChangeStageStatusErrors, ChangeStageStatusResponses, CompleteFileUploadData, CompleteFileUploadErrors, CompleteFileUploadResponses, ConfigureStageChecklistData, ConfigureStageChecklistErrors, ConfigureStageChecklistResponses, CreateChecklistItemPhotoData, CreateChecklistItemPhotoErrors, CreateChecklistItemPhotoResponses, CreateFileUploadData, CreateFileUploadErrors, CreateFileUploadResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteChecklistItemPhotoData, DeleteChecklistItemPhotoErrors, DeleteChecklistItemPhotoResponses, GetCurrentUserErrors, GetCurrentUserResponses, GetFileContentData, GetFileContentErrors, GetFileContentResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetStageChecklistData, GetStageChecklistErrors, GetStageChecklistResponses, GetStageData, GetStageErrors, GetStageResponses, GetUserData, GetUserErrors, GetUserResponses, ListChecklistItemPhotosData, ListChecklistItemPhotosErrors, ListChecklistItemPhotosResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListProjectStagesData, ListProjectStagesErrors, ListProjectStagesResponses, ListStagesData, ListStagesErrors, ListStagesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginData, LoginErrors, LoginResponses, LogoutErrors, LogoutResponses, ReturnStageForReworkData, ReturnStageForReworkErrors, ReturnStageForReworkResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, UpdateChecklistItemData, UpdateChecklistItemErrors, UpdateChecklistItemResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateStageData, UpdateStageErrors, UpdateStageResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen.js';
+import type { AcceptStageData, AcceptStageErrors, AcceptStageResponses, ChangeStageStatusData, ChangeStageStatusErrors, ChangeStageStatusResponses, CompleteFileUploadData, CompleteFileUploadErrors, CompleteFileUploadResponses, ConfigureStageChecklistData, ConfigureStageChecklistErrors, ConfigureStageChecklistResponses, CreateChecklistItemPhotoData, CreateChecklistItemPhotoErrors, CreateChecklistItemPhotoResponses, CreateFileUploadData, CreateFileUploadErrors, CreateFileUploadResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CreateWorkPaymentData, CreateWorkPaymentErrors, CreateWorkPaymentResponses, DeleteChecklistItemPhotoData, DeleteChecklistItemPhotoErrors, DeleteChecklistItemPhotoResponses, DeleteWorkPaymentData, DeleteWorkPaymentErrors, DeleteWorkPaymentResponses, GetCurrentUserErrors, GetCurrentUserResponses, GetFileContentData, GetFileContentErrors, GetFileContentResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetStageChecklistData, GetStageChecklistErrors, GetStageChecklistResponses, GetStageData, GetStageErrors, GetStageResponses, GetUserData, GetUserErrors, GetUserResponses, ListChecklistItemPhotosData, ListChecklistItemPhotosErrors, ListChecklistItemPhotosResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListProjectStagesData, ListProjectStagesErrors, ListProjectStagesResponses, ListStagesData, ListStagesErrors, ListStagesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, ListWorkPaymentsData, ListWorkPaymentsErrors, ListWorkPaymentsResponses, LoginData, LoginErrors, LoginResponses, LogoutErrors, LogoutResponses, ReturnStageForReworkData, ReturnStageForReworkErrors, ReturnStageForReworkResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, UpdateChecklistItemData, UpdateChecklistItemErrors, UpdateChecklistItemResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateStageData, UpdateStageErrors, UpdateStageResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UpdateWorkPaymentData, UpdateWorkPaymentErrors, UpdateWorkPaymentResponses } from './types.gen.js';
 
 export type RouteHandlers = {
     listUsers: RouteHandler<{
@@ -94,6 +94,25 @@ export type RouteHandlers = {
         Body: ConfigureStageChecklistData['body'];
         Params: ConfigureStageChecklistData['path'];
         Reply: ConfigureStageChecklistErrors & ConfigureStageChecklistResponses;
+    }>;
+    listWorkPayments: RouteHandler<{
+        Params: ListWorkPaymentsData['path'];
+        Reply: ListWorkPaymentsErrors & ListWorkPaymentsResponses;
+    }>;
+    createWorkPayment: RouteHandler<{
+        Body: CreateWorkPaymentData['body'];
+        Params: CreateWorkPaymentData['path'];
+        Reply: CreateWorkPaymentErrors & CreateWorkPaymentResponses;
+    }>;
+    deleteWorkPayment: RouteHandler<{
+        Body: DeleteWorkPaymentData['body'];
+        Params: DeleteWorkPaymentData['path'];
+        Reply: DeleteWorkPaymentErrors & DeleteWorkPaymentResponses;
+    }>;
+    updateWorkPayment: RouteHandler<{
+        Body: UpdateWorkPaymentData['body'];
+        Params: UpdateWorkPaymentData['path'];
+        Reply: UpdateWorkPaymentErrors & UpdateWorkPaymentResponses;
     }>;
     updateChecklistItem: RouteHandler<{
         Body: UpdateChecklistItemData['body'];

@@ -5,7 +5,9 @@
 
 import type { Acceptance } from './Acceptance'
 import type { Coordinates } from './Coordinates'
+import type { MoneyAmountMinor } from './MoneyAmountMinor'
 import type { PlannedMoneyAmountMinor } from './PlannedMoneyAmountMinor'
+import type { SignedMoneyAmountMinor } from './SignedMoneyAmountMinor'
 import type { StageStatusKey } from './StageStatus'
 import type { StageTypeKey } from './StageType'
 import type { UserBrief } from './UserBrief'
@@ -135,6 +137,25 @@ export type Stage = {
      * @type integer
     */
     plannedWorkAmountMinor: PlannedMoneyAmountMinor | null;
+    /**
+     * @description Сумма всех платежей за работы этапа.
+     *
+     * Format: `int64`
+     * @minLength 0
+     * @example 12500000
+     * @type integer
+    */
+    readonly actualWorkAmountMinor: MoneyAmountMinor;
+    /**
+     * @description План работ минус фактические платежи; отрицательное значение означает переплату, null — план не задан.
+     *
+     * Format: `int64`
+     * @example 250000
+     * @example -100000
+     * @example null
+     * @type integer
+    */
+    readonly workBalanceAmountMinor: SignedMoneyAmountMinor | null;
     /**
      * @description Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
      *
