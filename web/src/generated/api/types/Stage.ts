@@ -168,6 +168,69 @@ export type Stage = {
     */
     plannedMaterialAmountMinor: PlannedMoneyAmountMinor | null;
     /**
+     * @description Неотрицательная денежная сумма в копейках.
+     *
+     * Format: `int64`
+     * @minLength 0
+     * @example 12500000
+     * @type integer
+    */
+    actualMaterialAmountMinor: MoneyAmountMinor;
+    /**
+     * @description Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
+     *
+     * Format: `int64`
+     * @minLength 0
+     * @example 12500000
+     * @example 0
+     * @example null
+     * @type integer
+    */
+    totalPlannedAmountMinor: PlannedMoneyAmountMinor | null;
+    /**
+     * @description Неотрицательная денежная сумма в копейках.
+     *
+     * Format: `int64`
+     * @minLength 0
+     * @example 12500000
+     * @type integer
+    */
+    totalActualAmountMinor: MoneyAmountMinor;
+    /**
+     * @description Краткая сводка заказов, счетов, доставки и открытых нехваток этапа.
+     * @type object
+    */
+    materialSummary: {
+        /**
+         * @description Количество заказов этапа.
+         * @minLength 0
+         * @example 2
+         * @type integer
+        */
+        orderCount: number;
+        /**
+         * @description Количество счетов этапа.
+         * @minLength 0
+         * @example 3
+         * @type integer
+        */
+        invoiceCount: number;
+        /**
+         * @description Количество доставленных счетов.
+         * @minLength 0
+         * @example 2
+         * @type integer
+        */
+        deliveredInvoiceCount: number;
+        /**
+         * @description Количество открытых нехваток.
+         * @minLength 0
+         * @example 1
+         * @type integer
+        */
+        openShortageCount: number;
+    };
+    /**
      * @description Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.
      *
      * Format: `date`

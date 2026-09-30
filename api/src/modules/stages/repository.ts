@@ -3,7 +3,7 @@ import { and, asc, desc, eq, inArray, sql, sum } from 'drizzle-orm';
 import { acceptanceItems, acceptances } from '#app/db/schema/acceptances';
 import { type ChecklistItemRow, type ChecklistRow, checklistItems, checklists } from '#app/db/schema/checklists';
 import { checklistItemPhotos, files } from '#app/db/schema/files';
-import { materialInvoices, materialOrders } from '#app/db/schema/materials';
+import { materialInvoices, materialOrders, materialShortages } from '#app/db/schema/materials';
 import { projects } from '#app/db/schema/projects';
 import { stageTypes } from '#app/db/schema/stage-types';
 import { stagePredecessors, stages } from '#app/db/schema/stages';
@@ -113,6 +113,50 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
     .from(workPayments)
     .where(eq(workPayments.stageId, stageId));
   const actualWorkAmountMinor = workTotal?.amount ?? 0;
+  const orderRows = await database
+    .select({ id: materialOrders.id })
+    .from(materialOrders)
+    .where(eq(materialOrders.stageId, stageId));
+  const invoiceRows =
+    orderRows.length > 0
+      ? await database
+          .select({
+            id: materialInvoices.id,
+            amountMinor: materialInvoices.amountMinor,
+            paidAt: materialInvoices.paidAt,
+            deliveredAt: materialInvoices.deliveredAt,
+          })
+          .from(materialInvoices)
+          .where(
+            inArray(
+              materialInvoices.orderId,
+              orderRows.map(({ id }) => id),
+            ),
+          )
+      : [];
+  const [openShortage] =
+    invoiceRows.length > 0
+      ? await database
+          .select({ count: sql<number>`count(*)`.mapWith(Number) })
+          .from(materialShortages)
+          .where(
+            and(
+              inArray(
+                materialShortages.invoiceId,
+                invoiceRows.map(({ id }) => id),
+              ),
+              sql`${materialShortages.resolvedAt} is null`,
+            ),
+          )
+      : [{ count: 0 }];
+  const actualMaterialAmountMinor = invoiceRows.reduce(
+    (total, invoice) => total + (invoice.paidAt === null ? 0 : Number(invoice.amountMinor)),
+    0,
+  );
+  const totalPlannedAmountMinor =
+    row.stage.plannedWorkAmountMinor === null || row.stage.plannedMaterialAmountMinor === null
+      ? null
+      : row.stage.plannedWorkAmountMinor + row.stage.plannedMaterialAmountMinor;
   return {
     id: row.stage.id,
     projectId: row.stage.projectId,
@@ -134,6 +178,15 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
     workBalanceAmountMinor:
       row.stage.plannedWorkAmountMinor === null ? null : row.stage.plannedWorkAmountMinor - actualWorkAmountMinor,
     plannedMaterialAmountMinor: row.stage.plannedMaterialAmountMinor,
+    actualMaterialAmountMinor,
+    totalPlannedAmountMinor,
+    totalActualAmountMinor: actualWorkAmountMinor + actualMaterialAmountMinor,
+    materialSummary: {
+      orderCount: orderRows.length,
+      invoiceCount: invoiceRows.length,
+      deliveredInvoiceCount: invoiceRows.filter(({ deliveredAt }) => deliveredAt !== null).length,
+      openShortageCount: openShortage?.count ?? 0,
+    },
     actualStartDate: row.stage.actualStartDate,
     actualEndDate: row.stage.actualEndDate,
     predecessorStageIds: predecessors.map(({ id }) => id),
@@ -330,6 +383,31 @@ export class StageRepository {
           .update(stages)
           .set({
             plannedWorkAmountMinor,
+            version: sql`${stages.version} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(stages.id, stageId));
+      }
+      return { status: 'ok', value: (await loadStage(transaction, stageId))! };
+    });
+  }
+
+  updatePlannedMaterialAmount(
+    stageId: number,
+    expectedVersion: number,
+    plannedMaterialAmountMinor: number | null,
+  ): Promise<OperationResult<Stage>> {
+    return this.#database.transaction(async (transaction) => {
+      const locked = await lockStage(transaction, stageId);
+      const baseError = getBaseMutationError(locked, expectedVersion);
+      if (baseError) return { status: baseError };
+      if (!locked) return { status: 'not_found' };
+      if (locked.stage.status === 'paid') return { status: 'invalid_transition' };
+      if (locked.stage.plannedMaterialAmountMinor !== plannedMaterialAmountMinor) {
+        await transaction
+          .update(stages)
+          .set({
+            plannedMaterialAmountMinor,
             version: sql`${stages.version} + 1`,
             updatedAt: new Date(),
           })

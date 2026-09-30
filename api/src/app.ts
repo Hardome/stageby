@@ -6,6 +6,7 @@ import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fas
 import type { Environment } from '#app/config/env';
 import { authModule } from '#app/modules/auth/index';
 import { fileModule } from '#app/modules/files/index';
+import { materialModule } from '#app/modules/materials/index';
 import { projectModule } from '#app/modules/projects/index';
 import { stageModule } from '#app/modules/stages/index';
 import { userModule } from '#app/modules/users/index';
@@ -76,6 +77,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(projectModule);
   await app.register(stageModule);
   await app.register(workPaymentModule);
+  await app.register(materialModule);
 
   return app;
 }
