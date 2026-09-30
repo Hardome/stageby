@@ -9,6 +9,7 @@ import { fileModule } from '#app/modules/files/index';
 import { projectModule } from '#app/modules/projects/index';
 import { stageModule } from '#app/modules/stages/index';
 import { userModule } from '#app/modules/users/index';
+import { workPaymentModule } from '#app/modules/work-payments/index';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerDatabase } from '#app/plugins/database';
 import { registerDocumentation } from '#app/plugins/documentation';
@@ -74,6 +75,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   });
   await app.register(projectModule);
   await app.register(stageModule);
+  await app.register(workPaymentModule);
 
   return app;
 }

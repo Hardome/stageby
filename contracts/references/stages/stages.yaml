@@ -350,6 +350,8 @@ components:
         - plannedStartDate
         - plannedEndDate
         - plannedWorkAmountMinor
+        - actualWorkAmountMinor
+        - workBalanceAmountMinor
         - plannedMaterialAmountMinor
         - actualStartDate
         - actualEndDate
@@ -455,6 +457,16 @@ components:
           format: date
         plannedWorkAmountMinor:
           $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
+        actualWorkAmountMinor:
+          readOnly: true
+          description: Сумма всех платежей за работы этапа.
+          allOf:
+            - $ref: ../common/common.yaml#/components/schemas/MoneyAmountMinor
+        workBalanceAmountMinor:
+          readOnly: true
+          description: План работ минус фактические платежи; отрицательное значение означает переплату, null — план не задан.
+          allOf:
+            - $ref: ../common/common.yaml#/components/schemas/SignedMoneyAmountMinor
         plannedMaterialAmountMinor:
           $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
         actualStartDate:
@@ -588,6 +600,10 @@ components:
             - "null"
           minimum: 1
           maximum: 2147483647
+        plannedWorkAmountMinor:
+          description: Новый план оплаты работ; null очищает план. Доступно только руководителю.
+          allOf:
+            - $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
         workSubtypes:
           description: "Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы."
           type: array

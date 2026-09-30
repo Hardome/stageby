@@ -108,6 +108,11 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
     .orderBy(desc(acceptances.decidedAt), desc(acceptances.id))
     .limit(1);
   const checklist = await loadChecklist(database, stageId);
+  const [workTotal] = await database
+    .select({ amount: sum(workPayments.amountMinor).mapWith(Number) })
+    .from(workPayments)
+    .where(eq(workPayments.stageId, stageId));
+  const actualWorkAmountMinor = workTotal?.amount ?? 0;
   return {
     id: row.stage.id,
     projectId: row.stage.projectId,
@@ -125,6 +130,9 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
     plannedStartDate: row.stage.plannedStartDate,
     plannedEndDate: row.stage.plannedEndDate,
     plannedWorkAmountMinor: row.stage.plannedWorkAmountMinor,
+    actualWorkAmountMinor,
+    workBalanceAmountMinor:
+      row.stage.plannedWorkAmountMinor === null ? null : row.stage.plannedWorkAmountMinor - actualWorkAmountMinor,
     plannedMaterialAmountMinor: row.stage.plannedMaterialAmountMinor,
     actualStartDate: row.stage.actualStartDate,
     actualEndDate: row.stage.actualEndDate,
@@ -274,6 +282,12 @@ export class StageRepository {
     this.#database = database;
   }
 
+  async get(stageId: number, actor: Actor): Promise<OperationResult<Stage>> {
+    const [stage] = await this.#database.select().from(stages).where(eq(stages.id, stageId));
+    if (!stage || !canRead(actor, stage.assigneeId)) return { status: 'not_found' };
+    return { status: 'ok', value: (await loadStage(this.#database, stageId))! };
+  }
+
   async getChecklist(stageId: number, actor: Actor): Promise<OperationResult<Checklist>> {
     const [stage] = await this.#database.select().from(stages).where(eq(stages.id, stageId));
     if (!stage || !canRead(actor, stage.assigneeId)) return { status: 'not_found' };
@@ -294,6 +308,31 @@ export class StageRepository {
         await transaction
           .update(stages)
           .set({ assigneeId, status, version: sql`${stages.version} + 1`, updatedAt: new Date() })
+          .where(eq(stages.id, stageId));
+      }
+      return { status: 'ok', value: (await loadStage(transaction, stageId))! };
+    });
+  }
+
+  updatePlannedWorkAmount(
+    stageId: number,
+    expectedVersion: number,
+    plannedWorkAmountMinor: number | null,
+  ): Promise<OperationResult<Stage>> {
+    return this.#database.transaction(async (transaction) => {
+      const locked = await lockStage(transaction, stageId);
+      const baseError = getBaseMutationError(locked, expectedVersion);
+      if (baseError) return { status: baseError };
+      if (!locked) return { status: 'not_found' };
+      if (locked.stage.status === 'paid') return { status: 'invalid_transition' };
+      if (locked.stage.plannedWorkAmountMinor !== plannedWorkAmountMinor) {
+        await transaction
+          .update(stages)
+          .set({
+            plannedWorkAmountMinor,
+            version: sql`${stages.version} + 1`,
+            updatedAt: new Date(),
+          })
           .where(eq(stages.id, stageId));
       }
       return { status: 'ok', value: (await loadStage(transaction, stageId))! };
