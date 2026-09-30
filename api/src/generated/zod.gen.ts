@@ -261,6 +261,15 @@ export const zStage = z.object({
     actualWorkAmountMinor: zMoneyAmountMinor.readonly(),
     workBalanceAmountMinor: zSignedMoneyAmountMinor.readonly(),
     plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
+    actualMaterialAmountMinor: zMoneyAmountMinor,
+    totalPlannedAmountMinor: zPlannedMoneyAmountMinor,
+    totalActualAmountMinor: zMoneyAmountMinor,
+    materialSummary: z.object({
+        orderCount: z.int().gte(0),
+        invoiceCount: z.int().gte(0),
+        deliveredInvoiceCount: z.int().gte(0),
+        openShortageCount: z.int().gte(0)
+    }),
     actualStartDate: z.iso.date().nullable(),
     actualEndDate: z.iso.date().nullable(),
     predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7),
@@ -287,6 +296,7 @@ export const zUpdateStage = z.object({
     expectedVersion: zExpectedVersion,
     assigneeId: z.int().gte(1).lte(2147483647).nullish(),
     plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.optional(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30).optional(),
     plannedStartDate: z.iso.date().nullish(),
     plannedEndDate: z.iso.date().nullish(),
@@ -373,6 +383,71 @@ export const zUpdateWorkPayment = z.object({
     paidAt: z.iso.date().optional(),
     amountMinor: zPositiveMoneyAmountMinor.optional(),
     comment: z.string().min(1).max(1000).nullish()
+});
+
+export const zMaterialShortage = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    invoiceId: z.int().gte(1).lte(2147483647),
+    comment: z.string().min(1).max(500),
+    reportedAt: z.iso.datetime(),
+    reportedBy: zUserBrief,
+    resolvedAt: z.iso.datetime().nullable(),
+    resolvedBy: zUserBrief.nullable(),
+    resolutionComment: z.string().min(1).max(500).nullable(),
+    version: z.int().gte(1)
+});
+
+export const zMaterialInvoice = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    orderId: z.int().gte(1).lte(2147483647),
+    fileId: z.int().gte(1).lte(2147483647),
+    supplierName: z.string().min(1).max(255).nullable(),
+    amountMinor: zPositiveMoneyAmountMinor,
+    paidAt: z.iso.datetime().nullable(),
+    paidBy: zUserBrief.nullable(),
+    deliveredAt: z.iso.datetime().nullable(),
+    deliveredBy: zUserBrief.nullable(),
+    shortages: z.array(zMaterialShortage),
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zMaterialOrder = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    stageId: z.int().gte(1).lte(2147483647),
+    sentAt: z.iso.datetime().nullable(),
+    sentBy: zUserBrief.nullable(),
+    invoices: z.array(zMaterialInvoice),
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zUpdateMaterialOrder = z.object({
+    expectedVersion: zExpectedVersion,
+    isSent: z.boolean()
+});
+
+export const zCreateMaterialInvoice = z.object({
+    fileId: z.int().gte(1).lte(2147483647),
+    supplierName: z.string().min(1).max(255).nullish(),
+    amountMinor: zPositiveMoneyAmountMinor
+});
+
+export const zUpdateMaterialInvoice = z.object({
+    expectedVersion: zExpectedVersion,
+    isPaid: z.boolean().optional(),
+    isDelivered: z.boolean().optional()
+});
+
+export const zCreateMaterialShortage = z.object({
+    comment: z.string().min(1).max(500)
+});
+
+export const zResolveMaterialShortage = z.object({
+    expectedVersion: zExpectedVersion,
+    resolutionComment: z.string().min(1).max(500).nullish()
 });
 
 export const zUpdateChecklistItem = z.object({
@@ -498,6 +573,15 @@ export const zStageWritable = z.object({
     plannedEndDate: z.iso.date(),
     plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
     plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
+    actualMaterialAmountMinor: zMoneyAmountMinor,
+    totalPlannedAmountMinor: zPlannedMoneyAmountMinor,
+    totalActualAmountMinor: zMoneyAmountMinor,
+    materialSummary: z.object({
+        orderCount: z.int().gte(0),
+        invoiceCount: z.int().gte(0),
+        deliveredInvoiceCount: z.int().gte(0),
+        openShortageCount: z.int().gte(0)
+    }),
     actualStartDate: z.iso.date().nullable(),
     actualEndDate: z.iso.date().nullable(),
     predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7),
@@ -529,6 +613,12 @@ export const zLimit = z.int().gte(1).lte(100).default(20);
  * Количество пропущенных записей после фильтрации и проверки доступа.
  */
 export const zOffset = z.int().gte(0).default(0);
+
+export const zStageId = z.int().gte(1).lte(2147483647);
+
+export const zOrderId = z.int().gte(1).lte(2147483647);
+
+export const zInvoiceId = z.int().gte(1).lte(2147483647);
 
 export const zUploadId = zEntityId;
 
@@ -782,6 +872,88 @@ export const zUpdateWorkPaymentPath = z.object({
  * Платёж изменён
  */
 export const zUpdateWorkPaymentResponse = zWorkPayment;
+
+export const zListMaterialOrdersPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Список заказов со счетами и нехватками
+ */
+export const zListMaterialOrdersResponse = z.array(zMaterialOrder);
+
+export const zCreateMaterialOrderPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Заказ создан
+ */
+export const zCreateMaterialOrderResponse = zMaterialOrder;
+
+export const zUpdateMaterialOrderBody = zUpdateMaterialOrder;
+
+export const zUpdateMaterialOrderPath = z.object({
+    orderId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Заказ изменён
+ */
+export const zUpdateMaterialOrderResponse = zMaterialOrder;
+
+export const zListMaterialInvoicesPath = z.object({
+    orderId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Список счетов
+ */
+export const zListMaterialInvoicesResponse = z.array(zMaterialInvoice);
+
+export const zCreateMaterialInvoiceBody = zCreateMaterialInvoice;
+
+export const zCreateMaterialInvoicePath = z.object({
+    orderId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Счёт создан
+ */
+export const zCreateMaterialInvoiceResponse = zMaterialInvoice;
+
+export const zUpdateMaterialInvoiceBody = zUpdateMaterialInvoice;
+
+export const zUpdateMaterialInvoicePath = z.object({
+    invoiceId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Счёт изменён
+ */
+export const zUpdateMaterialInvoiceResponse = zMaterialInvoice;
+
+export const zCreateMaterialShortageBody = zCreateMaterialShortage;
+
+export const zCreateMaterialShortagePath = z.object({
+    invoiceId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Нехватка создана
+ */
+export const zCreateMaterialShortageResponse = zMaterialShortage;
+
+export const zResolveMaterialShortageBody = zResolveMaterialShortage;
+
+export const zResolveMaterialShortagePath = z.object({
+    shortageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Нехватка закрыта
+ */
+export const zResolveMaterialShortageResponse = zMaterialShortage;
 
 export const zUpdateChecklistItemBody = zUpdateChecklistItem;
 

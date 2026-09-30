@@ -37,6 +37,17 @@ export type UpdateStage = {
     */
     plannedWorkAmountMinor?: PlannedMoneyAmountMinor | null;
     /**
+     * @description Новый план материалов; null очищает план. Доступно только руководителю.
+     *
+     * Format: `int64`
+     * @minLength 0
+     * @example 12500000
+     * @example 0
+     * @example null
+     * @type integer | undefined
+    */
+    plannedMaterialAmountMinor?: PlannedMoneyAmountMinor | null;
+    /**
      * @description Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
      * @type array | undefined
     */
