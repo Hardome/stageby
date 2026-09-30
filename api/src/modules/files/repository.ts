@@ -4,6 +4,7 @@ import { and, asc, eq, isNull, lte, or, sql } from 'drizzle-orm';
 
 import { checklistItems, checklists } from '#app/db/schema/checklists';
 import { checklistItemPhotos, type FileRow, files } from '#app/db/schema/files';
+import { materialInvoices, materialOrders } from '#app/db/schema/materials';
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
@@ -232,10 +233,20 @@ export class FileRepository {
       .leftJoin(stages, eq(checklists.stageId, stages.id))
       .where(and(eq(files.id, fileId), eq(files.status, 'uploaded')));
     if (!row) return { status: 'not_found' };
+    const [material] =
+      row.file.purpose === 'material_invoice'
+        ? await this.#database
+            .select({ assigneeId: stages.assigneeId })
+            .from(materialInvoices)
+            .innerJoin(materialOrders, eq(materialInvoices.orderId, materialOrders.id))
+            .innerJoin(stages, eq(materialOrders.stageId, stages.id))
+            .where(eq(materialInvoices.fileId, fileId))
+        : [];
     const canRead =
       actor.role === 'manager' ||
       (row.file.purpose === 'checklist_photo' &&
-        (row.photoAssigneeId === actor.id || (row.photoId === null && row.file.uploadedByUserId === actor.id)));
+        (row.photoAssigneeId === actor.id || (row.photoId === null && row.file.uploadedByUserId === actor.id))) ||
+      (row.file.purpose === 'material_invoice' && material?.assigneeId === actor.id);
     if (!canRead) return { status: 'not_found' };
     const request = await this.#storage.createDownloadRequest({
       key: row.file.storageKey,

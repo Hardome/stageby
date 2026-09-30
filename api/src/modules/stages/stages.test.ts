@@ -141,6 +141,27 @@ async function attachUploadedPhoto(itemId: number) {
   await getApp().db.insert(checklistItemPhotos).values({ checklistItemId: itemId, fileId: file!.id, position: 1 });
 }
 
+async function createUploadedMaterialFile() {
+  const uploadedAt = new Date();
+  const [file] = await getApp()
+    .db.insert(files)
+    .values({
+      status: 'uploaded',
+      purpose: 'material_invoice',
+      storageKey: `tests/stages/materials/${randomUUID()}`,
+      originalName: 'invoice.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 1024,
+      checksumSha256: '1'.repeat(64),
+      uploadedByUserId: createdUserIds[0]!,
+      uploadExpiresAt: uploadedAt,
+      uploadedAt,
+    })
+    .returning();
+  createdFileIds.push(file!.id);
+  return file!;
+}
+
 async function updateItem(
   cookie: string,
   stageId: number,
@@ -230,7 +251,14 @@ describe('Stage statuses and checklists', () => {
     });
     expect(missing.statusCode).toBe(409);
     const [order] = await getApp().db.insert(materialOrders).values({ stageId: fixture.stage.id }).returning();
-    await getApp().db.insert(materialInvoices).values({ orderId: order!.id, deliveredAt: new Date() });
+    const file = await createUploadedMaterialFile();
+    await getApp().db.insert(materialInvoices).values({
+      orderId: order!.id,
+      fileId: file.id,
+      amountMinor: 10_000,
+      deliveredAt: new Date(),
+      deliveredByUserId: fixture.manager.user.id,
+    });
     const supplied = await getApp().inject({
       method: 'PUT',
       url: `/stages/${fixture.stage.id}/status`,
@@ -400,7 +428,14 @@ describe('Stage statuses and checklists', () => {
   it('отклоняет supplied и paid из неправильных исходных статусов', async () => {
     const fixture = await createFixture({ assigned: false, itemCount: 1, plannedWorkAmountMinor: 0 });
     const [order] = await getApp().db.insert(materialOrders).values({ stageId: fixture.stage.id }).returning();
-    await getApp().db.insert(materialInvoices).values({ orderId: order!.id, deliveredAt: new Date() });
+    const file = await createUploadedMaterialFile();
+    await getApp().db.insert(materialInvoices).values({
+      orderId: order!.id,
+      fileId: file.id,
+      amountMinor: 10_000,
+      deliveredAt: new Date(),
+      deliveredByUserId: fixture.manager.user.id,
+    });
     const supplied = await getApp().inject({
       method: 'PUT',
       url: `/stages/${fixture.stage.id}/status`,

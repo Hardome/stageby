@@ -2,9 +2,9 @@ openapi: 3.1.0
 info:
   title: Stageby API
   version: 0.1.0
-  description: "Контракт первой версии управления строительством: пользователи, проекты, этапы, чек-листы, файлы и оплата работ.
-    Материалы, инструмент и остальные финансовые операции отложены. Реализация новых маршрутов выполняется
-    отдельно. ID новых сущностей — положительные целые числа int32, назначаемые БД автоматически. Даты работ YYYY-MM-DD; timestamps — RFC 3339 UTC. Календарный часовой пояс
+  description: "Контракт первой версии управления строительством: пользователи, проекты, этапы, чек-листы, файлы, оплата работ и материалы.
+    Инструмент и остальные финансовые операции отложены. ID новых сущностей — положительные целые числа int32,
+    назначаемые БД автоматически. Даты работ YYYY-MM-DD; timestamps — RFC 3339 UTC. Календарный часовой пояс
     первой версии Asia/Yekaterinburg. PATCH меняет только переданные поля, null очищает только nullable-поле,
     пустое тело запрещено; массив заменяется целиком. Все изменения атомарны. Неизвестные поля и
     query-параметры — 400. Непустые текстовые значения обрезаются по краям и не могут состоять только из
@@ -31,6 +31,8 @@ tags:
     description: Фактические платежи за выполненные работы этапа. Изменение доступно только руководителю.
   - name: Files
     description: Устойчивые upload-сессии, закрытое файловое хранилище и типизированные связи файлов.
+  - name: Materials
+    description: Заказы материалов, счета, независимые отметки оплаты и доставки и сообщения о нехватке.
 paths:
   /users:
     $ref: ../users/users.yaml#/paths/~1users
@@ -66,6 +68,18 @@ paths:
     $ref: ../work-payments/work-payments.yaml#/paths/~1stages~1{stageId}~1work-payments
   /work-payments/{paymentId}:
     $ref: ../work-payments/work-payments.yaml#/paths/~1work-payments~1{paymentId}
+  /stages/{stageId}/material-orders:
+    $ref: ../materials/materials.yaml#/paths/~1stages~1{stageId}~1material-orders
+  /material-orders/{orderId}:
+    $ref: ../materials/materials.yaml#/paths/~1material-orders~1{orderId}
+  /material-orders/{orderId}/invoices:
+    $ref: ../materials/materials.yaml#/paths/~1material-orders~1{orderId}~1invoices
+  /material-invoices/{invoiceId}:
+    $ref: ../materials/materials.yaml#/paths/~1material-invoices~1{invoiceId}
+  /material-invoices/{invoiceId}/shortages:
+    $ref: ../materials/materials.yaml#/paths/~1material-invoices~1{invoiceId}~1shortages
+  /material-shortages/{shortageId}/resolution:
+    $ref: ../materials/materials.yaml#/paths/~1material-shortages~1{shortageId}~1resolution
   /stages/{stageId}/checklist/items/{itemId}:
     $ref: ../checklists/checklists.yaml#/paths/~1stages~1{stageId}~1checklist~1items~1{itemId}
   /file-uploads:

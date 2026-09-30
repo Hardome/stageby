@@ -353,6 +353,10 @@ components:
         - actualWorkAmountMinor
         - workBalanceAmountMinor
         - plannedMaterialAmountMinor
+        - actualMaterialAmountMinor
+        - totalPlannedAmountMinor
+        - totalActualAmountMinor
+        - materialSummary
         - actualStartDate
         - actualEndDate
         - predecessorStageIds
@@ -469,6 +473,22 @@ components:
             - $ref: ../common/common.yaml#/components/schemas/SignedMoneyAmountMinor
         plannedMaterialAmountMinor:
           $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
+        actualMaterialAmountMinor:
+          $ref: ../common/common.yaml#/components/schemas/MoneyAmountMinor
+        totalPlannedAmountMinor:
+          $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
+        totalActualAmountMinor:
+          $ref: ../common/common.yaml#/components/schemas/MoneyAmountMinor
+        materialSummary:
+          type: object
+          additionalProperties: false
+          description: Краткая сводка заказов, счетов, доставки и открытых нехваток этапа.
+          required: [orderCount, invoiceCount, deliveredInvoiceCount, openShortageCount]
+          properties:
+            orderCount: { type: integer, minimum: 0, example: 2, description: Количество заказов этапа. }
+            invoiceCount: { type: integer, minimum: 0, example: 3, description: Количество счетов этапа. }
+            deliveredInvoiceCount: { type: integer, minimum: 0, example: 2, description: Количество доставленных счетов. }
+            openShortageCount: { type: integer, minimum: 0, example: 1, description: Количество открытых нехваток. }
         actualStartDate:
           examples:
             - "2026-09-21"
@@ -602,6 +622,10 @@ components:
           maximum: 2147483647
         plannedWorkAmountMinor:
           description: Новый план оплаты работ; null очищает план. Доступно только руководителю.
+          allOf:
+            - $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
+        plannedMaterialAmountMinor:
+          description: Новый план материалов; null очищает план. Доступно только руководителю.
           allOf:
             - $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
         workSubtypes:

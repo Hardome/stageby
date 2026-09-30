@@ -44,6 +44,9 @@ const stageResponseSchema = zStage.extend({
   actualWorkAmountMinor: z.number().int().nonnegative(),
   workBalanceAmountMinor: z.number().int().nullable(),
   plannedMaterialAmountMinor: z.number().int().nonnegative().nullable(),
+  actualMaterialAmountMinor: z.number().int().nonnegative(),
+  totalPlannedAmountMinor: z.number().int().nonnegative().nullable(),
+  totalActualAmountMinor: z.number().int().nonnegative(),
 });
 
 const errorDetails: Record<StageOperationError, { statusCode: 400 | 403 | 404 | 409; error: ApiError }> = {
@@ -89,7 +92,7 @@ function send<T>(reply: FastifyReply, result: OperationResult<T>) {
 
 const errorResponses = { 400: zApiError, 401: zApiError, 403: zApiError, 404: zApiError, 409: zApiError };
 
-function parsePlannedWorkAmount(amount: bigint | null): { valid: true; value: number | null } | { valid: false } {
+function parsePlannedAmount(amount: bigint | null): { valid: true; value: number | null } | { valid: false } {
   if (amount === null) return { valid: true, value: null };
   if (amount > BigInt(Number.MAX_SAFE_INTEGER) || amount % 100n !== 0n) return { valid: false };
   return { valid: true, value: Number(amount) };
@@ -138,6 +141,7 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
       body: zUpdateStageBody,
       response: { 200: stageResponseSchema, ...errorResponses },
     },
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the endpoint deliberately dispatches mutually exclusive patch fields.
     handler: async (request, reply) => {
       const keys = Object.keys(request.body).filter((key) => key !== 'expectedVersion');
       if (keys.length !== 1) return send(reply, { status: 'forbidden' });
@@ -148,7 +152,7 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
         );
       }
       if (keys[0] === 'plannedWorkAmountMinor' && request.body.plannedWorkAmountMinor !== undefined) {
-        const amount = parsePlannedWorkAmount(request.body.plannedWorkAmountMinor);
+        const amount = parsePlannedAmount(request.body.plannedWorkAmountMinor);
         if (!amount.valid) {
           return reply.status(400).send({
             error: 'Bad Request',
@@ -159,6 +163,24 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
         return send(
           reply,
           await repository.updatePlannedWorkAmount(request.params.stageId, request.body.expectedVersion, amount.value),
+        );
+      }
+      if (keys[0] === 'plannedMaterialAmountMinor' && request.body.plannedMaterialAmountMinor !== undefined) {
+        const amount = parsePlannedAmount(request.body.plannedMaterialAmountMinor);
+        if (!amount.valid) {
+          return reply.status(400).send({
+            error: 'Bad Request',
+            code: 'invalid_request',
+            message: 'Сумма должна быть безопасным целым числом JavaScript и быть кратна 100 копейкам.',
+          });
+        }
+        return send(
+          reply,
+          await repository.updatePlannedMaterialAmount(
+            request.params.stageId,
+            request.body.expectedVersion,
+            amount.value,
+          ),
         );
       }
       return send(reply, { status: 'forbidden' });

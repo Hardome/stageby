@@ -19,6 +19,7 @@ const expectedTables = [
   'files',
   'material_invoices',
   'material_orders',
+  'material_shortages',
   'project_documents',
   'projects',
   'sessions',
@@ -42,7 +43,12 @@ const expectedIndexes = [
   'checklist_templates_active_stage_type_unique',
   'checklists_stage_id_unique',
   'material_invoices_order_idx',
+  'material_invoices_order_paid_delivered_idx',
+  'material_invoices_file_unique',
   'material_orders_stage_idx',
+  'material_orders_sent_idx',
+  'material_shortages_invoice_idx',
+  'material_shortages_open_idx',
   'files_completion_idempotency_key_unique',
   'files_expiration_cleanup_idx',
   'files_pending_cleanup_idx',
@@ -78,7 +84,14 @@ const expectedForeignKeys = [
   'checklist_templates_stageTypeCode_stage_types_code_fk',
   'checklists_stageId_stages_id_fk',
   'material_invoices_orderId_material_orders_id_fk',
+  'material_invoices_fileId_files_id_fk',
+  'material_invoices_paidByUserId_users_id_fk',
+  'material_invoices_deliveredByUserId_users_id_fk',
   'material_orders_stageId_stages_id_fk',
+  'material_orders_sentByUserId_users_id_fk',
+  'material_shortages_invoiceId_material_invoices_id_fk',
+  'material_shortages_reportedByUserId_users_id_fk',
+  'material_shortages_resolvedByUserId_users_id_fk',
   'files_uploadedByUserId_users_id_fk',
   'project_documents_fileId_files_id_fk',
   'project_documents_projectId_projects_id_fk',
@@ -196,13 +209,13 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('11');
+      expect(firstJournal.rows[0]?.count).toBe('12');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('51');
+      expect(checkConstraints.rows[0]?.count).toBe('62');
       expect(enumTypes.rows.map((row) => row.name)).toEqual([
         'acceptance_decision',
         'file_purpose',
