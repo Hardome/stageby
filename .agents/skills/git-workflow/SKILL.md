@@ -56,6 +56,8 @@ Add a commit body only when needed to explain a non-trivial reason for the chang
 
 Write concise bullet points: one bullet per concrete change. Do not repeat the title or summarize commits one by one.
 
+Describe the final result and its purpose for a reviewer who has not seen the conversation. Include implementation details only when they help assess correctness, a tradeoff, or a risk. Omit editing history, wording corrections, and explanations of how the PR itself is formatted. For instruction or skill changes, describe their purpose rather than enumerating individual writing rules.
+
 Write the checks that were actually performed in a separate paragraph after the change list. Use grammatical agreement: `Проверка ... прошла` for one check, `Проверки ... прошли` for multiple checks.
 
 ```markdown
