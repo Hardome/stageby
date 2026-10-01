@@ -13,8 +13,6 @@ Read documentation only when the task touches the area listed below, and read on
 | HTTP endpoints, request/response schemas, API errors, access rules, or OpenAPI contracts | [API contract](docs/api-contract.md) |
 | Business entities, relationships, roles, construction stages, checklists, or domain rules | [Domain model](docs/domain-model.md) |
 
-For tasks spanning several areas, use the applicable documents together.
-
 ## Build, Test, and Development Commands
 
 Use Node.js 24.7+ and pnpm 11+. Run commands from the root.
@@ -23,14 +21,15 @@ Use Node.js 24.7+ and pnpm 11+. Run commands from the root.
 - `pnpm run dev` starts the API and web app together.
 - `pnpm run check` builds the contract and runs lint, type checks, tests, and builds for both apps. Lint tasks may modify files.
 - `pnpm run codegen` rebuilds the OpenAPI bundle and generated API, client, and route code after contract or route changes.
+- `pnpm --dir api run test` or `pnpm --dir web run test` runs one package's Vitest suite.
 
 ## Coding Style & Naming Conventions
 
-Write TypeScript with two space indentation, LF endings, single quotes, and semicolons. Biome formats and checks both apps. Prefer descriptive kebab case filenames such as `user-form.test.ts`; follow existing feature and module boundaries. Do not edit bundled `contracts/openapi.yaml` by hand. Change its sources and run code generation.
+Write TypeScript with two space indentation, LF endings, single quotes, and semicolons. Biome formats and checks both apps; web also uses ESLint, Stylelint, Steiger, and cspell. Prefer descriptive kebab case filenames such as `user-form.test.ts`; follow existing feature and module boundaries. Do not edit `api/src/generated/`, `web/src/generated/`, or bundled `contracts/openapi.yaml` by hand. Change their sources and run code generation.
 
 ## Testing Guidelines
 
-Use Vitest. Name tests `*.test.ts` or `*.test.tsx` beside implementation. Cover changed behavior and error paths. No repository wide coverage threshold is configured.
+Use Vitest. Name tests `*.test.ts` or `*.test.tsx` beside implementation; API integration tests may live in `api/test/`. Cover changed behavior and error paths. API integration tests need PostgreSQL running (`pnpm run db:up`) with migrations applied (`pnpm --dir api run db:migrate`). Web tests use jsdom and Testing Library. No repository wide coverage threshold is configured; run `pnpm --dir web run test:coverage` when coverage detail is useful.
 
 ## Commit & Pull Request Guidelines
 
@@ -38,4 +37,4 @@ Recent commits use short subjects, often in Russian, sometimes with an issue or 
 
 ## Configuration & Secrets
 
-Keep credentials and local `.env` files out of commits. Package-specific environment examples are listed in each package's `AGENTS.md`.
+Use `api/.env.example` and `web/.env.example` to create local `.env` files. Keep credentials and local `.env` files out of commits.
