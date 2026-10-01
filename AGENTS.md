@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-Stageby has three pnpm packages. `api/` contains the Fastify server, Drizzle schema and migrations, and tests. `web/` contains the React and Vite app; UI code follows the `app`, `pages`, `widgets`, `features`, and `shared` layers under `web/src/`. `contracts/references/` holds source OpenAPI definitions; `contracts/openapi.yaml` is the generated bundle. Design notes live in `docs/`.
+Stageby has three pnpm packages: `api/`, `web/`, and `contracts/`. Package-specific instructions live in `api/AGENTS.md` and `web/AGENTS.md`. `contracts/references/` holds source OpenAPI definitions; `contracts/openapi.yaml` is the generated bundle. Design notes live in `docs/`.
 
 ## Task-Specific Documentation
 
@@ -10,15 +10,8 @@ Read documentation only when the task touches the area listed below, and read on
 
 | Read when working on | Documentation |
 | --- | --- |
-| Web features, frontend layer boundaries, routing, forms, state, or client integration in `web/` | [Web guidelines](docs/web-guidelines.md) |
-| UI appearance, design-system components, tokens, colors, typography, spacing, or interaction states | [Design system](docs/design-system.md) |
-| Fastify modules, routes, repositories, or API module integration tests in `api/` | [API module guidelines](docs/api-modules-guidelines.md) |
-| PostgreSQL or Drizzle schemas, database queries, constraints, or migrations | [Database guidelines](docs/database-guidelines.md) |
 | HTTP endpoints, request/response schemas, API errors, access rules, or OpenAPI contracts | [API contract](docs/api-contract.md) |
 | Business entities, relationships, roles, construction stages, checklists, or domain rules | [Domain model](docs/domain-model.md) |
-| Investigating the implementation history or decisions for authentication, sessions, users, or their migrations | [Completed auth/users implementation plan](docs/auth-users-implementation-plan.md) |
-
-For example, a backend-only change does not require the web guidelines or design system; a styling-only change does not require API or database documentation. The auth/users plan is historical context, not a pending task list; consult current code for implementation status.
 
 ## Build, Test, and Development Commands
 
