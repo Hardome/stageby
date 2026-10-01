@@ -8,7 +8,7 @@ description: Prepare Git commits, push branches, and create or update PRs. Use f
 ## General rules
 
 - Commit and PR titles must be no longer than 72 characters.
-- Use the imperative mood: `Add`, `Fix`, `Remove`, `Update`.
+- Describe completed changes in commit and PR titles: `Добавлен`, `Исправлена`, `Удалены`, `Обновлены`. Match gender and number to the subject.
 - Use Russian by default unless the repository requires another language or format.
 - Do not use Conventional Commits, emojis, or vague wording unless required by the project.
 - A commit must contain only changes related to the task.
@@ -56,12 +56,13 @@ Add a commit body only when needed to explain a non-trivial reason for the chang
 
 Write concise bullet points: one bullet per concrete change. Do not repeat the title or summarize commits one by one.
 
-Add a bullet with the checks that were actually performed:
+Write the checks that were actually performed in a separate paragraph after the change list. Use grammatical agreement: `Проверка ... прошла` for one check, `Проверки ... прошли` for multiple checks.
 
 ```markdown
 - Сохраняется выбранная роль при изменении участника проекта.
 - Добавлена проверка отказа при недостаточных правах.
-- Проверки: тесты API и проверка типов прошли.
+
+Проверки: тесты API и проверка типов прошли.
 ```
 
 Follow the repository's required PR template if one exists.
