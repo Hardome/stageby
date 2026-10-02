@@ -1,4 +1,5 @@
 import type { SessionRow } from '#app/db/schema/sessions';
+import type { UserRow } from '#app/db/schema/users';
 import type { SessionRepository } from '#app/modules/auth/session-repository';
 import { createSessionToken, hashSessionToken } from '#app/modules/auth/session-token';
 
@@ -33,5 +34,18 @@ export class SessionService {
 
   revoke(accessToken: string, revokedAt = new Date()): Promise<boolean> {
     return this.#repository.revokeByTokenHash(hashSessionToken(accessToken), revokedAt);
+  }
+
+  async issueForVerifiedUser(user: UserRow, replacementHash?: string) {
+    const { accessToken, tokenHash } = createSessionToken();
+    const issuedAt = new Date();
+    const expiresAt = new Date(issuedAt.getTime() + this.#ttlHours * HOUR_IN_MILLISECONDS);
+    const result = await this.#repository.createForVerifiedUser(
+      { userId: user.id, tokenHash, expiresAt, createdAt: issuedAt },
+      user,
+      replacementHash,
+    );
+    if (!result) return null;
+    return { user: result.user, issuedSession: { accessToken, expiresAt, session: result.session } };
   }
 }

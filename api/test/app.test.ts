@@ -79,7 +79,7 @@ describe('Приложение', () => {
     expect(response.json()).toMatchObject({ code: 'forbidden' });
   });
 
-  it('разрешает изменяющие запросы из Swagger UI на том же host', async () => {
+  it('разрешает изменяющие запросы из Swagger UI с настроенного origin API', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/auth/login',
@@ -99,13 +99,19 @@ describe('Приложение', () => {
       method: 'POST',
       url: '/auth/login',
       payload: { login: 'database.missing', password: 'wrong' },
+      headers: { origin: 'http://localhost:5173' },
     });
     expect(response.statusCode).toBe(401);
     expect(response.json()).toMatchObject({ code: 'unauthenticated' });
   });
 
   it('оформляет ошибки проверки данных через общий обработчик', async () => {
-    const response = await app.inject({ method: 'POST', url: '/auth/login', payload: {} });
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {},
+      headers: { origin: 'http://localhost:5173' },
+    });
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({
@@ -161,6 +167,7 @@ describe('Приложение', () => {
         method: 'POST',
         url: '/auth/login',
         payload: { login: user.login, password },
+        headers: { origin: 'http://localhost:5173' },
       });
       const cookieHeader = response.headers['set-cookie'];
       const cookie = (Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader)?.split(';', 1)[0] ?? '';
