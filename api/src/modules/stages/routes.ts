@@ -20,6 +20,7 @@ import {
   zUpdateStageBody,
   zUpdateStagePath,
 } from '#app/generated/zod.gen';
+import { requestAuditContext } from '#app/modules/audit/context';
 import type { StageRepository } from '#app/modules/stages/repository';
 import type { OperationResult, StageOperationError } from '#app/modules/stages/types';
 
@@ -130,6 +131,7 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
           request.params.itemId,
           request.body,
           request.auth!.user,
+          requestAuditContext(request),
         ),
       ),
   });
@@ -148,7 +150,12 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
       if (keys[0] === 'assigneeId' && request.body.assigneeId !== undefined) {
         return send(
           reply,
-          await repository.assign(request.params.stageId, request.body.expectedVersion, request.body.assigneeId),
+          await repository.assign(
+            request.params.stageId,
+            request.body.expectedVersion,
+            request.body.assigneeId,
+            requestAuditContext(request),
+          ),
         );
       }
       if (keys[0] === 'plannedWorkAmountMinor' && request.body.plannedWorkAmountMinor !== undefined) {
@@ -162,7 +169,12 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
         }
         return send(
           reply,
-          await repository.updatePlannedWorkAmount(request.params.stageId, request.body.expectedVersion, amount.value),
+          await repository.updatePlannedWorkAmount(
+            request.params.stageId,
+            request.body.expectedVersion,
+            amount.value,
+            requestAuditContext(request),
+          ),
         );
       }
       if (keys[0] === 'plannedMaterialAmountMinor' && request.body.plannedMaterialAmountMinor !== undefined) {
@@ -180,6 +192,7 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
             request.params.stageId,
             request.body.expectedVersion,
             amount.value,
+            requestAuditContext(request),
           ),
         );
       }
@@ -200,7 +213,12 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
     handler: async (request, reply) =>
       send(
         reply,
-        await repository.changeStatus(request.params.stageId, request.body.expectedVersion, request.body.status),
+        await repository.changeStatus(
+          request.params.stageId,
+          request.body.expectedVersion,
+          request.body.status,
+          requestAuditContext(request),
+        ),
       ),
   });
 
@@ -215,7 +233,15 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
       response: { 200: stageResponseSchema, ...errorResponses },
     },
     handler: async (request, reply) =>
-      send(reply, await repository.returnForRework(request.params.stageId, request.body, request.auth!.user)),
+      send(
+        reply,
+        await repository.returnForRework(
+          request.params.stageId,
+          request.body,
+          request.auth!.user,
+          requestAuditContext(request),
+        ),
+      ),
   });
 
   app.post<{ Params: z.infer<typeof zAcceptStagePath>; Body: z.infer<typeof zAcceptStageBody> }>(
@@ -228,7 +254,15 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
         response: { 200: stageResponseSchema, ...errorResponses },
       },
       handler: async (request, reply) =>
-        send(reply, await repository.accept(request.params.stageId, request.body, request.auth!.user)),
+        send(
+          reply,
+          await repository.accept(
+            request.params.stageId,
+            request.body,
+            request.auth!.user,
+            requestAuditContext(request),
+          ),
+        ),
     },
   );
 }

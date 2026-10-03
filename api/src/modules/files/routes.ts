@@ -18,6 +18,7 @@ import {
   zListChecklistItemPhotosPath,
   zListChecklistItemPhotosResponse,
 } from '#app/generated/zod.gen';
+import { requestAuditContext } from '#app/modules/audit/context';
 import type { FileRepository } from '#app/modules/files/repository';
 import type { FileOperationError, FileOperationResult } from '#app/modules/files/types';
 
@@ -114,7 +115,7 @@ export function registerFileRoutes(app: FastifyInstance, repository: FileReposit
     preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
     schema: { body: createUploadBodySchema, response: { 201: zCreateFileUploadResponse, ...errorResponses } },
     handler: async (request, reply) =>
-      send(reply, await repository.createUpload(request.body, request.auth!.user), 201),
+      send(reply, await repository.createUpload(request.body, request.auth!.user, requestAuditContext(request)), 201),
   });
 
   app.post<{
@@ -137,6 +138,7 @@ export function registerFileRoutes(app: FastifyInstance, repository: FileReposit
           request.body.checksumSha256,
           request.headers['idempotency-key'],
           request.auth!.user,
+          requestAuditContext(request),
         ),
       ),
   });
@@ -166,14 +168,27 @@ export function registerFileRoutes(app: FastifyInstance, repository: FileReposit
       response: { 201: zCreateChecklistItemPhotoResponse, ...errorResponses },
     },
     handler: async (request, reply) =>
-      send(reply, await repository.attachPhoto(request.params.itemId, request.body.fileId, request.auth!.user), 201),
+      send(
+        reply,
+        await repository.attachPhoto(
+          request.params.itemId,
+          request.body.fileId,
+          request.auth!.user,
+          requestAuditContext(request),
+        ),
+        201,
+      ),
   });
 
   app.delete<{ Params: z.infer<typeof zDeleteChecklistItemPhotoPath> }>('/checklist/photos/:photoId', {
     preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
     schema: { params: deletePhotoPathSchema, response: { 204: z.void(), ...errorResponses } },
     handler: async (request, reply) => {
-      const result = await repository.deletePhoto(request.params.photoId, request.auth!.user);
+      const result = await repository.deletePhoto(
+        request.params.photoId,
+        request.auth!.user,
+        requestAuditContext(request),
+      );
       if (result.status !== 'ok') return send(reply, result);
       return reply.status(204).send();
     },

@@ -29,6 +29,7 @@ import type {
   SignedUploadRequest,
   StoredObjectMetadata,
 } from '#app/storage/file-storage';
+import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
 
 const PASSWORD = 'Files-test-password-123!';
@@ -293,6 +294,18 @@ describe('File uploads and checklist photos', () => {
     expect(first.statusCode).toBe(200);
     expect(second.statusCode).toBe(200);
     expect(second.json()).toEqual(first.json());
+
+    const audit = await auditRecords(getApp().db, manager.user.id, 'completeFileUpload');
+    expect(audit.events).toHaveLength(1);
+    expect(audit.changes).toHaveLength(1);
+    expect(audit.changes[0]).toMatchObject({
+      entityType: 'files',
+      entityKey: { id: upload.fileId },
+      before: { status: 'pending' },
+      after: { status: 'uploaded' },
+    });
+    expect(JSON.stringify(audit.changes)).not.toContain(idempotencyKey);
+    expect(JSON.stringify(audit.changes)).not.toContain(key);
   });
 
   it('отклоняет неверный MIME, размер и checksum', async () => {
@@ -364,6 +377,7 @@ describe('File uploads and checklist photos', () => {
       .db.update(checklistItems)
       .set({ isCompleted: true, completedAt: new Date(), completedByUserId: fixture.foreman.user.id })
       .where(eq(checklistItems.id, fixture.item.id));
+    await getApp().db.update(stages).set({ status: 'acceptance' }).where(eq(stages.id, fixture.stage.id));
     const response = await getApp().inject({
       method: 'DELETE',
       url: `/checklist/photos/${attached.json<{ id: number }>().id}`,
@@ -377,6 +391,24 @@ describe('File uploads and checklist photos', () => {
       .where(and(eq(checklistItemPhotos.checklistItemId, fixture.item.id), isNull(checklistItemPhotos.deletedAt)));
     expect(storedItem?.isCompleted).toBe(false);
     expect(activePhoto).toBeUndefined();
+    const audit = await auditRecords(getApp().db, fixture.foreman.user.id, 'deleteChecklistItemPhoto');
+    expect(audit.events).toHaveLength(1);
+    expect(audit.changes.map((change) => change.entityType).sort()).toEqual([
+      'checklist_item_photos',
+      'checklist_items',
+      'checklists',
+      'files',
+      'stages',
+    ]);
+    expect(audit.changes.every((change) => change.stageId === fixture.stage.id)).toBe(true);
+    expect(audit.changes.find((change) => change.entityType === 'checklist_items')).toMatchObject({
+      before: { isCompleted: true },
+      after: { isCompleted: false, completedAt: null, completedByUserId: null },
+    });
+    expect(audit.changes.find((change) => change.entityType === 'stages')).toMatchObject({
+      before: { status: 'acceptance' },
+      after: { status: 'in_progress' },
+    });
   });
 
   it('повторяет временно неудачное удаление просроченного фото', async () => {
@@ -399,6 +431,10 @@ describe('File uploads and checklist photos', () => {
     await cleanupExpiredFiles(repository, getApp().log);
     const [afterFailure] = await getApp().db.select().from(files).where(eq(files.id, file!.id));
     expect(afterFailure?.status).toBe('uploaded');
+    const failedAudit = await auditRecords(getApp().db, null, 'cleanupExpiredFile');
+    expect(
+      failedAudit.changes.filter((change) => change.entityType === 'files' && change.entityKey.id === file!.id),
+    ).toHaveLength(0);
     await cleanupExpiredFiles(repository, getApp().log);
     const [deleted] = await getApp().db.select().from(files).where(eq(files.id, file!.id));
     const [photo] = await getApp()
@@ -408,5 +444,19 @@ describe('File uploads and checklist photos', () => {
     expect(deleted?.status).toBe('deleted');
     expect(photo?.deletedAt).toBeInstanceOf(Date);
     expect(storage.objects.has(file!.storageKey)).toBe(false);
+    await cleanupExpiredFiles(repository, getApp().log);
+    const audit = await auditRecords(getApp().db, null, 'cleanupExpiredFile');
+    const fileChanges = audit.changes.filter(
+      (change) => change.entityType === 'files' && change.entityKey.id === file!.id,
+    );
+    expect(fileChanges).toHaveLength(1);
+    const event = audit.events.find((entry) => entry.id === fileChanges[0]!.eventId);
+    expect(event).toMatchObject({ source: 'system', actorUserId: null, actorSnapshot: null });
+    expect(
+      audit.changes
+        .filter((change) => change.eventId === event!.id)
+        .map((change) => change.entityType)
+        .sort(),
+    ).toEqual(['checklist_item_photos', 'files']);
   });
 });

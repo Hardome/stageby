@@ -20,6 +20,7 @@ import { UserRepository } from '#app/modules/users/repository';
 import { workPaymentModule } from '#app/modules/work-payments/index';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
+import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
 
 const PASSWORD = 'ValidPass123!';
@@ -184,6 +185,21 @@ describe('Оплата работ', () => {
       payload: { expectedVersion: currentFirst.version },
     });
     expect(deleted.statusCode, deleted.body).toBe(204);
+
+    const updates = await auditRecords(getApp().db, fixture.manager.user.id, 'updateWorkPayment');
+    expect(updates.events).toHaveLength(1);
+    const audit = await auditRecords(getApp().db, fixture.manager.user.id, 'deleteWorkPayment');
+    expect(audit.events).toHaveLength(1);
+    expect(audit.changes).toHaveLength(1);
+    expect(audit.changes[0]).toMatchObject({
+      entityType: 'work_payments',
+      entityKey: { id: first.id },
+      stageId: fixture.stage.id,
+      projectId: fixture.project.id,
+      action: 'delete',
+      before: { version: currentFirst.version },
+      after: null,
+    });
   });
 
   it('оставляет мастеру агрегаты своего этапа, но запрещает список и изменение финансов', async () => {

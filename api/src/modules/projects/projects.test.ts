@@ -19,6 +19,7 @@ import { projectModule } from '#app/modules/projects/index';
 import { UserRepository } from '#app/modules/users/repository';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
+import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
 
 const PASSWORD = 'Projects-test-password-123!';
@@ -159,6 +160,24 @@ describe('Composite project creation', () => {
         ),
       );
     expect(storedChecklists[0]?.value).toBe(8);
+
+    const audit = await auditRecords(getApp().db, manager.user.id, 'createProject');
+    expect(audit.events).toHaveLength(1);
+    expect(audit.events[0]).toMatchObject({
+      source: 'api',
+      actorSnapshot: { login: manager.user.login, fullName: manager.user.fullName, role: 'manager' },
+    });
+    expect(audit.changes.filter((change) => change.entityType === 'stages')).toHaveLength(8);
+    expect(audit.changes.filter((change) => change.entityType === 'checklists')).toHaveLength(8);
+    expect(audit.changes.filter((change) => change.entityType === 'checklist_items').length).toBeGreaterThan(8);
+    expect(
+      audit.changes.every(
+        (change) => change.projectId === project.id && change.action === 'create' && change.before === null,
+      ),
+    ).toBe(true);
+    expect(
+      audit.changes.filter((change) => change.entityType !== 'projects').every((change) => change.stageId !== null),
+    ).toBe(true);
   });
 
   it('создаёт только выбранные этапы и сохраняет назначение, параллельность и планы', async () => {

@@ -9,6 +9,8 @@ import { stageTypes } from '#app/db/schema/stage-types';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
 import type { CreateProject, Project } from '#app/generated/types.gen';
+import type { AuditContext } from '#app/modules/audit/context';
+import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
 import { toProject } from '#app/modules/projects/mapper';
 
 type Database = NodePgDatabase<typeof databaseSchema>;
@@ -128,22 +130,25 @@ async function loadTemplates(transaction: Transaction, input: CreateProject) {
   return { templateByType, templateItemsById, details };
 }
 
-async function insertProject(transaction: Transaction, input: CreateProject) {
-  const [project] = await transaction
-    .insert(projects)
-    .values({
-      ownerName: input.ownerName,
-      address: input.address,
-      latitude: input.coordinates.latitude,
-      longitude: input.coordinates.longitude,
-      cadastralNumber: input.cadastralNumber,
-      houseDesign: input.houseDesign,
-      contractLabel: input.contractLabel,
-      plannedStartDate: input.plannedStartDate,
-      plannedEndDate: input.plannedEndDate,
-      notes: input.notes,
-    })
-    .returning();
+async function insertProject(transaction: Transaction, input: CreateProject, audit: AuditWriter) {
+  const [project] = await audit.created(
+    projects,
+    await transaction
+      .insert(projects)
+      .values({
+        ownerName: input.ownerName,
+        address: input.address,
+        latitude: input.coordinates.latitude,
+        longitude: input.coordinates.longitude,
+        cadastralNumber: input.cadastralNumber,
+        houseDesign: input.houseDesign,
+        contractLabel: input.contractLabel,
+        plannedStartDate: input.plannedStartDate,
+        plannedEndDate: input.plannedEndDate,
+        notes: input.notes,
+      })
+      .returning(),
+  );
   if (!project) {
     throw new Error('Не удалось создать проект');
   }
@@ -155,22 +160,26 @@ async function insertStage(
   projectId: number,
   stageInput: CreateProjectStage,
   position: number,
+  audit: AuditWriter,
 ) {
-  const [stage] = await transaction
-    .insert(stages)
-    .values({
-      projectId,
-      stageTypeCode: stageInput.type,
-      position,
-      canRunInParallel: stageInput.canRunInParallel,
-      assigneeId: stageInput.assigneeId,
-      status: stageInput.assigneeId === null ? 'created' : 'assigned',
-      plannedStartDate: stageInput.plannedStartDate,
-      plannedEndDate: stageInput.plannedEndDate,
-      plannedWorkAmountMinor: stageInput.plannedWorkAmountMinor,
-      plannedMaterialAmountMinor: stageInput.plannedMaterialAmountMinor,
-    })
-    .returning({ id: stages.id });
+  const [stage] = await audit.created(
+    stages,
+    await transaction
+      .insert(stages)
+      .values({
+        projectId,
+        stageTypeCode: stageInput.type,
+        position,
+        canRunInParallel: stageInput.canRunInParallel,
+        assigneeId: stageInput.assigneeId,
+        status: stageInput.assigneeId === null ? 'created' : 'assigned',
+        plannedStartDate: stageInput.plannedStartDate,
+        plannedEndDate: stageInput.plannedEndDate,
+        plannedWorkAmountMinor: stageInput.plannedWorkAmountMinor,
+        plannedMaterialAmountMinor: stageInput.plannedMaterialAmountMinor,
+      })
+      .returning(),
+  );
   if (!stage) {
     throw new Error('Не удалось создать этап');
   }
@@ -181,18 +190,28 @@ async function insertChecklist(
   transaction: Transaction,
   stageId: number,
   items: ReadonlyArray<{ title: string; photoHint?: string | null }>,
+  audit: AuditWriter,
 ) {
-  const [checklist] = await transaction.insert(checklists).values({ stageId }).returning({ id: checklists.id });
+  const [checklist] = await audit.created(
+    checklists,
+    await transaction.insert(checklists).values({ stageId }).returning(),
+  );
   if (!checklist) {
     throw new Error('Не удалось создать чек-лист');
   }
-  await transaction.insert(checklistItems).values(
-    items.map((item, index) => ({
-      checklistId: checklist.id,
-      title: item.title,
-      photoHint: item.photoHint,
-      position: index + 1,
-    })),
+  await audit.created(
+    checklistItems,
+    await transaction
+      .insert(checklistItems)
+      .values(
+        items.map((item, index) => ({
+          checklistId: checklist.id,
+          title: item.title,
+          photoHint: item.photoHint,
+          position: index + 1,
+        })),
+      )
+      .returning(),
   );
 }
 
@@ -203,8 +222,8 @@ export class ProjectRepository {
     this.#database = database;
   }
 
-  createAtomically(input: CreateProject): Promise<CreateProjectResult> {
-    return this.#database.transaction(async (transaction) => {
+  createAtomically(input: CreateProject, context: AuditContext = { source: 'system' }): Promise<CreateProjectResult> {
+    return auditedTransaction(this.#database, context, 'createProject', async (transaction, audit) => {
       const typeData = await loadStageTypes(transaction, input);
       const assigneeDetails = await validateAssignees(transaction, input);
       const documentDetails = await validateDocuments(transaction, input);
@@ -215,15 +234,21 @@ export class ProjectRepository {
         return { status: 'invalid', details };
       }
 
-      const project = await insertProject(transaction, input);
+      const project = await insertProject(transaction, input, audit);
 
       if (input.documentFileIds.length > 0) {
-        await transaction.insert(projectDocuments).values(
-          input.documentFileIds.map((fileId, index) => ({
-            projectId: project.id,
-            fileId,
-            position: index + 1,
-          })),
+        await audit.created(
+          projectDocuments,
+          await transaction
+            .insert(projectDocuments)
+            .values(
+              input.documentFileIds.map((fileId, index) => ({
+                projectId: project.id,
+                fileId,
+                position: index + 1,
+              })),
+            )
+            .returning(),
         );
       }
 
@@ -232,11 +257,11 @@ export class ProjectRepository {
         if (!stageType) {
           throw new Error('Тип этапа не найден после проверки');
         }
-        const stage = await insertStage(transaction, project.id, stageInput, stageType.position);
+        const stage = await insertStage(transaction, project.id, stageInput, stageType.position, audit);
         const template = templateData.templateByType.get(stageInput.type);
         const items =
           stageInput.checklistItems ?? (template ? (templateData.templateItemsById.get(template.id) ?? []) : []);
-        await insertChecklist(transaction, stage.id, items);
+        await insertChecklist(transaction, stage.id, items, audit);
       }
 
       const response = toProject(project);

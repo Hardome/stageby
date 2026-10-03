@@ -1,4 +1,5 @@
 import type { CreateUserWritable, UpdateUser } from '#app/generated/types.gen';
+import type { AuditContext } from '#app/modules/audit/context';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 import {
   type ListUsersInput,
@@ -26,17 +27,20 @@ export class UserService {
     return this.#repository.findById(id);
   }
 
-  async create(input: CreateUserWritable): Promise<CreateUserResult> {
+  async create(input: CreateUserWritable, context: AuditContext = { source: 'system' }): Promise<CreateUserResult> {
     const passwordHash = await hashPassword(input.password);
 
     try {
-      const user = await this.#repository.create({
-        login: input.login,
-        passwordHash,
-        fullName: input.fullName,
-        role: input.role,
-        ...(input.phone !== undefined ? { phone: input.phone } : {}),
-      });
+      const user = await this.#repository.create(
+        {
+          login: input.login,
+          passwordHash,
+          fullName: input.fullName,
+          role: input.role,
+          ...(input.phone !== undefined ? { phone: input.phone } : {}),
+        },
+        context,
+      );
       return { status: 'created', user };
     } catch (error) {
       if (error instanceof LoginTakenError) {
@@ -47,12 +51,12 @@ export class UserService {
     }
   }
 
-  update(id: number, input: UpdateUser): Promise<UpdateUserResult> {
-    return this.#repository.updateAtomically(id, input);
+  update(id: number, input: UpdateUser, context: AuditContext = { source: 'system' }): Promise<UpdateUserResult> {
+    return this.#repository.updateAtomically(id, input, context);
   }
 
-  async setPassword(id: number, password: string): Promise<boolean> {
+  async setPassword(id: number, password: string, context: AuditContext = { source: 'system' }): Promise<boolean> {
     const passwordHash = await hashPassword(password);
-    return this.#repository.setPasswordAtomically(id, passwordHash);
+    return this.#repository.setPasswordAtomically(id, passwordHash, context);
   }
 }
