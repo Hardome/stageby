@@ -190,7 +190,7 @@ export class UserRepository {
     throw new Error('Не удалось создать пользователя');
   }
 
-  async updateAtomically(id: number, input: UpdateUser, changedAt = new Date()): Promise<UpdateUserResult> {
+  async updateAtomically(id: number, input: UpdateUser): Promise<UpdateUserResult> {
     return this.#database.transaction(async (transaction) => {
       const activeManagerIds = await lockActiveManagers(transaction, mayRemoveActiveManager(input));
       const current = await findForUpdate(transaction, id);
@@ -205,6 +205,7 @@ export class UserRepository {
       }
 
       const effects = getChangeEffects(current, input);
+      const changedAt = new Date();
 
       const [updated] = await transaction
         .update(users)
@@ -227,7 +228,7 @@ export class UserRepository {
     });
   }
 
-  async setPasswordAtomically(id: number, passwordHash: string, changedAt = new Date()): Promise<boolean> {
+  async setPasswordAtomically(id: number, passwordHash: string): Promise<boolean> {
     try {
       return await this.#database.transaction(async (transaction) => {
         const [user] = await transaction
@@ -241,6 +242,7 @@ export class UserRepository {
           return false;
         }
 
+        const changedAt = new Date();
         await transaction.update(users).set({ passwordHash, updatedAt: changedAt }).where(eq(users.id, id));
         await transaction
           .update(sessions)
