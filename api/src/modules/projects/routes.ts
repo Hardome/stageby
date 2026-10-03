@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import type { RouteHandlers } from '#app/generated/fastify.gen';
 import type { ApiError, CreateProject } from '#app/generated/types.gen';
 import { zApiError, zCreateProjectBody, zCreateProjectResponse } from '#app/generated/zod.gen';
+import { requestAuditContext } from '#app/modules/audit/context';
 import type { ProjectService } from '#app/modules/projects/service';
 
 type ParsedCreateProject = z.infer<typeof zCreateProjectBody>;
@@ -116,7 +117,7 @@ const errors = {
 
 export function registerProjectRoutes(app: FastifyInstance, service: ProjectService): void {
   const createProject: RouteHandlers['createProject'] = async (request, reply) => {
-    const result = await service.create(request.body);
+    const result = await service.create(request.body, requestAuditContext(request));
     if (result.status === 'invalid') {
       return reply.status(400).send(errors.invalid(result.details));
     }

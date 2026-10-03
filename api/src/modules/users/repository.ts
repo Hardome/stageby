@@ -6,6 +6,8 @@ import { sessions } from '#app/db/schema/sessions';
 import { stages } from '#app/db/schema/stages';
 import { type UserRow, users } from '#app/db/schema/users';
 import type { UpdateUser } from '#app/generated/types.gen';
+import type { AuditContext } from '#app/modules/audit/context';
+import { auditedTransaction } from '#app/modules/audit/repository';
 
 type Database = NodePgDatabase<typeof databaseSchema>;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -172,13 +174,13 @@ export class UserRepository {
     return user ?? null;
   }
 
-  async create(input: CreateUserRecord): Promise<UserRow> {
+  async create(input: CreateUserRecord, context: AuditContext = { source: 'system' }): Promise<UserRow> {
     try {
-      const [user] = await this.#database.insert(users).values(input).returning();
-
-      if (user) {
+      return await auditedTransaction(this.#database, context, 'createUser', async (transaction, audit) => {
+        const [user] = await audit.created(users, await transaction.insert(users).values(input).returning());
+        if (!user) throw new Error('User was not inserted');
         return user;
-      }
+      });
     } catch (error) {
       if (hasLoginConstraint(error)) {
         throw new LoginTakenError();
@@ -186,12 +188,14 @@ export class UserRepository {
 
       throw new Error('Не удалось создать пользователя');
     }
-
-    throw new Error('Не удалось создать пользователя');
   }
 
-  async updateAtomically(id: number, input: UpdateUser): Promise<UpdateUserResult> {
-    return this.#database.transaction(async (transaction) => {
+  async updateAtomically(
+    id: number,
+    input: UpdateUser,
+    context: AuditContext = { source: 'system' },
+  ): Promise<UpdateUserResult> {
+    return auditedTransaction(this.#database, context, 'updateUser', async (transaction, audit) => {
       const activeManagerIds = await lockActiveManagers(transaction, mayRemoveActiveManager(input));
       const current = await findForUpdate(transaction, id);
 
@@ -204,14 +208,20 @@ export class UserRepository {
         return { status: securityConflict };
       }
 
+      if (Object.entries(input).every(([field, value]) => current[field as keyof UserRow] === value)) {
+        return { status: 'updated', user: current };
+      }
+
       const effects = getChangeEffects(current, input);
       const changedAt = new Date();
 
-      const [updated] = await transaction
-        .update(users)
-        .set({ ...input, updatedAt: changedAt })
-        .where(eq(users.id, id))
-        .returning();
+      const [updated] = await audit.mutate(users, eq(users.id, id), () =>
+        transaction
+          .update(users)
+          .set({ ...input, updatedAt: changedAt })
+          .where(eq(users.id, id))
+          .returning(),
+      );
 
       if (!updated) {
         return { status: 'not_found' };
@@ -228,9 +238,13 @@ export class UserRepository {
     });
   }
 
-  async setPasswordAtomically(id: number, passwordHash: string): Promise<boolean> {
+  async setPasswordAtomically(
+    id: number,
+    passwordHash: string,
+    context: AuditContext = { source: 'system' },
+  ): Promise<boolean> {
     try {
-      return await this.#database.transaction(async (transaction) => {
+      return await auditedTransaction(this.#database, context, 'setUserPassword', async (transaction, audit) => {
         const [user] = await transaction
           .select({ id: users.id })
           .from(users)
@@ -248,6 +262,7 @@ export class UserRepository {
           .update(sessions)
           .set({ revokedAt: changedAt })
           .where(and(eq(sessions.userId, id), isNull(sessions.revokedAt)));
+        audit.recordEvent();
         return true;
       });
     } catch {

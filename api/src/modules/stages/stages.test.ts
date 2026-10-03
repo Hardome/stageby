@@ -22,6 +22,7 @@ import { stageModule } from '#app/modules/stages/index';
 import { UserRepository } from '#app/modules/users/repository';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
+import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
 
 const PASSWORD = 'Stages-test-password-123!';
@@ -295,6 +296,22 @@ describe('Stage statuses and checklists', () => {
     });
     expect(rework.statusCode, rework.body).toBe(200);
     expect(rework.json<Stage>().status).toBe('rework');
+
+    const audit = await auditRecords(getApp().db, fixture.manager.user.id, 'returnStageForRework');
+    expect(audit.events).toHaveLength(1);
+    expect(audit.changes.map((change) => change.entityType).sort()).toEqual([
+      'acceptance_items',
+      'acceptances',
+      'checklist_items',
+      'checklists',
+      'stages',
+    ]);
+    expect(
+      audit.changes.every((change) => change.stageId === fixture.stage.id && change.projectId === fixture.project.id),
+    ).toBe(true);
+    const link = audit.changes.find((change) => change.entityType === 'acceptance_items')!;
+    expect(link.entityKey).toEqual({ acceptanceId: link.after!.acceptanceId, checklistItemId: fixture.items[0]!.id });
+    expect(link.action).toBe('create');
     const checklist = await getApp().inject({
       method: 'GET',
       url: `/stages/${fixture.stage.id}/checklist`,
