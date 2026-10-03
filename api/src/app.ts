@@ -32,6 +32,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     },
   };
   const app = Fastify({
+    trustProxy: options.environment.TRUST_PROXY.length > 0 ? options.environment.TRUST_PROXY : false,
     logger:
       options.environment.NODE_ENV === 'development'
         ? {
@@ -63,6 +64,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(authModule, {
     NODE_ENV: options.environment.NODE_ENV,
     SESSION_TTL_HOURS: options.environment.SESSION_TTL_HOURS,
+    SESSION_CLEANUP_INTERVAL_SECONDS: options.environment.SESSION_CLEANUP_INTERVAL_SECONDS,
     LOGIN_RATE_LIMIT_MAX: options.environment.LOGIN_RATE_LIMIT_MAX,
     LOGIN_RATE_LIMIT_TIME_WINDOW: options.environment.LOGIN_RATE_LIMIT_TIME_WINDOW,
   });

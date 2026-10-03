@@ -1,5 +1,5 @@
 import type { UserRow } from '#app/db/schema/users';
-import { verifyPassword } from '#app/modules/auth/password-hasher';
+import { hashPassword, passwordNeedsRehash, verifyPassword } from '#app/modules/auth/password-hasher';
 import type { IssuedSession, SessionService } from '#app/modules/auth/session-service';
 import type { UserRepository } from '#app/modules/users/repository';
 
@@ -30,7 +30,7 @@ export class LoginService {
       return null;
     }
 
-    const issuedSession = await this.#sessions.issue(user.id);
-    return { user, issuedSession };
+    const replacementHash = passwordNeedsRehash(user.passwordHash) ? await hashPassword(password) : undefined;
+    return this.#sessions.issueForVerifiedUser(user, replacementHash);
   }
 }

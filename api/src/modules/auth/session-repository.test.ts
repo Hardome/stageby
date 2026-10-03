@@ -85,4 +85,19 @@ describe('Хранилище пользователей и сессий', () => 
     expect(() => new SessionService(repository, 13)).toThrow(RangeError);
     expect(() => new SessionService(repository, 1.5)).toThrow(RangeError);
   });
+
+  it('удаляет истёкшие сессии порциями и сохраняет действующие', async () => {
+    const app = getApp();
+    const user = await createTestUser(new UserRepository(app.db));
+    const repository = new SessionRepository(app.db);
+    const service = new SessionService(repository, 1);
+    const now = new Date();
+    await service.issue(user.id, new Date(now.getTime() - 2 * 60 * 60 * 1000));
+    await service.issue(user.id, new Date(now.getTime() - 2 * 60 * 60 * 1000));
+    const active = await service.issue(user.id, now);
+    expect(await repository.deleteExpired(now, 1)).toBe(1);
+    expect(await repository.deleteExpired(now, 1)).toBe(1);
+    expect(await repository.deleteExpired(now, 1)).toBe(0);
+    expect(await repository.findActiveByTokenHash(active.session.tokenHash, now)).not.toBeNull();
+  });
 });

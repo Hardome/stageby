@@ -1,4 +1,16 @@
+import { isIP } from 'node:net';
+
 import { z } from 'zod';
+
+function isProxyAddress(value: string): boolean {
+  const [address, prefix, extra] = value.split('/');
+  const version = isIP(address ?? '');
+  return (
+    version !== 0 &&
+    extra === undefined &&
+    (prefix === undefined || (/^\d+$/.test(prefix) && Number(prefix) <= (version === 4 ? 32 : 128)))
+  );
+}
 
 const environmentSchema = z
   .object({
@@ -22,11 +34,29 @@ const environmentSchema = z
       .min(1)
       .transform((value) => value.split(',').map((origin) => origin.trim()))
       .pipe(z.array(z.url()).min(1)),
+    API_PUBLIC_ORIGIN: z
+      .url()
+      .refine((value) => {
+        const url = new URL(value);
+        return ['http:', 'https:'].includes(url.protocol) && value === url.origin;
+      }, 'Укажите полный origin без пути')
+      .optional(),
+    TRUST_PROXY: z
+      .string()
+      .default('')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((entry) => entry.trim())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.string().refine(isProxyAddress, 'Укажите IP или CIDR доверенного прокси'))),
     RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
     RATE_LIMIT_TIME_WINDOW: z.string().min(1).default('1 minute'),
     LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
     LOGIN_RATE_LIMIT_TIME_WINDOW: z.string().min(1).default('1 minute'),
     SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(12).default(12),
+    SESSION_CLEANUP_INTERVAL_SECONDS: z.coerce.number().int().min(10).max(86_400).default(3600),
     S3_ENDPOINT: z.url().optional(),
     S3_REGION: z.string().min(1).optional(),
     S3_BUCKET: z.string().min(1).optional(),
@@ -50,6 +80,11 @@ const environmentSchema = z
   })
   .transform((environment) => ({
     ...environment,
+    API_PUBLIC_ORIGIN:
+      environment.API_PUBLIC_ORIGIN ??
+      (environment.NODE_ENV === 'production'
+        ? undefined
+        : `http://${environment.HOST.includes(':') ? `[${environment.HOST}]` : environment.HOST}:${environment.PORT}`),
     S3_ENDPOINT: environment.S3_ENDPOINT ?? 'http://127.0.0.1:9000',
     S3_REGION: environment.S3_REGION ?? 'us-east-1',
     S3_BUCKET: environment.S3_BUCKET ?? 'stageby',
