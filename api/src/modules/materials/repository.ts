@@ -16,6 +16,8 @@ import type {
   UpdateMaterialOrder,
   UserBrief,
 } from '#app/generated/types.gen';
+import type { AuditContext } from '#app/modules/audit/context';
+import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
 import type { Actor, Database, MaterialOperationResult } from '#app/modules/materials/types';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -155,7 +157,7 @@ async function loadOrders(db: Db, stageId: number): Promise<MaterialOrder[]> {
   }));
 }
 
-async function syncSupplyStatus(transaction: Transaction, stageId: number): Promise<void> {
+async function syncSupplyStatus(transaction: Transaction, stageId: number, audit: AuditWriter): Promise<void> {
   const [stage] = await transaction.select().from(stages).where(eq(stages.id, stageId)).for('update');
   if (!stage || !['assigned', 'supplied'].includes(stage.status)) return;
   const orders = await transaction
@@ -182,10 +184,12 @@ async function syncSupplyStatus(transaction: Transaction, stageId: number): Prom
     });
   const status = complete ? 'supplied' : 'assigned';
   if (status !== stage.status) {
-    await transaction
-      .update(stages)
-      .set({ status, version: sql`${stages.version} + 1`, updatedAt: new Date() })
-      .where(eq(stages.id, stageId));
+    await audit.mutate(stages, eq(stages.id, stageId), () =>
+      transaction
+        .update(stages)
+        .set({ status, version: sql`${stages.version} + 1`, updatedAt: new Date() })
+        .where(eq(stages.id, stageId)),
+    );
   }
 }
 
@@ -225,13 +229,20 @@ export class MaterialRepository {
     return { status: 'ok', value: await loadOrders(this.database, stageId) };
   }
 
-  createOrder(stageId: number, actor: Actor): Promise<MaterialOperationResult<MaterialOrder>> {
-    return this.database.transaction(async (transaction) => {
+  createOrder(
+    stageId: number,
+    actor: Actor,
+    context: AuditContext = { source: 'system' },
+  ): Promise<MaterialOperationResult<MaterialOrder>> {
+    return auditedTransaction(this.database, context, 'createMaterialOrder', async (transaction, audit) => {
       const context = await stageContextByStage(transaction, stageId);
       if (!context) return { status: 'not_found' };
       if (context.isArchived) return { status: 'project_archived' };
-      const [order] = await transaction.insert(materialOrders).values({ stageId }).returning({ id: materialOrders.id });
-      await syncSupplyStatus(transaction, stageId);
+      const [order] = await audit.created(
+        materialOrders,
+        await transaction.insert(materialOrders).values({ stageId }).returning(),
+      );
+      await syncSupplyStatus(transaction, stageId, audit);
       const orders = await loadOrders(transaction, stageId);
       return { status: 'ok', value: orders.find(({ id }) => id === order!.id)! };
     });
@@ -241,8 +252,9 @@ export class MaterialRepository {
     orderId: number,
     input: UpdateMaterialOrder,
     actor: Actor,
+    context: AuditContext = { source: 'system' },
   ): Promise<MaterialOperationResult<MaterialOrder>> {
-    return this.database.transaction(async (transaction) => {
+    return auditedTransaction(this.database, context, 'updateMaterialOrder', async (transaction, audit) => {
       const [order] = await transaction
         .select()
         .from(materialOrders)
@@ -254,15 +266,17 @@ export class MaterialRepository {
       if (context.isArchived) return { status: 'project_archived' };
       if (order.version !== input.expectedVersion) return { status: 'version_conflict' };
       const now = new Date();
-      await transaction
-        .update(materialOrders)
-        .set({
-          sentAt: input.isSent ? (order.sentAt ?? now) : null,
-          sentByUserId: input.isSent ? (order.sentByUserId ?? actor.id) : null,
-          version: sql`${materialOrders.version} + 1`,
-          updatedAt: now,
-        })
-        .where(eq(materialOrders.id, orderId));
+      await audit.mutate(materialOrders, eq(materialOrders.id, orderId), () =>
+        transaction
+          .update(materialOrders)
+          .set({
+            sentAt: input.isSent ? (order.sentAt ?? now) : null,
+            sentByUserId: input.isSent ? (order.sentByUserId ?? actor.id) : null,
+            version: sql`${materialOrders.version} + 1`,
+            updatedAt: now,
+          })
+          .where(eq(materialOrders.id, orderId)),
+      );
       const orders = await loadOrders(transaction, order.stageId);
       return { status: 'ok', value: orders.find(({ id }) => id === orderId)! };
     });
@@ -274,8 +288,12 @@ export class MaterialRepository {
     return { status: 'ok', value: await loadInvoices(this.database, [orderId]) };
   }
 
-  createInvoice(orderId: number, input: CreateMaterialInvoice): Promise<MaterialOperationResult<MaterialInvoice>> {
-    return this.database.transaction(async (transaction) => {
+  createInvoice(
+    orderId: number,
+    input: CreateMaterialInvoice,
+    context: AuditContext = { source: 'system' },
+  ): Promise<MaterialOperationResult<MaterialInvoice>> {
+    return auditedTransaction(this.database, context, 'createMaterialInvoice', async (transaction, audit) => {
       const context = await stageContextByOrder(transaction, orderId);
       if (!context) return { status: 'not_found' };
       if (context.isArchived) return { status: 'project_archived' };
@@ -288,16 +306,19 @@ export class MaterialRepository {
         .from(materialInvoices)
         .where(eq(materialInvoices.fileId, input.fileId));
       if (used) return { status: 'invalid_request' };
-      const [invoice] = await transaction
-        .insert(materialInvoices)
-        .values({
-          orderId,
-          fileId: input.fileId,
-          amountMinor: input.amountMinor,
-          supplierName: input.supplierName ?? null,
-        })
-        .returning({ id: materialInvoices.id });
-      await syncSupplyStatus(transaction, context.stage.id);
+      const [invoice] = await audit.created(
+        materialInvoices,
+        await transaction
+          .insert(materialInvoices)
+          .values({
+            orderId,
+            fileId: input.fileId,
+            amountMinor: input.amountMinor,
+            supplierName: input.supplierName ?? null,
+          })
+          .returning(),
+      );
+      await syncSupplyStatus(transaction, context.stage.id, audit);
       const invoices = await loadInvoices(transaction, [orderId]);
       return { status: 'ok', value: invoices.find(({ id }) => id === invoice!.id)! };
     });
@@ -307,8 +328,9 @@ export class MaterialRepository {
     invoiceId: number,
     input: UpdateMaterialInvoice,
     actor: Actor,
+    context: AuditContext = { source: 'system' },
   ): Promise<MaterialOperationResult<MaterialInvoice>> {
-    return this.database.transaction(async (transaction) => {
+    return auditedTransaction(this.database, context, 'updateMaterialInvoice', async (transaction, audit) => {
       const [invoice] = await transaction
         .select()
         .from(materialInvoices)
@@ -320,25 +342,35 @@ export class MaterialRepository {
       if (invoice.version !== input.expectedVersion) return { status: 'version_conflict' };
       if (actor.role === 'foreman' && input.isPaid !== undefined) return { status: 'forbidden' };
       const now = new Date();
-      await transaction
-        .update(materialInvoices)
-        .set(invoiceStateUpdate(invoice, input, actor, now))
-        .where(eq(materialInvoices.id, invoiceId));
-      await syncSupplyStatus(transaction, context.stage.id);
+      await audit.mutate(materialInvoices, eq(materialInvoices.id, invoiceId), () =>
+        transaction
+          .update(materialInvoices)
+          .set(invoiceStateUpdate(invoice, input, actor, now))
+          .where(eq(materialInvoices.id, invoiceId)),
+      );
+      await syncSupplyStatus(transaction, context.stage.id, audit);
       const invoices = await loadInvoices(transaction, [invoice.orderId]);
       return { status: 'ok', value: invoices.find(({ id }) => id === invoiceId)! };
     });
   }
 
-  createShortage(invoiceId: number, comment: string, actor: Actor): Promise<MaterialOperationResult<MaterialShortage>> {
-    return this.database.transaction(async (transaction) => {
+  createShortage(
+    invoiceId: number,
+    comment: string,
+    actor: Actor,
+    context: AuditContext = { source: 'system' },
+  ): Promise<MaterialOperationResult<MaterialShortage>> {
+    return auditedTransaction(this.database, context, 'createMaterialShortage', async (transaction, audit) => {
       const context = await stageContextByInvoice(transaction, invoiceId);
       if (!context || !canRead(actor, context.stage.assigneeId)) return { status: 'not_found' };
       if (context.isArchived) return { status: 'project_archived' };
-      const [shortage] = await transaction
-        .insert(materialShortages)
-        .values({ invoiceId, comment, reportedByUserId: actor.id })
-        .returning({ id: materialShortages.id });
+      const [shortage] = await audit.created(
+        materialShortages,
+        await transaction
+          .insert(materialShortages)
+          .values({ invoiceId, comment, reportedByUserId: actor.id })
+          .returning(),
+      );
       const values = await loadShortages(transaction, [invoiceId]);
       return { status: 'ok', value: values.get(invoiceId)!.find(({ id }) => id === shortage!.id)! };
     });
@@ -348,8 +380,9 @@ export class MaterialRepository {
     shortageId: number,
     input: ResolveMaterialShortage,
     actor: Actor,
+    context: AuditContext = { source: 'system' },
   ): Promise<MaterialOperationResult<MaterialShortage>> {
-    return this.database.transaction(async (transaction) => {
+    return auditedTransaction(this.database, context, 'resolveMaterialShortage', async (transaction, audit) => {
       const [shortage] = await transaction
         .select()
         .from(materialShortages)
@@ -361,15 +394,20 @@ export class MaterialRepository {
       if (context.isArchived) return { status: 'project_archived' };
       if (shortage.version !== input.expectedVersion) return { status: 'version_conflict' };
       if (shortage.resolvedAt !== null) return { status: 'invalid_transition' };
-      await transaction
-        .update(materialShortages)
-        .set({
-          resolvedAt: new Date(),
-          resolvedByUserId: actor.id,
-          resolutionComment: input.resolutionComment ?? null,
-          version: sql`${materialShortages.version} + 1`,
-        })
-        .where(and(eq(materialShortages.id, shortageId), isNull(materialShortages.resolvedAt)));
+      await audit.mutate(
+        materialShortages,
+        and(eq(materialShortages.id, shortageId), isNull(materialShortages.resolvedAt)),
+        () =>
+          transaction
+            .update(materialShortages)
+            .set({
+              resolvedAt: new Date(),
+              resolvedByUserId: actor.id,
+              resolutionComment: input.resolutionComment ?? null,
+              version: sql`${materialShortages.version} + 1`,
+            })
+            .where(and(eq(materialShortages.id, shortageId), isNull(materialShortages.resolvedAt))),
+      );
       const values = await loadShortages(transaction, [shortage.invoiceId]);
       return { status: 'ok', value: values.get(shortage.invoiceId)!.find(({ id }) => id === shortageId)! };
     });

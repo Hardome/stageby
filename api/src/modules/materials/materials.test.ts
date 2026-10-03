@@ -20,6 +20,7 @@ import { stageModule } from '#app/modules/stages/index';
 import { UserRepository } from '#app/modules/users/repository';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
+import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
 
 const PASSWORD = 'Materials-test-password-123!';
@@ -221,6 +222,18 @@ describe('Материалы, счета и нехватки', () => {
     }
     const [supplied] = await getApp().db.select().from(stages).where(eq(stages.id, data.stage.id));
     expect(supplied!.status).toBe('supplied');
+
+    const creation = await auditRecords(getApp().db, data.manager.user.id, 'createMaterialInvoice');
+    expect(creation.events).toHaveLength(3);
+    expect(creation.changes.every((change) => change.stageId === data.stage.id)).toBe(true);
+    const delivery = await auditRecords(getApp().db, data.foreman.user.id, 'updateMaterialInvoice');
+    expect(delivery.events).toHaveLength(3);
+    const last = delivery.changes.filter((change) => change.eventId === delivery.events.at(-1)!.id);
+    expect(last.map((change) => change.entityType).sort()).toEqual(['material_invoices', 'stages']);
+    expect(last.find((change) => change.entityType === 'stages')).toMatchObject({
+      before: { status: 'assigned' },
+      after: { status: 'supplied' },
+    });
   });
 
   it('не закрывает нехватку новым счётом и разрешает устранение только руководителю', async () => {

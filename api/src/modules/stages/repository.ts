@@ -10,6 +10,8 @@ import { stagePredecessors, stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
 import { workPayments } from '#app/db/schema/work-payments';
 import type { Checklist, RejectStage, Stage, UpdateChecklistItem } from '#app/generated/types.gen';
+import type { AuditContext } from '#app/modules/audit/context';
+import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
 import type { Actor, Database, OperationResult, StageOperationError } from '#app/modules/stages/types';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -291,16 +293,19 @@ async function applyChecklistItemUpdate(
   itemId: number,
   input: UpdateChecklistItem,
   actor: Actor,
+  audit: AuditWriter,
 ): Promise<void> {
   const now = new Date();
-  await transaction
-    .update(checklistItems)
-    .set({
-      isCompleted: input.isCompleted,
-      completedAt: input.isCompleted ? now : null,
-      completedByUserId: input.isCompleted ? actor.id : null,
-    })
-    .where(eq(checklistItems.id, itemId));
+  await audit.mutate(checklistItems, eq(checklistItems.id, itemId), () =>
+    transaction
+      .update(checklistItems)
+      .set({
+        isCompleted: input.isCompleted,
+        completedAt: input.isCompleted ? now : null,
+        completedByUserId: input.isCompleted ? actor.id : null,
+      })
+      .where(eq(checklistItems.id, itemId)),
+  );
   const allItems = await transaction.select().from(checklistItems).where(eq(checklistItems.checklistId, checklist.id));
   const allCompleted =
     allItems.length > 0 &&
@@ -313,19 +318,25 @@ async function applyChecklistItemUpdate(
   }
   if (allCompleted) {
     nextStatus = 'acceptance';
-    await transaction
-      .update(checklistItems)
-      .set({ requiresRework: false })
-      .where(eq(checklistItems.checklistId, checklist.id));
+    await audit.mutate(checklistItems, eq(checklistItems.checklistId, checklist.id), () =>
+      transaction
+        .update(checklistItems)
+        .set({ requiresRework: false })
+        .where(eq(checklistItems.checklistId, checklist.id)),
+    );
   }
-  await transaction
-    .update(checklists)
-    .set({ version: sql`${checklists.version} + 1`, updatedAt: now })
-    .where(eq(checklists.id, checklist.id));
-  await transaction
-    .update(stages)
-    .set({ status: nextStatus, actualStartDate, version: sql`${stages.version} + 1`, updatedAt: now })
-    .where(eq(stages.id, locked.stage.id));
+  await audit.mutate(checklists, eq(checklists.id, checklist.id), () =>
+    transaction
+      .update(checklists)
+      .set({ version: sql`${checklists.version} + 1`, updatedAt: now })
+      .where(eq(checklists.id, checklist.id)),
+  );
+  await audit.mutate(stages, eq(stages.id, locked.stage.id), () =>
+    transaction
+      .update(stages)
+      .set({ status: nextStatus, actualStartDate, version: sql`${stages.version} + 1`, updatedAt: now })
+      .where(eq(stages.id, locked.stage.id)),
+  );
 }
 
 export class StageRepository {
@@ -348,8 +359,13 @@ export class StageRepository {
     return checklist ? { status: 'ok', value: checklist } : { status: 'not_found' };
   }
 
-  assign(stageId: number, expectedVersion: number, assigneeId: number | null): Promise<OperationResult<Stage>> {
-    return this.#database.transaction(async (transaction) => {
+  assign(
+    stageId: number,
+    expectedVersion: number,
+    assigneeId: number | null,
+    context: AuditContext = { source: 'system' },
+  ): Promise<OperationResult<Stage>> {
+    return auditedTransaction(this.#database, context, 'updateStage', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       const baseError = getBaseMutationError(locked, expectedVersion);
       if (baseError) return { status: baseError };
@@ -358,10 +374,12 @@ export class StageRepository {
       if (!(await isActiveForeman(transaction, assigneeId))) return { status: 'invalid_request' };
       const status = assigneeId === null ? 'created' : 'assigned';
       if (locked.stage.assigneeId !== assigneeId || locked.stage.status !== status) {
-        await transaction
-          .update(stages)
-          .set({ assigneeId, status, version: sql`${stages.version} + 1`, updatedAt: new Date() })
-          .where(eq(stages.id, stageId));
+        await audit.mutate(stages, eq(stages.id, stageId), () =>
+          transaction
+            .update(stages)
+            .set({ assigneeId, status, version: sql`${stages.version} + 1`, updatedAt: new Date() })
+            .where(eq(stages.id, stageId)),
+        );
       }
       return { status: 'ok', value: (await loadStage(transaction, stageId))! };
     });
@@ -371,22 +389,25 @@ export class StageRepository {
     stageId: number,
     expectedVersion: number,
     plannedWorkAmountMinor: number | null,
+    context: AuditContext = { source: 'system' },
   ): Promise<OperationResult<Stage>> {
-    return this.#database.transaction(async (transaction) => {
+    return auditedTransaction(this.#database, context, 'updateStage', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       const baseError = getBaseMutationError(locked, expectedVersion);
       if (baseError) return { status: baseError };
       if (!locked) return { status: 'not_found' };
       if (locked.stage.status === 'paid') return { status: 'invalid_transition' };
       if (locked.stage.plannedWorkAmountMinor !== plannedWorkAmountMinor) {
-        await transaction
-          .update(stages)
-          .set({
-            plannedWorkAmountMinor,
-            version: sql`${stages.version} + 1`,
-            updatedAt: new Date(),
-          })
-          .where(eq(stages.id, stageId));
+        await audit.mutate(stages, eq(stages.id, stageId), () =>
+          transaction
+            .update(stages)
+            .set({
+              plannedWorkAmountMinor,
+              version: sql`${stages.version} + 1`,
+              updatedAt: new Date(),
+            })
+            .where(eq(stages.id, stageId)),
+        );
       }
       return { status: 'ok', value: (await loadStage(transaction, stageId))! };
     });
@@ -396,29 +417,37 @@ export class StageRepository {
     stageId: number,
     expectedVersion: number,
     plannedMaterialAmountMinor: number | null,
+    context: AuditContext = { source: 'system' },
   ): Promise<OperationResult<Stage>> {
-    return this.#database.transaction(async (transaction) => {
+    return auditedTransaction(this.#database, context, 'updateStage', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       const baseError = getBaseMutationError(locked, expectedVersion);
       if (baseError) return { status: baseError };
       if (!locked) return { status: 'not_found' };
       if (locked.stage.status === 'paid') return { status: 'invalid_transition' };
       if (locked.stage.plannedMaterialAmountMinor !== plannedMaterialAmountMinor) {
-        await transaction
-          .update(stages)
-          .set({
-            plannedMaterialAmountMinor,
-            version: sql`${stages.version} + 1`,
-            updatedAt: new Date(),
-          })
-          .where(eq(stages.id, stageId));
+        await audit.mutate(stages, eq(stages.id, stageId), () =>
+          transaction
+            .update(stages)
+            .set({
+              plannedMaterialAmountMinor,
+              version: sql`${stages.version} + 1`,
+              updatedAt: new Date(),
+            })
+            .where(eq(stages.id, stageId)),
+        );
       }
       return { status: 'ok', value: (await loadStage(transaction, stageId))! };
     });
   }
 
-  changeStatus(stageId: number, expectedVersion: number, status: 'supplied' | 'paid'): Promise<OperationResult<Stage>> {
-    return this.#database.transaction(async (transaction) => {
+  changeStatus(
+    stageId: number,
+    expectedVersion: number,
+    status: 'supplied' | 'paid',
+    context: AuditContext = { source: 'system' },
+  ): Promise<OperationResult<Stage>> {
+    return auditedTransaction(this.#database, context, 'changeStageStatus', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       const baseError = getBaseMutationError(locked, expectedVersion);
       if (baseError) return { status: baseError };
@@ -426,10 +455,12 @@ export class StageRepository {
       if (locked.stage.status === status) return { status: 'ok', value: (await loadStage(transaction, stageId))! };
       const transitionError = await getStatusTransitionError(transaction, locked, stageId, status);
       if (transitionError) return { status: transitionError };
-      await transaction
-        .update(stages)
-        .set({ status, version: sql`${stages.version} + 1`, updatedAt: new Date() })
-        .where(eq(stages.id, stageId));
+      await audit.mutate(stages, eq(stages.id, stageId), () =>
+        transaction
+          .update(stages)
+          .set({ status, version: sql`${stages.version} + 1`, updatedAt: new Date() })
+          .where(eq(stages.id, stageId)),
+      );
       return { status: 'ok', value: (await loadStage(transaction, stageId))! };
     });
   }
@@ -439,8 +470,9 @@ export class StageRepository {
     itemId: number,
     input: UpdateChecklistItem,
     actor: Actor,
+    context: AuditContext = { source: 'system' },
   ): Promise<OperationResult<Checklist>> {
-    return this.#database.transaction(async (transaction) => {
+    return auditedTransaction(this.#database, context, 'updateChecklistItem', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       const [checklist] = await transaction
         .select()
@@ -458,13 +490,18 @@ export class StageRepository {
         return { status: 'ok', value: (await loadChecklist(transaction, stageId))! };
       }
       if (input.isCompleted && !(await hasUploadedPhoto(transaction, itemId))) return { status: 'photo_required' };
-      await applyChecklistItemUpdate(transaction, locked, checklist, itemId, input, actor);
+      await applyChecklistItemUpdate(transaction, locked, checklist, itemId, input, actor, audit);
       return { status: 'ok', value: (await loadChecklist(transaction, stageId))! };
     });
   }
 
-  returnForRework(stageId: number, input: RejectStage, actor: Actor): Promise<OperationResult<Stage>> {
-    return this.#database.transaction(async (transaction) => {
+  returnForRework(
+    stageId: number,
+    input: RejectStage,
+    actor: Actor,
+    context: AuditContext = { source: 'system' },
+  ): Promise<OperationResult<Stage>> {
+    return auditedTransaction(this.#database, context, 'returnStageForRework', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       if (!locked) return { status: 'not_found' };
       if (locked.isArchived) return { status: 'project_archived' };
@@ -478,32 +515,45 @@ export class StageRepository {
         .from(checklistItems)
         .where(and(eq(checklistItems.checklistId, checklist.id), inArray(checklistItems.id, input.itemIds)));
       if (selected.length !== input.itemIds.length) return { status: 'invalid_request' };
-      const [acceptance] = await transaction
-        .insert(acceptances)
-        .values({
-          stageId,
-          decision: 'rejected',
-          comment: input.comment,
-          correctionDueDate: input.correctionDueDate,
-          decidedByUserId: actor.id,
-        })
-        .returning({ id: acceptances.id });
-      await transaction
-        .insert(acceptanceItems)
-        .values(input.itemIds.map((checklistItemId) => ({ acceptanceId: acceptance!.id, checklistItemId })));
-      await transaction
-        .update(checklistItems)
-        .set({ isCompleted: false, requiresRework: true, completedAt: null, completedByUserId: null })
-        .where(inArray(checklistItems.id, input.itemIds));
+      const [acceptance] = await audit.created(
+        acceptances,
+        await transaction
+          .insert(acceptances)
+          .values({
+            stageId,
+            decision: 'rejected',
+            comment: input.comment,
+            correctionDueDate: input.correctionDueDate,
+            decidedByUserId: actor.id,
+          })
+          .returning(),
+      );
+      await audit.created(
+        acceptanceItems,
+        await transaction
+          .insert(acceptanceItems)
+          .values(input.itemIds.map((checklistItemId) => ({ acceptanceId: acceptance!.id, checklistItemId })))
+          .returning(),
+      );
+      await audit.mutate(checklistItems, inArray(checklistItems.id, input.itemIds), () =>
+        transaction
+          .update(checklistItems)
+          .set({ isCompleted: false, requiresRework: true, completedAt: null, completedByUserId: null })
+          .where(inArray(checklistItems.id, input.itemIds)),
+      );
       const now = new Date();
-      await transaction
-        .update(checklists)
-        .set({ version: sql`${checklists.version} + 1`, updatedAt: now })
-        .where(eq(checklists.id, checklist.id));
-      await transaction
-        .update(stages)
-        .set({ status: 'rework', version: sql`${stages.version} + 1`, updatedAt: now })
-        .where(eq(stages.id, stageId));
+      await audit.mutate(checklists, eq(checklists.id, checklist.id), () =>
+        transaction
+          .update(checklists)
+          .set({ version: sql`${checklists.version} + 1`, updatedAt: now })
+          .where(eq(checklists.id, checklist.id)),
+      );
+      await audit.mutate(stages, eq(stages.id, stageId), () =>
+        transaction
+          .update(stages)
+          .set({ status: 'rework', version: sql`${stages.version} + 1`, updatedAt: now })
+          .where(eq(stages.id, stageId)),
+      );
       return { status: 'ok', value: (await loadStage(transaction, stageId))! };
     });
   }
@@ -512,8 +562,9 @@ export class StageRepository {
     stageId: number,
     input: { expectedVersion: number; comment?: string | null | undefined },
     actor: Actor,
+    context: AuditContext = { source: 'system' },
   ): Promise<OperationResult<Stage>> {
-    return this.#database.transaction(async (transaction) => {
+    return auditedTransaction(this.#database, context, 'acceptStage', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       if (!locked) return { status: 'not_found' };
       if (locked.isArchived) return { status: 'project_archived' };
@@ -524,22 +575,30 @@ export class StageRepository {
         ? await transaction.select().from(checklistItems).where(eq(checklistItems.checklistId, checklist.id))
         : [];
       if (items.length === 0 || items.some((item) => !item.isCompleted)) return { status: 'invalid_transition' };
-      await transaction.insert(acceptances).values({
-        stageId,
-        decision: 'accepted',
-        comment: input.comment ?? null,
-        correctionDueDate: null,
-        decidedByUserId: actor.id,
-      });
-      await transaction
-        .update(stages)
-        .set({
-          status: 'completed',
-          actualEndDate: today(),
-          version: sql`${stages.version} + 1`,
-          updatedAt: new Date(),
-        })
-        .where(eq(stages.id, stageId));
+      await audit.created(
+        acceptances,
+        await transaction
+          .insert(acceptances)
+          .values({
+            stageId,
+            decision: 'accepted',
+            comment: input.comment ?? null,
+            correctionDueDate: null,
+            decidedByUserId: actor.id,
+          })
+          .returning(),
+      );
+      await audit.mutate(stages, eq(stages.id, stageId), () =>
+        transaction
+          .update(stages)
+          .set({
+            status: 'completed',
+            actualEndDate: today(),
+            version: sql`${stages.version} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(stages.id, stageId)),
+      );
       return { status: 'ok', value: (await loadStage(transaction, stageId))! };
     });
   }

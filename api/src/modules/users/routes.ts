@@ -17,6 +17,7 @@ import {
   zUpdateUserPath,
   zUpdateUserResponse,
 } from '#app/generated/zod.gen';
+import { requestAuditContext } from '#app/modules/audit/context';
 import { toUser } from '#app/modules/users/mapper';
 import type { UserService } from '#app/modules/users/service';
 
@@ -91,7 +92,7 @@ export function registerUserRoutes(app: FastifyInstance, service: UserService): 
   };
 
   const createUser: RouteHandlers['createUser'] = async (request, reply) => {
-    const result = await service.create(request.body);
+    const result = await service.create(request.body, requestAuditContext(request));
 
     if (result.status === 'login_taken') {
       return reply.status(409).send(errors.loginTaken);
@@ -106,7 +107,7 @@ export function registerUserRoutes(app: FastifyInstance, service: UserService): 
   };
 
   const updateUser: RouteHandlers['updateUser'] = async (request, reply) => {
-    const result = await service.update(request.params.userId, request.body);
+    const result = await service.update(request.params.userId, request.body, requestAuditContext(request));
 
     if (result.status === 'not_found') {
       return reply.status(404).send(errors.notFound);
@@ -124,7 +125,11 @@ export function registerUserRoutes(app: FastifyInstance, service: UserService): 
   };
 
   const setUserPassword: RouteHandlers['setUserPassword'] = async (request, reply) => {
-    const updated = await service.setPassword(request.params.userId, request.body.password);
+    const updated = await service.setPassword(
+      request.params.userId,
+      request.body.password,
+      requestAuditContext(request),
+    );
     return updated ? reply.status(204).send() : reply.status(404).send(errors.notFound);
   };
 

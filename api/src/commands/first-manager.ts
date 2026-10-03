@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 import type * as databaseSchema from '#app/db/schema/index';
 import { users } from '#app/db/schema/users';
+import { auditedTransaction } from '#app/modules/audit/repository';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 
 type Database = NodePgDatabase<typeof databaseSchema>;
@@ -33,32 +34,40 @@ export class FirstManagerRepository implements FirstManagerStore {
   }
 
   async createIfEmpty(input: CreateFirstManagerRecord): Promise<CreateFirstManagerResult> {
-    return this.#database.transaction(async (transaction) => {
-      // The table lock makes concurrent bootstrap commands observe the same initialized state.
-      await transaction.execute(sql`lock table ${users} in exclusive mode`);
+    return auditedTransaction(
+      this.#database,
+      { source: 'command' },
+      'createFirstManager',
+      async (transaction, audit) => {
+        // The table lock makes concurrent bootstrap commands observe the same initialized state.
+        await transaction.execute(sql`lock table ${users} in exclusive mode`);
 
-      const [existingUser] = await transaction.select({ id: users.id }).from(users).limit(1);
-      if (existingUser) {
-        return { status: 'already_initialized' };
-      }
+        const [existingUser] = await transaction.select({ id: users.id }).from(users).limit(1);
+        if (existingUser) {
+          return { status: 'already_initialized' };
+        }
 
-      const [manager] = await transaction
-        .insert(users)
-        .values({
-          login: input.login,
-          passwordHash: input.passwordHash,
-          fullName: input.fullName,
-          role: 'manager',
-          isActive: true,
-        })
-        .returning({ id: users.id });
+        const [manager] = await audit.created(
+          users,
+          await transaction
+            .insert(users)
+            .values({
+              login: input.login,
+              passwordHash: input.passwordHash,
+              fullName: input.fullName,
+              role: 'manager',
+              isActive: true,
+            })
+            .returning(),
+        );
 
-      if (!manager) {
-        throw new Error('Не удалось создать первого руководителя');
-      }
+        if (!manager) {
+          throw new Error('Не удалось создать первого руководителя');
+        }
 
-      return { status: 'created', id: manager.id };
-    });
+        return { status: 'created', id: manager.id };
+      },
+    );
   }
 }
 

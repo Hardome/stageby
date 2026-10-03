@@ -13,6 +13,7 @@ import {
   zUpdateWorkPaymentPath,
   zWorkPayment,
 } from '#app/generated/zod.gen';
+import { requestAuditContext } from '#app/modules/audit/context';
 import type { WorkPaymentRepository } from '#app/modules/work-payments/repository';
 import type { WorkPaymentOperationError, WorkPaymentOperationResult } from '#app/modules/work-payments/types';
 
@@ -113,7 +114,16 @@ export function registerWorkPaymentRoutes(app: FastifyInstance, repository: Work
       response: { 201: workPaymentResponseSchema, ...errorResponses },
     },
     handler: async (request, reply) =>
-      send(reply, await repository.create(request.params.stageId, request.body, request.auth!.user.id), 201),
+      send(
+        reply,
+        await repository.create(
+          request.params.stageId,
+          request.body,
+          request.auth!.user.id,
+          requestAuditContext(request),
+        ),
+        201,
+      ),
   });
 
   app.patch<{
@@ -126,7 +136,8 @@ export function registerWorkPaymentRoutes(app: FastifyInstance, repository: Work
       body: updateBodySchema,
       response: { 200: workPaymentResponseSchema, ...errorResponses },
     },
-    handler: async (request, reply) => send(reply, await repository.update(request.params.paymentId, request.body)),
+    handler: async (request, reply) =>
+      send(reply, await repository.update(request.params.paymentId, request.body, requestAuditContext(request))),
   });
 
   app.delete<{
@@ -140,6 +151,10 @@ export function registerWorkPaymentRoutes(app: FastifyInstance, repository: Work
       response: { 204: z.void(), ...errorResponses },
     },
     handler: async (request, reply) =>
-      send(reply, await repository.delete(request.params.paymentId, request.body.expectedVersion), 204),
+      send(
+        reply,
+        await repository.delete(request.params.paymentId, request.body.expectedVersion, requestAuditContext(request)),
+        204,
+      ),
   });
 }

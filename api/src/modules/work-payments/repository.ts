@@ -5,6 +5,8 @@ import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
 import { workPayments } from '#app/db/schema/work-payments';
 import type { CreateWorkPayment, UpdateWorkPayment, WorkPayment } from '#app/generated/types.gen';
+import type { AuditContext } from '#app/modules/audit/context';
+import { auditedTransaction } from '#app/modules/audit/repository';
 import { toWorkPayment } from '#app/modules/work-payments/mapper';
 import type { Database, WorkPaymentOperationError, WorkPaymentOperationResult } from '#app/modules/work-payments/types';
 
@@ -76,50 +78,69 @@ export class WorkPaymentRepository {
     stageId: number,
     input: CreateWorkPayment,
     createdByUserId: number,
+    context: AuditContext = { source: 'system' },
   ): Promise<WorkPaymentOperationResult<WorkPayment>> {
-    return this.#database.transaction(async (transaction) => {
+    return auditedTransaction(this.#database, context, 'createWorkPayment', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       if (!locked) return { status: 'not_found' };
       if (locked.isArchived) return { status: 'project_archived' };
-      const [created] = await transaction
-        .insert(workPayments)
-        .values({
-          stageId,
-          paidAt: input.paidAt,
-          amountMinor: input.amountMinor,
-          comment: input.comment ?? null,
-          createdByUserId,
-        })
-        .returning({ id: workPayments.id });
+      const [created] = await audit.created(
+        workPayments,
+        await transaction
+          .insert(workPayments)
+          .values({
+            stageId,
+            paidAt: input.paidAt,
+            amountMinor: input.amountMinor,
+            comment: input.comment ?? null,
+            createdByUserId,
+          })
+          .returning(),
+      );
       return { status: 'ok', value: (await loadPayment(transaction, created!.id))! };
     });
   }
 
-  update(paymentId: number, input: UpdateWorkPayment): Promise<WorkPaymentOperationResult<WorkPayment>> {
-    return this.#database.transaction(async (transaction) => {
+  update(
+    paymentId: number,
+    input: UpdateWorkPayment,
+    context: AuditContext = { source: 'system' },
+  ): Promise<WorkPaymentOperationResult<WorkPayment>> {
+    return auditedTransaction(this.#database, context, 'updateWorkPayment', async (transaction, audit) => {
       const locked = await lockPayment(transaction, paymentId);
       const error = getMutationError(locked, input.expectedVersion);
       if (error) return { status: error };
-      await transaction
-        .update(workPayments)
-        .set({
-          ...(input.paidAt === undefined ? {} : { paidAt: input.paidAt }),
-          ...(input.amountMinor === undefined ? {} : { amountMinor: input.amountMinor }),
-          ...(input.comment === undefined ? {} : { comment: input.comment }),
-          version: sql`${workPayments.version} + 1`,
-          updatedAt: new Date(),
-        })
-        .where(and(eq(workPayments.id, paymentId), eq(workPayments.version, input.expectedVersion)));
+      await audit.mutate(
+        workPayments,
+        and(eq(workPayments.id, paymentId), eq(workPayments.version, input.expectedVersion)),
+        () =>
+          transaction
+            .update(workPayments)
+            .set({
+              ...(input.paidAt === undefined ? {} : { paidAt: input.paidAt }),
+              ...(input.amountMinor === undefined ? {} : { amountMinor: input.amountMinor }),
+              ...(input.comment === undefined ? {} : { comment: input.comment }),
+              version: sql`${workPayments.version} + 1`,
+              updatedAt: new Date(),
+            })
+            .where(and(eq(workPayments.id, paymentId), eq(workPayments.version, input.expectedVersion))),
+      );
       return { status: 'ok', value: (await loadPayment(transaction, paymentId))! };
     });
   }
 
-  delete(paymentId: number, expectedVersion: number): Promise<WorkPaymentOperationResult<void>> {
-    return this.#database.transaction(async (transaction) => {
+  delete(
+    paymentId: number,
+    expectedVersion: number,
+    context: AuditContext = { source: 'system' },
+  ): Promise<WorkPaymentOperationResult<void>> {
+    return auditedTransaction(this.#database, context, 'deleteWorkPayment', async (transaction, audit) => {
       const locked = await lockPayment(transaction, paymentId);
       const error = getMutationError(locked, expectedVersion);
       if (error) return { status: error };
-      await transaction.delete(workPayments).where(eq(workPayments.id, paymentId));
+      await audit.mutate(workPayments, eq(workPayments.id, paymentId), () =>
+        transaction.delete(workPayments).where(eq(workPayments.id, paymentId)),
+      );
       return { status: 'ok', value: undefined };
     });
   }

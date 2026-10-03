@@ -28,6 +28,7 @@ import {
   zUpdateMaterialOrderPath,
   zUpdateMaterialOrderResponse,
 } from '#app/generated/zod.gen';
+import { requestAuditContext } from '#app/modules/audit/context';
 import type { MaterialRepository } from '#app/modules/materials/repository';
 import type { MaterialOperationError, MaterialOperationResult } from '#app/modules/materials/types';
 
@@ -114,7 +115,11 @@ export function registerMaterialRoutes(app: FastifyInstance, repository: Materia
     handler: async (request, reply) =>
       send(
         reply,
-        await repository.createOrder((request.params as { stageId: number }).stageId, request.auth!.user),
+        await repository.createOrder(
+          (request.params as { stageId: number }).stageId,
+          request.auth!.user,
+          requestAuditContext(request),
+        ),
         201,
       ),
   });
@@ -132,6 +137,7 @@ export function registerMaterialRoutes(app: FastifyInstance, repository: Materia
           (request.params as { orderId: number }).orderId,
           request.body as z.infer<typeof zUpdateMaterialOrderBody>,
           request.auth!.user,
+          requestAuditContext(request),
         ),
       ),
   });
@@ -157,6 +163,7 @@ export function registerMaterialRoutes(app: FastifyInstance, repository: Materia
         await repository.createInvoice(
           (request.params as { orderId: number }).orderId,
           request.body as z.infer<typeof invoiceBody>,
+          requestAuditContext(request),
         ),
         201,
       ),
@@ -177,7 +184,12 @@ export function registerMaterialRoutes(app: FastifyInstance, repository: Materia
       };
       return send(
         reply,
-        await repository.updateInvoice((request.params as { invoiceId: number }).invoiceId, input, request.auth!.user),
+        await repository.updateInvoice(
+          (request.params as { invoiceId: number }).invoiceId,
+          input,
+          request.auth!.user,
+          requestAuditContext(request),
+        ),
       );
     },
   });
@@ -195,6 +207,7 @@ export function registerMaterialRoutes(app: FastifyInstance, repository: Materia
           (request.params as { invoiceId: number }).invoiceId,
           (request.body as z.infer<typeof shortageBody>).comment,
           request.auth!.user,
+          requestAuditContext(request),
         ),
         201,
       ),
@@ -213,6 +226,7 @@ export function registerMaterialRoutes(app: FastifyInstance, repository: Materia
           (request.params as { shortageId: number }).shortageId,
           request.body as z.infer<typeof resolutionBody>,
           request.auth!.user,
+          requestAuditContext(request),
         ),
       ),
   });

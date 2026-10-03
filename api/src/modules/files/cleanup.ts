@@ -6,7 +6,7 @@ export async function cleanupExpiredFiles(repository: FileRepository, logger: Fa
   const now = new Date();
   for (const fileId of await repository.findExpiredFileIds(now)) {
     try {
-      await repository.deleteExpiredFile(fileId, now);
+      await repository.deleteExpiredFile(fileId, now, { source: 'system' });
     } catch (error) {
       logger.warn({ error, fileId }, 'Не удалось удалить просроченный файл; операция будет повторена');
     }

@@ -9,6 +9,8 @@ import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
 import type { ChecklistItemPhoto, CreateFileUpload, File, FileDownload, FileUpload } from '#app/generated/types.gen';
+import type { AuditContext } from '#app/modules/audit/context';
+import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
 import { toChecklistItemPhoto, toFile } from '#app/modules/files/mapper';
 import { getMaximumSize, isAllowedMimeType, validateUploadPolicy } from '#app/modules/files/policy';
 import type { Actor, Database, FileOperationError, FileOperationResult } from '#app/modules/files/types';
@@ -103,6 +105,7 @@ async function clearCompletedItemAfterLastPhoto(
   context: NonNullable<Awaited<ReturnType<typeof loadItemContext>>>,
   removedPhotoId: number,
   now: Date,
+  audit: AuditWriter,
 ): Promise<void> {
   if (!context.item.isCompleted) return;
   const [remaining] = await transaction
@@ -117,19 +120,25 @@ async function clearCompletedItemAfterLastPhoto(
     )
     .limit(1);
   if (remaining) return;
-  await transaction
-    .update(checklistItems)
-    .set({ isCompleted: false, completedAt: null, completedByUserId: null })
-    .where(eq(checklistItems.id, context.item.id));
-  await transaction
-    .update(checklists)
-    .set({ version: sql`${checklists.version} + 1`, updatedAt: now })
-    .where(eq(checklists.id, context.checklist.id));
+  await audit.mutate(checklistItems, eq(checklistItems.id, context.item.id), () =>
+    transaction
+      .update(checklistItems)
+      .set({ isCompleted: false, completedAt: null, completedByUserId: null })
+      .where(eq(checklistItems.id, context.item.id)),
+  );
+  await audit.mutate(checklists, eq(checklists.id, context.checklist.id), () =>
+    transaction
+      .update(checklists)
+      .set({ version: sql`${checklists.version} + 1`, updatedAt: now })
+      .where(eq(checklists.id, context.checklist.id)),
+  );
   if (context.stage.status === 'acceptance') {
-    await transaction
-      .update(stages)
-      .set({ status: 'in_progress', version: sql`${stages.version} + 1`, updatedAt: now })
-      .where(eq(stages.id, context.stage.id));
+    await audit.mutate(stages, eq(stages.id, context.stage.id), () =>
+      transaction
+        .update(stages)
+        .set({ status: 'in_progress', version: sql`${stages.version} + 1`, updatedAt: now })
+        .where(eq(stages.id, context.stage.id)),
+    );
   }
 }
 
@@ -144,7 +153,11 @@ export class FileRepository {
     this.#signedUrlTtlSeconds = signedUrlTtlSeconds;
   }
 
-  async createUpload(input: CreateFileUpload, actor: Actor): Promise<FileOperationResult<FileUpload>> {
+  async createUpload(
+    input: CreateFileUpload,
+    actor: Actor,
+    context: AuditContext = { source: 'system' },
+  ): Promise<FileOperationResult<FileUpload>> {
     const policyError = validateUploadPolicy(input, actor);
     if (policyError) return { status: policyError };
     const storageKey = `uploads/${new Date().toISOString().slice(0, 10)}/${randomUUID()}`;
@@ -155,31 +168,36 @@ export class FileRepository {
       checksumSha256Base64: checksumToBase64(input.checksumSha256),
       expiresInSeconds: this.#signedUrlTtlSeconds,
     });
-    const [file] = await this.#database
-      .insert(files)
-      .values({
-        purpose: input.purpose,
-        storageKey,
-        originalName: input.originalName,
-        mimeType: input.mimeType,
-        sizeBytes: input.sizeBytes,
-        checksumSha256: input.checksumSha256,
-        uploadedByUserId: actor.id,
-        uploadExpiresAt: request.expiresAt,
-      })
-      .returning({ id: files.id, status: files.status });
-    if (!file) throw new Error('Не удалось создать upload-сессию');
-    return {
-      status: 'ok',
-      value: {
-        fileId: file.id,
-        status: file.status,
-        method: 'PUT',
-        uploadUrl: request.url,
-        headers: request.headers,
-        expiresAt: request.expiresAt.toISOString(),
-      },
-    };
+    return auditedTransaction(this.#database, context, 'createFileUpload', async (transaction, audit) => {
+      const [file] = await audit.created(
+        files,
+        await transaction
+          .insert(files)
+          .values({
+            purpose: input.purpose,
+            storageKey,
+            originalName: input.originalName,
+            mimeType: input.mimeType,
+            sizeBytes: input.sizeBytes,
+            checksumSha256: input.checksumSha256,
+            uploadedByUserId: actor.id,
+            uploadExpiresAt: request.expiresAt,
+          })
+          .returning(),
+      );
+      if (!file) throw new Error('Не удалось создать upload-сессию');
+      return {
+        status: 'ok',
+        value: {
+          fileId: file.id,
+          status: file.status,
+          method: 'PUT',
+          uploadUrl: request.url,
+          headers: request.headers,
+          expiresAt: request.expiresAt.toISOString(),
+        },
+      };
+    });
   }
 
   completeUpload(
@@ -187,8 +205,9 @@ export class FileRepository {
     checksumSha256: string,
     idempotencyKey: string,
     actor: Actor,
+    context: AuditContext = { source: 'system' },
   ): Promise<FileOperationResult<File>> {
-    return this.#database.transaction(async (transaction) => {
+    return auditedTransaction(this.#database, context, 'completeFileUpload', async (transaction, audit) => {
       const [file] = await transaction.select().from(files).where(eq(files.id, uploadId)).for('update');
       if (!file || file.uploadedByUserId !== actor.id) return { status: 'not_found' };
       const [keyOwner] = await transaction
@@ -206,11 +225,13 @@ export class FileRepository {
       const uploadedAt = new Date();
       const expiresAt =
         file.purpose === 'checklist_photo' ? new Date(uploadedAt.getTime() + 365 * 24 * 60 * 60 * 1000) : null;
-      const [uploaded] = await transaction
-        .update(files)
-        .set({ status: 'uploaded', uploadedAt, expiresAt, completionIdempotencyKey: idempotencyKey })
-        .where(eq(files.id, file.id))
-        .returning();
+      const [uploaded] = await audit.mutate(files, eq(files.id, file.id), () =>
+        transaction
+          .update(files)
+          .set({ status: 'uploaded', uploadedAt, expiresAt, completionIdempotencyKey: idempotencyKey })
+          .where(eq(files.id, file.id))
+          .returning(),
+      );
       if (!uploaded) throw new Error('Не удалось завершить upload-сессию');
       return { status: 'ok', value: toFile(uploaded) };
     });
@@ -288,8 +309,13 @@ export class FileRepository {
     };
   }
 
-  attachPhoto(itemId: number, fileId: number, actor: Actor): Promise<FileOperationResult<ChecklistItemPhoto>> {
-    return this.#database.transaction(async (transaction) => {
+  attachPhoto(
+    itemId: number,
+    fileId: number,
+    actor: Actor,
+    context: AuditContext = { source: 'system' },
+  ): Promise<FileOperationResult<ChecklistItemPhoto>> {
+    return auditedTransaction(this.#database, context, 'createChecklistItemPhoto', async (transaction, audit) => {
       await transaction.execute(sql`select pg_advisory_xact_lock(${itemId})`);
       const context = await loadItemContext(transaction, itemId);
       if (!context || !canReadStage(actor, context.stage.assigneeId)) return { status: 'not_found' };
@@ -314,17 +340,21 @@ export class FileRepository {
         .where(and(eq(checklistItemPhotos.checklistItemId, itemId), isNull(checklistItemPhotos.deletedAt)));
       const position = nextPhotoPosition(active.map((photo) => photo.position));
       if (position === null) return { status: 'photo_limit_exceeded' };
-      const [photo] = await transaction
-        .insert(checklistItemPhotos)
-        .values({ checklistItemId: itemId, fileId, position })
-        .returning({ id: checklistItemPhotos.id });
+      const [photo] = await audit.created(
+        checklistItemPhotos,
+        await transaction.insert(checklistItemPhotos).values({ checklistItemId: itemId, fileId, position }).returning(),
+      );
       if (!photo) throw new Error('Не удалось привязать фотографию');
       return { status: 'ok', value: (await loadPhoto(transaction, photo.id))! };
     });
   }
 
-  deletePhoto(photoId: number, actor: Actor): Promise<FileOperationResult<void>> {
-    return this.#database.transaction(async (transaction) => {
+  deletePhoto(
+    photoId: number,
+    actor: Actor,
+    context: AuditContext = { source: 'system' },
+  ): Promise<FileOperationResult<void>> {
+    return auditedTransaction(this.#database, context, 'deleteChecklistItemPhoto', async (transaction, audit) => {
       const [photo] = await transaction
         .select({ photo: checklistItemPhotos, file: files })
         .from(checklistItemPhotos)
@@ -338,9 +368,13 @@ export class FileRepository {
       if (context.projectIsArchived) return { status: 'project_archived' };
       if (context.stage.status === 'completed' || context.stage.status === 'paid') return { status: 'invalid_state' };
       const now = new Date();
-      await transaction.update(checklistItemPhotos).set({ deletedAt: now }).where(eq(checklistItemPhotos.id, photoId));
-      await transaction.update(files).set({ expiresAt: now }).where(eq(files.id, photo.file.id));
-      await clearCompletedItemAfterLastPhoto(transaction, context, photoId, now);
+      await audit.mutate(checklistItemPhotos, eq(checklistItemPhotos.id, photoId), () =>
+        transaction.update(checklistItemPhotos).set({ deletedAt: now }).where(eq(checklistItemPhotos.id, photoId)),
+      );
+      await audit.mutate(files, eq(files.id, photo.file.id), () =>
+        transaction.update(files).set({ expiresAt: now }).where(eq(files.id, photo.file.id)),
+      );
+      await clearCompletedItemAfterLastPhoto(transaction, context, photoId, now, audit);
       return { status: 'ok', value: undefined };
     });
   }
@@ -359,7 +393,7 @@ export class FileRepository {
     return rows.map(({ id }) => id);
   }
 
-  async deleteExpiredFile(fileId: number, now: Date): Promise<void> {
+  async deleteExpiredFile(fileId: number, now: Date, context: AuditContext = { source: 'system' }): Promise<void> {
     const [file] = await this.#database.select().from(files).where(eq(files.id, fileId));
     if (!file) return;
     const isExpired =
@@ -367,17 +401,25 @@ export class FileRepository {
       (file.status === 'uploaded' && file.expiresAt !== null && file.expiresAt <= now && file.deletedAt === null);
     if (!isExpired) return;
     await this.#storage.delete(file.storageKey);
-    await this.#database.transaction(async (transaction) => {
+    await auditedTransaction(this.#database, context, 'cleanupExpiredFile', async (transaction, audit) => {
       const [locked] = await transaction.select().from(files).where(eq(files.id, fileId)).for('update');
       if (!locked) return;
-      await transaction
-        .update(files)
-        .set({ status: locked.status === 'pending' ? 'failed' : 'deleted', deletedAt: now })
-        .where(eq(files.id, fileId));
-      await transaction
-        .update(checklistItemPhotos)
-        .set({ deletedAt: now })
-        .where(and(eq(checklistItemPhotos.fileId, fileId), isNull(checklistItemPhotos.deletedAt)));
+      if (locked.status !== 'pending' && (locked.status !== 'uploaded' || locked.deletedAt !== null)) return;
+      await audit.mutate(files, eq(files.id, fileId), () =>
+        transaction
+          .update(files)
+          .set({ status: locked.status === 'pending' ? 'failed' : 'deleted', deletedAt: now })
+          .where(eq(files.id, fileId)),
+      );
+      await audit.mutate(
+        checklistItemPhotos,
+        and(eq(checklistItemPhotos.fileId, fileId), isNull(checklistItemPhotos.deletedAt)),
+        () =>
+          transaction
+            .update(checklistItemPhotos)
+            .set({ deletedAt: now })
+            .where(and(eq(checklistItemPhotos.fileId, fileId), isNull(checklistItemPhotos.deletedAt))),
+      );
     });
   }
 }

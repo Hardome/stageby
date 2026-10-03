@@ -11,6 +11,8 @@ const migrationsFolder = fileURLToPath(new URL('../src/db/migrations', import.me
 const expectedTables = [
   'acceptance_items',
   'acceptances',
+  'audit_changes',
+  'audit_events',
   'checklist_item_photos',
   'checklist_items',
   'checklist_template_items',
@@ -31,6 +33,11 @@ const expectedTables = [
 ];
 
 const expectedIndexes = [
+  'audit_events_occurred_at_idx',
+  'audit_changes_event_idx',
+  'audit_changes_entity_idx',
+  'audit_changes_project_idx',
+  'audit_changes_stage_idx',
   'acceptance_items_checklist_item_idx',
   'acceptances_decided_by_user_idx',
   'acceptances_stage_decided_at_idx',
@@ -72,6 +79,7 @@ const expectedIndexes = [
 ];
 
 const expectedForeignKeys = [
+  'audit_changes_eventId_audit_events_id_fk',
   'acceptance_items_acceptanceId_acceptances_id_fk',
   'acceptance_items_checklistItemId_checklist_items_id_fk',
   'acceptances_decidedByUserId_users_id_fk',
@@ -209,13 +217,13 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('12');
+      expect(firstJournal.rows[0]?.count).toBe('13');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('62');
+      expect(checkConstraints.rows[0]?.count).toBe('65');
       expect(enumTypes.rows.map((row) => row.name)).toEqual([
         'acceptance_decision',
         'file_purpose',
