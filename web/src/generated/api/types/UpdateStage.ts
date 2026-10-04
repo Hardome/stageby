@@ -53,23 +53,21 @@ export type UpdateStage = {
     */
     workSubtypes?: string[];
     /**
-     * @description Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату.
+     * @description Новая плановая дата начала этапа в формате YYYY-MM-DD. Дата обязательна и должна остаться внутри срока проекта.
      *
      * Format: `date`
      * @example 2026-09-21
-     * @example null
      * @type string | undefined
     */
-    plannedStartDate?: string | null;
+    plannedStartDate?: string;
     /**
-     * @description Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. После изменения не может быть раньше планового начала, если обе даты заданы.
+     * @description Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся.
      *
      * Format: `date`
      * @example 2026-09-28
-     * @example null
      * @type string | undefined
     */
-    plannedEndDate?: string | null;
+    plannedEndDate?: string;
     /**
      * @description ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.
      * @type array | undefined

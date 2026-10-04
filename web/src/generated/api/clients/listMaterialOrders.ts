@@ -12,6 +12,7 @@ import { listMaterialOrdersResponseSchema, listMaterialOrdersErrorSchema } from 
  * @description Руководитель видит любой этап, мастер — только назначенный ему. Сортировка createdAt ASC, id ASC.
  * @summary Заказы материалов этапа
  * {@link /stages/:stageId/material-orders}
+ * @deprecated
  */
 export function listMaterialOrders<ThrowOnError extends boolean = true>(options: Options<ListMaterialOrdersOptions, ThrowOnError>): Unwrappable<RequestResult<ListMaterialOrdersResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options

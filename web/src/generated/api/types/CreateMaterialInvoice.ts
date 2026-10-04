@@ -58,6 +58,10 @@ export type CreateMaterialInvoiceStatus409 = ApiError;
 
 export type CreateMaterialInvoiceBody = CreateMaterialInvoice;
 
+/**
+ * @deprecated
+ * @type object
+*/
 export type CreateMaterialInvoiceOptions = {
     body: CreateMaterialInvoiceBody;
     path: CreateMaterialInvoicePath;

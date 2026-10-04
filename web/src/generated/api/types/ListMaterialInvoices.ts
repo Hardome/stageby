@@ -23,6 +23,10 @@ export type ListMaterialInvoicesStatus403 = ApiError;
 
 export type ListMaterialInvoicesStatus404 = ApiError;
 
+/**
+ * @deprecated
+ * @type object
+*/
 export type ListMaterialInvoicesOptions = {
     body?: never;
     path: ListMaterialInvoicesPath;

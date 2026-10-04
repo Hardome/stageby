@@ -24,7 +24,9 @@ tags:
   - name: Files
     description: Устойчивые upload-сессии, закрытое файловое хранилище и типизированные связи файлов.
   - name: Materials
-    description: Заказы материалов, счета, независимые отметки оплаты и доставки и сообщения о нехватке.
+    description: Счета этапа, независимые отметки оплаты и доставки и сообщения о нехватке.
+  - name: Dashboard
+    description: Независимые агрегаты и строки панели руководителя.
 paths:
   /users:
     get:
@@ -270,7 +272,7 @@ paths:
       tags:
         - Projects
       summary: Список объектов строительства
-      description: Руководитель и инженер-сметчик. Мастер и приёмщик работают через /stages без доступа к полной карточке клиента. Сортировка createdAt DESC, id ASC. Фильтры AND.
+      description: Только руководитель. Мастер работает через /stages без доступа к полной карточке объекта и общим суммам. Сортировка createdAt DESC, id ASC. Фильтры AND.
       parameters:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
@@ -307,7 +309,9 @@ paths:
       tags:
         - Projects
       summary: Составное создание объекта
-      description: Только руководитель. В одной транзакции создаёт проект, выбранные этапы и индивидуальные чек-листы. Если checklistItems этапа отсутствует, сервер копирует активный шаблон его типа. Ошибка любого этапа откатывает всю операцию. Защита интерфейса от повторной отправки будет реализована на фронтенде. Идентификаторы файлов относятся к предварительно успешно загруженным PDF проекта.
+      description: Только руководитель. В одной транзакции создаёт проект, выбранные этапы и индивидуальные чек-листы. Если checklistItems этапа отсутствует, сервер копирует активный шаблон его типа. Ошибка любого этапа откатывает всю операцию. Счета материалов в этот запрос не входят и добавляются отдельно к уже созданному этапу. Идентификаторы файлов относятся только к предварительно успешно загруженным PDF проекта. Повтор с тем же Idempotency-Key и тем же телом возвращает ранее созданный объект; тот же ключ с другим телом возвращает 409 idempotency_conflict.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -327,6 +331,8 @@ paths:
           $ref: '#/components/responses/ApiUnauthorized'
         '403':
           $ref: '#/components/responses/ApiForbidden'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
   /projects/{projectId}:
     parameters:
       - name: projectId
@@ -342,7 +348,7 @@ paths:
       tags:
         - Projects
       summary: Карточка проекта
-      description: Руководитель и инженер-сметчик. Финансы выдаются отдельным методом.
+      description: Только руководитель. Мастер получает только назначенные ему этапы через /stages.
       responses:
         '200':
           description: Успешный ответ
@@ -385,6 +391,27 @@ paths:
           $ref: '#/components/responses/ApiForbidden'
         '404':
           $ref: '#/components/responses/ApiNotFound'
+  /stage-types:
+    get:
+      operationId: listActiveStageTypes
+      tags:
+        - Stages
+      summary: Активные типы этапов и шаблоны
+      description: Только руководитель. Возвращает активный справочник в порядке position ASC и ровно тот активный шаблон каждого типа, который сервер копирует при создании объекта, включая photoHint. Ответ не содержит неактивные редакции.
+      responses:
+        '200':
+          description: Активные типы этапов с шаблонами чек-листов.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 8
+                items:
+                  $ref: '#/components/schemas/ActiveStageType'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
   /stages:
     get:
       operationId: listStages
@@ -831,6 +858,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/StageId'
     get:
+      deprecated: true
       operationId: listMaterialOrders
       tags:
         - Materials
@@ -852,6 +880,7 @@ paths:
         '404':
           $ref: '#/components/responses/ApiNotFound'
     post:
+      deprecated: true
       operationId: createMaterialOrder
       tags:
         - Materials
@@ -876,6 +905,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrderId'
     patch:
+      deprecated: true
       operationId: updateMaterialOrder
       tags:
         - Materials
@@ -908,6 +938,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrderId'
     get:
+      deprecated: true
       operationId: listMaterialInvoices
       tags:
         - Materials
@@ -928,6 +959,7 @@ paths:
         '404':
           $ref: '#/components/responses/ApiNotFound'
     post:
+      deprecated: true
       operationId: createMaterialInvoice
       tags:
         - Materials
@@ -956,6 +988,62 @@ paths:
           $ref: '#/components/responses/ApiNotFound'
         '409':
           $ref: '#/components/responses/ApiConflict'
+  /stages/{stageId}/material-invoices:
+    parameters:
+      - $ref: '#/components/parameters/StageId'
+    get:
+      operationId: listStageMaterialInvoices
+      tags:
+        - Materials
+      summary: Счета материалов этапа
+      description: Руководитель видит счета любого этапа, мастер — только назначенного ему. Сортировка createdAt ASC, id ASC. Заказ материалов пользователем не создаётся.
+      responses:
+        '200':
+          description: До десяти счетов этапа со сведениями об оплате, доставке и нехватках.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 10
+                items:
+                  $ref: '#/components/schemas/StageMaterialInvoice'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+    post:
+      operationId: createStageMaterialInvoice
+      tags:
+        - Materials
+      summary: Добавить счёт материалов к этапу
+      description: Только руководитель. Привязывает к существующему этапу успешно загруженный PDF или JPEG назначения material_invoice размером не более 10 МиБ и положительную сумму. Один fileId можно привязать не более одного раза. Лимит десять счетов проверяется атомарно под блокировкой этапа; при двух конкурентных запросах на десятое место ровно один может завершиться успешно, второй получает 409 invoice_limit_exceeded.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMaterialInvoice'
+      responses:
+        '201':
+          description: Счёт создан.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StageMaterialInvoice'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/InvoiceConflict'
+        '413':
+          $ref: '#/components/responses/ApiPayloadTooLarge'
   /material-invoices/{invoiceId}:
     parameters:
       - $ref: '#/components/parameters/InvoiceId'
@@ -973,11 +1061,11 @@ paths:
               $ref: '#/components/schemas/UpdateMaterialInvoice'
       responses:
         '200':
-          description: Счёт изменён
+          description: Счёт этапа изменён
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MaterialInvoice'
+                $ref: '#/components/schemas/StageMaterialInvoice'
         '400':
           $ref: '#/components/responses/ApiBadRequest'
         '401':
@@ -1111,7 +1199,7 @@ paths:
       tags:
         - Files
       summary: Создать upload-сессию
-      description: Создаёт запись файла и возвращает короткоживущие подписанные данные для прямой загрузки в закрытое S3-совместимое хранилище.
+      description: Создаёт запись файла и возвращает короткоживущие подписанные данные для прямой загрузки в закрытое S3-совместимое хранилище. Лимит зависит от purpose — PDF проекта до 50 МБ, счёт PDF/JPEG до 10 МиБ (10485760 байт), фото JPEG/PNG/HEIC до 20 МБ. Превышение возвращает 413 file_too_large.
       requestBody:
         required: true
         content:
@@ -1141,7 +1229,7 @@ paths:
       tags:
         - Files
       summary: Подтвердить загрузку файла
-      description: Проверяет объект в storage по MIME, размеру и SHA-256. Повтор с тем же Idempotency-Key и телом возвращает тот же результат.
+      description: Проверяет объект в storage по MIME, фактическому размеру и SHA-256, повторно применяя лимит purpose. Для material_invoice предел равен 10485760 байт; лимиты project_document и checklist_photo не меняются. Повтор с тем же Idempotency-Key и телом возвращает тот же результат.
       parameters:
         - name: Idempotency-Key
           in: header
@@ -1272,6 +1360,58 @@ paths:
           $ref: '#/components/responses/ApiNotFound'
         '409':
           $ref: '#/components/responses/ApiConflict'
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags:
+        - Dashboard
+      summary: Финансовая сводка панели руководителя
+      description: Только руководитель. Считает работы, материалы и общий итог независимо от таблицы объектов. В расчёт входят этапы с plannedEndDate не позже through. Факт того же периметра включает все внесённые выплаты за работы и полные суммы оплаченных счетов; суммы не дублируются при соединении наборов данных.
+      parameters:
+        - name: through
+          in: query
+          required: false
+          description: Конечная календарная дата включительно. По умолчанию сегодня в Asia/Yekaterinburg; допустим диапазон от сегодня до сегодня + 30 календарных дней включительно.
+          schema:
+            type: string
+            format: date
+          example: '2026-11-03'
+      responses:
+        '200':
+          description: Агрегаты на применённую дату.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+  /dashboard/projects:
+    get:
+      operationId: listDashboardProjects
+      tags:
+        - Dashboard
+      summary: Строки объектов панели руководителя
+      description: Только руководитель. Загружается независимо от summary. Для активного объекта selectedStage — первый включённый по position этап со статусом не paid; все даты, мастер, суммы и индикаторы внутри selectedStage относятся только к нему. Завершённый объект возвращается с selectedStage=null. Сортировка активных строк по plannedStartDate выбранного этапа ASC, затем projectId ASC; завершённые строки идут после активных по projectId ASC.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Страница компактных строк объектов.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardProjectPage'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
 components:
   schemas:
     ExpectedVersion:
@@ -1328,6 +1468,7 @@ components:
         - upload_incomplete
         - upload_expired
         - photo_limit_exceeded
+        - invoice_limit_exceeded
         - rate_limited
       examples:
         - invalid_request
@@ -2040,6 +2181,76 @@ components:
           description: Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.
           type: boolean
       minProperties: 1
+    ChecklistTemplateItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - position
+        - title
+        - photoHint
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 501
+          description: Идентификатор пункта активного шаблона.
+        position:
+          type: integer
+          minimum: 1
+          example: 1
+          description: Порядок копирования пункта в индивидуальный чек-лист.
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: Армирование
+          description: Название, копируемое в новый этап.
+        photoHint:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 1000
+          example: Фото перевязки углов и перехлёста арматуры
+          description: Фотоподсказка, копируемая в новый этап; null — подсказки нет.
+    ActiveStageType:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - title
+        - position
+        - checklistTemplateId
+        - checklistItems
+      properties:
+        code:
+          $ref: '#/components/schemas/StageType'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Фундамент
+          description: Отображаемое название активного типа.
+        position:
+          type: integer
+          minimum: 1
+          maximum: 8
+          example: 1
+          description: Порядок типа в объекте.
+        checklistTemplateId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 81
+          description: Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
+        checklistItems:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ChecklistTemplateItem'
+          description: Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
     UserBrief:
       description: Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
       type: object
@@ -2453,20 +2664,14 @@ components:
         plannedStartDate:
           examples:
             - '2026-09-21'
-            - null
-          description: Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату.
-          type:
-            - string
-            - 'null'
+          description: Новая плановая дата начала этапа в формате YYYY-MM-DD. Дата обязательна и должна остаться внутри срока проекта.
+          type: string
           format: date
         plannedEndDate:
           examples:
             - '2026-09-28'
-            - null
-          description: Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. После изменения не может быть раньше планового начала, если обе даты заданы.
-          type:
-            - string
-            - 'null'
+          description: Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся.
+          type: string
           format: date
         predecessorStageIds:
           description: ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.
@@ -3108,6 +3313,97 @@ components:
         amountMinor:
           $ref: '#/components/schemas/PositiveMoneyAmountMinor'
           description: Положительная сумма в копейках.
+    StageMaterialInvoice:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - stageId
+        - fileId
+        - supplierName
+        - amountMinor
+        - paidAt
+        - paidBy
+        - deliveredAt
+        - deliveredBy
+        - shortages
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 401
+          description: Идентификатор счёта.
+        stageId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 101
+          description: Этап, к которому напрямую относится счёт.
+        fileId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 201
+          description: Идентификатор загруженного файла счёта.
+        supplierName:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 255
+          example: Стройснаб
+          description: Поставщик или null.
+        amountMinor:
+          $ref: '#/components/schemas/PositiveMoneyAmountMinor'
+          description: Полная сумма счёта в копейках. Частичная оплата одного счёта не поддерживается.
+        paidAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          example: '2026-10-02T08:00:00Z'
+          description: Серверное время отметки полной оплаты или null.
+        paidBy:
+          anyOf:
+            - $ref: '#/components/schemas/UserBrief'
+            - type: 'null'
+          description: Автор отметки оплаты или null.
+        deliveredAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          example: '2026-10-03T08:00:00Z'
+          description: Серверное время отметки доставки или null.
+        deliveredBy:
+          anyOf:
+            - $ref: '#/components/schemas/UserBrief'
+            - type: 'null'
+          description: Автор отметки доставки или null.
+        shortages:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterialShortage'
+          description: Нехватки счёта в порядке reportedAt ASC, id ASC.
+        version:
+          type: integer
+          minimum: 1
+          example: 1
+          description: Версия счёта для последующих изменений.
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-01T08:00:00Z'
+          description: Время создания в UTC.
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-03T08:00:00Z'
+          description: Время изменения в UTC.
     UpdateMaterialInvoice:
       type: object
       additionalProperties: false
@@ -3173,7 +3469,7 @@ components:
         - project_document
         - checklist_photo
         - material_invoice
-      description: Назначение файла, определяющее MIME, размер и правила доступа.
+      description: Назначение файла, определяющее MIME, размер и правила доступа. project_document — PDF до 50 МБ; material_invoice — PDF/JPEG до 10 МиБ; checklist_photo — JPEG/PNG/HEIC до 20 МБ.
       examples:
         - checklist_photo
     Sha256:
@@ -3215,7 +3511,7 @@ components:
           type: integer
           minimum: 1
           maximum: 52428800
-          description: Заявленный размер содержимого в байтах.
+          description: Заявленный размер содержимого в байтах. Общий верхний предел схемы нужен для PDF проекта; сервер применяет более строгий предел purpose, включая 10485760 байт для material_invoice.
           examples:
             - 1048576
         checksumSha256:
@@ -3428,6 +3724,330 @@ components:
           description: Серверное время подтверждения загрузки файла.
           examples:
             - '2026-09-29T08:15:00Z'
+    DashboardMoneyMetric:
+      type: object
+      description: План, факт, остаток и полнота плана одной финансовой категории.
+      additionalProperties: false
+      required:
+        - plannedAmountMinor
+        - actualAmountMinor
+        - balanceAmountMinor
+        - isPlanComplete
+      properties:
+        plannedAmountMinor:
+          readOnly: true
+          description: Сумма заданных планов; null, если план соответствующей категории неполон хотя бы у одного включённого этапа.
+          allOf:
+            - $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        actualAmountMinor:
+          readOnly: true
+          description: Фактическая сумма соответствующей категории в том же периметре этапов.
+          allOf:
+            - $ref: '#/components/schemas/MoneyAmountMinor'
+        balanceAmountMinor:
+          readOnly: true
+          description: План минус факт; отрицательное значение означает переплату, null — план неполон.
+          allOf:
+            - $ref: '#/components/schemas/SignedMoneyAmountMinor'
+        isPlanComplete:
+          type: boolean
+          readOnly: true
+          example: true
+          description: true, если план категории задан у каждого включённого этапа. Нулевой план считается заданным.
+    DashboardSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - through
+        - activeProjectCount
+        - works
+        - materials
+        - total
+      properties:
+        through:
+          type: string
+          format: date
+          readOnly: true
+          description: Применённая календарная дата в Asia/Yekaterinburg.
+          example: '2026-11-03'
+        activeProjectCount:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Количество неархивных объектов, у которых хотя бы один включённый этап не paid; от through не зависит.
+          example: 7
+        works:
+          $ref: '#/components/schemas/DashboardMoneyMetric'
+        materials:
+          $ref: '#/components/schemas/DashboardMoneyMetric'
+        total:
+          description: Общий итог работ и материалов. План и остаток равны null, если неполон план хотя бы одной категории.
+          allOf:
+            - $ref: '#/components/schemas/DashboardMoneyMetric'
+    ProjectStatus:
+      type: string
+      enum:
+        - created
+        - in_progress
+        - acceptance
+        - completed
+      examples:
+        - in_progress
+      description: 'Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.'
+    MaterialIndicator:
+      type: object
+      description: Вычисляемое состояние счетов и нехваток выбранного этапа.
+      additionalProperties: false
+      required:
+        - color
+        - invoiceCount
+        - paidInvoiceCount
+        - deliveredInvoiceCount
+        - openShortageCount
+        - isPartiallyPaid
+        - isPartiallyDelivered
+      properties:
+        color:
+          type: string
+          enum:
+            - red
+            - yellow
+            - green
+          example: yellow
+          description: Красный — нет счетов или есть открытая нехватка; иначе жёлтый — не все счета оплачены или доставлены; иначе зелёный.
+        invoiceCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+          example: 3
+          description: Количество счетов выбранного этапа.
+        paidInvoiceCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+          example: 2
+          description: Количество полностью оплаченных счетов выбранного этапа.
+        deliveredInvoiceCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+          example: 1
+          description: Количество доставленных счетов выбранного этапа.
+        openShortageCount:
+          type: integer
+          minimum: 0
+          example: 0
+          description: Количество отдельно не устранённых нехваток выбранного этапа.
+        isPartiallyPaid:
+          type: boolean
+          example: true
+          description: true, только если оплачено больше нуля, но меньше общего количества счетов.
+        isPartiallyDelivered:
+          type: boolean
+          example: true
+          description: true, только если доставлено больше нуля, но меньше общего количества счетов.
+    VariancePercent:
+      type:
+        - number
+        - 'null'
+      examples:
+        - 10
+        - -10
+        - null
+      description: Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
+    StageFinancialSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - plannedWorkAmountMinor
+        - actualWorkAmountMinor
+        - workBalanceAmountMinor
+        - plannedMaterialAmountMinor
+        - actualMaterialAmountMinor
+        - totalPlannedAmountMinor
+        - totalActualAmountMinor
+        - isPlanComplete
+        - variancePercent
+      properties:
+        plannedWorkAmountMinor:
+          readOnly: true
+          description: Плановая стоимость работ этапа; null — план работ не задан.
+          allOf:
+            - $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        actualWorkAmountMinor:
+          readOnly: true
+          description: Сумма всех платежей за работы этапа.
+          allOf:
+            - $ref: '#/components/schemas/MoneyAmountMinor'
+        workBalanceAmountMinor:
+          readOnly: true
+          description: План работ минус фактические платежи; отрицательное значение означает переплату, null — план не задан.
+          allOf:
+            - $ref: '#/components/schemas/SignedMoneyAmountMinor'
+        plannedMaterialAmountMinor:
+          readOnly: true
+          description: Плановая стоимость материалов этапа; null — план материалов не задан.
+          allOf:
+            - $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        actualMaterialAmountMinor:
+          readOnly: true
+          description: Сумма оплаченных счетов за материалы этапа.
+          allOf:
+            - $ref: '#/components/schemas/MoneyAmountMinor'
+        totalPlannedAmountMinor:
+          readOnly: true
+          description: Сумма планов работ и материалов; null, если хотя бы один план не задан.
+          allOf:
+            - $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        totalActualAmountMinor:
+          readOnly: true
+          description: Сумма фактических затрат на работы и материалы этапа.
+          allOf:
+            - $ref: '#/components/schemas/MoneyAmountMinor'
+        isPlanComplete:
+          type: boolean
+          readOnly: true
+          examples:
+            - true
+          description: true, если заданы оба плана этапа. Нулевой план считается заданным.
+        variancePercent:
+          readOnly: true
+          description: Процент отклонения общего плана этапа от общего факта.
+          allOf:
+            - $ref: '#/components/schemas/VariancePercent'
+      description: Вычисляемые финансовые итоги одного этапа. Все поля доступны только для чтения.
+    DashboardSelectedStage:
+      type: object
+      additionalProperties: false
+      required:
+        - stageId
+        - position
+        - stageCount
+        - title
+        - plannedStartDate
+        - plannedEndDate
+        - assignee
+        - status
+        - progressPercent
+        - materials
+        - finances
+      properties:
+        stageId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 1001
+          description: Единственный этап, к которому относятся все остальные поля этого объекта.
+        position:
+          type: integer
+          minimum: 1
+          maximum: 8
+          example: 2
+          description: Позиция выбранного этапа среди типов справочника.
+        stageCount:
+          type: integer
+          minimum: 1
+          maximum: 8
+          example: 6
+          description: Количество включённых этапов объекта для подписи «N из K».
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Стены
+          description: Отображаемое название выбранного этапа.
+        plannedStartDate:
+          type: string
+          format: date
+          example: '2026-10-10'
+          description: Плановое начало выбранного этапа.
+        plannedEndDate:
+          type: string
+          format: date
+          example: '2026-10-25'
+          description: Плановое окончание выбранного этапа.
+        assignee:
+          description: Назначенный мастер выбранного этапа или null.
+          anyOf:
+            - $ref: '#/components/schemas/UserBrief'
+            - type: 'null'
+        status:
+          $ref: '#/components/schemas/StageStatus'
+        progressPercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 50
+          description: Вычисляемая готовность выбранного этапа.
+        materials:
+          $ref: '#/components/schemas/MaterialIndicator'
+        finances:
+          $ref: '#/components/schemas/StageFinancialSummary'
+    DashboardProjectRow:
+      type: object
+      additionalProperties: false
+      required:
+        - projectId
+        - ownerName
+        - address
+        - status
+        - selectedStage
+      properties:
+        projectId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 101
+          description: Идентификатор объекта.
+        ownerName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Анна Смирнова
+          description: Имя клиента.
+        address:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: Екатеринбург, ул. Лесная, д. 10
+          description: Адрес объекта.
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        selectedStage:
+          description: Первый по позиции невыплаченный этап или null, если все включённые этапы paid. Переходы к счёту, мастеру и чек-листу используют только его stageId.
+          anyOf:
+            - $ref: '#/components/schemas/DashboardSelectedStage'
+            - type: 'null'
+    DashboardProjectPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardProjectRow'
+          description: Строки текущей страницы в документированном стабильном порядке.
+        total:
+          type: integer
+          minimum: 0
+          example: 12
+          description: Количество доступных строк до limit и offset.
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 20
+          description: Применённый размер страницы.
+        offset:
+          type: integer
+          minimum: 0
+          example: 0
+          description: Применённое смещение.
   responses:
     ApiBadRequest:
       description: Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
@@ -3473,7 +4093,7 @@ components:
             code: not_found
             message: Запись не найдена или недоступна.
     ApiConflict:
-      description: Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+      description: Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
       content:
         application/json:
           schema:
@@ -3498,6 +4118,18 @@ components:
           schema:
             type: integer
             minimum: 1
+    InvoiceConflict:
+      description: Лимит десять счетов исчерпан, файл уже привязан либо состояние ресурса конфликтует. Изменения не применены.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            invoiceLimitExceeded:
+              value:
+                error: Conflict
+                code: invoice_limit_exceeded
+                message: На этапе уже создано максимально допустимое количество счетов.
     ApiPayloadTooLarge:
       description: Файл превышает допустимый для его назначения размер. Upload-сессия не завершается.
       content:
@@ -3534,6 +4166,16 @@ components:
         type: integer
         minimum: 0
         default: 0
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Уникальный ключ безопасного повтора операции после потери ответа. Повтор с другим телом возвращает 409 idempotency_conflict.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 100
+        pattern: ^[A-Za-z0-9._:-]+$
     StageId:
       name: stageId
       in: path

@@ -21,7 +21,7 @@ export function getProjectQueryOptions({ path }: GetProjectOptions, config: Part
 }
 
 /**
- * @description Руководитель и инженер-сметчик. Финансы выдаются отдельным методом.
+ * @description Только руководитель. Мастер получает только назначенные ему этапы через /stages.
  * @summary Карточка проекта
  * {@link /projects/:projectId}
  */

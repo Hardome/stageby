@@ -94,6 +94,17 @@ export type CreateProject = {
     notes?: string | null;
 };
 
+export type CreateProjectHeaders = {
+    /**
+     * @description Уникальный ключ безопасного повтора операции после потери ответа. Повтор с другим телом возвращает 409 idempotency_conflict.
+     * @minLength 16
+     * @maxLength 100
+     * @pattern ^[A-Za-z0-9._:-]+$
+     * @type string
+    */
+    "Idempotency-Key": string;
+};
+
 export type CreateProjectStatus201 = Project;
 
 export type CreateProjectStatus400 = ApiError;
@@ -102,13 +113,15 @@ export type CreateProjectStatus401 = ApiError;
 
 export type CreateProjectStatus403 = ApiError;
 
+export type CreateProjectStatus409 = ApiError;
+
 export type CreateProjectBody = CreateProject;
 
 export type CreateProjectOptions = {
     body: CreateProjectBody;
     path?: never;
     query?: never;
-    headers?: never;
+    headers: CreateProjectHeaders;
 };
 
 export type CreateProjectResponses = {
@@ -116,9 +129,10 @@ export type CreateProjectResponses = {
     "400": CreateProjectStatus400;
     "401": CreateProjectStatus401;
     "403": CreateProjectStatus403;
+    "409": CreateProjectStatus409;
 };
 
 /**
  * @description Union of all possible responses
 */
-export type CreateProjectResponse = (CreateProjectStatus201 | CreateProjectStatus400 | CreateProjectStatus401 | CreateProjectStatus403);
+export type CreateProjectResponse = (CreateProjectStatus201 | CreateProjectStatus400 | CreateProjectStatus401 | CreateProjectStatus403 | CreateProjectStatus409);

@@ -46,6 +46,10 @@ export type UpdateMaterialOrderStatus409 = ApiError;
 
 export type UpdateMaterialOrderBody = UpdateMaterialOrder;
 
+/**
+ * @deprecated
+ * @type object
+*/
 export type UpdateMaterialOrderOptions = {
     body: UpdateMaterialOrderBody;
     path: UpdateMaterialOrderPath;

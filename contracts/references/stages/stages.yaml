@@ -1,4 +1,25 @@
 paths:
+  /stage-types:
+    get:
+      operationId: listActiveStageTypes
+      tags:
+        - Stages
+      summary: Активные типы этапов и шаблоны
+      description: Только руководитель. Возвращает активный справочник в порядке position ASC и ровно тот активный шаблон каждого типа, который сервер копирует при создании объекта, включая photoHint. Ответ не содержит неактивные редакции.
+      responses:
+        "200":
+          description: Активные типы этапов с шаблонами чек-листов.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 8
+                items:
+                  $ref: "#/components/schemas/ActiveStageType"
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
   /stages:
     get:
       operationId: listStages
@@ -281,6 +302,74 @@ paths:
           $ref: ../common/common.yaml#/components/responses/ApiConflict
 components:
   schemas:
+    ChecklistTemplateItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - position
+        - title
+        - photoHint
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 501
+          description: Идентификатор пункта активного шаблона.
+        position:
+          type: integer
+          minimum: 1
+          example: 1
+          description: Порядок копирования пункта в индивидуальный чек-лист.
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: Армирование
+          description: Название, копируемое в новый этап.
+        photoHint:
+          type: [string, "null"]
+          minLength: 1
+          maxLength: 1000
+          example: Фото перевязки углов и перехлёста арматуры
+          description: Фотоподсказка, копируемая в новый этап; null — подсказки нет.
+    ActiveStageType:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - title
+        - position
+        - checklistTemplateId
+        - checklistItems
+      properties:
+        code:
+          $ref: ../common/common.yaml#/components/schemas/StageType
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Фундамент
+          description: Отображаемое название активного типа.
+        position:
+          type: integer
+          minimum: 1
+          maximum: 8
+          example: 1
+          description: Порядок типа в объекте.
+        checklistTemplateId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 81
+          description: Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
+        checklistItems:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ChecklistTemplateItem"
+          description: Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
     StageType:
       $ref: ../common/common.yaml#/components/schemas/StageType
     StageStatus:
@@ -640,20 +729,14 @@ components:
         plannedStartDate:
           examples:
             - "2026-09-21"
-            - null
-          description: "Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату."
-          type:
-            - string
-            - "null"
+          description: "Новая плановая дата начала этапа в формате YYYY-MM-DD. Дата обязательна и должна остаться внутри срока проекта."
+          type: string
           format: date
         plannedEndDate:
           examples:
             - "2026-09-28"
-            - null
-          description: "Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. После изменения не может быть раньше планового начала, если обе даты заданы."
-          type:
-            - string
-            - "null"
+          description: "Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся."
+          type: string
           format: date
         predecessorStageIds:
           description: "ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены."

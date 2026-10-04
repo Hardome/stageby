@@ -21,6 +21,7 @@ export const apiErrorCode = {
     upload_incomplete: "upload_incomplete",
     upload_expired: "upload_expired",
     photo_limit_exceeded: "photo_limit_exceeded",
+    invoice_limit_exceeded: "invoice_limit_exceeded",
     rate_limited: "rate_limited"
 } as const;
 

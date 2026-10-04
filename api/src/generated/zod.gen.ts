@@ -56,6 +56,7 @@ export const zApiErrorCode = z.enum([
     'upload_incomplete',
     'upload_expired',
     'photo_limit_exceeded',
+    'invoice_limit_exceeded',
     'rate_limited'
 ]);
 
@@ -206,6 +207,21 @@ export const zUpdateProject = z.object({
     isArchived: z.boolean().optional()
 });
 
+export const zChecklistTemplateItem = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    position: z.int().gte(1),
+    title: z.string().min(1).max(500),
+    photoHint: z.string().min(1).max(1000).nullable()
+});
+
+export const zActiveStageType = z.object({
+    code: zStageType,
+    title: z.string().min(1).max(255),
+    position: z.int().gte(1).lte(8),
+    checklistTemplateId: z.int().gte(1).lte(2147483647),
+    checklistItems: z.array(zChecklistTemplateItem).min(1)
+});
+
 /**
  * Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
  */
@@ -298,8 +314,8 @@ export const zUpdateStage = z.object({
     plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
     plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.optional(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30).optional(),
-    plannedStartDate: z.iso.date().nullish(),
-    plannedEndDate: z.iso.date().nullish(),
+    plannedStartDate: z.iso.date().optional(),
+    plannedEndDate: z.iso.date().optional(),
     predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7).optional(),
     notes: z.string().min(1).max(5000).nullish()
 });
@@ -435,6 +451,22 @@ export const zCreateMaterialInvoice = z.object({
     amountMinor: zPositiveMoneyAmountMinor
 });
 
+export const zStageMaterialInvoice = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    stageId: z.int().gte(1).lte(2147483647),
+    fileId: z.int().gte(1).lte(2147483647),
+    supplierName: z.string().min(1).max(255).nullable(),
+    amountMinor: zPositiveMoneyAmountMinor,
+    paidAt: z.iso.datetime().nullable(),
+    paidBy: zUserBrief.nullable(),
+    deliveredAt: z.iso.datetime().nullable(),
+    deliveredBy: zUserBrief.nullable(),
+    shortages: z.array(zMaterialShortage),
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
 export const zUpdateMaterialInvoice = z.object({
     expectedVersion: zExpectedVersion,
     isPaid: z.boolean().optional(),
@@ -456,7 +488,7 @@ export const zUpdateChecklistItem = z.object({
 });
 
 /**
- * Назначение файла, определяющее MIME, размер и правила доступа.
+ * Назначение файла, определяющее MIME, размер и правила доступа. project_document — PDF до 50 МБ; material_invoice — PDF/JPEG до 10 МиБ; checklist_photo — JPEG/PNG/HEIC до 20 МБ.
  */
 export const zFilePurpose = z.enum([
     'project_document',
@@ -533,6 +565,100 @@ export const zChecklistItemPhoto = z.object({
     uploadedAt: z.iso.datetime()
 });
 
+/**
+ * План, факт, остаток и полнота плана одной финансовой категории.
+ */
+export const zDashboardMoneyMetric = z.object({
+    plannedAmountMinor: zPlannedMoneyAmountMinor.readonly(),
+    actualAmountMinor: zMoneyAmountMinor.readonly(),
+    balanceAmountMinor: zSignedMoneyAmountMinor.readonly(),
+    isPlanComplete: z.boolean().readonly()
+});
+
+export const zDashboardSummary = z.object({
+    through: z.iso.date().readonly(),
+    activeProjectCount: z.int().gte(0).readonly(),
+    works: zDashboardMoneyMetric,
+    materials: zDashboardMoneyMetric,
+    total: zDashboardMoneyMetric
+});
+
+/**
+ * Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.
+ */
+export const zProjectStatus = z.enum([
+    'created',
+    'in_progress',
+    'acceptance',
+    'completed'
+]);
+
+/**
+ * Вычисляемое состояние счетов и нехваток выбранного этапа.
+ */
+export const zMaterialIndicator = z.object({
+    color: z.enum([
+        'red',
+        'yellow',
+        'green'
+    ]),
+    invoiceCount: z.int().gte(0).lte(10),
+    paidInvoiceCount: z.int().gte(0).lte(10),
+    deliveredInvoiceCount: z.int().gte(0).lte(10),
+    openShortageCount: z.int().gte(0),
+    isPartiallyPaid: z.boolean(),
+    isPartiallyDelivered: z.boolean()
+});
+
+/**
+ * Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
+ */
+export const zVariancePercent = z.number().nullable();
+
+/**
+ * Вычисляемые финансовые итоги одного этапа. Все поля доступны только для чтения.
+ */
+export const zStageFinancialSummary = z.object({
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor.readonly(),
+    actualWorkAmountMinor: zMoneyAmountMinor.readonly(),
+    workBalanceAmountMinor: zSignedMoneyAmountMinor.readonly(),
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.readonly(),
+    actualMaterialAmountMinor: zMoneyAmountMinor.readonly(),
+    totalPlannedAmountMinor: zPlannedMoneyAmountMinor.readonly(),
+    totalActualAmountMinor: zMoneyAmountMinor.readonly(),
+    isPlanComplete: z.boolean().readonly(),
+    variancePercent: zVariancePercent.readonly()
+});
+
+export const zDashboardSelectedStage = z.object({
+    stageId: z.int().gte(1).lte(2147483647),
+    position: z.int().gte(1).lte(8),
+    stageCount: z.int().gte(1).lte(8),
+    title: z.string().min(1).max(255),
+    plannedStartDate: z.iso.date(),
+    plannedEndDate: z.iso.date(),
+    assignee: zUserBrief.nullable(),
+    status: zStageStatus,
+    progressPercent: z.int().gte(0).lte(100),
+    materials: zMaterialIndicator,
+    finances: zStageFinancialSummary
+});
+
+export const zDashboardProjectRow = z.object({
+    projectId: z.int().gte(1).lte(2147483647),
+    ownerName: z.string().min(1).max(255),
+    address: z.string().min(1).max(1000),
+    status: zProjectStatus,
+    selectedStage: zDashboardSelectedStage.nullable()
+});
+
+export const zDashboardProjectPage = z.object({
+    items: z.array(zDashboardProjectRow),
+    total: z.int().gte(0),
+    limit: z.int().gte(1).lte(100),
+    offset: z.int().gte(0)
+});
+
 export const zCreateUserWritable = z.object({
     login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
     password: z.string().min(8).max(128),
@@ -604,6 +730,38 @@ export const zProjectStagesWritable = z.object({
     items: z.array(zStageWritable).max(8)
 });
 
+export const zDashboardSummaryWritable = z.object({
+    total: z.unknown()
+});
+
+export const zDashboardSelectedStageWritable = z.object({
+    stageId: z.int().gte(1).lte(2147483647),
+    position: z.int().gte(1).lte(8),
+    stageCount: z.int().gte(1).lte(8),
+    title: z.string().min(1).max(255),
+    plannedStartDate: z.iso.date(),
+    plannedEndDate: z.iso.date(),
+    assignee: zUserBrief.nullable(),
+    status: zStageStatus,
+    progressPercent: z.int().gte(0).lte(100),
+    materials: zMaterialIndicator
+});
+
+export const zDashboardProjectRowWritable = z.object({
+    projectId: z.int().gte(1).lte(2147483647),
+    ownerName: z.string().min(1).max(255),
+    address: z.string().min(1).max(1000),
+    status: zProjectStatus,
+    selectedStage: zDashboardSelectedStageWritable.nullable()
+});
+
+export const zDashboardProjectPageWritable = z.object({
+    items: z.array(zDashboardProjectRowWritable),
+    total: z.int().gte(0),
+    limit: z.int().gte(1).lte(100),
+    offset: z.int().gte(0)
+});
+
 /**
  * Размер страницы, от 1 до 100.
  */
@@ -613,6 +771,11 @@ export const zLimit = z.int().gte(1).lte(100).default(20);
  * Количество пропущенных записей после фильтрации и проверки доступа.
  */
 export const zOffset = z.int().gte(0).default(0);
+
+/**
+ * Уникальный ключ безопасного повтора операции после потери ответа. Повтор с другим телом возвращает 409 idempotency_conflict.
+ */
+export const zIdempotencyKey = z.string().min(16).max(100).regex(/^[A-Za-z0-9._:-]+$/);
 
 export const zStageId = z.int().gte(1).lte(2147483647);
 
@@ -710,6 +873,10 @@ export const zListProjectsResponse = zProjectPage;
 
 export const zCreateProjectBody = zCreateProject;
 
+export const zCreateProjectHeaders = z.object({
+    'Idempotency-Key': z.string().min(16).max(100).regex(/^[A-Za-z0-9._:-]+$/)
+});
+
 /**
  * Успешный ответ
  */
@@ -734,6 +901,11 @@ export const zUpdateProjectPath = z.object({
  * Успешный ответ
  */
 export const zUpdateProjectResponse = zProject;
+
+/**
+ * Активные типы этапов с шаблонами чек-листов.
+ */
+export const zListActiveStageTypesResponse = z.array(zActiveStageType).max(8);
 
 export const zListStagesQuery = z.object({
     limit: z.int().gte(1).lte(100).optional().default(20),
@@ -922,6 +1094,26 @@ export const zCreateMaterialInvoicePath = z.object({
  */
 export const zCreateMaterialInvoiceResponse = zMaterialInvoice;
 
+export const zListStageMaterialInvoicesPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * До десяти счетов этапа со сведениями об оплате, доставке и нехватках.
+ */
+export const zListStageMaterialInvoicesResponse = z.array(zStageMaterialInvoice).max(10);
+
+export const zCreateStageMaterialInvoiceBody = zCreateMaterialInvoice;
+
+export const zCreateStageMaterialInvoicePath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Счёт создан.
+ */
+export const zCreateStageMaterialInvoiceResponse = zStageMaterialInvoice;
+
 export const zUpdateMaterialInvoiceBody = zUpdateMaterialInvoice;
 
 export const zUpdateMaterialInvoicePath = z.object({
@@ -929,9 +1121,9 @@ export const zUpdateMaterialInvoicePath = z.object({
 });
 
 /**
- * Счёт изменён
+ * Счёт этапа изменён
  */
-export const zUpdateMaterialInvoiceResponse = zMaterialInvoice;
+export const zUpdateMaterialInvoiceResponse = zStageMaterialInvoice;
 
 export const zCreateMaterialShortageBody = zCreateMaterialShortage;
 
@@ -1028,3 +1220,22 @@ export const zDeleteChecklistItemPhotoPath = z.object({
  * Фотография удалена.
  */
 export const zDeleteChecklistItemPhotoResponse = z.void();
+
+export const zGetDashboardSummaryQuery = z.object({
+    through: z.iso.date().optional()
+});
+
+/**
+ * Агрегаты на применённую дату.
+ */
+export const zGetDashboardSummaryResponse = zDashboardSummary;
+
+export const zListDashboardProjectsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(20),
+    offset: z.int().gte(0).optional().default(0)
+});
+
+/**
+ * Страница компактных строк объектов.
+ */
+export const zListDashboardProjectsResponse = zDashboardProjectPage;

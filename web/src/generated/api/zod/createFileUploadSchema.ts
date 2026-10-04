@@ -13,7 +13,7 @@ export const createFileUploadSchema = z.object({
   purpose: filePurposeSchema.describe('Назначение загружаемого файла.').meta({ examples: ['checklist_photo'] }),
   originalName: z.string().min(1).max(255).describe('Исходное имя файла без пути на устройстве пользователя.').meta({ examples: ['foundation.jpg'] }),
   mimeType: z.string().min(1).max(255).describe('Заявленный MIME-тип содержимого.').meta({ examples: ['image/jpeg'] }),
-  sizeBytes: z.int().min(1).max(52428800).describe('Заявленный размер содержимого в байтах.').meta({ examples: [1048576] }),
+  sizeBytes: z.int().min(1).max(52428800).describe('Заявленный размер содержимого в байтах. Общий верхний предел схемы нужен для PDF проекта; сервер применяет более строгий предел purpose, включая 10485760 байт для material_invoice.').meta({ examples: [1048576] }),
   checksumSha256: sha256Schema.describe('Ожидаемая контрольная сумма содержимого.').meta({ examples: ['0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'] }),
 }).strict()
 

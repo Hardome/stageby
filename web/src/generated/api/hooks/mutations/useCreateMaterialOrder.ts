@@ -21,6 +21,7 @@ export function createMaterialOrderMutationOptions<TContext = unknown>(config: P
 /**
  * @description Только руководитель. Один этап может иметь несколько заказов.
  * @summary Создать заказ материалов
+ * @deprecated
  * {@link /stages/:stageId/material-orders}
  */
 export function useCreateMaterialOrder<TContext>(options: {

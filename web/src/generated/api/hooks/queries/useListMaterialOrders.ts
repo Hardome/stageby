@@ -23,6 +23,7 @@ export function listMaterialOrdersQueryOptions({ path }: ListMaterialOrdersOptio
 /**
  * @description Руководитель видит любой этап, мастер — только назначенный ему. Сортировка createdAt ASC, id ASC.
  * @summary Заказы материалов этапа
+ * @deprecated
  * {@link /stages/:stageId/material-orders}
  */
 export function useListMaterialOrders<TData = ListMaterialOrdersStatus200, TQueryData = ListMaterialOrdersStatus200, TQueryKey extends QueryKey = ListMaterialOrdersQueryKey>({ path }: { path: ListMaterialOrdersOptions['path'] | (() => ListMaterialOrdersOptions['path']) }, options: {
