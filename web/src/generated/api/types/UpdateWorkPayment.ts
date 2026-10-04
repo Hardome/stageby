@@ -10,6 +10,14 @@ import type { WorkPayment } from './WorkPayment'
 
 export type UpdateWorkPayment = {
     /**
+     * @description Новый получатель — активный мастер. Изменение назначения этапа само по себе получателя не меняет.
+     * @minLength 1
+     * @maxLength 2147483647
+     * @example 3
+     * @type integer | undefined
+    */
+    recipientId?: number;
+    /**
      * @description Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
      * @minLength 1
      * @example 1

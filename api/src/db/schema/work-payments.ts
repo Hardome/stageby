@@ -11,6 +11,7 @@ export const workPayments = pgTable(
     stageId: integer()
       .notNull()
       .references(() => stages.id, { onDelete: 'cascade' }),
+    recipientId: integer().references(() => users.id, { onDelete: 'restrict' }),
     paidAt: date().notNull(),
     amountMinor: bigint({ mode: 'number' }).notNull(),
     comment: varchar({ length: 1000 }),

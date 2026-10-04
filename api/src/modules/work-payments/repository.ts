@@ -1,4 +1,5 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
@@ -11,14 +12,37 @@ import { toWorkPayment } from '#app/modules/work-payments/mapper';
 import type { Database, WorkPaymentOperationError, WorkPaymentOperationResult } from '#app/modules/work-payments/types';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+const recipient = alias(users, 'recipient');
 
 async function loadPayment(database: Database | Transaction, paymentId: number): Promise<WorkPayment | null> {
   const [row] = await database
-    .select({ payment: workPayments, createdById: users.id, createdByName: users.fullName })
+    .select({
+      payment: workPayments,
+      createdById: users.id,
+      createdByName: users.fullName,
+      recipientId: recipient.id,
+      recipientName: recipient.fullName,
+    })
     .from(workPayments)
     .innerJoin(users, eq(workPayments.createdByUserId, users.id))
+    .leftJoin(recipient, eq(workPayments.recipientId, recipient.id))
     .where(eq(workPayments.id, paymentId));
-  return row ? toWorkPayment(row.payment, { id: row.createdById, fullName: row.createdByName }) : null;
+  return row
+    ? toWorkPayment(
+        row.payment,
+        { id: row.createdById, fullName: row.createdByName },
+        row.recipientId === null ? null : { id: row.recipientId, fullName: row.recipientName! },
+      )
+    : null;
+}
+
+async function validRecipient(transaction: Transaction, id: number): Promise<boolean> {
+  const [user] = await transaction
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.id, id), eq(users.role, 'foreman'), eq(users.isActive, true)))
+    .for('share');
+  return user !== undefined;
 }
 
 async function lockStage(transaction: Transaction, stageId: number) {
@@ -63,14 +87,27 @@ export class WorkPaymentRepository {
     const [stage] = await this.#database.select({ id: stages.id }).from(stages).where(eq(stages.id, stageId));
     if (!stage) return { status: 'not_found' };
     const rows = await this.#database
-      .select({ payment: workPayments, createdById: users.id, createdByName: users.fullName })
+      .select({
+        payment: workPayments,
+        createdById: users.id,
+        createdByName: users.fullName,
+        recipientId: recipient.id,
+        recipientName: recipient.fullName,
+      })
       .from(workPayments)
       .innerJoin(users, eq(workPayments.createdByUserId, users.id))
+      .leftJoin(recipient, eq(workPayments.recipientId, recipient.id))
       .where(eq(workPayments.stageId, stageId))
       .orderBy(desc(workPayments.paidAt), desc(workPayments.id));
     return {
       status: 'ok',
-      value: rows.map((row) => toWorkPayment(row.payment, { id: row.createdById, fullName: row.createdByName })),
+      value: rows.map((row) =>
+        toWorkPayment(
+          row.payment,
+          { id: row.createdById, fullName: row.createdByName },
+          row.recipientId === null ? null : { id: row.recipientId, fullName: row.recipientName! },
+        ),
+      ),
     };
   }
 
@@ -84,12 +121,14 @@ export class WorkPaymentRepository {
       const locked = await lockStage(transaction, stageId);
       if (!locked) return { status: 'not_found' };
       if (locked.isArchived) return { status: 'project_archived' };
+      if (!(await validRecipient(transaction, input.recipientId))) return { status: 'invalid_request' };
       const [created] = await audit.created(
         workPayments,
         await transaction
           .insert(workPayments)
           .values({
             stageId,
+            recipientId: input.recipientId,
             paidAt: input.paidAt,
             amountMinor: input.amountMinor,
             comment: input.comment ?? null,
@@ -110,6 +149,8 @@ export class WorkPaymentRepository {
       const locked = await lockPayment(transaction, paymentId);
       const error = getMutationError(locked, input.expectedVersion);
       if (error) return { status: error };
+      if (input.recipientId !== undefined && !(await validRecipient(transaction, input.recipientId)))
+        return { status: 'invalid_request' };
       await audit.mutate(
         workPayments,
         and(eq(workPayments.id, paymentId), eq(workPayments.version, input.expectedVersion)),
@@ -117,6 +158,7 @@ export class WorkPaymentRepository {
           transaction
             .update(workPayments)
             .set({
+              ...(input.recipientId === undefined ? {} : { recipientId: input.recipientId }),
               ...(input.paidAt === undefined ? {} : { paidAt: input.paidAt }),
               ...(input.amountMinor === undefined ? {} : { amountMinor: input.amountMinor }),
               ...(input.comment === undefined ? {} : { comment: input.comment }),

@@ -22,13 +22,13 @@ export type RejectStage = {
     */
     comment: string;
     /**
-     * @description Обязательный срок исправления в формате YYYY-MM-DD, не раньше текущей даты объекта в часовом поясе Asia/Yekaterinburg.
+     * @description Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.
      *
      * Format: `date`
      * @example 2026-09-27
-     * @type string
+     * @type string | undefined
     */
-    correctionDueDate: string;
+    correctionDueDate?: string;
     /**
      * @description Пункты текущего чек-листа, требующие повторного выполнения.
      * @type array

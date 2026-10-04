@@ -76,6 +76,7 @@ export const zUserRole = z.enum([
 export const zUser = z.object({
     id: z.int().gte(1).lte(2147483647),
     login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
+    passwordResetRequestedAt: z.iso.datetime().readonly().nullable(),
     fullName: z.string().min(1).max(255),
     role: zUserRole,
     phone: z.string().min(1).max(32).nullable(),
@@ -126,6 +127,10 @@ export const zLoginRequest = z.object({
 export const zSession = z.object({
     expiresAt: z.iso.datetime(),
     user: zUser
+});
+
+export const zPasswordResetRequest = z.object({
+    login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/)
 });
 
 /**
@@ -374,7 +379,7 @@ export const zAcceptStage = z.object({
 export const zRejectStage = z.object({
     expectedVersion: zExpectedVersion,
     comment: z.string().min(1).max(5000),
-    correctionDueDate: z.iso.date(),
+    correctionDueDate: z.iso.date().optional(),
     itemIds: z.array(z.int().gte(1).lte(2147483647)).min(1)
 });
 
@@ -420,12 +425,14 @@ export const zWorkPayment = z.object({
     amountMinor: zPositiveMoneyAmountMinor,
     comment: z.string().min(1).max(1000).nullable(),
     createdBy: zUserBrief,
+    recipient: zUserBrief.nullable(),
     version: z.int().gte(1),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()
 });
 
 export const zCreateWorkPayment = z.object({
+    recipientId: z.int().gte(1).lte(2147483647),
     paidAt: z.iso.date(),
     amountMinor: zPositiveMoneyAmountMinor,
     comment: z.string().min(1).max(1000).nullish()
@@ -436,6 +443,7 @@ export const zDeleteWorkPayment = z.object({
 });
 
 export const zUpdateWorkPayment = z.object({
+    recipientId: z.int().gte(1).lte(2147483647).optional(),
     expectedVersion: zExpectedVersion,
     paidAt: z.iso.date().optional(),
     amountMinor: zPositiveMoneyAmountMinor.optional(),
@@ -626,11 +634,33 @@ export const zDashboardProjectRow = z.object({
     ownerName: z.string().min(1).max(255),
     address: z.string().min(1).max(1000),
     status: zProjectStatus,
+    finances: zProjectFinancialSummary,
     selectedStage: zDashboardSelectedStage.nullable()
 });
 
 export const zDashboardProjectPage = z.object({
     items: z.array(zDashboardProjectRow),
+    total: z.int().gte(0),
+    limit: z.int().gte(1).lte(100),
+    offset: z.int().gte(0)
+});
+
+/**
+ * Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.
+ */
+export const zUserWritable = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
+    fullName: z.string().min(1).max(255),
+    role: zUserRole,
+    phone: z.string().min(1).max(32).nullable(),
+    isActive: z.boolean(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zUserPageWritable = z.object({
+    items: z.array(zUserWritable),
     total: z.int().gte(0),
     limit: z.int().gte(1).lte(100),
     offset: z.int().gte(0)
@@ -647,6 +677,11 @@ export const zCreateUserWritable = z.object({
 export const zLoginRequestWritable = z.object({
     login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
     password: z.string().min(1).max(128)
+});
+
+export const zSessionWritable = z.object({
+    expiresAt: z.iso.datetime(),
+    user: zUserWritable
 });
 
 export const zProjectWritable = z.object({
@@ -842,6 +877,8 @@ export const zLoginBody = zLoginRequestWritable;
  * Успешный ответ
  */
 export const zLoginResponse = zSession;
+
+export const zRequestPasswordResetBody = zPasswordResetRequest;
 
 /**
  * Операция выполнена; тело отсутствует.

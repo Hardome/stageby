@@ -4,6 +4,7 @@
 */
 
 import type { DashboardSelectedStage } from './DashboardSelectedStage'
+import type { ProjectFinancialSummary } from './ProjectFinancialSummary'
 import type { ProjectStatusKey } from './ProjectStatus'
 
 export type DashboardProjectRow = {
@@ -37,6 +38,11 @@ export type DashboardProjectRow = {
      * @type string
     */
     status: ProjectStatusKey;
+    /**
+     * @description Вычисляемые финансовые итоги проекта. Все поля доступны только для чтения; при неполном плане плановые итоги и отклонение равны null.
+     * @type object
+    */
+    finances: ProjectFinancialSummary;
     /**
      * @description Первый по позиции невыплаченный этап или null, если все включённые этапы paid. Переходы к счёту, мастеру и чек-листу используют только его stageId.
     */

@@ -1,4 +1,21 @@
 paths:
+  /auth/password-reset-requests:
+    post:
+      operationId: requestPasswordReset
+      tags: [Auth]
+      summary: Запросить назначение нового пароля
+      description: Публичный запрос по логину. Ответ одинаков для существующего, неизвестного и неактивного пользователя. Руководитель видит отметку в списке пользователей и закрывает запрос назначением нового пароля. Повтор открытого запроса не создаёт дубля. Применяется лимит запросов по IP и логину.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordResetRequest' }
+      responses:
+        '202':
+          description: Запрос принят; тело отсутствует, наличие пользователя не раскрывается.
+        '400': { $ref: ../common/common.yaml#/components/responses/ApiBadRequest }
+        '429': { $ref: ../common/common.yaml#/components/responses/ApiTooManyRequests }
   /auth/login:
     post:
       operationId: login
@@ -78,6 +95,18 @@ paths:
           $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
 components:
   schemas:
+    PasswordResetRequest:
+      type: object
+      additionalProperties: false
+      required: [login]
+      properties:
+        login:
+          example: foreman.ivan
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: ^[a-z0-9][a-z0-9._-]{2,63}$
+          description: Логин пользователя, которому требуется новый пароль.
     LoginRequest:
       type: object
       additionalProperties: false

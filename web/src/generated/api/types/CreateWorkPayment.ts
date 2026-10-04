@@ -9,6 +9,14 @@ import type { WorkPayment } from './WorkPayment'
 
 export type CreateWorkPayment = {
     /**
+     * @description ID активного мастера из списка пользователей; может отличаться от текущего назначенного мастера.
+     * @minLength 1
+     * @maxLength 2147483647
+     * @example 2
+     * @type integer
+    */
+    recipientId: number;
+    /**
      * @description Дата фактической оплаты в формате YYYY-MM-DD.
      *
      * Format: `date`

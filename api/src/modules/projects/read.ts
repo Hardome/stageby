@@ -11,7 +11,7 @@ import type { Database } from '#app/modules/stages/types';
 type Db = Database | Parameters<Parameters<Database['transaction']>[0]>[0];
 type Summary = Awaited<ReturnType<typeof loadStageSummaries>> extends Map<number, infer T> ? T : never;
 
-function financialSummary(rows: Summary[]): ProjectFinancialSummary {
+export function financialSummary(rows: Summary[]): ProjectFinancialSummary {
   const plan = (field: 'plannedWorkAmountMinor' | 'plannedMaterialAmountMinor') =>
     rows.some((row) => row[field] === null) ? null : rows.reduce((total, row) => total + (row[field] ?? 0), 0);
   const plannedWorkAmountMinor = plan('plannedWorkAmountMinor');
@@ -38,6 +38,20 @@ function financialSummary(rows: Summary[]): ProjectFinancialSummary {
   };
 }
 
+export function projectStatus(included: (typeof stages.$inferSelect)[]): Project['status'] {
+  if (included.length > 0 && included.every((stage) => stage.status === 'paid')) return 'completed';
+  if (['acceptance', 'completed'].includes(included.at(-1)?.status ?? '')) return 'acceptance';
+  if (
+    included.some(
+      (stage) =>
+        stage.actualStartDate !== null ||
+        ['in_progress', 'rework', 'acceptance', 'completed', 'paid'].includes(stage.status),
+    )
+  )
+    return 'in_progress';
+  return 'created';
+}
+
 export async function loadProjects(db: Db, rows: ProjectRow[]): Promise<Project[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
@@ -59,20 +73,9 @@ export async function loadProjects(db: Db, rows: ProjectRow[]): Promise<Project[
   const documentsByProject = Map.groupBy(documents, (document) => document.projectId);
   return rows.map((row) => {
     const included = stagesByProject.get(row.id) ?? [];
-    let status: Project['status'] = 'created';
-    if (included.length > 0 && included.every((stage) => stage.status === 'paid')) status = 'completed';
-    else if (['acceptance', 'completed'].includes(included.at(-1)?.status ?? '')) status = 'acceptance';
-    else if (
-      included.some(
-        (stage) =>
-          stage.actualStartDate !== null ||
-          ['in_progress', 'rework', 'acceptance', 'completed', 'paid'].includes(stage.status),
-      )
-    )
-      status = 'in_progress';
     return {
       ...toProject(row),
-      status,
+      status: projectStatus(included),
       finances: financialSummary(included.map((stage) => summaries.get(stage.id)!)),
       documentFileIds: (documentsByProject.get(row.id) ?? []).map((document) => document.fileId),
     };

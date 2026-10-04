@@ -1,0 +1,386 @@
+import { randomUUID } from 'node:crypto';
+
+import fastifyCookie from '@fastify/cookie';
+import { eq, inArray } from 'drizzle-orm';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { parseEnvironment } from '#app/config/env';
+import { checklistItems, checklists } from '#app/db/schema/checklists';
+import { files } from '#app/db/schema/files';
+import { materialInvoices, materialShortages } from '#app/db/schema/materials';
+import { projects } from '#app/db/schema/projects';
+import { sessions } from '#app/db/schema/sessions';
+import { stages } from '#app/db/schema/stages';
+import { users } from '#app/db/schema/users';
+import { workPayments } from '#app/db/schema/work-payments';
+import type { DashboardProjectPage, DashboardSummary, Project, Stage } from '#app/generated/types.gen';
+import { hashPassword } from '#app/modules/auth/password-hasher';
+import { SessionRepository } from '#app/modules/auth/session-repository';
+import { SessionService } from '#app/modules/auth/session-service';
+import { addCalendarDays, calendarDate } from '#app/modules/dashboard/calendar';
+import { dashboardModule } from '#app/modules/dashboard/index';
+import { DashboardRepository } from '#app/modules/dashboard/repository';
+import { projectModule } from '#app/modules/projects/index';
+import { stageModule } from '#app/modules/stages/index';
+import { UserRepository } from '#app/modules/users/repository';
+import { registerAuthentication } from '#app/plugins/authentication';
+import { registerErrorHandler } from '#app/plugins/error-handler';
+import { setupModuleTest } from '#test/setup-module-test';
+
+const projectIds: number[] = [];
+const userIds: number[] = [];
+const fileIds: number[] = [];
+let passwordHash: string;
+const getApp = setupModuleTest(async (app) => {
+  registerErrorHandler(
+    app,
+    parseEnvironment({
+      NODE_ENV: 'test',
+      DATABASE_URL: process.env.DATABASE_URL,
+      CORS_ORIGIN: 'http://localhost:5173',
+      LOG_LEVEL: 'silent',
+    }),
+  );
+  await app.register(fastifyCookie);
+  await registerAuthentication(app);
+  await app.register(projectModule);
+  await app.register(stageModule);
+  await app.register(dashboardModule);
+});
+
+beforeAll(async () => {
+  passwordHash = await hashPassword('Dashboard-password-123!');
+});
+afterEach(async () => {
+  vi.useRealTimers();
+  if (projectIds.length > 0) await getApp().db.delete(projects).where(inArray(projects.id, projectIds));
+  if (fileIds.length > 0) await getApp().db.delete(files).where(inArray(files.id, fileIds));
+  if (userIds.length > 0) await getApp().db.delete(users).where(inArray(users.id, userIds));
+  projectIds.length = 0;
+  userIds.length = 0;
+  fileIds.length = 0;
+});
+
+async function identity(role: 'manager' | 'foreman' = 'manager') {
+  const user = await new UserRepository(getApp().db).create({
+    login: `dashboard.${randomUUID().replaceAll('-', '')}`,
+    fullName: 'Мастер панели',
+    role,
+    passwordHash,
+  });
+  userIds.push(user.id);
+  const session = await new SessionService(new SessionRepository(getApp().db), 12).issue(user.id);
+  return { user, cookie: `stageby_session=${session.accessToken}` };
+}
+
+async function fixture(cookie: string, assigneeId: number, start = calendarDate()) {
+  const response = await getApp().inject({
+    method: 'POST',
+    url: '/projects',
+    headers: { cookie, 'idempotency-key': randomUUID() },
+    payload: {
+      ownerName: 'Клиент панели',
+      address: 'Екатеринбург',
+      coordinates: { latitude: 56.84, longitude: 60.61 },
+      plannedStartDate: addCalendarDays(start, -20),
+      plannedEndDate: addCalendarDays(start, 50),
+      documentFileIds: [],
+      stages: ['foundation', 'walls', 'roof'].map((type, index) => ({
+        type,
+        plannedStartDate: addCalendarDays(start, index * 10),
+        plannedEndDate: addCalendarDays(start, index * 10 + 5),
+        assigneeId,
+        plannedWorkAmountMinor: 10_000,
+        plannedMaterialAmountMinor: 20_000,
+        checklistItems: [{ title: 'Проверка' }, { title: 'Уборка' }],
+      })),
+    },
+  });
+  if (response.statusCode !== 201) throw new Error(`Project fixture failed: ${response.body}`);
+  const project = response.json<Project>();
+  projectIds.push(project.id);
+  const included = await getApp()
+    .db.select()
+    .from(stages)
+    .where(eq(stages.projectId, project.id))
+    .orderBy(stages.position);
+  return { project, included };
+}
+
+async function invoice(stageId: number, userId: number, amountMinor: number, paid: boolean, delivered: boolean) {
+  const now = new Date();
+  const [file] = await getApp()
+    .db.insert(files)
+    .values({
+      purpose: 'material_invoice',
+      status: 'uploaded',
+      storageKey: randomUUID(),
+      originalName: 'invoice.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 1024,
+      checksumSha256: 'a'.repeat(64),
+      uploadedByUserId: userId,
+      uploadExpiresAt: now,
+      uploadedAt: now,
+    })
+    .returning();
+  fileIds.push(file!.id);
+  const [value] = await getApp()
+    .db.insert(materialInvoices)
+    .values({
+      stageId,
+      fileId: file!.id,
+      amountMinor,
+      paidAt: paid ? now : null,
+      paidByUserId: paid ? userId : null,
+      deliveredAt: delivered ? now : null,
+      deliveredByUserId: delivered ? userId : null,
+    })
+    .returning();
+  return value!;
+}
+
+async function page(cookie: string, query = '') {
+  const response = await getApp().inject({ url: `/dashboard/projects${query}`, headers: { cookie } });
+  if (response.statusCode !== 200) throw new Error(`Dashboard request failed: ${response.body}`);
+  return response.json<DashboardProjectPage>();
+}
+
+describe('Dashboard API', () => {
+  it('проверяет роль и параметры двух независимых запросов', async () => {
+    const manager = await identity();
+    const foreman = await identity('foreman');
+    for (const url of ['/dashboard/summary', '/dashboard/projects']) {
+      expect((await getApp().inject({ url })).statusCode).toBe(401);
+      expect((await getApp().inject({ url, headers: { cookie: foreman.cookie } })).statusCode).toBe(403);
+    }
+    for (const query of ['limit=0', 'limit=101', 'offset=-1', 'limit=1.5', 'unknown=1'])
+      expect(
+        (await getApp().inject({ url: `/dashboard/projects?${query}`, headers: { cookie: manager.cookie } }))
+          .statusCode,
+      ).toBe(400);
+    vi.spyOn(DashboardRepository.prototype, 'summary').mockRejectedValue(new Error('Summary unavailable'));
+    expect((await getApp().inject({ url: '/dashboard/summary', headers: { cookie: manager.cookie } })).statusCode).toBe(
+      500,
+    );
+    expect((await page(manager.cookie)).items).toEqual([]);
+    vi.restoreAllMocks();
+    vi.spyOn(DashboardRepository.prototype, 'list').mockRejectedValue(new Error('Projects unavailable'));
+    expect(
+      (await getApp().inject({ url: '/dashboard/projects', headers: { cookie: manager.cookie } })).statusCode,
+    ).toBe(500);
+    const summary = await getApp().inject({ url: '/dashboard/summary', headers: { cookie: manager.cookie } });
+    expect(summary.statusCode, summary.body).toBe(200);
+    expect(summary.json()).toMatchObject({
+      activeProjectCount: 0,
+      total: { plannedAmountMinor: 0, actualAmountMinor: 0, balanceAmountMinor: 0, isPlanComplete: true },
+    });
+  });
+
+  it.each([
+    ['2026-12-31T18:59:59Z', '2026-12-31'],
+    ['2026-12-31T19:00:00Z', '2027-01-01'],
+    ['2028-02-28T19:00:00Z', '2028-02-29'],
+  ])('проверяет календарные границы UTC+5: %s', async (instant, expectedToday) => {
+    const manager = await identity();
+    await getApp()
+      .db.update(sessions)
+      .set({ expiresAt: new Date('2100-01-01T00:00:00Z') })
+      .where(eq(sessions.userId, manager.user.id));
+    // Keep real timers for database and HTTP; freeze only the wall clock.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(instant));
+    const today = calendarDate();
+    expect(today).toBe(expectedToday);
+    for (const through of [undefined, today, addCalendarDays(today, 30)]) {
+      const response = await getApp().inject({
+        url: `/dashboard/summary${through ? `?through=${through}` : ''}`,
+        headers: { cookie: manager.cookie },
+      });
+      expect(response.statusCode, response.body).toBe(200);
+      expect(response.json().through).toBe(through ?? today);
+    }
+    for (const through of [addCalendarDays(today, -1), addCalendarDays(today, 31), '2026-02-30', 'bad', ''])
+      expect(
+        (await getApp().inject({ url: `/dashboard/summary?through=${through}`, headers: { cookie: manager.cookie } }))
+          .statusCode,
+      ).toBe(400);
+    expect(
+      (await getApp().inject({ url: '/dashboard/summary?unknown=1', headers: { cookie: manager.cookie } })).statusCode,
+    ).toBe(400);
+  });
+
+  it('считает один периметр планов и фактов без умножения платежей на счета', async () => {
+    const manager = await identity();
+    const foreman = await identity('foreman');
+    const { project, included } = await fixture(manager.cookie, foreman.user.id);
+    const first = included[0]!;
+    const second = included[1]!;
+    const beforeDue = await getApp().inject({ url: '/dashboard/summary', headers: { cookie: manager.cookie } });
+    expect(beforeDue.statusCode, beforeDue.body).toBe(200);
+    expect(beforeDue.json()).toMatchObject({
+      activeProjectCount: 1,
+      total: { plannedAmountMinor: 0, actualAmountMinor: 0 },
+    });
+    await getApp()
+      .db.insert(workPayments)
+      .values(
+        [3000, 4000].map((amountMinor) => ({
+          stageId: first.id,
+          recipientId: foreman.user.id,
+          createdByUserId: manager.user.id,
+          paidAt: '2099-01-01',
+          amountMinor,
+        })),
+      );
+    await invoice(first.id, manager.user.id, 5000, true, true);
+    await invoice(first.id, manager.user.id, 6000, true, false);
+    await invoice(first.id, manager.user.id, 8000, false, true);
+    // Paid stages remain in the financial perimeter; later and archived stages do not.
+    await getApp().db.update(stages).set({ status: 'paid' }).where(eq(stages.id, first.id));
+    const archived = await fixture(manager.cookie, foreman.user.id);
+    await getApp().db.update(projects).set({ isArchived: true }).where(eq(projects.id, archived.project.id));
+    const response = await getApp().inject({
+      url: `/dashboard/summary?through=${first.plannedEndDate}`,
+      headers: { cookie: manager.cookie },
+    });
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json<DashboardSummary>()).toMatchObject({
+      activeProjectCount: 1,
+      works: { plannedAmountMinor: 10_000, actualAmountMinor: 7000, balanceAmountMinor: 3000, isPlanComplete: true },
+      materials: {
+        plannedAmountMinor: 20_000,
+        actualAmountMinor: 11_000,
+        balanceAmountMinor: 9000,
+        isPlanComplete: true,
+      },
+      total: {
+        plannedAmountMinor: 30_000,
+        actualAmountMinor: 18_000,
+        balanceAmountMinor: 12_000,
+        isPlanComplete: true,
+      },
+    });
+    const row = (await page(manager.cookie)).items[0]!;
+    expect(row).toMatchObject({
+      projectId: project.id,
+      finances: { totalPlannedAmountMinor: 90_000, totalActualAmountMinor: 18_000 },
+      selectedStage: { stageId: second.id },
+    });
+    const card = await getApp().inject({ url: `/projects/${project.id}`, headers: { cookie: manager.cookie } });
+    expect(card.json<Project>().finances).toEqual(row.finances);
+    const selected = await getApp().inject({ url: `/stages/${second.id}`, headers: { cookie: manager.cookie } });
+    expect(row.selectedStage!.finances.totalActualAmountMinor).toBe(selected.json<Stage>().totalActualAmountMinor);
+  });
+
+  it('сохраняет неизвестный план и отрицательный остаток, нулевой план считается заданным', async () => {
+    const manager = await identity();
+    const foreman = await identity('foreman');
+    const { included } = await fixture(manager.cookie, foreman.user.id);
+    const first = included[0]!;
+    await getApp()
+      .db.update(stages)
+      .set({ plannedWorkAmountMinor: null, plannedMaterialAmountMinor: 0 })
+      .where(eq(stages.id, first.id));
+    await invoice(first.id, manager.user.id, 1000, true, false);
+    const response = await getApp().inject({
+      url: `/dashboard/summary?through=${first.plannedEndDate}`,
+      headers: { cookie: manager.cookie },
+    });
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json()).toMatchObject({
+      works: { plannedAmountMinor: null, balanceAmountMinor: null, isPlanComplete: false },
+      materials: { plannedAmountMinor: 0, actualAmountMinor: 1000, balanceAmountMinor: -1000, isPlanComplete: true },
+      total: { plannedAmountMinor: null, actualAmountMinor: 1000, balanceAmountMinor: null, isPlanComplete: false },
+    });
+  });
+
+  it('выбирает первый невыплаченный этап для всех данных, переключает его после paid и завершает только после всех выплат', async () => {
+    const manager = await identity();
+    const foreman = await identity('foreman');
+    const { project, included } = await fixture(manager.cookie, foreman.user.id);
+    const [first, second, last] = included;
+    await getApp().db.update(stages).set({ status: 'paid' }).where(eq(stages.id, last!.id));
+    await getApp().db.update(stages).set({ status: 'in_progress' }).where(eq(stages.id, second!.id));
+    await getApp().db.update(stages).set({ status: 'acceptance' }).where(eq(stages.id, first!.id));
+    expect((await page(manager.cookie)).items[0]!.selectedStage).toMatchObject({
+      stageId: first!.id,
+      status: 'acceptance',
+    });
+    await getApp().db.update(stages).set({ status: 'completed' }).where(eq(stages.id, first!.id));
+    const [checklist] = await getApp().db.select().from(checklists).where(eq(checklists.stageId, first!.id));
+    await getApp()
+      .db.update(checklistItems)
+      .set({ isCompleted: true, completedAt: new Date(), completedByUserId: foreman.user.id })
+      .where(eq(checklistItems.checklistId, checklist!.id));
+    const firstInvoice = await invoice(first!.id, manager.user.id, 1000, true, false);
+    await invoice(first!.id, manager.user.id, 2000, false, true);
+    await getApp()
+      .db.insert(materialShortages)
+      .values({ invoiceId: firstInvoice.id, comment: 'Не хватает', reportedByUserId: foreman.user.id });
+    let row = (await page(manager.cookie)).items[0]!;
+    expect(row.status).not.toBe('completed');
+    expect(row.selectedStage).toMatchObject({
+      stageId: first!.id,
+      plannedStartDate: first!.plannedStartDate,
+      plannedEndDate: first!.plannedEndDate,
+      stageCount: 3,
+      assignee: { id: foreman.user.id },
+      status: 'completed',
+      progressPercent: 100,
+      materials: {
+        color: 'red',
+        invoiceCount: 2,
+        isPartiallyPaid: true,
+        isPartiallyDelivered: true,
+        openShortageCount: 1,
+      },
+      finances: { actualMaterialAmountMinor: 1000 },
+    });
+    await getApp().db.update(stages).set({ status: 'paid' }).where(eq(stages.id, first!.id));
+    row = (await page(manager.cookie)).items[0]!;
+    expect(row.selectedStage).toMatchObject({
+      stageId: second!.id,
+      status: 'in_progress',
+      progressPercent: 0,
+      materials: { color: 'red', invoiceCount: 0 },
+      finances: { actualMaterialAmountMinor: 0 },
+    });
+    await getApp().db.update(stages).set({ status: 'paid' }).where(eq(stages.id, second!.id));
+    row = (await page(manager.cookie)).items[0]!;
+    expect(row).toMatchObject({ status: 'completed', selectedStage: null });
+    const summary = await getApp().inject({ url: '/dashboard/summary', headers: { cookie: manager.cookie } });
+    expect(summary.json().activeProjectCount).toBe(0);
+    expect(
+      (await getApp().inject({ url: `/projects/${project.id}`, headers: { cookie: manager.cookie } })).json().status,
+    ).toBe('completed');
+  });
+
+  it('сортирует по началу выбранного этапа и ID, применяет пагинацию и помещает завершённые объекты в конец', async () => {
+    const manager = await identity();
+    const foreman = await identity('foreman');
+    const first = await fixture(manager.cookie, foreman.user.id);
+    const second = await fixture(manager.cookie, foreman.user.id);
+    const earlier = await fixture(manager.cookie, foreman.user.id, addCalendarDays(calendarDate(), -1));
+    const completed = await fixture(manager.cookie, foreman.user.id);
+    await getApp().db.update(stages).set({ status: 'paid' }).where(eq(stages.projectId, completed.project.id));
+    const selectQueries = vi.spyOn(getApp().db, 'select');
+    expect((await page(manager.cookie)).items.map((row) => row.projectId)).toEqual([
+      earlier.project.id,
+      first.project.id,
+      second.project.id,
+      completed.project.id,
+    ]);
+    const fullPageQueryCount = selectQueries.mock.calls.length;
+    selectQueries.mockClear();
+    expect(await page(manager.cookie, '?limit=1&offset=2')).toMatchObject({
+      total: 4,
+      limit: 1,
+      offset: 2,
+      items: [{ projectId: second.project.id }],
+    });
+    expect(selectQueries.mock.calls.length).toBe(fullPageQueryCount);
+    expect(fullPageQueryCount).toBeLessThanOrEqual(6);
+    expect((await page(manager.cookie, '?offset=100')).items).toEqual([]);
+  });
+});
