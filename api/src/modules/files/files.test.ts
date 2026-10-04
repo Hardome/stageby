@@ -326,6 +326,47 @@ describe('File uploads and checklist photos', () => {
     expect(mismatch.statusCode).toBe(409);
   });
 
+  it('применяет лимит счёта 10 МиБ при создании и завершении upload', async () => {
+    const manager = await createIdentity('manager');
+    const oversized = await uploadPhoto(manager.cookie, {
+      purpose: 'material_invoice',
+      originalName: 'invoice.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 10 * 1024 * 1024 + 1,
+    });
+    expect(oversized.createResponse.statusCode).toBe(413);
+
+    const createResponse = await getApp().inject({
+      method: 'POST',
+      url: '/file-uploads',
+      headers: { cookie: manager.cookie },
+      payload: {
+        purpose: 'material_invoice',
+        originalName: 'invoice.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: 10 * 1024 * 1024,
+        checksumSha256: checksum,
+      },
+    });
+    expect(createResponse.statusCode, createResponse.body).toBe(201);
+    const upload = createResponse.json<FileUpload>();
+    createdFileIds.push(upload.fileId);
+    const key = decodeURIComponent(new URL(upload.uploadUrl).pathname.slice(1));
+    storage.objects.set(key, {
+      sizeBytes: 10 * 1024 * 1024 + 1,
+      mimeType: 'application/pdf',
+      checksumSha256Base64: upload.headers['x-amz-checksum-sha256']!,
+    });
+    const completed = await getApp().inject({
+      method: 'POST',
+      url: `/file-uploads/${upload.fileId}/completion`,
+      headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
+      payload: { checksumSha256: checksum },
+    });
+    expect(completed.statusCode).toBe(413);
+    expect(completed.json()).toMatchObject({ code: 'file_too_large' });
+  });
+
   it('не раскрывает чужой файл по прямому ID', async () => {
     const fixture = await createFixture();
     const owner = await createIdentity('foreman');

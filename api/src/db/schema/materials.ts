@@ -5,37 +5,13 @@ import { files } from './files.ts';
 import { stages } from './stages.ts';
 import { users } from './users.ts';
 
-export const materialOrders = pgTable(
-  'material_orders',
+export const materialInvoices = pgTable(
+  'material_invoices',
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     stageId: integer()
       .notNull()
       .references(() => stages.id, { onDelete: 'cascade' }),
-    sentAt: timestamp({ withTimezone: true }),
-    sentByUserId: integer().references(() => users.id, { onDelete: 'restrict' }),
-    version: integer().notNull().default(1),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    index('material_orders_stage_idx').on(table.stageId),
-    index('material_orders_sent_idx').on(table.sentAt),
-    check(
-      'material_orders_sent_author_check',
-      sql`(${table.sentAt} is null and ${table.sentByUserId} is null) or (${table.sentAt} is not null and ${table.sentByUserId} is not null)`,
-    ),
-    check('material_orders_version_check', sql`${table.version} >= 1`),
-  ],
-);
-
-export const materialInvoices = pgTable(
-  'material_invoices',
-  {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    orderId: integer()
-      .notNull()
-      .references(() => materialOrders.id, { onDelete: 'cascade' }),
     fileId: integer()
       .notNull()
       .references(() => files.id, { onDelete: 'restrict' }),
@@ -50,8 +26,8 @@ export const materialInvoices = pgTable(
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index('material_invoices_order_idx').on(table.orderId),
-    index('material_invoices_order_paid_delivered_idx').on(table.orderId, table.paidAt, table.deliveredAt),
+    index('material_invoices_stage_idx').on(table.stageId),
+    index('material_invoices_stage_paid_delivered_idx').on(table.stageId, table.paidAt, table.deliveredAt),
     uniqueIndex('material_invoices_file_unique').on(table.fileId),
     check(
       'material_invoices_supplier_not_blank_check',
@@ -106,6 +82,5 @@ export const materialShortages = pgTable(
   ],
 );
 
-export type MaterialOrderRow = typeof materialOrders.$inferSelect;
 export type MaterialInvoiceRow = typeof materialInvoices.$inferSelect;
 export type MaterialShortageRow = typeof materialShortages.$inferSelect;

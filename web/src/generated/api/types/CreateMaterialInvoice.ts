@@ -3,8 +3,6 @@
 * Do not edit manually.
 */
 
-import type { ApiError } from './ApiError'
-import type { MaterialInvoice } from './MaterialInvoice'
 import type { PositiveMoneyAmountMinor } from './PositiveMoneyAmountMinor'
 
 export type CreateMaterialInvoice = {
@@ -34,51 +32,3 @@ export type CreateMaterialInvoice = {
     */
     amountMinor: PositiveMoneyAmountMinor;
 };
-
-export type CreateMaterialInvoicePath = {
-    /**
-     * @minLength 1
-     * @maxLength 2147483647
-     * @type integer
-    */
-    orderId: number;
-};
-
-export type CreateMaterialInvoiceStatus201 = MaterialInvoice;
-
-export type CreateMaterialInvoiceStatus400 = ApiError;
-
-export type CreateMaterialInvoiceStatus401 = ApiError;
-
-export type CreateMaterialInvoiceStatus403 = ApiError;
-
-export type CreateMaterialInvoiceStatus404 = ApiError;
-
-export type CreateMaterialInvoiceStatus409 = ApiError;
-
-export type CreateMaterialInvoiceBody = CreateMaterialInvoice;
-
-/**
- * @deprecated
- * @type object
-*/
-export type CreateMaterialInvoiceOptions = {
-    body: CreateMaterialInvoiceBody;
-    path: CreateMaterialInvoicePath;
-    query?: never;
-    headers?: never;
-};
-
-export type CreateMaterialInvoiceResponses = {
-    "201": CreateMaterialInvoiceStatus201;
-    "400": CreateMaterialInvoiceStatus400;
-    "401": CreateMaterialInvoiceStatus401;
-    "403": CreateMaterialInvoiceStatus403;
-    "404": CreateMaterialInvoiceStatus404;
-    "409": CreateMaterialInvoiceStatus409;
-};
-
-/**
- * @description Union of all possible responses
-*/
-export type CreateMaterialInvoiceResponse = (CreateMaterialInvoiceStatus201 | CreateMaterialInvoiceStatus400 | CreateMaterialInvoiceStatus401 | CreateMaterialInvoiceStatus403 | CreateMaterialInvoiceStatus404 | CreateMaterialInvoiceStatus409);

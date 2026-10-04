@@ -4,7 +4,7 @@ import { and, asc, eq, isNull, lte, or, sql } from 'drizzle-orm';
 
 import { checklistItems, checklists } from '#app/db/schema/checklists';
 import { checklistItemPhotos, type FileRow, files } from '#app/db/schema/files';
-import { materialInvoices, materialOrders } from '#app/db/schema/materials';
+import { materialInvoices } from '#app/db/schema/materials';
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
@@ -259,8 +259,7 @@ export class FileRepository {
         ? await this.#database
             .select({ assigneeId: stages.assigneeId })
             .from(materialInvoices)
-            .innerJoin(materialOrders, eq(materialInvoices.orderId, materialOrders.id))
-            .innerJoin(stages, eq(materialOrders.stageId, stages.id))
+            .innerJoin(stages, eq(materialInvoices.stageId, stages.id))
             .where(eq(materialInvoices.fileId, fileId))
         : [];
     const canRead =

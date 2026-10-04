@@ -6,7 +6,7 @@ const bytesPerMiB = 1024 * 1024;
 const policies: Record<FilePurpose, { mimeTypes: ReadonlySet<string>; maxSizeBytes: number }> = {
   project_document: { mimeTypes: new Set(['application/pdf']), maxSizeBytes: 50 * bytesPerMiB },
   checklist_photo: { mimeTypes: new Set(['image/jpeg', 'image/png', 'image/heic']), maxSizeBytes: 20 * bytesPerMiB },
-  material_invoice: { mimeTypes: new Set(['application/pdf', 'image/jpeg']), maxSizeBytes: 50 * bytesPerMiB },
+  material_invoice: { mimeTypes: new Set(['application/pdf', 'image/jpeg']), maxSizeBytes: 10 * bytesPerMiB },
 };
 
 export function validateUploadPolicy(

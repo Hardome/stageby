@@ -10,7 +10,7 @@ import { files } from '#app/db/schema/files';
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
-import type { MaterialInvoice, MaterialOrder, MaterialShortage, Project, Stage } from '#app/generated/types.gen';
+import type { MaterialShortage, Project, Stage, StageMaterialInvoice } from '#app/generated/types.gen';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 import { SessionRepository } from '#app/modules/auth/session-repository';
 import { SessionService } from '#app/modules/auth/session-service';
@@ -114,7 +114,7 @@ async function fixture() {
   return { manager, foreman, outsider, stage: stage! };
 }
 
-async function uploadedInvoiceFile(userId: number, mimeType = 'application/pdf') {
+async function uploadedInvoiceFile(userId: number, mimeType = 'application/pdf', sizeBytes = 1024) {
   const uploadedAt = new Date();
   const [file] = await getApp()
     .db.insert(files)
@@ -124,7 +124,7 @@ async function uploadedInvoiceFile(userId: number, mimeType = 'application/pdf')
       storageKey: `tests/materials/${randomUUID()}`,
       originalName: mimeType === 'application/pdf' ? 'invoice.pdf' : 'invoice.jpg',
       mimeType,
-      sizeBytes: 1024,
+      sizeBytes,
       checksumSha256: randomUUID().replaceAll('-', '').repeat(2),
       uploadedByUserId: userId,
       uploadExpiresAt: uploadedAt,
@@ -135,27 +135,17 @@ async function uploadedInvoiceFile(userId: number, mimeType = 'application/pdf')
   return file!;
 }
 
-async function createOrder(stageId: number, cookie: string) {
-  const response = await getApp().inject({
-    method: 'POST',
-    url: `/stages/${stageId}/material-orders`,
-    headers: { cookie },
-  });
-  if (response.statusCode !== 201) throw new Error(`Не удалось создать заказ: ${response.body}`);
-  return response.json<MaterialOrder>();
-}
-
-async function createInvoice(orderId: number, fileId: number, amountMinor: number, cookie: string) {
+async function createInvoice(stageId: number, fileId: number, amountMinor: number, cookie: string) {
   return getApp().inject({
     method: 'POST',
-    url: `/material-orders/${orderId}/invoices`,
+    url: `/stages/${stageId}/material-invoices`,
     headers: { cookie },
     payload: { fileId, amountMinor, supplierName: 'Стройснаб' },
   });
 }
 
 describe('Материалы, счета и нехватки', () => {
-  it('учитывает несколько заказов и счетов, оплату и доставку независимо', async () => {
+  it('учитывает счета этапа, оплату и доставку независимо', async () => {
     const data = await fixture();
     const planned = await getApp().inject({
       method: 'PATCH',
@@ -165,18 +155,20 @@ describe('Материалы, счета и нехватки', () => {
     });
     expect(planned.statusCode, planned.body).toBe(200);
     expect(planned.json<Stage>().plannedMaterialAmountMinor).toBe(120_000);
-    const firstOrder = await createOrder(data.stage.id, data.manager.cookie);
-    const secondOrder = await createOrder(data.stage.id, data.manager.cookie);
     const fileIds = await Promise.all([
       uploadedInvoiceFile(data.manager.user.id),
       uploadedInvoiceFile(data.manager.user.id, 'image/jpeg'),
       uploadedInvoiceFile(data.manager.user.id),
     ]);
-    const first = await createInvoice(firstOrder.id, fileIds[0]!.id, 10_000, data.manager.cookie);
-    const second = await createInvoice(firstOrder.id, fileIds[1]!.id, 20_000, data.manager.cookie);
-    const third = await createInvoice(secondOrder.id, fileIds[2]!.id, 30_000, data.manager.cookie);
+    const first = await createInvoice(data.stage.id, fileIds[0]!.id, 10_000, data.manager.cookie);
+    const second = await createInvoice(data.stage.id, fileIds[1]!.id, 20_000, data.manager.cookie);
+    const third = await createInvoice(data.stage.id, fileIds[2]!.id, 30_000, data.manager.cookie);
     expect([first.statusCode, second.statusCode, third.statusCode]).toEqual([201, 201, 201]);
-    const invoices = [first.json<MaterialInvoice>(), second.json<MaterialInvoice>(), third.json<MaterialInvoice>()];
+    const invoices = [
+      first.json<StageMaterialInvoice>(),
+      second.json<StageMaterialInvoice>(),
+      third.json<StageMaterialInvoice>(),
+    ];
 
     let stage = await getApp().inject({
       method: 'GET',
@@ -186,7 +178,7 @@ describe('Материалы, счета и нехватки', () => {
     expect(stage.json<Stage>()).toMatchObject({
       actualMaterialAmountMinor: 0,
       totalActualAmountMinor: 0,
-      materialSummary: { orderCount: 2, invoiceCount: 3, deliveredInvoiceCount: 0, openShortageCount: 0 },
+      materialSummary: { invoiceCount: 3, deliveredInvoiceCount: 0, openShortageCount: 0 },
     });
 
     const paid = await getApp().inject({
@@ -238,10 +230,9 @@ describe('Материалы, счета и нехватки', () => {
 
   it('не закрывает нехватку новым счётом и разрешает устранение только руководителю', async () => {
     const data = await fixture();
-    const order = await createOrder(data.stage.id, data.manager.cookie);
     const file = await uploadedInvoiceFile(data.manager.user.id);
-    const created = await createInvoice(order.id, file.id, 10_000, data.manager.cookie);
-    const invoice = created.json<MaterialInvoice>();
+    const created = await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie);
+    const invoice = created.json<StageMaterialInvoice>();
     const shortageResponse = await getApp().inject({
       method: 'POST',
       url: `/material-invoices/${invoice.id}/shortages`,
@@ -253,13 +244,13 @@ describe('Материалы, счета и нехватки', () => {
     expect(shortage.comment).toBe('Не доставлены крепёжные элементы');
 
     const secondFile = await uploadedInvoiceFile(data.manager.user.id);
-    expect((await createInvoice(order.id, secondFile.id, 20_000, data.manager.cookie)).statusCode).toBe(201);
-    const orders = await getApp().inject({
+    expect((await createInvoice(data.stage.id, secondFile.id, 20_000, data.manager.cookie)).statusCode).toBe(201);
+    const invoices = await getApp().inject({
       method: 'GET',
-      url: `/stages/${data.stage.id}/material-orders`,
+      url: `/stages/${data.stage.id}/material-invoices`,
       headers: { cookie: data.foreman.cookie },
     });
-    const current = orders.json<MaterialOrder[]>()[0]!.invoices[0]!.shortages[0]!;
+    const current = invoices.json<StageMaterialInvoice[]>()[0]!.shortages[0]!;
     expect(current.resolvedAt).toBeNull();
 
     const foremanResolve = await getApp().inject({
@@ -281,11 +272,10 @@ describe('Материалы, счета и нехватки', () => {
 
   it('отклоняет счёт без подходящего файла и скрывает чужой этап от мастера', async () => {
     const data = await fixture();
-    const order = await createOrder(data.stage.id, data.manager.cookie);
-    const missingFile = await createInvoice(order.id, 2_147_483_647, 10_000, data.manager.cookie);
+    const missingFile = await createInvoice(data.stage.id, 2_147_483_647, 10_000, data.manager.cookie);
     const missingAmount = await getApp().inject({
       method: 'POST',
-      url: `/material-orders/${order.id}/invoices`,
+      url: `/stages/${data.stage.id}/material-invoices`,
       headers: { cookie: data.manager.cookie },
       payload: { fileId: 1 },
     });
@@ -293,9 +283,44 @@ describe('Материалы, счета и нехватки', () => {
     expect(missingAmount.statusCode).toBe(400);
     const hidden = await getApp().inject({
       method: 'GET',
-      url: `/stages/${data.stage.id}/material-orders`,
+      url: `/stages/${data.stage.id}/material-invoices`,
       headers: { cookie: data.outsider.cookie },
     });
     expect(hidden.statusCode).toBe(404);
+  });
+
+  it('атомарно ограничивает этап десятью счетами', async () => {
+    const data = await fixture();
+    const invoiceFiles = await Promise.all(Array.from({ length: 11 }, () => uploadedInvoiceFile(data.manager.user.id)));
+    for (const file of invoiceFiles.slice(0, 9)) {
+      const created = await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie);
+      expect(created.statusCode, created.body).toBe(201);
+    }
+
+    const competing = await Promise.all(
+      invoiceFiles.slice(9).map((file) => createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie)),
+    );
+    expect(competing.map(({ statusCode }) => statusCode).sort()).toEqual([201, 409]);
+    expect(competing.find(({ statusCode }) => statusCode === 409)!.json()).toMatchObject({
+      code: 'invoice_limit_exceeded',
+    });
+
+    const listed = await getApp().inject({
+      method: 'GET',
+      url: `/stages/${data.stage.id}/material-invoices`,
+      headers: { cookie: data.manager.cookie },
+    });
+    expect(listed.json<StageMaterialInvoice[]>()).toHaveLength(10);
+  });
+
+  it('проверяет лимит файла счёта при привязке к этапу', async () => {
+    const data = await fixture();
+    const boundary = await uploadedInvoiceFile(data.manager.user.id, 'application/pdf', 10 * 1024 * 1024);
+    const oversized = await uploadedInvoiceFile(data.manager.user.id, 'application/pdf', 10 * 1024 * 1024 + 1);
+
+    expect((await createInvoice(data.stage.id, boundary.id, 10_000, data.manager.cookie)).statusCode).toBe(201);
+    const rejected = await createInvoice(data.stage.id, oversized.id, 10_000, data.manager.cookie);
+    expect(rejected.statusCode).toBe(413);
+    expect(rejected.json()).toMatchObject({ code: 'file_too_large' });
   });
 });

@@ -3,7 +3,7 @@ import { and, asc, desc, eq, inArray, sql, sum } from 'drizzle-orm';
 import { acceptanceItems, acceptances } from '#app/db/schema/acceptances';
 import { type ChecklistItemRow, type ChecklistRow, checklistItems, checklists } from '#app/db/schema/checklists';
 import { checklistItemPhotos, files } from '#app/db/schema/files';
-import { materialInvoices, materialOrders, materialShortages } from '#app/db/schema/materials';
+import { materialInvoices, materialShortages } from '#app/db/schema/materials';
 import { projects } from '#app/db/schema/projects';
 import { stageTypes } from '#app/db/schema/stage-types';
 import { stagePredecessors, stages } from '#app/db/schema/stages';
@@ -30,24 +30,11 @@ function canRead(actor: Actor, assigneeId: number | null): boolean {
 }
 
 async function isMaterialSupplyComplete(database: Database | Transaction, stageId: number): Promise<boolean> {
-  const orders = await database
-    .select({ id: materialOrders.id })
-    .from(materialOrders)
-    .where(eq(materialOrders.stageId, stageId));
-  if (orders.length === 0) return false;
   const invoices = await database
-    .select({ orderId: materialInvoices.orderId, deliveredAt: materialInvoices.deliveredAt })
+    .select({ deliveredAt: materialInvoices.deliveredAt })
     .from(materialInvoices)
-    .where(
-      inArray(
-        materialInvoices.orderId,
-        orders.map(({ id }) => id),
-      ),
-    );
-  return orders.every((order) => {
-    const orderInvoices = invoices.filter((invoice) => invoice.orderId === order.id);
-    return orderInvoices.length > 0 && orderInvoices.every((invoice) => invoice.deliveredAt !== null);
-  });
+    .where(eq(materialInvoices.stageId, stageId));
+  return invoices.length > 0 && invoices.every((invoice) => invoice.deliveredAt !== null);
 }
 
 async function loadChecklist(database: Database | Transaction, stageId: number): Promise<Checklist | null> {
@@ -115,27 +102,15 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
     .from(workPayments)
     .where(eq(workPayments.stageId, stageId));
   const actualWorkAmountMinor = workTotal?.amount ?? 0;
-  const orderRows = await database
-    .select({ id: materialOrders.id })
-    .from(materialOrders)
-    .where(eq(materialOrders.stageId, stageId));
-  const invoiceRows =
-    orderRows.length > 0
-      ? await database
-          .select({
-            id: materialInvoices.id,
-            amountMinor: materialInvoices.amountMinor,
-            paidAt: materialInvoices.paidAt,
-            deliveredAt: materialInvoices.deliveredAt,
-          })
-          .from(materialInvoices)
-          .where(
-            inArray(
-              materialInvoices.orderId,
-              orderRows.map(({ id }) => id),
-            ),
-          )
-      : [];
+  const invoiceRows = await database
+    .select({
+      id: materialInvoices.id,
+      amountMinor: materialInvoices.amountMinor,
+      paidAt: materialInvoices.paidAt,
+      deliveredAt: materialInvoices.deliveredAt,
+    })
+    .from(materialInvoices)
+    .where(eq(materialInvoices.stageId, stageId));
   const [openShortage] =
     invoiceRows.length > 0
       ? await database
@@ -184,7 +159,6 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
     totalPlannedAmountMinor,
     totalActualAmountMinor: actualWorkAmountMinor + actualMaterialAmountMinor,
     materialSummary: {
-      orderCount: orderRows.length,
       invoiceCount: invoiceRows.length,
       deliveredInvoiceCount: invoiceRows.filter(({ deliveredAt }) => deliveredAt !== null).length,
       openShortageCount: openShortage?.count ?? 0,

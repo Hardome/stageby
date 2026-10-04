@@ -2,7 +2,7 @@ export { acceptanceDecisionEnum, acceptanceItems, acceptances } from './acceptan
 export { auditChanges, auditEvents } from './audit.ts';
 export { checklistItems, checklists, checklistTemplateItems, checklistTemplates } from './checklists.ts';
 export { checklistItemPhotos, filePurposeEnum, fileStatusEnum, files, projectDocuments } from './files.ts';
-export { materialInvoices, materialOrders, materialShortages } from './materials.ts';
+export { materialInvoices, materialShortages } from './materials.ts';
 export { projects } from './projects.ts';
 export { sessions } from './sessions.ts';
 export { stageTypes } from './stage-types.ts';
