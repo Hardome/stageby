@@ -1,7 +1,7 @@
 import type { ProjectRow } from '#app/db/schema/projects';
 import type { Project } from '#app/generated/types.gen';
 
-export function toProject(project: ProjectRow): Project {
+export function toProject(project: ProjectRow): Omit<Project, 'status' | 'finances' | 'documentFileIds'> {
   return {
     id: project.id,
     ownerName: project.ownerName,

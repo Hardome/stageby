@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { configureStageChecklistResponseSchema, configureStageChecklistErrorSchema } from '../zod/configureStageChecklistSchema'
 
 /**
- * @description Только руководитель. Только до старта: created, assigned или supplied. Атомарно заменяет весь состав на непустой список. Создаёт новые ID пунктов, все отметки false, position начинается с 1; увеличивает версии чек-листа и этапа. expectedVersion относится к чек-листу. После старта состав фиксирован. Архив — 409 project_archived. Названия не должны состоять из пробелов.
+ * @description Только руководитель. Только до старта: created, assigned или supplied. Атомарно заменяет весь состав на непустой список. Создаёт новые ID пунктов, все отметки false, position начинается с 1; Старые пункты помечаются удалёнными, фото и история сохраняются. Увеличивает версии чек-листа и этапа. expectedVersion относится к чек-листу. После старта состав фиксирован. Архив — 409 project_archived. Названия не должны состоять из пробелов.
  * @summary Настроить контрольные точки
  * {@link /stages/:stageId/checklist}
  */

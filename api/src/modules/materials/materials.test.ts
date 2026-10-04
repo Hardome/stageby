@@ -87,7 +87,7 @@ async function fixture() {
   const response = await getApp().inject({
     method: 'POST',
     url: '/projects',
-    headers: { cookie: manager.cookie },
+    headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
     payload: {
       ownerName: `Клиент ${randomUUID()}`,
       address: 'Екатеринбург, ул. Материальная, 1',
@@ -221,6 +221,36 @@ describe('Материалы, счета и нехватки', () => {
       workBalanceAmountMinor: null,
       materialSummary: { color: 'green', isPartiallyPaid: false, isPartiallyDelivered: false },
     });
+    const card = await getApp().inject({
+      url: `/projects/${data.stage.projectId}`,
+      headers: { cookie: data.manager.cookie },
+    });
+    expect(card.statusCode, card.body).toBe(200);
+    expect(card.json()).toMatchObject({
+      finances: {
+        plannedWorkAmountMinor: null,
+        plannedMaterialAmountMinor: 100_000,
+        actualWorkAmountMinor: 70_000,
+        actualMaterialAmountMinor: 30_000,
+        totalActualAmountMinor: 100_000,
+        totalPlannedAmountMinor: null,
+        isPlanComplete: false,
+        variancePercent: null,
+      },
+    });
+    for (const url of [`/stages?projectId=${data.stage.projectId}`, `/projects/${data.stage.projectId}/stages`]) {
+      const response = await getApp().inject({ url, headers: { cookie: data.foreman.cookie } });
+      expect(response.statusCode, response.body).toBe(200);
+      expect(response.json().items).toMatchObject([
+        {
+          id: data.stage.id,
+          actualWorkAmountMinor: 70_000,
+          actualMaterialAmountMinor: 30_000,
+          totalActualAmountMinor: 100_000,
+          materialSummary: { color: 'green' },
+        },
+      ]);
+    }
     for (let index = 0; index < 2; index++) {
       const shortage = await getApp().inject({
         method: 'POST',

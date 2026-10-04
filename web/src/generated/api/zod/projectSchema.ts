@@ -5,8 +5,13 @@
 
 import * as z from 'zod'
 import { coordinatesSchema } from './coordinatesSchema'
+import { projectFinancialSummarySchema } from './projectFinancialSummarySchema'
+import { projectStatusSchema } from './projectStatusSchema'
 
 export const projectSchema = z.object({
+  status: projectStatusSchema.describe('Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.').meta({ examples: ['in_progress'] }),
+  finances: projectFinancialSummarySchema.describe('Вычисляемые финансовые итоги проекта. Все поля доступны только для чтения; при неполном плане плановые итоги и отклонение равны null.'),
+  documentFileIds: z.array(z.int().min(1).max(2147483647)).describe('Загруженные PDF проекта в порядке position ASC.'),
   id: z.int().min(1).max(2147483647).describe('Стабильный ID проекта — объекта строительства.').meta({ examples: [101] }),
   ownerName: z.string().min(1).max(255).describe('Имя клиента или собственника объекта строительства.').meta({ examples: ['Анна Смирнова'] }),
   address: z.string().min(1).max(1000).describe('Обязательный адрес объекта строительства.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10'] }),

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import fastifyCookie from '@fastify/cookie';
-import { count, eq, inArray } from 'drizzle-orm';
+import { and, count, eq, inArray } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -115,11 +115,11 @@ function payload(overrides: Partial<CreateProject> = {}): CreateProject {
   };
 }
 
-async function createProject(cookie: string, body: CreateProject) {
+async function createProject(cookie: string, body: CreateProject, key = randomUUID()) {
   const response = await getApp().inject({
     method: 'POST',
     url: '/projects',
-    headers: { cookie },
+    headers: { cookie, 'idempotency-key': key },
     payload: body,
   });
   if (response.statusCode === 201) {
@@ -132,6 +132,149 @@ async function createProject(cookie: string, body: CreateProject) {
 }
 
 describe('Composite project creation', () => {
+  it('повторяет создание без дубля и аудита, отклоняет изменение тела с тем же ключом', async () => {
+    const manager = await createIdentity();
+    const body = payload();
+    const key = randomUUID();
+    const first = await createProject(manager.cookie, body, key);
+    const repeated = await createProject(manager.cookie, body, key);
+    expect(first.statusCode, first.body).toBe(201);
+    expect(repeated.json()).toEqual(first.json());
+    const conflict = await createProject(manager.cookie, { ...body, address: 'Другой адрес' }, key);
+    expect(conflict.statusCode).toBe(409);
+    expect(conflict.json()).toMatchObject({ code: 'idempotency_conflict' });
+    const audit = await auditRecords(getApp().db, manager.user.id, 'createProject');
+    expect(audit.events).toHaveLength(1);
+  });
+
+  it('сохраняет один объект при одновременном повторе одного ключа', async () => {
+    const manager = await createIdentity();
+    const body = payload();
+    const key = randomUUID();
+    const responses = await Promise.all([
+      createProject(manager.cookie, body, key),
+      createProject(manager.cookie, body, key),
+    ]);
+    expect(responses.map((response) => response.statusCode)).toEqual([201, 201]);
+    expect(responses[0]!.json()).toEqual(responses[1]!.json());
+    expect((await auditRecords(getApp().db, manager.user.id, 'createProject')).events).toHaveLength(1);
+  });
+
+  it('требует корректный ключ создания и не сохраняет объект при отказе', async () => {
+    const manager = await createIdentity();
+    for (const key of [undefined, 'short', 'invalid key with spaces']) {
+      const response = await getApp().inject({
+        method: 'POST',
+        url: '/projects',
+        headers: { cookie: manager.cookie, ...(key === undefined ? {} : { 'idempotency-key': key }) },
+        payload: payload(),
+      });
+      expect(response.statusCode).toBe(400);
+    }
+    expect((await auditRecords(getApp().db, manager.user.id, 'createProject')).events).toHaveLength(0);
+  });
+
+  it('читает и фильтрует объекты, скрывает карточку и общие суммы от мастера', async () => {
+    const manager = await createIdentity();
+    const foreman = await createIdentity('foreman');
+    const body = payload({
+      stages: [
+        stage('foundation', { plannedWorkAmountMinor: 10_000, plannedMaterialAmountMinor: 20_000 }),
+        stage('walls'),
+      ],
+    });
+    const response = await createProject(manager.cookie, body);
+    const project = response.json<Project>();
+    const card = await getApp().inject({ url: `/projects/${project.id}`, headers: { cookie: manager.cookie } });
+    expect(card.statusCode, card.body).toBe(200);
+    expect(card.json()).toMatchObject({
+      status: 'created',
+      finances: {
+        plannedWorkAmountMinor: null,
+        plannedMaterialAmountMinor: null,
+        totalPlannedAmountMinor: null,
+        totalActualAmountMinor: 0,
+        isPlanComplete: false,
+        variancePercent: null,
+      },
+    });
+    const page = await getApp().inject({
+      url: `/projects?search=${encodeURIComponent(body.ownerName)}&limit=1&offset=0&isArchived=false`,
+      headers: { cookie: manager.cookie },
+    });
+    expect(page.statusCode, page.body).toBe(200);
+    expect(page.json()).toMatchObject({ total: 1, limit: 1, offset: 0, items: [{ id: project.id }] });
+    for (const url of ['/projects', `/projects/${project.id}`]) {
+      expect((await getApp().inject({ url, headers: { cookie: foreman.cookie } })).statusCode).toBe(403);
+    }
+    expect(
+      (await getApp().inject({ url: '/projects?isArchived=anything', headers: { cookie: manager.cookie } })).statusCode,
+    ).toBe(400);
+    expect(
+      (await getApp().inject({ url: '/projects/2147483647', headers: { cookie: manager.cookie } })).statusCode,
+    ).toBe(404);
+  });
+
+  it('изменяет реквизиты и архив, отклоняет сужение срока за границы этапов', async () => {
+    const manager = await createIdentity();
+    const project = (await createProject(manager.cookie, payload())).json<Project>();
+    const patch = (body: object) =>
+      getApp().inject({
+        method: 'PATCH',
+        url: `/projects/${project.id}`,
+        headers: { cookie: manager.cookie },
+        payload: body,
+      });
+    const invalid = await patch({ address: 'Не должно сохраниться', plannedEndDate: '2026-10-20' });
+    expect(invalid.statusCode).toBe(400);
+    expect((await getApp().db.select().from(projects).where(eq(projects.id, project.id)))[0]!.address).toBe(
+      project.address,
+    );
+    const result = await patch({
+      ownerName: 'Новое имя',
+      notes: 'Примечание',
+      coordinates: { latitude: 50, longitude: 60 },
+      isArchived: true,
+    });
+    expect(result.statusCode, result.body).toBe(200);
+    expect(result.json()).toMatchObject({
+      ownerName: 'Новое имя',
+      notes: 'Примечание',
+      coordinates: { latitude: 50, longitude: 60 },
+      isArchived: true,
+    });
+    const search = encodeURIComponent('Новое имя');
+    expect(
+      (await getApp().inject({ url: `/projects?search=${search}`, headers: { cookie: manager.cookie } })).json().total,
+    ).toBe(0);
+    expect(
+      (
+        await getApp().inject({
+          url: `/projects?search=${search}&isArchived=true`,
+          headers: { cookie: manager.cookie },
+        })
+      ).json().total,
+    ).toBe(1);
+    expect((await patch({ notes: null, isArchived: false })).json()).toMatchObject({ notes: null, isArchived: false });
+    for (const body of [{}, { notes: '  ' }, { status: 'completed' }]) expect((await patch(body)).statusCode).toBe(400);
+    expect((await auditRecords(getApp().db, manager.user.id, 'updateProject')).events).toHaveLength(2);
+  });
+
+  it('завершает объект только после выплаты всех этапов', async () => {
+    const manager = await createIdentity();
+    const project = (
+      await createProject(manager.cookie, payload({ stages: [stage('foundation'), stage('walls')] }))
+    ).json<Project>();
+    await getApp()
+      .db.update(stages)
+      .set({ status: 'paid' })
+      .where(and(eq(stages.projectId, project.id), eq(stages.stageTypeCode, 'walls')));
+    const card = () => getApp().inject({ url: `/projects/${project.id}`, headers: { cookie: manager.cookie } });
+    expect((await card()).json().status).toBe('in_progress');
+    await getApp().db.update(stages).set({ status: 'paid' }).where(eq(stages.projectId, project.id));
+    expect((await card()).json().status).toBe('completed');
+  });
+
   it('создаёт все выбранные этапы и копирует их шаблоны', async () => {
     const manager = await createIdentity();
     const body = payload({ stages: stageTypes.map((type) => stage(type)) });
@@ -322,7 +465,7 @@ describe('Composite project creation', () => {
     expect(inactive.statusCode).toBe(400);
   });
 
-  it('считает повторную отправку новым созданием проекта', async () => {
+  it('создаёт разные объекты при разных ключах идемпотентности', async () => {
     const manager = await createIdentity();
     const body = payload();
     const first = await createProject(manager.cookie, body);

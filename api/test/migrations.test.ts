@@ -212,7 +212,7 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('16');
+      expect(firstJournal.rows[0]?.count).toBe('17');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);

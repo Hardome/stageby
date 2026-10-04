@@ -7,7 +7,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { parseEnvironment } from '#app/config/env';
 import { checklistItems, checklists } from '#app/db/schema/checklists';
-import { checklistItemPhotos, files } from '#app/db/schema/files';
+import { checklistItemPhotos, files, projectDocuments } from '#app/db/schema/files';
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
@@ -18,9 +18,11 @@ import { SessionService } from '#app/modules/auth/session-service';
 import { cleanupExpiredFiles } from '#app/modules/files/cleanup';
 import { fileModule } from '#app/modules/files/index';
 import { FileRepository } from '#app/modules/files/repository';
+import { materialModule } from '#app/modules/materials/index';
 import { projectModule } from '#app/modules/projects/index';
 import { stageModule } from '#app/modules/stages/index';
 import { UserRepository } from '#app/modules/users/repository';
+import { workPaymentModule } from '#app/modules/work-payments/index';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
 import type {
@@ -105,6 +107,8 @@ const filesTestModule: FastifyPluginAsync = async (app) => {
   await app.register(fileModule, { storage, signedUrlTtlSeconds: 900, cleanupIntervalSeconds: 86_400 });
   await app.register(projectModule);
   await app.register(stageModule);
+  await app.register(materialModule);
+  await app.register(workPaymentModule);
 };
 
 const getApp = setupModuleTest(filesTestModule);
@@ -151,7 +155,7 @@ async function createFixture() {
   const response = await getApp().inject({
     method: 'POST',
     url: '/projects',
-    headers: { cookie: manager.cookie },
+    headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
     payload: {
       ownerName: `Клиент ${randomUUID()}`,
       address: 'Екатеринбург, ул. Файловая, 1',
@@ -238,6 +242,100 @@ async function insertUploadedPhotos(userId: number, count: number) {
 }
 
 describe('File uploads and checklist photos', () => {
+  it('отзывает вложенные ресурсы у прежнего мастера после замены, открывает PDF назначенному мастеру', async () => {
+    const fixture = await createFixture();
+    const replacement = await createIdentity('foreman');
+    const photo = await uploadPhoto(fixture.foreman.cookie);
+    const document = await uploadPhoto(fixture.manager.cookie, {
+      purpose: 'project_document',
+      originalName: 'project.pdf',
+      mimeType: 'application/pdf',
+    });
+    const invoiceFile = await uploadPhoto(fixture.manager.cookie, {
+      purpose: 'material_invoice',
+      originalName: 'invoice.pdf',
+      mimeType: 'application/pdf',
+    });
+    for (const uploaded of [photo, document, invoiceFile]) expect(uploaded.completeResponse?.statusCode).toBe(200);
+    const attached = await getApp().inject({
+      method: 'POST',
+      url: `/checklist/items/${fixture.item.id}/photos`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { fileId: photo.upload!.fileId },
+    });
+    expect(attached.statusCode, attached.body).toBe(201);
+    await getApp()
+      .db.insert(projectDocuments)
+      .values({ projectId: fixture.stage.projectId, fileId: document.upload!.fileId, position: 1 });
+    const invoice = await getApp().inject({
+      method: 'POST',
+      url: `/stages/${fixture.stage.id}/material-invoices`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { fileId: invoiceFile.upload!.fileId, amountMinor: 10_000, supplierName: 'Поставщик' },
+    });
+    expect(invoice.statusCode, invoice.body).toBe(201);
+    const payment = await getApp().inject({
+      method: 'POST',
+      url: `/stages/${fixture.stage.id}/work-payments`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { paidAt: '2026-10-04', amountMinor: 5000 },
+    });
+    expect(payment.statusCode, payment.body).toBe(201);
+    const download = (cookie: string, fileId: number) =>
+      getApp().inject({ url: `/files/${fileId}/content`, headers: { cookie } });
+    expect((await download(fixture.foreman.cookie, document.upload!.fileId)).statusCode).toBe(200);
+    expect((await download(replacement.cookie, document.upload!.fileId)).statusCode).toBe(404);
+    await getApp()
+      .db.update(stages)
+      .set({ status: 'in_progress', actualStartDate: '2026-10-04' })
+      .where(eq(stages.id, fixture.stage.id));
+    const changed = await getApp().inject({
+      method: 'PATCH',
+      url: `/stages/${fixture.stage.id}`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { expectedVersion: 1, assigneeId: replacement.user.id, notes: 'Новый мастер' },
+    });
+    expect(changed.statusCode, changed.body).toBe(200);
+    for (const url of [
+      `/stages/${fixture.stage.id}`,
+      `/stages/${fixture.stage.id}/checklist`,
+      `/stages/${fixture.stage.id}/material-invoices`,
+      `/checklist/items/${fixture.item.id}/photos`,
+    ]) {
+      expect((await getApp().inject({ url, headers: { cookie: fixture.foreman.cookie } })).statusCode).toBe(404);
+      expect((await getApp().inject({ url, headers: { cookie: replacement.cookie } })).statusCode).toBe(200);
+    }
+    for (const uploaded of [photo, document, invoiceFile]) {
+      expect((await download(fixture.foreman.cookie, uploaded.upload!.fileId)).statusCode).toBe(404);
+      expect((await download(replacement.cookie, uploaded.upload!.fileId)).statusCode).toBe(200);
+    }
+    const oldList = await getApp().inject({
+      url: `/stages?projectId=${fixture.stage.projectId}`,
+      headers: { cookie: fixture.foreman.cookie },
+    });
+    expect(oldList.json()).toMatchObject({ total: 0, items: [] });
+    for (const cookie of [fixture.foreman.cookie, replacement.cookie]) {
+      expect(
+        (await getApp().inject({ url: `/stages/${fixture.stage.id}/work-payments`, headers: { cookie } })).statusCode,
+      ).toBe(403);
+      expect(
+        (
+          await getApp().inject({
+            method: 'PATCH',
+            url: `/work-payments/${payment.json().id}`,
+            headers: { cookie },
+            payload: { expectedVersion: 1, amountMinor: 9000 },
+          })
+        ).statusCode,
+      ).toBe(403);
+    }
+    const payments = await getApp().inject({
+      url: `/stages/${fixture.stage.id}/work-payments`,
+      headers: { cookie: fixture.manager.cookie },
+    });
+    expect(payments.json()).toMatchObject([{ id: payment.json().id, amountMinor: 5000 }]);
+  });
+
   it('повторяет создание после сетевой ошибки и идемпотентно завершает upload', async () => {
     const manager = await createIdentity('manager');
     storage.failNextUploadRequest = true;
