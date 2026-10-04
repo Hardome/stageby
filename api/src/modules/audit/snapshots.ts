@@ -76,7 +76,6 @@ const fields: Record<string, readonly string[]> = {
     'projectId',
     'stageTypeCode',
     'position',
-    'canRunInParallel',
     'workSubtypes',
     'assigneeId',
     'inspectorId',

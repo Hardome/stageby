@@ -1035,7 +1035,7 @@ paths:
       tags:
         - Checklists
       summary: Отметить или снять выполнение пункта
-      description: Руководитель или назначенный мастер. Первый явно выполненный пункт начинает этап из assigned или supplied, устанавливает actualStartDate и возвращает предупреждение materials_incomplete при старте из assigned. Для isCompleted=true нужна хотя бы одна успешно загруженная активная фотография. Сама загрузка фотографии пункт не выполняет. itemId должен принадлежать чек-листу данного этапа, иначе 404. expectedVersion — версия всего чек-листа. false→true устанавливает completedAt и completedBy на сервере; true→false очищает их. Повтор текущего значения с актуальной версией — без изменений. Пересчитывает целочисленный прогресс и атомарно увеличивает версии чек-листа и этапа. Последний пункт непустого чек-листа автоматически переводит этап в acceptance. В rework мастер может менять только отмеченные для доработки пункты; повторное выполнение всех замечаний возвращает acceptance. Приёмка, completed и paid блокируют отметки; архив — 409 project_archived.
+      description: Руководитель или назначенный мастер. Первый явно выполненный пункт начинает этап из assigned или supplied, устанавливает actualStartDate и возвращает предупреждение materials_incomplete при старте из assigned. Если непосредственно предыдущий включённый этап ещё не completed/paid, также возвращает predecessor_incomplete, но не блокирует выполнение. Для isCompleted=true нужна хотя бы одна успешно загруженная активная фотография. Сама загрузка фотографии пункт не выполняет. itemId должен принадлежать чек-листу данного этапа, иначе 404. expectedVersion — версия всего чек-листа. false→true устанавливает completedAt и completedBy на сервере; true→false очищает их. Повтор текущего значения с актуальной версией — без изменений. Пересчитывает целочисленный прогресс и атомарно увеличивает версии чек-листа и этапа. Последний пункт непустого чек-листа автоматически переводит этап в acceptance. В rework мастер может менять только отмеченные для доработки пункты; повторное выполнение всех замечаний возвращает acceptance. Приёмка, completed и paid блокируют отметки; архив — 409 project_archived.
       requestBody:
         required: true
         content:
@@ -1299,7 +1299,7 @@ components:
         - heating
       examples:
         - foundation
-      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
+      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
     StageStatus:
       type: string
       enum:
@@ -1828,7 +1828,6 @@ components:
         - type
         - plannedStartDate
         - plannedEndDate
-        - canRunInParallel
         - assigneeId
         - plannedWorkAmountMinor
         - plannedMaterialAmountMinor
@@ -1847,11 +1846,6 @@ components:
           type: string
           format: date
           description: Плановое окончание этапа внутри срока проекта, не раньше начала этапа.
-        canRunInParallel:
-          examples:
-            - false
-          type: boolean
-          description: Может ли этап выполняться параллельно с соседними этапами.
         assigneeId:
           examples:
             - 17
@@ -2214,7 +2208,6 @@ components:
         - type
         - title
         - position
-        - canRunInParallel
         - workSubtypes
         - assignee
         - status
@@ -2284,10 +2277,10 @@ components:
             - Фундамент
             - Стены
             - Крыша
-            - Окна
+            - Окна, двери
             - Фасад
             - Электрика
-            - Отделка
+            - Штукатурка
             - Отопление
           description: Название однозначно определяется type и не меняется.
         position:
@@ -2297,11 +2290,6 @@ components:
           minimum: 1
           maximum: 8
           description: Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
-        canRunInParallel:
-          examples:
-            - false
-          type: boolean
-          description: Признак допустимости параллельного выполнения этапа.
         workSubtypes:
           description: Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.
           type: array
@@ -2734,7 +2722,8 @@ components:
             type: string
             enum:
               - materials_incomplete
-          description: Предупреждения текущего состояния. materials_incomplete означает, что работы начаты до полной комплектации материалами.
+              - predecessor_incomplete
+          description: Предупреждения текущего состояния. materials_incomplete означает, что работы начаты до полной комплектации материалами; predecessor_incomplete — что непосредственно предыдущий включённый этап ещё не выполнен. Предупреждения не блокируют работу.
         version:
           examples:
             - 1

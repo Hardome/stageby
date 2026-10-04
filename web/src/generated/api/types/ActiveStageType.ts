@@ -8,7 +8,7 @@ import type { StageTypeKey } from './StageType'
 
 export type ActiveStageType = {
     /**
-     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
+     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
      * @example foundation
      * @type string
     */

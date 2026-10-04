@@ -170,7 +170,6 @@ async function insertStage(
         projectId,
         stageTypeCode: stageInput.type,
         position,
-        canRunInParallel: stageInput.canRunInParallel,
         assigneeId: stageInput.assigneeId,
         status: stageInput.assigneeId === null ? 'created' : 'assigned',
         plannedStartDate: stageInput.plannedStartDate,

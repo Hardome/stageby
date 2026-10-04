@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
   bigint,
-  boolean,
   check,
   date,
   foreignKey,
@@ -43,7 +42,6 @@ export const stages = pgTable(
       .notNull()
       .references(() => stageTypes.code, { onDelete: 'restrict' }),
     position: integer().notNull(),
-    canRunInParallel: boolean().notNull().default(false),
     workSubtypes: varchar({ length: 255 }).array().notNull().default(sql`'{}'::varchar[]`),
     assigneeId: integer().references(() => users.id, { onDelete: 'restrict' }),
     inspectorId: integer().references(() => users.id, { onDelete: 'restrict' }),

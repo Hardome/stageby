@@ -102,7 +102,6 @@ async function createFixture(
           type: 'foundation',
           plannedStartDate: '2026-10-01',
           plannedEndDate: '2026-10-31',
-          canRunInParallel: false,
           assigneeId: options.assigned === false ? null : foreman.user.id,
           plannedWorkAmountMinor: options.plannedWorkAmountMinor ?? 10_000,
           plannedMaterialAmountMinor: null,
@@ -221,6 +220,72 @@ describe('Stage statuses and checklists', () => {
     expect(last.json<Checklist>().progressPercent).toBe(100);
     const [acceptance] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
     expect(acceptance!.status).toBe('acceptance');
+  });
+
+  it('предупреждает о непосредственно предыдущем включённом этапе, но не блокирует старт', async () => {
+    const manager = await createIdentity('manager');
+    const foreman = await createIdentity('foreman');
+    const response = await getApp().inject({
+      method: 'POST',
+      url: '/projects',
+      headers: { cookie: manager.cookie },
+      payload: {
+        ownerName: `Клиент ${randomUUID()}`,
+        address: 'Екатеринбург, ул. Последовательная, 1',
+        coordinates: { latitude: 56.84, longitude: 60.61 },
+        plannedStartDate: '2026-10-01',
+        plannedEndDate: '2026-12-31',
+        documentFileIds: [],
+        stages: [
+          {
+            type: 'foundation',
+            plannedStartDate: '2026-10-01',
+            plannedEndDate: '2026-11-15',
+            assigneeId: foreman.user.id,
+            plannedWorkAmountMinor: null,
+            plannedMaterialAmountMinor: null,
+            checklistItems: [{ title: 'Фундамент' }],
+          },
+          {
+            type: 'roof',
+            plannedStartDate: '2026-10-15',
+            plannedEndDate: '2026-12-01',
+            assigneeId: foreman.user.id,
+            plannedWorkAmountMinor: null,
+            plannedMaterialAmountMinor: null,
+            checklistItems: [{ title: 'Крыша 1' }, { title: 'Крыша 2' }],
+          },
+        ],
+      },
+    });
+    expect(response.statusCode, response.body).toBe(201);
+    const project = response.json<Project>();
+    createdProjectIds.push(project.id);
+    const projectStages = await getApp().db.select().from(stages).where(eq(stages.projectId, project.id));
+    const previousStage = projectStages.find(({ stageTypeCode }) => stageTypeCode === 'foundation')!;
+    const targetStage = projectStages.find(({ stageTypeCode }) => stageTypeCode === 'roof')!;
+    const [targetChecklist] = await getApp().db.select().from(checklists).where(eq(checklists.stageId, targetStage.id));
+    const [targetItem] = await getApp()
+      .db.select()
+      .from(checklistItems)
+      .where(eq(checklistItems.checklistId, targetChecklist!.id));
+    await attachUploadedPhoto(targetItem!.id);
+
+    const started = await updateItem(foreman.cookie, targetStage.id, targetItem!.id, 1);
+    expect(started.statusCode, started.body).toBe(200);
+    expect(started.json<Checklist>().warnings).toEqual(['materials_incomplete', 'predecessor_incomplete']);
+    expect((await getApp().db.select().from(stages).where(eq(stages.id, targetStage.id)))[0]).toMatchObject({
+      status: 'in_progress',
+    });
+
+    await getApp().db.update(stages).set({ status: 'completed' }).where(eq(stages.id, previousStage.id));
+    const afterCompletion = await getApp().inject({
+      method: 'GET',
+      url: `/stages/${targetStage.id}/checklist`,
+      headers: { cookie: foreman.cookie },
+    });
+    expect(afterCompletion.statusCode, afterCompletion.body).toBe(200);
+    expect(afterCompletion.json<Checklist>().warnings).toEqual(['materials_incomplete']);
   });
 
   it('очищает автора и время при снятии отметки', async () => {

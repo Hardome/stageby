@@ -72,7 +72,9 @@ it('updates active templates without changing individual checklists, progress or
     const oldTemplates = await temporaryPool.query<{ id: number }>('select id from checklist_templates order by id');
     const oldChecklist = await temporaryPool.query('select * from checklists order by id');
     const oldChecklistItems = await temporaryPool.query('select * from checklist_items order by id');
-    const oldStages = await temporaryPool.query('select * from stages order by id');
+    const oldStages = await temporaryPool.query(
+      `select to_jsonb(stages) - 'canRunInParallel' as value from stages order by id`,
+    );
 
     await migrate(database, { migrationsFolder });
     await migrate(database, { migrationsFolder });
@@ -81,7 +83,9 @@ it('updates active templates without changing individual checklists, progress or
     expect((await temporaryPool.query('select * from checklist_items order by id')).rows).toEqual(
       oldChecklistItems.rows,
     );
-    expect((await temporaryPool.query('select * from stages order by id')).rows).toEqual(oldStages.rows);
+    expect((await temporaryPool.query('select to_jsonb(stages) as value from stages order by id')).rows).toEqual(
+      oldStages.rows,
+    );
     expect(
       (
         await temporaryPool.query('select * from checklist_template_items where id = any($1) order by id', [

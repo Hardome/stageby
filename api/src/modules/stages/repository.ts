@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql, sum } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, sql, sum } from 'drizzle-orm';
 
 import { acceptanceItems, acceptances } from '#app/db/schema/acceptances';
 import { type ChecklistItemRow, type ChecklistRow, checklistItems, checklists } from '#app/db/schema/checklists';
@@ -47,8 +47,33 @@ async function loadChecklist(database: Database | Transaction, stageId: number):
     .where(eq(checklistItems.checklistId, row.id))
     .orderBy(asc(checklistItems.position), asc(checklistItems.id));
   const completed = items.filter(({ item }) => item.isCompleted).length;
-  const [stage] = await database.select({ status: stages.status }).from(stages).where(eq(stages.id, stageId));
+  const [stage] = await database
+    .select({
+      status: stages.status,
+      actualStartDate: stages.actualStartDate,
+      projectId: stages.projectId,
+      position: stages.position,
+    })
+    .from(stages)
+    .where(eq(stages.id, stageId));
   const materialsComplete = await isMaterialSupplyComplete(database, stageId);
+  const [previousStage] = stage
+    ? await database
+        .select({ status: stages.status })
+        .from(stages)
+        .where(and(eq(stages.projectId, stage.projectId), lt(stages.position, stage.position)))
+        .orderBy(desc(stages.position))
+        .limit(1)
+    : [];
+  const warnings: Checklist['warnings'] = [];
+  if (stage?.status === 'in_progress' && !materialsComplete) warnings.push('materials_incomplete');
+  if (
+    stage?.actualStartDate !== null &&
+    previousStage !== undefined &&
+    !['completed', 'paid'].includes(previousStage.status)
+  ) {
+    warnings.push('predecessor_incomplete');
+  }
   return {
     id: row.id,
     stageId: row.stageId,
@@ -64,7 +89,7 @@ async function loadChecklist(database: Database | Transaction, stageId: number):
         completedById === null || completedByName === null ? null : { id: completedById, fullName: completedByName },
     })),
     progressPercent: items.length === 0 ? 0 : Math.round((completed * 100) / items.length),
-    warnings: stage?.status === 'in_progress' && !materialsComplete ? ['materials_incomplete'] : [],
+    warnings,
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -144,7 +169,6 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
     type: row.stage.stageTypeCode as Stage['type'],
     title: row.stageType.title as Stage['title'],
     position: row.stage.position,
-    canRunInParallel: row.stage.canRunInParallel,
     workSubtypes: row.stage.workSubtypes,
     assignee: assignee ?? null,
     status: row.stage.status,

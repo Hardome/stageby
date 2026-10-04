@@ -8,7 +8,7 @@ import { checklistTemplateItemSchema } from './checklistTemplateItemSchema'
 import { stageTypeSchema } from './stageTypeSchema'
 
 export const activeStageTypeSchema = z.object({
-  code: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.').meta({ examples: ['foundation'] }),
+  code: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.').meta({ examples: ['foundation'] }),
   title: z.string().min(1).max(255).describe('Отображаемое название активного типа.').meta({ examples: ['Фундамент'] }),
   position: z.int().min(1).max(8).describe('Порядок типа в объекте.').meta({ examples: [1] }),
   checklistTemplateId: z.int().min(1).max(2147483647).describe('Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.').meta({ examples: [81] }),
