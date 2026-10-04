@@ -37,7 +37,6 @@ export const stageSchema = z.object({
   totalPlannedAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
   totalActualAmountMinor: moneyAmountMinorSchema.describe('Неотрицательная денежная сумма в копейках.').meta({ examples: [12500000] }),
   materialSummary: z.object({
-    orderCount: z.int().min(0).describe('Количество заказов этапа.').meta({ examples: [2] }),
     invoiceCount: z.int().min(0).describe('Количество счетов этапа.').meta({ examples: [3] }),
     deliveredInvoiceCount: z.int().min(0).describe('Количество доставленных счетов.').meta({ examples: [2] }),
     openShortageCount: z.int().min(0).describe('Количество открытых нехваток.').meta({ examples: [1] }),

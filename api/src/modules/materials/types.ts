@@ -7,6 +7,8 @@ export type Database = NodePgDatabase<typeof schema>;
 export type Actor = Pick<UserRow, 'id' | 'role'>;
 export type MaterialOperationError =
   | 'forbidden'
+  | 'file_too_large'
+  | 'invoice_limit_exceeded'
   | 'invalid_request'
   | 'invalid_transition'
   | 'not_found'

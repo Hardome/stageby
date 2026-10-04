@@ -538,10 +538,6 @@ export type Stage = {
      */
     materialSummary: {
         /**
-         * Количество заказов этапа.
-         */
-        orderCount: number;
-        /**
          * Количество счетов этапа.
          */
         invoiceCount: number;
@@ -879,119 +875,6 @@ export type MaterialShortage = {
     version: number;
 };
 
-export type MaterialInvoice = {
-    /**
-     * Идентификатор счёта.
-     */
-    id: number;
-    /**
-     * Идентификатор заказа.
-     */
-    orderId: number;
-    /**
-     * Идентификатор файла счёта.
-     */
-    fileId: number;
-    /**
-     * Поставщик или null.
-     */
-    supplierName: string | null;
-    /**
-     * Сумма счёта в копейках.
-     */
-    amountMinor: PositiveMoneyAmountMinor;
-    /**
-     * Время оплаты или null.
-     */
-    paidAt: string | null;
-    /**
-     * Автор отметки оплаты или null.
-     */
-    paidBy: UserBrief | null;
-    /**
-     * Время доставки или null.
-     */
-    deliveredAt: string | null;
-    /**
-     * Автор отметки доставки или null.
-     */
-    deliveredBy: UserBrief | null;
-    /**
-     * Сообщения о нехватке.
-     */
-    shortages: Array<MaterialShortage>;
-    /**
-     * Версия счёта.
-     */
-    version: number;
-    /**
-     * Время создания.
-     */
-    createdAt: string;
-    /**
-     * Время изменения.
-     */
-    updatedAt: string;
-};
-
-export type MaterialOrder = {
-    /**
-     * Идентификатор заказа.
-     */
-    id: number;
-    /**
-     * Идентификатор этапа.
-     */
-    stageId: number;
-    /**
-     * Время отправки или null.
-     */
-    sentAt: string | null;
-    /**
-     * Автор отправки или null.
-     */
-    sentBy: UserBrief | null;
-    /**
-     * Счета этого заказа.
-     */
-    invoices: Array<MaterialInvoice>;
-    /**
-     * Версия заказа.
-     */
-    version: number;
-    /**
-     * Время создания.
-     */
-    createdAt: string;
-    /**
-     * Время изменения.
-     */
-    updatedAt: string;
-};
-
-export type UpdateMaterialOrder = {
-    expectedVersion: ExpectedVersion;
-    /**
-     * Требуемая отметка отправки.
-     */
-    isSent: boolean;
-};
-
-export type CreateMaterialInvoice = {
-    /**
-     * Успешно загруженный файл счёта.
-     */
-    fileId: number;
-    /**
-     * Необязательное имя поставщика.
-     */
-    supplierName?: string | null;
-    /**
-     * Положительная сумма в копейках.
-     */
-    amountMinor: PositiveMoneyAmountMinor;
-};
-
 export type StageMaterialInvoice = {
     /**
      * Идентификатор счёта.
@@ -1045,6 +928,21 @@ export type StageMaterialInvoice = {
      * Время изменения в UTC.
      */
     updatedAt: string;
+};
+
+export type CreateMaterialInvoice = {
+    /**
+     * Успешно загруженный файл счёта.
+     */
+    fileId: number;
+    /**
+     * Необязательное имя поставщика.
+     */
+    supplierName?: string | null;
+    /**
+     * Положительная сумма в копейках.
+     */
+    amountMinor: PositiveMoneyAmountMinor;
 };
 
 export type UpdateMaterialInvoice = {
@@ -1541,10 +1439,6 @@ export type StageWritable = {
      */
     materialSummary: {
         /**
-         * Количество заказов этапа.
-         */
-        orderCount: number;
-        /**
          * Количество счетов этапа.
          */
         invoiceCount: number;
@@ -1720,8 +1614,6 @@ export type Offset = number;
 export type IdempotencyKey = string;
 
 export type StageId = number;
-
-export type OrderId = number;
 
 export type InvoiceId = number;
 
@@ -2836,201 +2728,6 @@ export type UpdateWorkPaymentResponses = {
 };
 
 export type UpdateWorkPaymentResponse = UpdateWorkPaymentResponses[keyof UpdateWorkPaymentResponses];
-
-export type ListMaterialOrdersData = {
-    body?: never;
-    path: {
-        stageId: number;
-    };
-    query?: never;
-    url: '/stages/{stageId}/material-orders';
-};
-
-export type ListMaterialOrdersErrors = {
-    /**
-     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
-     */
-    401: ApiError;
-    /**
-     * Роль не разрешает эту операцию или изменение поля.
-     */
-    403: ApiError;
-    /**
-     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
-     */
-    404: ApiError;
-};
-
-export type ListMaterialOrdersError = ListMaterialOrdersErrors[keyof ListMaterialOrdersErrors];
-
-export type ListMaterialOrdersResponses = {
-    /**
-     * Список заказов со счетами и нехватками
-     */
-    200: Array<MaterialOrder>;
-};
-
-export type ListMaterialOrdersResponse = ListMaterialOrdersResponses[keyof ListMaterialOrdersResponses];
-
-export type CreateMaterialOrderData = {
-    body?: never;
-    path: {
-        stageId: number;
-    };
-    query?: never;
-    url: '/stages/{stageId}/material-orders';
-};
-
-export type CreateMaterialOrderErrors = {
-    /**
-     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
-     */
-    401: ApiError;
-    /**
-     * Роль не разрешает эту операцию или изменение поля.
-     */
-    403: ApiError;
-    /**
-     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
-     */
-    404: ApiError;
-    /**
-     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
-     */
-    409: ApiError;
-};
-
-export type CreateMaterialOrderError = CreateMaterialOrderErrors[keyof CreateMaterialOrderErrors];
-
-export type CreateMaterialOrderResponses = {
-    /**
-     * Заказ создан
-     */
-    201: MaterialOrder;
-};
-
-export type CreateMaterialOrderResponse = CreateMaterialOrderResponses[keyof CreateMaterialOrderResponses];
-
-export type UpdateMaterialOrderData = {
-    body: UpdateMaterialOrder;
-    path: {
-        orderId: number;
-    };
-    query?: never;
-    url: '/material-orders/{orderId}';
-};
-
-export type UpdateMaterialOrderErrors = {
-    /**
-     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
-     */
-    400: ApiError;
-    /**
-     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
-     */
-    401: ApiError;
-    /**
-     * Роль не разрешает эту операцию или изменение поля.
-     */
-    403: ApiError;
-    /**
-     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
-     */
-    404: ApiError;
-    /**
-     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
-     */
-    409: ApiError;
-};
-
-export type UpdateMaterialOrderError = UpdateMaterialOrderErrors[keyof UpdateMaterialOrderErrors];
-
-export type UpdateMaterialOrderResponses = {
-    /**
-     * Заказ изменён
-     */
-    200: MaterialOrder;
-};
-
-export type UpdateMaterialOrderResponse = UpdateMaterialOrderResponses[keyof UpdateMaterialOrderResponses];
-
-export type ListMaterialInvoicesData = {
-    body?: never;
-    path: {
-        orderId: number;
-    };
-    query?: never;
-    url: '/material-orders/{orderId}/invoices';
-};
-
-export type ListMaterialInvoicesErrors = {
-    /**
-     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
-     */
-    401: ApiError;
-    /**
-     * Роль не разрешает эту операцию или изменение поля.
-     */
-    403: ApiError;
-    /**
-     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
-     */
-    404: ApiError;
-};
-
-export type ListMaterialInvoicesError = ListMaterialInvoicesErrors[keyof ListMaterialInvoicesErrors];
-
-export type ListMaterialInvoicesResponses = {
-    /**
-     * Список счетов
-     */
-    200: Array<MaterialInvoice>;
-};
-
-export type ListMaterialInvoicesResponse = ListMaterialInvoicesResponses[keyof ListMaterialInvoicesResponses];
-
-export type CreateMaterialInvoiceData = {
-    body: CreateMaterialInvoice;
-    path: {
-        orderId: number;
-    };
-    query?: never;
-    url: '/material-orders/{orderId}/invoices';
-};
-
-export type CreateMaterialInvoiceErrors = {
-    /**
-     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
-     */
-    400: ApiError;
-    /**
-     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
-     */
-    401: ApiError;
-    /**
-     * Роль не разрешает эту операцию или изменение поля.
-     */
-    403: ApiError;
-    /**
-     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
-     */
-    404: ApiError;
-    /**
-     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
-     */
-    409: ApiError;
-};
-
-export type CreateMaterialInvoiceError = CreateMaterialInvoiceErrors[keyof CreateMaterialInvoiceErrors];
-
-export type CreateMaterialInvoiceResponses = {
-    /**
-     * Счёт создан
-     */
-    201: MaterialInvoice;
-};
-
-export type CreateMaterialInvoiceResponse = CreateMaterialInvoiceResponses[keyof CreateMaterialInvoiceResponses];
 
 export type ListStageMaterialInvoicesData = {
     body?: never;
