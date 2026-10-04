@@ -24,6 +24,10 @@ export const createChecklistItemPhotoStatus401Schema = apiErrorSchema
 
 export type CreateChecklistItemPhotoStatus401SchemaType = z.infer<typeof createChecklistItemPhotoStatus401Schema>
 
+export const createChecklistItemPhotoStatus403Schema = apiErrorSchema
+
+export type CreateChecklistItemPhotoStatus403SchemaType = z.infer<typeof createChecklistItemPhotoStatus403Schema>
+
 export const createChecklistItemPhotoStatus404Schema = apiErrorSchema
 
 export type CreateChecklistItemPhotoStatus404SchemaType = z.infer<typeof createChecklistItemPhotoStatus404Schema>
@@ -36,7 +40,7 @@ export const createChecklistItemPhotoResponseSchema = createChecklistItemPhotoSt
 
 export type CreateChecklistItemPhotoResponseSchemaType = z.infer<typeof createChecklistItemPhotoResponseSchema>
 
-export const createChecklistItemPhotoErrorSchema = z.union([createChecklistItemPhotoStatus400Schema, createChecklistItemPhotoStatus401Schema, createChecklistItemPhotoStatus404Schema, createChecklistItemPhotoStatus409Schema])
+export const createChecklistItemPhotoErrorSchema = z.union([createChecklistItemPhotoStatus400Schema, createChecklistItemPhotoStatus401Schema, createChecklistItemPhotoStatus403Schema, createChecklistItemPhotoStatus404Schema, createChecklistItemPhotoStatus409Schema])
 
 export type CreateChecklistItemPhotoErrorSchemaType = z.infer<typeof createChecklistItemPhotoErrorSchema>
 
@@ -65,6 +69,7 @@ export const createChecklistItemPhotoResponsesSchema = z.object({
   '201': createChecklistItemPhotoStatus201Schema,
   '400': createChecklistItemPhotoStatus400Schema,
   '401': createChecklistItemPhotoStatus401Schema,
+  '403': createChecklistItemPhotoStatus403Schema,
   '404': createChecklistItemPhotoStatus404Schema,
   '409': createChecklistItemPhotoStatus409Schema,
 })

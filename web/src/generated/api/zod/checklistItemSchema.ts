@@ -13,6 +13,9 @@ export const checklistItemSchema = z.object({
   position: z.int().min(1).describe('Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.').meta({ examples: [1] }),
   isCompleted: z.boolean().describe('Признак выполнения контрольной точки.').meta({ examples: [true] }),
   requiresRework: z.boolean().describe('Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.').meta({ examples: [false] }),
+  photoCount: z.int().min(0).max(20).describe('Число активных успешно загруженных фото; 0 означает отсутствие доступных фото.').meta({ examples: [1] }),
+  photosDeletedByRetention: z.boolean().describe('У пункта есть фото, удалённые автоматической очисткой по сроку хранения. Выполнение сохраняется.').meta({ examples: [false] }),
+  reworkComment: z.string().nullable().describe('Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.').meta({ examples: [] }),
   completedAt: z.iso.datetime().nullable().describe('Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.').meta({ examples: ['2026-09-24T09:30:00Z', ] }),
   completedBy: z.union([userBriefSchema, z.null()]).describe('Пользователь, отметивший выполнение; null — пункт не выполнен. Устанавливается сервером.'),
 }).strict()

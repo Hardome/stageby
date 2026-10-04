@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { createChecklistItemPhotoResponseSchema, createChecklistItemPhotoErrorSchema } from '../zod/createChecklistItemPhotoSchema'
 
 /**
- * @description Атомарно привязывает фотографию и проверяет лимит двадцать активных фото. Пункт автоматически не выполняется.
+ * @description Атомарно привязывает фотографию и проверяет лимит двадцать активных фото. Пункт автоматически не выполняется. Повтор привязки активного файла к тому же пункту возвращает ту же запись без изменений. Мастер на приёмке имеет только доступ для чтения; при доработке меняет только возвращённые пункты. completed и paid запрещают изменения для всех ролей.
  * @summary Привязать загруженную фотографию
  * {@link /checklist/items/:itemId/photos}
  */

@@ -17,9 +17,21 @@ export type DeleteChecklistItemPhotoPath = {
     photoId: EntityId;
 };
 
+export type DeleteChecklistItemPhotoQuery = {
+    /**
+     * @description Подтверждение снятия выполнения при удалении последнего фото.
+     * @type boolean | undefined
+    */
+    confirmLastPhotoDeletion?: boolean;
+};
+
 export type DeleteChecklistItemPhotoStatus204 = unknown;
 
+export type DeleteChecklistItemPhotoStatus400 = ApiError;
+
 export type DeleteChecklistItemPhotoStatus401 = ApiError;
+
+export type DeleteChecklistItemPhotoStatus403 = ApiError;
 
 export type DeleteChecklistItemPhotoStatus404 = ApiError;
 
@@ -28,13 +40,15 @@ export type DeleteChecklistItemPhotoStatus409 = ApiError;
 export type DeleteChecklistItemPhotoOptions = {
     body?: never;
     path: DeleteChecklistItemPhotoPath;
-    query?: never;
+    query?: DeleteChecklistItemPhotoQuery;
     headers?: never;
 };
 
 export type DeleteChecklistItemPhotoResponses = {
     "204": DeleteChecklistItemPhotoStatus204;
+    "400": DeleteChecklistItemPhotoStatus400;
     "401": DeleteChecklistItemPhotoStatus401;
+    "403": DeleteChecklistItemPhotoStatus403;
     "404": DeleteChecklistItemPhotoStatus404;
     "409": DeleteChecklistItemPhotoStatus409;
 };
@@ -42,4 +56,4 @@ export type DeleteChecklistItemPhotoResponses = {
 /**
  * @description Union of all possible responses
 */
-export type DeleteChecklistItemPhotoResponse = (DeleteChecklistItemPhotoStatus204 | DeleteChecklistItemPhotoStatus401 | DeleteChecklistItemPhotoStatus404 | DeleteChecklistItemPhotoStatus409);
+export type DeleteChecklistItemPhotoResponse = (DeleteChecklistItemPhotoStatus204 | DeleteChecklistItemPhotoStatus400 | DeleteChecklistItemPhotoStatus401 | DeleteChecklistItemPhotoStatus403 | DeleteChecklistItemPhotoStatus404 | DeleteChecklistItemPhotoStatus409);

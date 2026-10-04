@@ -176,6 +176,7 @@ export type RouteHandlers = {
     }>;
     deleteChecklistItemPhoto: RouteHandler<{
         Params: DeleteChecklistItemPhotoData['path'];
+        Querystring?: DeleteChecklistItemPhotoData['query'];
         Reply: DeleteChecklistItemPhotoErrors & DeleteChecklistItemPhotoResponses;
     }>;
     getDashboardSummary: RouteHandler<{

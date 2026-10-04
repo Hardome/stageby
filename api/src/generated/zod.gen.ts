@@ -56,6 +56,7 @@ export const zApiErrorCode = z.enum([
     'upload_incomplete',
     'upload_expired',
     'photo_limit_exceeded',
+    'photo_deletion_confirmation_required',
     'invoice_limit_exceeded',
     'rate_limited'
 ]);
@@ -390,6 +391,9 @@ export const zChecklistItem = z.object({
     position: z.int().gte(1),
     isCompleted: z.boolean(),
     requiresRework: z.boolean(),
+    photoCount: z.int().gte(0).lte(20),
+    photosDeletedByRetention: z.boolean(),
+    reworkComment: z.string().nullable(),
     completedAt: z.iso.datetime().nullable(),
     completedBy: zUserBrief.nullable()
 });
@@ -1196,6 +1200,10 @@ export const zCreateChecklistItemPhotoResponse = zChecklistItemPhoto;
 
 export const zDeleteChecklistItemPhotoPath = z.object({
     photoId: zEntityId
+});
+
+export const zDeleteChecklistItemPhotoQuery = z.object({
+    confirmLastPhotoDeletion: z.boolean().optional()
 });
 
 /**

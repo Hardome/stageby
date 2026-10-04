@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, integer, pgEnum, pgTable, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { boolean, check, index, integer, pgEnum, pgTable, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 import { checklistItems } from './checklists.ts';
 import { projects } from './projects.ts';
@@ -81,6 +81,7 @@ export const checklistItemPhotos = pgTable(
     position: integer().notNull(),
     deletedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    deletedByRetention: boolean().notNull().default(false),
   },
   (table) => [
     uniqueIndex('checklist_item_photos_file_unique').on(table.fileId),

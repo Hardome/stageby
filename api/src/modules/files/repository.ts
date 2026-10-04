@@ -26,6 +26,15 @@ function canReadStage(actor: Actor, assigneeId: number | null): boolean {
   return actor.role === 'manager' || assigneeId === actor.id;
 }
 
+function canAttachFile(file: FileRow | undefined, actor: Actor): boolean {
+  return (
+    file !== undefined &&
+    file.status === 'uploaded' &&
+    file.purpose === 'checklist_photo' &&
+    (actor.role === 'manager' || file.uploadedByUserId === actor.id)
+  );
+}
+
 function nextPhotoPosition(positions: number[]): number | null {
   const occupied = new Set(positions);
   for (let position = 1; position <= 20; position += 1) {
@@ -54,6 +63,15 @@ async function loadPhoto(database: Database | Transaction, photoId: number): Pro
   return photo?.uploadedAt ? toChecklistItemPhoto({ ...photo, uploadedAt: photo.uploadedAt }) : null;
 }
 
+async function repeatPhotoAttachment(
+  transaction: Transaction,
+  photo: typeof checklistItemPhotos.$inferSelect,
+  itemId: number,
+): Promise<FileOperationResult<ChecklistItemPhoto>> {
+  if (photo.checklistItemId !== itemId || photo.deletedAt !== null) return { status: 'invalid_state' };
+  return { status: 'ok', value: (await loadPhoto(transaction, photo.id))! };
+}
+
 async function loadItemContext(database: Database | Transaction, itemId: number) {
   const [context] = await database
     .select({ item: checklistItems, checklist: checklists, stage: stages, projectIsArchived: projects.isArchived })
@@ -63,6 +81,30 @@ async function loadItemContext(database: Database | Transaction, itemId: number)
     .innerJoin(projects, eq(stages.projectId, projects.id))
     .where(and(eq(checklistItems.id, itemId), isNull(checklistItems.deletedAt)));
   return context;
+}
+
+async function lockItemContext(transaction: Transaction, itemId: number) {
+  const initial = await loadItemContext(transaction, itemId);
+  if (!initial) return;
+  // Use the same lock order as checklist completion and acceptance.
+  await transaction
+    .select({ id: stages.id })
+    .from(stages)
+    .innerJoin(projects, eq(stages.projectId, projects.id))
+    .where(eq(stages.id, initial.stage.id))
+    .for('update');
+  await transaction.select().from(checklists).where(eq(checklists.id, initial.checklist.id)).for('update');
+  return loadItemContext(transaction, itemId);
+}
+
+function photoMutationError(context: NonNullable<Awaited<ReturnType<typeof loadItemContext>>>, actor: Actor) {
+  if (context.projectIsArchived) return 'project_archived';
+  if (['completed', 'paid'].includes(context.stage.status)) return 'invalid_state';
+  if (actor.role === 'foreman') {
+    if (!['assigned', 'supplied', 'in_progress', 'rework'].includes(context.stage.status)) return 'invalid_state';
+    if (context.stage.status === 'rework' && !context.item.requiresRework) return 'forbidden';
+  }
+  return null;
 }
 
 function getCompletionPrecondition(
@@ -116,6 +158,7 @@ async function clearCompletedItemAfterLastPhoto(
         eq(checklistItemPhotos.checklistItemId, context.item.id),
         isNull(checklistItemPhotos.deletedAt),
         sql`${checklistItemPhotos.id} <> ${removedPhotoId}`,
+        sql`exists(select 1 from files f where f.id = ${checklistItemPhotos.fileId} and f.status = 'uploaded')`,
       ),
     )
     .limit(1);
@@ -132,14 +175,16 @@ async function clearCompletedItemAfterLastPhoto(
       .set({ version: sql`${checklists.version} + 1`, updatedAt: now })
       .where(eq(checklists.id, context.checklist.id)),
   );
-  if (context.stage.status === 'acceptance') {
-    await audit.mutate(stages, eq(stages.id, context.stage.id), () =>
-      transaction
-        .update(stages)
-        .set({ status: 'in_progress', version: sql`${stages.version} + 1`, updatedAt: now })
-        .where(eq(stages.id, context.stage.id)),
-    );
-  }
+  await audit.mutate(stages, eq(stages.id, context.stage.id), () =>
+    transaction
+      .update(stages)
+      .set({
+        status: context.stage.status === 'acceptance' ? 'in_progress' : context.stage.status,
+        version: sql`${stages.version} + 1`,
+        updatedAt: now,
+      })
+      .where(eq(stages.id, context.stage.id)),
+  );
 }
 
 export class FileRepository {
@@ -325,24 +370,17 @@ export class FileRepository {
     context: AuditContext = { source: 'system' },
   ): Promise<FileOperationResult<ChecklistItemPhoto>> {
     return auditedTransaction(this.#database, context, 'createChecklistItemPhoto', async (transaction, audit) => {
-      await transaction.execute(sql`select pg_advisory_xact_lock(${itemId})`);
-      const context = await loadItemContext(transaction, itemId);
+      const context = await lockItemContext(transaction, itemId);
       if (!context || !canReadStage(actor, context.stage.assigneeId)) return { status: 'not_found' };
-      if (context.projectIsArchived) return { status: 'project_archived' };
+      const mutationError = photoMutationError(context, actor);
+      if (mutationError) return { status: mutationError };
       const [file] = await transaction.select().from(files).where(eq(files.id, fileId)).for('update');
-      if (
-        !file ||
-        file.status !== 'uploaded' ||
-        file.purpose !== 'checklist_photo' ||
-        (actor.role !== 'manager' && file.uploadedByUserId !== actor.id)
-      ) {
-        return { status: 'not_found' };
-      }
+      if (!canAttachFile(file, actor)) return { status: 'not_found' };
       const [existing] = await transaction
-        .select({ id: checklistItemPhotos.id })
+        .select()
         .from(checklistItemPhotos)
         .where(eq(checklistItemPhotos.fileId, fileId));
-      if (existing) return { status: 'invalid_state' };
+      if (existing) return repeatPhotoAttachment(transaction, existing, itemId);
       const active = await transaction
         .select({ position: checklistItemPhotos.position })
         .from(checklistItemPhotos)
@@ -362,8 +400,17 @@ export class FileRepository {
     photoId: number,
     actor: Actor,
     context: AuditContext = { source: 'system' },
+    confirmLastPhotoDeletion = false,
   ): Promise<FileOperationResult<void>> {
     return auditedTransaction(this.#database, context, 'deleteChecklistItemPhoto', async (transaction, audit) => {
+      const [initial] = await transaction.select().from(checklistItemPhotos).where(eq(checklistItemPhotos.id, photoId));
+      if (!initial) return { status: 'not_found' };
+      const context = await lockItemContext(transaction, initial.checklistItemId);
+      if (!context || !canReadStage(actor, context.stage.assigneeId)) return { status: 'not_found' };
+      const mutationError = photoMutationError(context, actor);
+      if (mutationError) return { status: mutationError };
+      // Cleanup locks the file before its attachment; use the same order here.
+      await transaction.select().from(files).where(eq(files.id, initial.fileId)).for('update');
       const [photo] = await transaction
         .select({ photo: checklistItemPhotos, file: files })
         .from(checklistItemPhotos)
@@ -371,11 +418,22 @@ export class FileRepository {
         .where(and(eq(checklistItemPhotos.id, photoId), isNull(checklistItemPhotos.deletedAt)))
         .for('update');
       if (!photo) return { status: 'not_found' };
-      await transaction.execute(sql`select pg_advisory_xact_lock(${photo.photo.checklistItemId})`);
-      const context = await loadItemContext(transaction, photo.photo.checklistItemId);
-      if (!context || !canReadStage(actor, context.stage.assigneeId)) return { status: 'not_found' };
-      if (context.projectIsArchived) return { status: 'project_archived' };
-      if (context.stage.status === 'completed' || context.stage.status === 'paid') return { status: 'invalid_state' };
+      if (context.item.isCompleted && !confirmLastPhotoDeletion) {
+        const remaining = await transaction
+          .select({ id: checklistItemPhotos.id })
+          .from(checklistItemPhotos)
+          .innerJoin(files, eq(checklistItemPhotos.fileId, files.id))
+          .where(
+            and(
+              eq(checklistItemPhotos.checklistItemId, context.item.id),
+              isNull(checklistItemPhotos.deletedAt),
+              eq(files.status, 'uploaded'),
+              sql`${checklistItemPhotos.id} <> ${photoId}`,
+            ),
+          )
+          .limit(1);
+        if (remaining.length === 0) return { status: 'photo_deletion_confirmation_required' };
+      }
       const now = new Date();
       await audit.mutate(checklistItemPhotos, eq(checklistItemPhotos.id, photoId), () =>
         transaction.update(checklistItemPhotos).set({ deletedAt: now }).where(eq(checklistItemPhotos.id, photoId)),
@@ -403,17 +461,17 @@ export class FileRepository {
   }
 
   async deleteExpiredFile(fileId: number, now: Date, context: AuditContext = { source: 'system' }): Promise<void> {
-    const [file] = await this.#database.select().from(files).where(eq(files.id, fileId));
-    if (!file) return;
-    const isExpired =
-      (file.status === 'pending' && file.uploadExpiresAt <= now) ||
-      (file.status === 'uploaded' && file.expiresAt !== null && file.expiresAt <= now && file.deletedAt === null);
-    if (!isExpired) return;
-    await this.#storage.delete(file.storageKey);
     await auditedTransaction(this.#database, context, 'cleanupExpiredFile', async (transaction, audit) => {
       const [locked] = await transaction.select().from(files).where(eq(files.id, fileId)).for('update');
       if (!locked) return;
-      if (locked.status !== 'pending' && (locked.status !== 'uploaded' || locked.deletedAt !== null)) return;
+      const isExpired =
+        (locked.status === 'pending' && locked.uploadExpiresAt <= now) ||
+        (locked.status === 'uploaded' &&
+          locked.expiresAt !== null &&
+          locked.expiresAt <= now &&
+          locked.deletedAt === null);
+      if (!isExpired) return;
+      await this.#storage.delete(locked.storageKey);
       await audit.mutate(files, eq(files.id, fileId), () =>
         transaction
           .update(files)
@@ -426,7 +484,7 @@ export class FileRepository {
         () =>
           transaction
             .update(checklistItemPhotos)
-            .set({ deletedAt: now })
+            .set({ deletedAt: now, deletedByRetention: true })
             .where(and(eq(checklistItemPhotos.fileId, fileId), isNull(checklistItemPhotos.deletedAt))),
       );
     });

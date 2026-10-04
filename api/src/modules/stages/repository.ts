@@ -52,7 +52,21 @@ async function loadChecklist(database: Database | Transaction, stageId: number):
   const [row] = await database.select().from(checklists).where(eq(checklists.stageId, stageId));
   if (!row) return null;
   const items = await database
-    .select({ item: checklistItems, completedById: users.id, completedByName: users.fullName })
+    .select({
+      item: checklistItems,
+      completedById: users.id,
+      completedByName: users.fullName,
+      photoCount: sql<number>`(select count(*) from checklist_item_photos p join files f on f.id = p."fileId"
+        where p."checklistItemId" = checklist_items.id and p."deletedAt" is null and f.status = 'uploaded')`.mapWith(
+        Number,
+      ),
+      photosDeletedByRetention: sql<boolean>`exists(select 1 from checklist_item_photos p
+        where p."checklistItemId" = checklist_items.id and p."deletedByRetention")`,
+      reworkComment: sql<
+        string | null
+      >`(select a.comment from acceptances a join acceptance_items ai on ai."acceptanceId" = a.id
+        where ai."checklistItemId" = checklist_items.id and a.decision = 'rejected' order by a."decidedAt" desc, a.id desc limit 1)`,
+    })
     .from(checklistItems)
     .leftJoin(users, eq(checklistItems.completedByUserId, users.id))
     .where(and(eq(checklistItems.checklistId, row.id), isNull(checklistItems.deletedAt)))
@@ -88,17 +102,22 @@ async function loadChecklist(database: Database | Transaction, stageId: number):
   return {
     id: row.id,
     stageId: row.stageId,
-    items: items.map(({ item, completedById, completedByName }) => ({
-      id: item.id,
-      title: item.title,
-      photoHint: item.photoHint,
-      position: item.position,
-      isCompleted: item.isCompleted,
-      requiresRework: item.requiresRework,
-      completedAt: item.completedAt?.toISOString() ?? null,
-      completedBy:
-        completedById === null || completedByName === null ? null : { id: completedById, fullName: completedByName },
-    })),
+    items: items.map(
+      ({ item, completedById, completedByName, photoCount, photosDeletedByRetention, reworkComment }) => ({
+        id: item.id,
+        title: item.title,
+        photoHint: item.photoHint,
+        position: item.position,
+        isCompleted: item.isCompleted,
+        requiresRework: item.requiresRework,
+        photoCount,
+        photosDeletedByRetention,
+        reworkComment,
+        completedAt: item.completedAt?.toISOString() ?? null,
+        completedBy:
+          completedById === null || completedByName === null ? null : { id: completedById, fullName: completedByName },
+      }),
+    ),
     progressPercent: items.length === 0 ? 0 : Math.round((completed * 100) / items.length),
     warnings,
     version: row.version,
@@ -274,16 +293,21 @@ function getChecklistUpdateError(
   return null;
 }
 
-async function hasUploadedPhoto(transaction: Transaction, itemId: number): Promise<boolean> {
+async function hasUploadedPhoto(transaction: Transaction, item: ChecklistItemRow): Promise<boolean> {
   const [photo] = await transaction
     .select({ id: checklistItemPhotos.id })
     .from(checklistItemPhotos)
     .innerJoin(files, eq(checklistItemPhotos.fileId, files.id))
     .where(
       and(
-        eq(checklistItemPhotos.checklistItemId, itemId),
+        eq(checklistItemPhotos.checklistItemId, item.id),
         eq(files.status, 'uploaded'),
         sql`${checklistItemPhotos.deletedAt} is null`,
+        item.requiresRework
+          ? sql`${files.uploadedAt} > (select max(a."decidedAt") from acceptances a
+              join acceptance_items ai on ai."acceptanceId" = a.id
+              where ai."checklistItemId" = ${item.id} and a.decision = 'rejected')`
+          : undefined,
       ),
     )
     .limit(1);
@@ -603,7 +627,7 @@ export class StageRepository {
       if (item.isCompleted === input.isCompleted) {
         return { status: 'ok', value: (await loadChecklist(transaction, stageId))! };
       }
-      if (input.isCompleted && !(await hasUploadedPhoto(transaction, itemId))) return { status: 'photo_required' };
+      if (input.isCompleted && !(await hasUploadedPhoto(transaction, item))) return { status: 'photo_required' };
       await applyChecklistItemUpdate(transaction, locked, checklist, itemId, input, actor, audit);
       return { status: 'ok', value: (await loadChecklist(transaction, stageId))! };
     });
@@ -644,6 +668,7 @@ export class StageRepository {
           .values({
             stageId,
             decision: 'rejected',
+            decidedAt: new Date(),
             comment: input.comment,
             correctionDueDate,
             decidedByUserId: actor.id,

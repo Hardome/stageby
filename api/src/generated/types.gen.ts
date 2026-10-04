@@ -22,7 +22,7 @@ export type StageStatus = 'created' | 'assigned' | 'supplied' | 'in_progress' | 
 /**
  * Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.
  */
-export type ApiErrorCode = 'invalid_request' | 'unauthenticated' | 'forbidden' | 'not_found' | 'version_conflict' | 'invalid_transition' | 'idempotency_conflict' | 'login_taken' | 'last_manager' | 'user_in_use' | 'project_archived' | 'unsupported_mime_type' | 'file_too_large' | 'checksum_mismatch' | 'upload_incomplete' | 'upload_expired' | 'photo_limit_exceeded' | 'invoice_limit_exceeded' | 'rate_limited';
+export type ApiErrorCode = 'invalid_request' | 'unauthenticated' | 'forbidden' | 'not_found' | 'version_conflict' | 'invalid_transition' | 'idempotency_conflict' | 'login_taken' | 'last_manager' | 'user_in_use' | 'project_archived' | 'unsupported_mime_type' | 'file_too_large' | 'checksum_mismatch' | 'upload_incomplete' | 'upload_expired' | 'photo_limit_exceeded' | 'photo_deletion_confirmation_required' | 'invoice_limit_exceeded' | 'rate_limited';
 
 /**
  * manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
@@ -778,6 +778,18 @@ export type ChecklistItem = {
      * Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.
      */
     requiresRework: boolean;
+    /**
+     * Число активных успешно загруженных фото; 0 означает отсутствие доступных фото.
+     */
+    photoCount: number;
+    /**
+     * У пункта есть фото, удалённые автоматической очисткой по сроку хранения. Выполнение сохраняется.
+     */
+    photosDeletedByRetention: boolean;
+    /**
+     * Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.
+     */
+    reworkComment: string | null;
     /**
      * Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.
      */
@@ -3350,6 +3362,10 @@ export type CreateChecklistItemPhotoErrors = {
      */
     401: ApiError;
     /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
      * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
@@ -3375,15 +3391,28 @@ export type DeleteChecklistItemPhotoData = {
     path: {
         photoId: EntityId;
     };
-    query?: never;
+    query?: {
+        /**
+         * Подтверждение снятия выполнения при удалении последнего фото.
+         */
+        confirmLastPhotoDeletion?: boolean;
+    };
     url: '/checklist/photos/{photoId}';
 };
 
 export type DeleteChecklistItemPhotoErrors = {
     /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
      * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
      */
     401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
     /**
      * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
