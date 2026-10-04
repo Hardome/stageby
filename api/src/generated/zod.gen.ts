@@ -129,6 +129,45 @@ export const zSession = z.object({
 });
 
 /**
+ * Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.
+ */
+export const zProjectStatus = z.enum([
+    'created',
+    'in_progress',
+    'acceptance',
+    'completed'
+]);
+
+/**
+ * Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
+ */
+export const zPlannedMoneyAmountMinor = z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }).nullable();
+
+/**
+ * Неотрицательная денежная сумма в копейках.
+ */
+export const zMoneyAmountMinor = z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' });
+
+/**
+ * Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
+ */
+export const zVariancePercent = z.number().nullable();
+
+/**
+ * Вычисляемые финансовые итоги проекта. Все поля доступны только для чтения; при неполном плане плановые итоги и отклонение равны null.
+ */
+export const zProjectFinancialSummary = z.object({
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor.readonly(),
+    actualWorkAmountMinor: zMoneyAmountMinor.readonly(),
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.readonly(),
+    actualMaterialAmountMinor: zMoneyAmountMinor.readonly(),
+    totalPlannedAmountMinor: zPlannedMoneyAmountMinor.readonly(),
+    totalActualAmountMinor: zMoneyAmountMinor.readonly(),
+    isPlanComplete: z.boolean().readonly(),
+    variancePercent: zVariancePercent.readonly()
+});
+
+/**
  * Географические координаты объекта в десятичных градусах.
  */
 export const zCoordinates = z.object({
@@ -137,6 +176,9 @@ export const zCoordinates = z.object({
 });
 
 export const zProject = z.object({
+    status: zProjectStatus,
+    finances: zProjectFinancialSummary,
+    documentFileIds: z.array(z.int().gte(1).lte(2147483647)),
     id: z.int().gte(1).lte(2147483647),
     ownerName: z.string().min(1).max(255),
     address: z.string().min(1).max(1000),
@@ -158,11 +200,6 @@ export const zProjectPage = z.object({
     limit: z.int().gte(1).lte(100),
     offset: z.int().gte(0)
 });
-
-/**
- * Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
- */
-export const zPlannedMoneyAmountMinor = z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }).nullable();
 
 export const zCreateProjectChecklistItem = z.object({
     title: z.string().min(1).max(500),
@@ -228,11 +265,6 @@ export const zUserBrief = z.object({
     id: z.int().gte(1).lte(2147483647),
     fullName: z.string().min(1).max(255)
 });
-
-/**
- * Неотрицательная денежная сумма в копейках.
- */
-export const zMoneyAmountMinor = z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' });
 
 /**
  * Вычисляемая разница в копейках: положительное значение — остаток, отрицательное — переплата, null — план не задан.
@@ -326,7 +358,6 @@ export const zUpdateStage = z.object({
     workSubtypes: z.array(z.string().min(1).max(255)).max(30).optional(),
     plannedStartDate: z.iso.date().optional(),
     plannedEndDate: z.iso.date().optional(),
-    predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7).optional(),
     notes: z.string().min(1).max(5000).nullish()
 });
 
@@ -562,21 +593,6 @@ export const zDashboardSummary = z.object({
 });
 
 /**
- * Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.
- */
-export const zProjectStatus = z.enum([
-    'created',
-    'in_progress',
-    'acceptance',
-    'completed'
-]);
-
-/**
- * Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
- */
-export const zVariancePercent = z.number().nullable();
-
-/**
  * Вычисляемые финансовые итоги одного этапа. Все поля доступны только для чтения.
  */
 export const zStageFinancialSummary = z.object({
@@ -631,6 +647,31 @@ export const zCreateUserWritable = z.object({
 export const zLoginRequestWritable = z.object({
     login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/),
     password: z.string().min(1).max(128)
+});
+
+export const zProjectWritable = z.object({
+    status: zProjectStatus,
+    documentFileIds: z.array(z.int().gte(1).lte(2147483647)),
+    id: z.int().gte(1).lte(2147483647),
+    ownerName: z.string().min(1).max(255),
+    address: z.string().min(1).max(1000),
+    coordinates: zCoordinates,
+    cadastralNumber: z.string().min(1).max(100).nullable(),
+    houseDesign: z.string().min(1).max(255).nullable(),
+    contractLabel: z.string().min(1).max(255).nullable(),
+    plannedStartDate: z.iso.date(),
+    plannedEndDate: z.iso.date(),
+    notes: z.string().min(1).max(5000).nullable(),
+    isArchived: z.boolean(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zProjectPageWritable = z.object({
+    items: z.array(zProjectWritable),
+    total: z.int().gte(0),
+    limit: z.int().gte(1).lte(100),
+    offset: z.int().gte(0)
 });
 
 export const zStageWritable = z.object({

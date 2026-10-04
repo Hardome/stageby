@@ -69,11 +69,6 @@ export type UpdateStage = {
     */
     plannedEndDate?: string;
     /**
-     * @description ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.
-     * @type array | undefined
-    */
-    predecessorStageIds?: number[];
-    /**
      * @description Новые примечания к этапу; null очищает сохранённые примечания.
      * @minLength 1
      * @maxLength 5000

@@ -81,7 +81,7 @@ it('updates active templates without changing individual checklists, progress or
 
     expect((await temporaryPool.query('select * from checklists order by id')).rows).toEqual(oldChecklist.rows);
     expect((await temporaryPool.query('select * from checklist_items order by id')).rows).toEqual(
-      oldChecklistItems.rows,
+      oldChecklistItems.rows.map((row) => ({ ...row, deletedAt: null })),
     );
     expect((await temporaryPool.query('select to_jsonb(stages) as value from stages order by id')).rows).toEqual(
       oldStages.rows,

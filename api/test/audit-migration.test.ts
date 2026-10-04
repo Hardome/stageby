@@ -45,17 +45,13 @@ it('preserves existing data without inventing history and audits the first manag
     temporaryPool = new Pool({ connectionString: temporaryUrl.toString() });
     const database = drizzle({ client: temporaryPool, schema });
     await migrate(database, { migrationsFolder: folder });
-    const [project] = await database
-      .insert(schema.projects)
-      .values({
-        ownerName: 'Existing client',
-        address: 'Existing address',
-        latitude: 56.84,
-        longitude: 60.61,
-        plannedStartDate: '2026-01-01',
-        plannedEndDate: '2026-12-31',
-      })
-      .returning();
+    // The fixture predates new service columns; use the schema that existed at that revision.
+    const {
+      rows: [project],
+    } = await temporaryPool.query<{ id: number }>(`
+      insert into projects ("ownerName", address, latitude, longitude, "plannedStartDate", "plannedEndDate")
+      values ('Existing client', 'Existing address', 56.84, 60.61, '2026-01-01', '2026-12-31') returning *
+    `);
     const [stage] = await database
       .insert(schema.stages)
       .values({
@@ -67,7 +63,8 @@ it('preserves existing data without inventing history and audits the first manag
       })
       .returning();
     await migrate(database, { migrationsFolder });
-    expect(await database.select().from(schema.projects)).toEqual([project]);
+    const { rows: currentProjects } = await temporaryPool.query('select * from projects');
+    expect(currentProjects).toEqual([{ ...project, creationIdempotencyKey: null, creationFingerprint: null }]);
     expect(await database.select().from(schema.stages)).toEqual([stage]);
     expect(await database.select().from(auditEvents)).toEqual([]);
     expect(await database.select().from(auditChanges)).toEqual([]);

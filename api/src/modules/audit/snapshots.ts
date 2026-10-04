@@ -13,6 +13,7 @@ const fields: Record<string, readonly string[]> = {
     'requiresRework',
     'completedAt',
     'completedByUserId',
+    'deletedAt',
   ],
   files: [
     'id',
