@@ -22,6 +22,7 @@ export function listMaterialInvoicesQueryOptions({ path }: ListMaterialInvoicesO
 
 /**
  * @summary Счета заказа
+ * @deprecated
  * {@link /material-orders/:orderId/invoices}
  */
 export function useListMaterialInvoices<TData = ListMaterialInvoicesStatus200, TQueryData = ListMaterialInvoicesStatus200, TQueryKey extends QueryKey = ListMaterialInvoicesQueryKey>({ path }: { path: ListMaterialInvoicesOptions['path'] | (() => ListMaterialInvoicesOptions['path']) }, options: {

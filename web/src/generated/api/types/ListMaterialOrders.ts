@@ -23,6 +23,10 @@ export type ListMaterialOrdersStatus403 = ApiError;
 
 export type ListMaterialOrdersStatus404 = ApiError;
 
+/**
+ * @deprecated
+ * @type object
+*/
 export type ListMaterialOrdersOptions = {
     body?: never;
     path: ListMaterialOrdersPath;

@@ -19,7 +19,7 @@ export function createFileUploadMutationOptions<TContext = unknown>(config: Part
 }
 
 /**
- * @description Создаёт запись файла и возвращает короткоживущие подписанные данные для прямой загрузки в закрытое S3-совместимое хранилище.
+ * @description Создаёт запись файла и возвращает короткоживущие подписанные данные для прямой загрузки в закрытое S3-совместимое хранилище. Лимит зависит от purpose — PDF проекта до 50 МБ, счёт PDF/JPEG до 10 МиБ (10485760 байт), фото JPEG/PNG/HEIC до 20 МБ. Превышение возвращает 413 file_too_large.
  * @summary Создать upload-сессию
  * {@link /file-uploads}
  */

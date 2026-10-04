@@ -19,7 +19,7 @@ export function completeFileUploadMutationOptions<TContext = unknown>(config: Pa
 }
 
 /**
- * @description Проверяет объект в storage по MIME, размеру и SHA-256. Повтор с тем же Idempotency-Key и телом возвращает тот же результат.
+ * @description Проверяет объект в storage по MIME, фактическому размеру и SHA-256, повторно применяя лимит purpose. Для material_invoice предел равен 10485760 байт; лимиты project_document и checklist_photo не меняются. Повтор с тем же Idempotency-Key и телом возвращает тот же результат.
  * @summary Подтвердить загрузку файла
  * {@link /file-uploads/:uploadId/completion}
  */

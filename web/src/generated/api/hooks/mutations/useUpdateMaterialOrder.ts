@@ -21,6 +21,7 @@ export function updateMaterialOrderMutationOptions<TContext = unknown>(config: P
 /**
  * @description Только руководитель. Дата и автор отправки фиксируются сервером.
  * @summary Изменить отправку заказа
+ * @deprecated
  * {@link /material-orders/:orderId}
  */
 export function useUpdateMaterialOrder<TContext>(options: {

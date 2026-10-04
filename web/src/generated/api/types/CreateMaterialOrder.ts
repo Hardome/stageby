@@ -25,6 +25,10 @@ export type CreateMaterialOrderStatus404 = ApiError;
 
 export type CreateMaterialOrderStatus409 = ApiError;
 
+/**
+ * @deprecated
+ * @type object
+*/
 export type CreateMaterialOrderOptions = {
     body?: never;
     path: CreateMaterialOrderPath;

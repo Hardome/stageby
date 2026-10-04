@@ -3,6 +3,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/StageId'
     get:
+      deprecated: true
       operationId: listMaterialOrders
       tags: [Materials]
       summary: Заказы материалов этапа
@@ -15,6 +16,7 @@ paths:
         '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
         '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
     post:
+      deprecated: true
       operationId: createMaterialOrder
       tags: [Materials]
       summary: Создать заказ материалов
@@ -29,6 +31,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrderId'
     patch:
+      deprecated: true
       operationId: updateMaterialOrder
       tags: [Materials]
       summary: Изменить отправку заказа
@@ -45,6 +48,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrderId'
     get:
+      deprecated: true
       operationId: listMaterialInvoices
       tags: [Materials]
       summary: Счета заказа
@@ -54,6 +58,7 @@ paths:
         '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
         '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
     post:
+      deprecated: true
       operationId: createMaterialInvoice
       tags: [Materials]
       summary: Добавить счёт к заказу
@@ -66,6 +71,48 @@ paths:
         '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
         '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
         '409': { $ref: ../common/common.yaml#/components/responses/ApiConflict }
+  /stages/{stageId}/material-invoices:
+    parameters:
+      - $ref: '#/components/parameters/StageId'
+    get:
+      operationId: listStageMaterialInvoices
+      tags: [Materials]
+      summary: Счета материалов этапа
+      description: Руководитель видит счета любого этапа, мастер — только назначенного ему. Сортировка createdAt ASC, id ASC. Заказ материалов пользователем не создаётся.
+      responses:
+        '200':
+          description: До десяти счетов этапа со сведениями об оплате, доставке и нехватках.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 10
+                items: { $ref: '#/components/schemas/StageMaterialInvoice' }
+        '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
+        '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
+        '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
+    post:
+      operationId: createStageMaterialInvoice
+      tags: [Materials]
+      summary: Добавить счёт материалов к этапу
+      description: Только руководитель. Привязывает к существующему этапу успешно загруженный PDF или JPEG назначения material_invoice размером не более 10 МиБ и положительную сумму. Один fileId можно привязать не более одного раза. Лимит десять счетов проверяется атомарно под блокировкой этапа; при двух конкурентных запросах на десятое место ровно один может завершиться успешно, второй получает 409 invoice_limit_exceeded.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateMaterialInvoice' }
+      responses:
+        '201':
+          description: Счёт создан.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StageMaterialInvoice' }
+        '400': { $ref: ../common/common.yaml#/components/responses/ApiBadRequest }
+        '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
+        '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
+        '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
+        '409': { $ref: '#/components/responses/InvoiceConflict' }
+        '413': { $ref: ../common/common.yaml#/components/responses/ApiPayloadTooLarge }
   /material-invoices/{invoiceId}:
     parameters:
       - $ref: '#/components/parameters/InvoiceId'
@@ -76,7 +123,7 @@ paths:
       description: Оплату меняет только руководитель. Доставку — руководитель или назначенный мастер. Даты и авторы фиксируются независимо сервером.
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateMaterialInvoice' } } } }
       responses:
-        '200': { description: Счёт изменён, content: { application/json: { schema: { $ref: '#/components/schemas/MaterialInvoice' } } } }
+        '200': { description: Счёт этапа изменён, content: { application/json: { schema: { $ref: '#/components/schemas/StageMaterialInvoice' } } } }
         '400': { $ref: ../common/common.yaml#/components/responses/ApiBadRequest }
         '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
         '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
@@ -118,6 +165,18 @@ paths:
         '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
         '409': { $ref: ../common/common.yaml#/components/responses/ApiConflict }
 components:
+  responses:
+    InvoiceConflict:
+      description: Лимит десять счетов исчерпан, файл уже привязан либо состояние ресурса конфликтует. Изменения не применены.
+      content:
+        application/json:
+          schema: { $ref: ../common/common.yaml#/components/schemas/ApiError }
+          examples:
+            invoiceLimitExceeded:
+              value:
+                error: Conflict
+                code: invoice_limit_exceeded
+                message: На этапе уже создано максимально допустимое количество счетов.
   parameters:
     StageId:
       name: stageId
@@ -173,6 +232,24 @@ components:
         version: { type: integer, minimum: 1, example: 1, description: Версия счёта. }
         createdAt: { type: string, format: date-time, example: '2026-10-01T08:00:00Z', description: Время создания. }
         updatedAt: { type: string, format: date-time, example: '2026-10-03T08:00:00Z', description: Время изменения. }
+    StageMaterialInvoice:
+      type: object
+      additionalProperties: false
+      required: [id, stageId, fileId, supplierName, amountMinor, paidAt, paidBy, deliveredAt, deliveredBy, shortages, version, createdAt, updatedAt]
+      properties:
+        id: { type: integer, minimum: 1, maximum: 2147483647, example: 401, description: Идентификатор счёта. }
+        stageId: { type: integer, minimum: 1, maximum: 2147483647, example: 101, description: "Этап, к которому напрямую относится счёт." }
+        fileId: { type: integer, minimum: 1, maximum: 2147483647, example: 201, description: Идентификатор загруженного файла счёта. }
+        supplierName: { type: [string, 'null'], minLength: 1, maxLength: 255, example: Стройснаб, description: Поставщик или null. }
+        amountMinor: { $ref: ../common/common.yaml#/components/schemas/PositiveMoneyAmountMinor, description: Полная сумма счёта в копейках. Частичная оплата одного счёта не поддерживается. }
+        paidAt: { type: [string, 'null'], format: date-time, example: '2026-10-02T08:00:00Z', description: Серверное время отметки полной оплаты или null. }
+        paidBy: { anyOf: [{ $ref: ../users/users.yaml#/components/schemas/UserBrief }, { type: 'null' }], description: Автор отметки оплаты или null. }
+        deliveredAt: { type: [string, 'null'], format: date-time, example: '2026-10-03T08:00:00Z', description: Серверное время отметки доставки или null. }
+        deliveredBy: { anyOf: [{ $ref: ../users/users.yaml#/components/schemas/UserBrief }, { type: 'null' }], description: Автор отметки доставки или null. }
+        shortages: { type: array, items: { $ref: '#/components/schemas/MaterialShortage' }, description: "Нехватки счёта в порядке reportedAt ASC, id ASC." }
+        version: { type: integer, minimum: 1, example: 1, description: Версия счёта для последующих изменений. }
+        createdAt: { type: string, format: date-time, example: '2026-10-01T08:00:00Z', description: Время создания в UTC. }
+        updatedAt: { type: string, format: date-time, example: '2026-10-03T08:00:00Z', description: Время изменения в UTC. }
     CreateMaterialInvoice:
       type: object
       additionalProperties: false

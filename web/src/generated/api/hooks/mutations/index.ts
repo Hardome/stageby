@@ -10,6 +10,7 @@ export { createMaterialInvoiceMutationKey, createMaterialInvoiceMutationOptions,
 export { createMaterialOrderMutationKey, createMaterialOrderMutationOptions, useCreateMaterialOrder } from './useCreateMaterialOrder'
 export { createMaterialShortageMutationKey, createMaterialShortageMutationOptions, useCreateMaterialShortage } from './useCreateMaterialShortage'
 export { createProjectMutationKey, createProjectMutationOptions, useCreateProject } from './useCreateProject'
+export { createStageMaterialInvoiceMutationKey, createStageMaterialInvoiceMutationOptions, useCreateStageMaterialInvoice } from './useCreateStageMaterialInvoice'
 export { createUserMutationKey, createUserMutationOptions, useCreateUser } from './useCreateUser'
 export { createWorkPaymentMutationKey, createWorkPaymentMutationOptions, useCreateWorkPayment } from './useCreateWorkPayment'
 export { deleteChecklistItemPhotoMutationKey, deleteChecklistItemPhotoMutationOptions, useDeleteChecklistItemPhoto } from './useDeleteChecklistItemPhoto'

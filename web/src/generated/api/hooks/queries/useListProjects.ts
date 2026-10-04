@@ -21,7 +21,7 @@ export function listProjectsQueryOptions({ query }: ListProjectsOptions = {}, co
 }
 
 /**
- * @description Руководитель и инженер-сметчик. Мастер и приёмщик работают через /stages без доступа к полной карточке клиента. Сортировка createdAt DESC, id ASC. Фильтры AND.
+ * @description Только руководитель. Мастер работает через /stages без доступа к полной карточке объекта и общим суммам. Сортировка createdAt DESC, id ASC. Фильтры AND.
  * @summary Список объектов строительства
  * {@link /projects}
  */

@@ -2,7 +2,7 @@
 
 import type { RouteHandler } from 'fastify';
 
-import type { AcceptStageData, AcceptStageErrors, AcceptStageResponses, ChangeStageStatusData, ChangeStageStatusErrors, ChangeStageStatusResponses, CompleteFileUploadData, CompleteFileUploadErrors, CompleteFileUploadResponses, ConfigureStageChecklistData, ConfigureStageChecklistErrors, ConfigureStageChecklistResponses, CreateChecklistItemPhotoData, CreateChecklistItemPhotoErrors, CreateChecklistItemPhotoResponses, CreateFileUploadData, CreateFileUploadErrors, CreateFileUploadResponses, CreateMaterialInvoiceData, CreateMaterialInvoiceErrors, CreateMaterialInvoiceResponses, CreateMaterialOrderData, CreateMaterialOrderErrors, CreateMaterialOrderResponses, CreateMaterialShortageData, CreateMaterialShortageErrors, CreateMaterialShortageResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CreateWorkPaymentData, CreateWorkPaymentErrors, CreateWorkPaymentResponses, DeleteChecklistItemPhotoData, DeleteChecklistItemPhotoErrors, DeleteChecklistItemPhotoResponses, DeleteWorkPaymentData, DeleteWorkPaymentErrors, DeleteWorkPaymentResponses, GetCurrentUserErrors, GetCurrentUserResponses, GetFileContentData, GetFileContentErrors, GetFileContentResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetStageChecklistData, GetStageChecklistErrors, GetStageChecklistResponses, GetStageData, GetStageErrors, GetStageResponses, GetUserData, GetUserErrors, GetUserResponses, ListChecklistItemPhotosData, ListChecklistItemPhotosErrors, ListChecklistItemPhotosResponses, ListMaterialInvoicesData, ListMaterialInvoicesErrors, ListMaterialInvoicesResponses, ListMaterialOrdersData, ListMaterialOrdersErrors, ListMaterialOrdersResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListProjectStagesData, ListProjectStagesErrors, ListProjectStagesResponses, ListStagesData, ListStagesErrors, ListStagesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, ListWorkPaymentsData, ListWorkPaymentsErrors, ListWorkPaymentsResponses, LoginData, LoginErrors, LoginResponses, LogoutErrors, LogoutResponses, ResolveMaterialShortageData, ResolveMaterialShortageErrors, ResolveMaterialShortageResponses, ReturnStageForReworkData, ReturnStageForReworkErrors, ReturnStageForReworkResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, UpdateChecklistItemData, UpdateChecklistItemErrors, UpdateChecklistItemResponses, UpdateMaterialInvoiceData, UpdateMaterialInvoiceErrors, UpdateMaterialInvoiceResponses, UpdateMaterialOrderData, UpdateMaterialOrderErrors, UpdateMaterialOrderResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateStageData, UpdateStageErrors, UpdateStageResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UpdateWorkPaymentData, UpdateWorkPaymentErrors, UpdateWorkPaymentResponses } from './types.gen.js';
+import type { AcceptStageData, AcceptStageErrors, AcceptStageResponses, ChangeStageStatusData, ChangeStageStatusErrors, ChangeStageStatusResponses, CompleteFileUploadData, CompleteFileUploadErrors, CompleteFileUploadResponses, ConfigureStageChecklistData, ConfigureStageChecklistErrors, ConfigureStageChecklistResponses, CreateChecklistItemPhotoData, CreateChecklistItemPhotoErrors, CreateChecklistItemPhotoResponses, CreateFileUploadData, CreateFileUploadErrors, CreateFileUploadResponses, CreateMaterialInvoiceData, CreateMaterialInvoiceErrors, CreateMaterialInvoiceResponses, CreateMaterialOrderData, CreateMaterialOrderErrors, CreateMaterialOrderResponses, CreateMaterialShortageData, CreateMaterialShortageErrors, CreateMaterialShortageResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateStageMaterialInvoiceData, CreateStageMaterialInvoiceErrors, CreateStageMaterialInvoiceResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CreateWorkPaymentData, CreateWorkPaymentErrors, CreateWorkPaymentResponses, DeleteChecklistItemPhotoData, DeleteChecklistItemPhotoErrors, DeleteChecklistItemPhotoResponses, DeleteWorkPaymentData, DeleteWorkPaymentErrors, DeleteWorkPaymentResponses, GetCurrentUserErrors, GetCurrentUserResponses, GetDashboardSummaryData, GetDashboardSummaryErrors, GetDashboardSummaryResponses, GetFileContentData, GetFileContentErrors, GetFileContentResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetStageChecklistData, GetStageChecklistErrors, GetStageChecklistResponses, GetStageData, GetStageErrors, GetStageResponses, GetUserData, GetUserErrors, GetUserResponses, ListActiveStageTypesErrors, ListActiveStageTypesResponses, ListChecklistItemPhotosData, ListChecklistItemPhotosErrors, ListChecklistItemPhotosResponses, ListDashboardProjectsData, ListDashboardProjectsErrors, ListDashboardProjectsResponses, ListMaterialInvoicesData, ListMaterialInvoicesErrors, ListMaterialInvoicesResponses, ListMaterialOrdersData, ListMaterialOrdersErrors, ListMaterialOrdersResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListProjectStagesData, ListProjectStagesErrors, ListProjectStagesResponses, ListStageMaterialInvoicesData, ListStageMaterialInvoicesErrors, ListStageMaterialInvoicesResponses, ListStagesData, ListStagesErrors, ListStagesResponses, ListUsersData, ListUsersErrors, ListUsersResponses, ListWorkPaymentsData, ListWorkPaymentsErrors, ListWorkPaymentsResponses, LoginData, LoginErrors, LoginResponses, LogoutErrors, LogoutResponses, ResolveMaterialShortageData, ResolveMaterialShortageErrors, ResolveMaterialShortageResponses, ReturnStageForReworkData, ReturnStageForReworkErrors, ReturnStageForReworkResponses, SetUserPasswordData, SetUserPasswordErrors, SetUserPasswordResponses, UpdateChecklistItemData, UpdateChecklistItemErrors, UpdateChecklistItemResponses, UpdateMaterialInvoiceData, UpdateMaterialInvoiceErrors, UpdateMaterialInvoiceResponses, UpdateMaterialOrderData, UpdateMaterialOrderErrors, UpdateMaterialOrderResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateStageData, UpdateStageErrors, UpdateStageResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UpdateWorkPaymentData, UpdateWorkPaymentErrors, UpdateWorkPaymentResponses } from './types.gen.js';
 
 export type RouteHandlers = {
     listUsers: RouteHandler<{
@@ -43,6 +43,7 @@ export type RouteHandlers = {
     }>;
     createProject: RouteHandler<{
         Body: CreateProjectData['body'];
+        Headers: CreateProjectData['headers'];
         Reply: CreateProjectErrors & CreateProjectResponses;
     }>;
     getProject: RouteHandler<{
@@ -53,6 +54,9 @@ export type RouteHandlers = {
         Body: UpdateProjectData['body'];
         Params: UpdateProjectData['path'];
         Reply: UpdateProjectErrors & UpdateProjectResponses;
+    }>;
+    listActiveStageTypes: RouteHandler<{
+        Reply: ListActiveStageTypesErrors & ListActiveStageTypesResponses;
     }>;
     listStages: RouteHandler<{
         Querystring?: ListStagesData['query'];
@@ -136,6 +140,15 @@ export type RouteHandlers = {
         Params: CreateMaterialInvoiceData['path'];
         Reply: CreateMaterialInvoiceErrors & CreateMaterialInvoiceResponses;
     }>;
+    listStageMaterialInvoices: RouteHandler<{
+        Params: ListStageMaterialInvoicesData['path'];
+        Reply: ListStageMaterialInvoicesErrors & ListStageMaterialInvoicesResponses;
+    }>;
+    createStageMaterialInvoice: RouteHandler<{
+        Body: CreateStageMaterialInvoiceData['body'];
+        Params: CreateStageMaterialInvoiceData['path'];
+        Reply: CreateStageMaterialInvoiceErrors & CreateStageMaterialInvoiceResponses;
+    }>;
     updateMaterialInvoice: RouteHandler<{
         Body: UpdateMaterialInvoiceData['body'];
         Params: UpdateMaterialInvoiceData['path'];
@@ -182,5 +195,13 @@ export type RouteHandlers = {
     deleteChecklistItemPhoto: RouteHandler<{
         Params: DeleteChecklistItemPhotoData['path'];
         Reply: DeleteChecklistItemPhotoErrors & DeleteChecklistItemPhotoResponses;
+    }>;
+    getDashboardSummary: RouteHandler<{
+        Querystring?: GetDashboardSummaryData['query'];
+        Reply: GetDashboardSummaryErrors & GetDashboardSummaryResponses;
+    }>;
+    listDashboardProjects: RouteHandler<{
+        Querystring?: ListDashboardProjectsData['query'];
+        Reply: ListDashboardProjectsErrors & ListDashboardProjectsResponses;
     }>;
 };

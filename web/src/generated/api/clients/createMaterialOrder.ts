@@ -12,6 +12,7 @@ import { createMaterialOrderResponseSchema, createMaterialOrderErrorSchema } fro
  * @description Только руководитель. Один этап может иметь несколько заказов.
  * @summary Создать заказ материалов
  * {@link /stages/:stageId/material-orders}
+ * @deprecated
  */
 export function createMaterialOrder<ThrowOnError extends boolean = true>(options: Options<CreateMaterialOrderOptions, ThrowOnError>): Unwrappable<RequestResult<CreateMaterialOrderResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options

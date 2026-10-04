@@ -25,6 +25,10 @@ export const createProjectSchema = z.object({
 
 export type CreateProjectSchemaType = z.infer<typeof createProjectSchema>
 
+export const createProjectHeaderIdempotencyKeySchema = z.string().min(16).max(100).regex(/^[A-Za-z0-9._:-]+$/).describe('Уникальный ключ безопасного повтора операции после потери ответа. Повтор с другим телом возвращает 409 idempotency_conflict.')
+
+export type CreateProjectHeaderIdempotencyKeySchemaType = z.infer<typeof createProjectHeaderIdempotencyKeySchema>
+
 export const createProjectStatus201Schema = projectSchema
 
 export type CreateProjectStatus201SchemaType = z.infer<typeof createProjectStatus201Schema>
@@ -41,11 +45,15 @@ export const createProjectStatus403Schema = apiErrorSchema
 
 export type CreateProjectStatus403SchemaType = z.infer<typeof createProjectStatus403Schema>
 
+export const createProjectStatus409Schema = apiErrorSchema
+
+export type CreateProjectStatus409SchemaType = z.infer<typeof createProjectStatus409Schema>
+
 export const createProjectResponseSchema = createProjectStatus201Schema
 
 export type CreateProjectResponseSchemaType = z.infer<typeof createProjectResponseSchema>
 
-export const createProjectErrorSchema = z.union([createProjectStatus400Schema, createProjectStatus401Schema, createProjectStatus403Schema])
+export const createProjectErrorSchema = z.union([createProjectStatus400Schema, createProjectStatus401Schema, createProjectStatus403Schema, createProjectStatus409Schema])
 
 export type CreateProjectErrorSchemaType = z.infer<typeof createProjectErrorSchema>
 
@@ -53,11 +61,17 @@ export const createProjectBodySchema = createProjectSchema
 
 export type CreateProjectBodySchemaType = z.infer<typeof createProjectBodySchema>
 
+export const createProjectHeadersSchema = z.object({
+  'Idempotency-Key': z.string().min(16).max(100).regex(/^[A-Za-z0-9._:-]+$/).describe('Уникальный ключ безопасного повтора операции после потери ответа. Повтор с другим телом возвращает 409 idempotency_conflict.'),
+})
+
+export type CreateProjectHeadersSchemaType = z.infer<typeof createProjectHeadersSchema>
+
 export const createProjectOptionsSchema = z.object({
   body: createProjectBodySchema,
   path: z.never().optional(),
   query: z.never().optional(),
-  headers: z.never().optional(),
+  headers: createProjectHeadersSchema,
 })
 
 export type CreateProjectOptionsSchemaType = z.infer<typeof createProjectOptionsSchema>
@@ -67,6 +81,7 @@ export const createProjectResponsesSchema = z.object({
   '400': createProjectStatus400Schema,
   '401': createProjectStatus401Schema,
   '403': createProjectStatus403Schema,
+  '409': createProjectStatus409Schema,
 })
 
 export type CreateProjectResponsesSchemaType = z.infer<typeof createProjectResponsesSchema>

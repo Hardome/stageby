@@ -6,7 +6,7 @@
 import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 import { expectedVersionSchema } from './expectedVersionSchema'
-import { materialInvoiceSchema } from './materialInvoiceSchema'
+import { stageMaterialInvoiceSchema } from './stageMaterialInvoiceSchema'
 
 export const updateMaterialInvoiceSchema = z.object({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
@@ -20,7 +20,7 @@ export const updateMaterialInvoicePathInvoiceIdSchema = z.int().min(1).max(21474
 
 export type UpdateMaterialInvoicePathInvoiceIdSchemaType = z.infer<typeof updateMaterialInvoicePathInvoiceIdSchema>
 
-export const updateMaterialInvoiceStatus200Schema = materialInvoiceSchema
+export const updateMaterialInvoiceStatus200Schema = stageMaterialInvoiceSchema
 
 export type UpdateMaterialInvoiceStatus200SchemaType = z.infer<typeof updateMaterialInvoiceStatus200Schema>
 

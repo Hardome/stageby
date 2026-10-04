@@ -15,8 +15,8 @@ export const updateStageSchema = z.object({
   plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Новый план оплаты работ; null очищает план. Доступно только руководителю.').meta({ examples: [12500000, 0, ] }),
   plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Новый план материалов; null очищает план. Доступно только руководителю.').meta({ examples: [12500000, 0, ] }),
   workSubtypes: z.array(z.string().min(1).max(255)).max(30).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).optional().describe('Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.'),
-  plannedStartDate: z.iso.date().nullish().describe('Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату.').meta({ examples: ['2026-09-21', ] }),
-  plannedEndDate: z.iso.date().nullish().describe('Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. После изменения не может быть раньше планового начала, если обе даты заданы.').meta({ examples: ['2026-09-28', ] }),
+  plannedStartDate: z.iso.date().optional().describe('Новая плановая дата начала этапа в формате YYYY-MM-DD. Дата обязательна и должна остаться внутри срока проекта.').meta({ examples: ['2026-09-21'] }),
+  plannedEndDate: z.iso.date().optional().describe('Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся.').meta({ examples: ['2026-09-28'] }),
   predecessorStageIds: z.array(z.int().min(1).max(2147483647)).max(7).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).optional().describe('ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.'),
   notes: z.string().min(1).max(5000).nullish().describe('Новые примечания к этапу; null очищает сохранённые примечания.').meta({ examples: ['Согласовать время доставки бетона.', ] }),
 }).strict()
