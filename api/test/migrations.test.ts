@@ -217,7 +217,7 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('13');
+      expect(firstJournal.rows[0]?.count).toBe('14');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
@@ -235,21 +235,21 @@ describe('миграции БД', () => {
         { code: 'foundation', title: 'Фундамент', position: 1 },
         { code: 'walls', title: 'Стены', position: 2 },
         { code: 'roof', title: 'Крыша', position: 3 },
-        { code: 'windows', title: 'Окна', position: 4 },
+        { code: 'windows', title: 'Окна, двери', position: 4 },
         { code: 'facade', title: 'Фасад', position: 5 },
         { code: 'electrical', title: 'Электрика', position: 6 },
-        { code: 'finishing', title: 'Отделка', position: 7 },
+        { code: 'finishing', title: 'Штукатурка', position: 7 },
         { code: 'heating', title: 'Отопление', position: 8 },
       ]);
       expect(templateItemCounts.rows.map(({ code, count }) => [code, count])).toEqual([
-        ['foundation', 4],
-        ['walls', 5],
-        ['roof', 7],
-        ['windows', 2],
-        ['facade', 3],
-        ['electrical', 1],
-        ['finishing', 2],
-        ['heating', 1],
+        ['foundation', 5],
+        ['walls', 6],
+        ['roof', 8],
+        ['windows', 3],
+        ['facade', 4],
+        ['electrical', 3],
+        ['finishing', 3],
+        ['heating', 2],
       ]);
     } finally {
       await temporaryPool?.end();

@@ -161,6 +161,19 @@ describe('Composite project creation', () => {
       );
     expect(storedChecklists[0]?.value).toBe(8);
 
+    const copiedItems = await getApp()
+      .db.select({ title: checklistItems.title })
+      .from(checklistItems)
+      .innerJoin(checklists, eq(checklists.id, checklistItems.checklistId))
+      .where(
+        inArray(
+          checklists.stageId,
+          storedStages.map((item) => item.id),
+        ),
+      );
+    expect(copiedItems).toHaveLength(34);
+    expect(copiedItems.filter((item) => item.title === 'Уборка')).toHaveLength(8);
+
     const audit = await auditRecords(getApp().db, manager.user.id, 'createProject');
     expect(audit.events).toHaveLength(1);
     expect(audit.events[0]).toMatchObject({
