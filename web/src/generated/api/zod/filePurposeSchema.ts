@@ -5,6 +5,6 @@
 
 import * as z from 'zod'
 
-export const filePurposeSchema = z.enum(['project_document', 'checklist_photo', 'material_invoice']).describe('Назначение файла, определяющее MIME, размер и правила доступа.').meta({ examples: ['checklist_photo'] })
+export const filePurposeSchema = z.enum(['project_document', 'checklist_photo', 'material_invoice']).describe('Назначение файла, определяющее MIME, размер и правила доступа. project_document — PDF до 50 МБ; material_invoice — PDF/JPEG до 10 МиБ; checklist_photo — JPEG/PNG/HEIC до 20 МБ.').meta({ examples: ['checklist_photo'] })
 
 export type FilePurposeSchemaType = z.infer<typeof filePurposeSchema>

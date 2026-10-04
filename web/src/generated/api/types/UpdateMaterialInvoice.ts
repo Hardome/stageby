@@ -5,7 +5,7 @@
 
 import type { ApiError } from './ApiError'
 import type { ExpectedVersion } from './ExpectedVersion'
-import type { MaterialInvoice } from './MaterialInvoice'
+import type { StageMaterialInvoice } from './StageMaterialInvoice'
 
 export type UpdateMaterialInvoice = {
     /**
@@ -38,7 +38,7 @@ export type UpdateMaterialInvoicePath = {
     invoiceId: number;
 };
 
-export type UpdateMaterialInvoiceStatus200 = MaterialInvoice;
+export type UpdateMaterialInvoiceStatus200 = StageMaterialInvoice;
 
 export type UpdateMaterialInvoiceStatus400 = ApiError;
 

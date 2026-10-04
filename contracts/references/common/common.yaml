@@ -234,6 +234,7 @@ components:
         - upload_incomplete
         - upload_expired
         - photo_limit_exceeded
+        - invoice_limit_exceeded
         - rate_limited
       examples:
         - invalid_request
@@ -287,6 +288,16 @@ components:
                 minLength: 1
                 maxLength: 1000
   parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Уникальный ключ безопасного повтора операции после потери ответа. Повтор с другим телом возвращает 409 idempotency_conflict.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 100
+        pattern: "^[A-Za-z0-9._:-]+$"
     Limit:
       name: limit
       in: query
@@ -352,7 +363,7 @@ components:
             code: not_found
             message: Запись не найдена или недоступна.
     ApiConflict:
-      description: Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+      description: Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
       content:
         application/json:
           schema:

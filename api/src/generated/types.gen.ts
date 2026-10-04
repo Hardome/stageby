@@ -22,7 +22,7 @@ export type StageStatus = 'created' | 'assigned' | 'supplied' | 'in_progress' | 
 /**
  * Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.
  */
-export type ApiErrorCode = 'invalid_request' | 'unauthenticated' | 'forbidden' | 'not_found' | 'version_conflict' | 'invalid_transition' | 'idempotency_conflict' | 'login_taken' | 'last_manager' | 'user_in_use' | 'project_archived' | 'unsupported_mime_type' | 'file_too_large' | 'checksum_mismatch' | 'upload_incomplete' | 'upload_expired' | 'photo_limit_exceeded' | 'rate_limited';
+export type ApiErrorCode = 'invalid_request' | 'unauthenticated' | 'forbidden' | 'not_found' | 'version_conflict' | 'invalid_transition' | 'idempotency_conflict' | 'login_taken' | 'last_manager' | 'user_in_use' | 'project_archived' | 'unsupported_mime_type' | 'file_too_large' | 'checksum_mismatch' | 'upload_incomplete' | 'upload_expired' | 'photo_limit_exceeded' | 'invoice_limit_exceeded' | 'rate_limited';
 
 /**
  * manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
@@ -382,6 +382,45 @@ export type UpdateProject = {
     isArchived?: boolean;
 };
 
+export type ChecklistTemplateItem = {
+    /**
+     * Идентификатор пункта активного шаблона.
+     */
+    id: number;
+    /**
+     * Порядок копирования пункта в индивидуальный чек-лист.
+     */
+    position: number;
+    /**
+     * Название, копируемое в новый этап.
+     */
+    title: string;
+    /**
+     * Фотоподсказка, копируемая в новый этап; null — подсказки нет.
+     */
+    photoHint: string | null;
+};
+
+export type ActiveStageType = {
+    code: StageType;
+    /**
+     * Отображаемое название активного типа.
+     */
+    title: string;
+    /**
+     * Порядок типа в объекте.
+     */
+    position: number;
+    /**
+     * Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
+     */
+    checklistTemplateId: number;
+    /**
+     * Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
+     */
+    checklistItems: Array<ChecklistTemplateItem>;
+};
+
 /**
  * Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
  */
@@ -598,13 +637,13 @@ export type UpdateStage = {
      */
     workSubtypes?: Array<string>;
     /**
-     * Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату.
+     * Новая плановая дата начала этапа в формате YYYY-MM-DD. Дата обязательна и должна остаться внутри срока проекта.
      */
-    plannedStartDate?: string | null;
+    plannedStartDate?: string;
     /**
-     * Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. После изменения не может быть раньше планового начала, если обе даты заданы.
+     * Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся.
      */
-    plannedEndDate?: string | null;
+    plannedEndDate?: string;
     /**
      * ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.
      */
@@ -953,6 +992,61 @@ export type CreateMaterialInvoice = {
     amountMinor: PositiveMoneyAmountMinor;
 };
 
+export type StageMaterialInvoice = {
+    /**
+     * Идентификатор счёта.
+     */
+    id: number;
+    /**
+     * Этап, к которому напрямую относится счёт.
+     */
+    stageId: number;
+    /**
+     * Идентификатор загруженного файла счёта.
+     */
+    fileId: number;
+    /**
+     * Поставщик или null.
+     */
+    supplierName: string | null;
+    /**
+     * Полная сумма счёта в копейках. Частичная оплата одного счёта не поддерживается.
+     */
+    amountMinor: PositiveMoneyAmountMinor;
+    /**
+     * Серверное время отметки полной оплаты или null.
+     */
+    paidAt: string | null;
+    /**
+     * Автор отметки оплаты или null.
+     */
+    paidBy: UserBrief | null;
+    /**
+     * Серверное время отметки доставки или null.
+     */
+    deliveredAt: string | null;
+    /**
+     * Автор отметки доставки или null.
+     */
+    deliveredBy: UserBrief | null;
+    /**
+     * Нехватки счёта в порядке reportedAt ASC, id ASC.
+     */
+    shortages: Array<MaterialShortage>;
+    /**
+     * Версия счёта для последующих изменений.
+     */
+    version: number;
+    /**
+     * Время создания в UTC.
+     */
+    createdAt: string;
+    /**
+     * Время изменения в UTC.
+     */
+    updatedAt: string;
+};
+
 export type UpdateMaterialInvoice = {
     expectedVersion: ExpectedVersion;
     /**
@@ -989,7 +1083,7 @@ export type UpdateChecklistItem = {
 };
 
 /**
- * Назначение файла, определяющее MIME, размер и правила доступа.
+ * Назначение файла, определяющее MIME, размер и правила доступа. project_document — PDF до 50 МБ; material_invoice — PDF/JPEG до 10 МиБ; checklist_photo — JPEG/PNG/HEIC до 20 МБ.
  */
 export type FilePurpose = 'project_document' | 'checklist_photo' | 'material_invoice';
 
@@ -1012,7 +1106,7 @@ export type CreateFileUpload = {
      */
     mimeType: string;
     /**
-     * Заявленный размер содержимого в байтах.
+     * Заявленный размер содержимого в байтах. Общий верхний предел схемы нужен для PDF проекта; сервер применяет более строгий предел purpose, включая 10485760 байт для material_invoice.
      */
     sizeBytes: number;
     /**
@@ -1147,6 +1241,208 @@ export type ChecklistItemPhoto = {
      * Серверное время подтверждения загрузки файла.
      */
     uploadedAt: string;
+};
+
+/**
+ * План, факт, остаток и полнота плана одной финансовой категории.
+ */
+export type DashboardMoneyMetric = {
+    /**
+     * Сумма заданных планов; null, если план соответствующей категории неполон хотя бы у одного включённого этапа.
+     */
+    readonly plannedAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Фактическая сумма соответствующей категории в том же периметре этапов.
+     */
+    readonly actualAmountMinor: MoneyAmountMinor;
+    /**
+     * План минус факт; отрицательное значение означает переплату, null — план неполон.
+     */
+    readonly balanceAmountMinor: SignedMoneyAmountMinor;
+    /**
+     * true, если план категории задан у каждого включённого этапа. Нулевой план считается заданным.
+     */
+    readonly isPlanComplete: boolean;
+};
+
+export type DashboardSummary = {
+    /**
+     * Применённая календарная дата в Asia/Yekaterinburg.
+     */
+    readonly through: string;
+    /**
+     * Количество неархивных объектов, у которых хотя бы один включённый этап не paid; от through не зависит.
+     */
+    readonly activeProjectCount: number;
+    works: DashboardMoneyMetric;
+    materials: DashboardMoneyMetric;
+    /**
+     * Общий итог работ и материалов. План и остаток равны null, если неполон план хотя бы одной категории.
+     */
+    total: DashboardMoneyMetric;
+};
+
+/**
+ * Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.
+ */
+export type ProjectStatus = 'created' | 'in_progress' | 'acceptance' | 'completed';
+
+/**
+ * Вычисляемое состояние счетов и нехваток выбранного этапа.
+ */
+export type MaterialIndicator = {
+    /**
+     * Красный — нет счетов или есть открытая нехватка; иначе жёлтый — не все счета оплачены или доставлены; иначе зелёный.
+     */
+    color: 'red' | 'yellow' | 'green';
+    /**
+     * Количество счетов выбранного этапа.
+     */
+    invoiceCount: number;
+    /**
+     * Количество полностью оплаченных счетов выбранного этапа.
+     */
+    paidInvoiceCount: number;
+    /**
+     * Количество доставленных счетов выбранного этапа.
+     */
+    deliveredInvoiceCount: number;
+    /**
+     * Количество отдельно не устранённых нехваток выбранного этапа.
+     */
+    openShortageCount: number;
+    /**
+     * true, только если оплачено больше нуля, но меньше общего количества счетов.
+     */
+    isPartiallyPaid: boolean;
+    /**
+     * true, только если доставлено больше нуля, но меньше общего количества счетов.
+     */
+    isPartiallyDelivered: boolean;
+};
+
+/**
+ * Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
+ */
+export type VariancePercent = number | null;
+
+/**
+ * Вычисляемые финансовые итоги одного этапа. Все поля доступны только для чтения.
+ */
+export type StageFinancialSummary = {
+    /**
+     * Плановая стоимость работ этапа; null — план работ не задан.
+     */
+    readonly plannedWorkAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Сумма всех платежей за работы этапа.
+     */
+    readonly actualWorkAmountMinor: MoneyAmountMinor;
+    /**
+     * План работ минус фактические платежи; отрицательное значение означает переплату, null — план не задан.
+     */
+    readonly workBalanceAmountMinor: SignedMoneyAmountMinor;
+    /**
+     * Плановая стоимость материалов этапа; null — план материалов не задан.
+     */
+    readonly plannedMaterialAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Сумма оплаченных счетов за материалы этапа.
+     */
+    readonly actualMaterialAmountMinor: MoneyAmountMinor;
+    /**
+     * Сумма планов работ и материалов; null, если хотя бы один план не задан.
+     */
+    readonly totalPlannedAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Сумма фактических затрат на работы и материалы этапа.
+     */
+    readonly totalActualAmountMinor: MoneyAmountMinor;
+    /**
+     * true, если заданы оба плана этапа. Нулевой план считается заданным.
+     */
+    readonly isPlanComplete: boolean;
+    /**
+     * Процент отклонения общего плана этапа от общего факта.
+     */
+    readonly variancePercent: VariancePercent;
+};
+
+export type DashboardSelectedStage = {
+    /**
+     * Единственный этап, к которому относятся все остальные поля этого объекта.
+     */
+    stageId: number;
+    /**
+     * Позиция выбранного этапа среди типов справочника.
+     */
+    position: number;
+    /**
+     * Количество включённых этапов объекта для подписи «N из K».
+     */
+    stageCount: number;
+    /**
+     * Отображаемое название выбранного этапа.
+     */
+    title: string;
+    /**
+     * Плановое начало выбранного этапа.
+     */
+    plannedStartDate: string;
+    /**
+     * Плановое окончание выбранного этапа.
+     */
+    plannedEndDate: string;
+    /**
+     * Назначенный мастер выбранного этапа или null.
+     */
+    assignee: UserBrief | null;
+    status: StageStatus;
+    /**
+     * Вычисляемая готовность выбранного этапа.
+     */
+    progressPercent: number;
+    materials: MaterialIndicator;
+    finances: StageFinancialSummary;
+};
+
+export type DashboardProjectRow = {
+    /**
+     * Идентификатор объекта.
+     */
+    projectId: number;
+    /**
+     * Имя клиента.
+     */
+    ownerName: string;
+    /**
+     * Адрес объекта.
+     */
+    address: string;
+    status: ProjectStatus;
+    /**
+     * Первый по позиции невыплаченный этап или null, если все включённые этапы paid. Переходы к счёту, мастеру и чек-листу используют только его stageId.
+     */
+    selectedStage: DashboardSelectedStage | null;
+};
+
+export type DashboardProjectPage = {
+    /**
+     * Строки текущей страницы в документированном стабильном порядке.
+     */
+    items: Array<DashboardProjectRow>;
+    /**
+     * Количество доступных строк до limit и offset.
+     */
+    total: number;
+    /**
+     * Применённый размер страницы.
+     */
+    limit: number;
+    /**
+     * Применённое смещение.
+     */
+    offset: number;
 };
 
 export type CreateUserWritable = {
@@ -1325,6 +1621,89 @@ export type ProjectStagesWritable = {
     items: Array<StageWritable>;
 };
 
+export type DashboardSummaryWritable = {
+    /**
+     * Общий итог работ и материалов. План и остаток равны null, если неполон план хотя бы одной категории.
+     */
+    total: unknown;
+};
+
+export type DashboardSelectedStageWritable = {
+    /**
+     * Единственный этап, к которому относятся все остальные поля этого объекта.
+     */
+    stageId: number;
+    /**
+     * Позиция выбранного этапа среди типов справочника.
+     */
+    position: number;
+    /**
+     * Количество включённых этапов объекта для подписи «N из K».
+     */
+    stageCount: number;
+    /**
+     * Отображаемое название выбранного этапа.
+     */
+    title: string;
+    /**
+     * Плановое начало выбранного этапа.
+     */
+    plannedStartDate: string;
+    /**
+     * Плановое окончание выбранного этапа.
+     */
+    plannedEndDate: string;
+    /**
+     * Назначенный мастер выбранного этапа или null.
+     */
+    assignee: UserBrief | null;
+    status: StageStatus;
+    /**
+     * Вычисляемая готовность выбранного этапа.
+     */
+    progressPercent: number;
+    materials: MaterialIndicator;
+};
+
+export type DashboardProjectRowWritable = {
+    /**
+     * Идентификатор объекта.
+     */
+    projectId: number;
+    /**
+     * Имя клиента.
+     */
+    ownerName: string;
+    /**
+     * Адрес объекта.
+     */
+    address: string;
+    status: ProjectStatus;
+    /**
+     * Первый по позиции невыплаченный этап или null, если все включённые этапы paid. Переходы к счёту, мастеру и чек-листу используют только его stageId.
+     */
+    selectedStage: DashboardSelectedStageWritable | null;
+};
+
+export type DashboardProjectPageWritable = {
+    /**
+     * Строки текущей страницы в документированном стабильном порядке.
+     */
+    items: Array<DashboardProjectRowWritable>;
+    /**
+     * Количество доступных строк до limit и offset.
+     */
+    total: number;
+    /**
+     * Применённый размер страницы.
+     */
+    limit: number;
+    /**
+     * Применённое смещение.
+     */
+    offset: number;
+};
+
 /**
  * Размер страницы, от 1 до 100.
  */
@@ -1334,6 +1713,11 @@ export type Limit = number;
  * Количество пропущенных записей после фильтрации и проверки доступа.
  */
 export type Offset = number;
+
+/**
+ * Уникальный ключ безопасного повтора операции после потери ответа. Повтор с другим телом возвращает 409 idempotency_conflict.
+ */
+export type IdempotencyKey = string;
 
 export type StageId = number;
 
@@ -1424,7 +1808,7 @@ export type CreateUserErrors = {
      */
     403: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -1512,7 +1896,7 @@ export type UpdateUserErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -1713,6 +2097,12 @@ export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsRespo
 
 export type CreateProjectData = {
     body: CreateProject;
+    headers: {
+        /**
+         * Уникальный ключ безопасного повтора операции после потери ответа. Повтор с другим телом возвращает 409 idempotency_conflict.
+         */
+        'Idempotency-Key': string;
+    };
     path?: never;
     query?: never;
     url: '/projects';
@@ -1731,6 +2121,10 @@ export type CreateProjectErrors = {
      * Роль не разрешает эту операцию или изменение поля.
      */
     403: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
 };
 
 export type CreateProjectError = CreateProjectErrors[keyof CreateProjectErrors];
@@ -1827,6 +2221,35 @@ export type UpdateProjectResponses = {
 };
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
+
+export type ListActiveStageTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/stage-types';
+};
+
+export type ListActiveStageTypesErrors = {
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+};
+
+export type ListActiveStageTypesError = ListActiveStageTypesErrors[keyof ListActiveStageTypesErrors];
+
+export type ListActiveStageTypesResponses = {
+    /**
+     * Активные типы этапов с шаблонами чек-листов.
+     */
+    200: Array<ActiveStageType>;
+};
+
+export type ListActiveStageTypesResponse = ListActiveStageTypesResponses[keyof ListActiveStageTypesResponses];
 
 export type ListStagesData = {
     body?: never;
@@ -1996,7 +2419,7 @@ export type UpdateStageErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2042,7 +2465,7 @@ export type ChangeStageStatusErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2088,7 +2511,7 @@ export type AcceptStageErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2134,7 +2557,7 @@ export type ReturnStageForReworkErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2222,7 +2645,7 @@ export type ConfigureStageChecklistErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2306,7 +2729,7 @@ export type CreateWorkPaymentErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2352,7 +2775,7 @@ export type DeleteWorkPaymentErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2398,7 +2821,7 @@ export type UpdateWorkPaymentErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2472,7 +2895,7 @@ export type CreateMaterialOrderErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2515,7 +2938,7 @@ export type UpdateMaterialOrderErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2593,7 +3016,7 @@ export type CreateMaterialInvoiceErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2608,6 +3031,88 @@ export type CreateMaterialInvoiceResponses = {
 };
 
 export type CreateMaterialInvoiceResponse = CreateMaterialInvoiceResponses[keyof CreateMaterialInvoiceResponses];
+
+export type ListStageMaterialInvoicesData = {
+    body?: never;
+    path: {
+        stageId: number;
+    };
+    query?: never;
+    url: '/stages/{stageId}/material-invoices';
+};
+
+export type ListStageMaterialInvoicesErrors = {
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+};
+
+export type ListStageMaterialInvoicesError = ListStageMaterialInvoicesErrors[keyof ListStageMaterialInvoicesErrors];
+
+export type ListStageMaterialInvoicesResponses = {
+    /**
+     * До десяти счетов этапа со сведениями об оплате, доставке и нехватках.
+     */
+    200: Array<StageMaterialInvoice>;
+};
+
+export type ListStageMaterialInvoicesResponse = ListStageMaterialInvoicesResponses[keyof ListStageMaterialInvoicesResponses];
+
+export type CreateStageMaterialInvoiceData = {
+    body: CreateMaterialInvoice;
+    path: {
+        stageId: number;
+    };
+    query?: never;
+    url: '/stages/{stageId}/material-invoices';
+};
+
+export type CreateStageMaterialInvoiceErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Лимит десять счетов исчерпан, файл уже привязан либо состояние ресурса конфликтует. Изменения не применены.
+     */
+    409: ApiError;
+    /**
+     * Файл превышает допустимый для его назначения размер. Upload-сессия не завершается.
+     */
+    413: ApiError;
+};
+
+export type CreateStageMaterialInvoiceError = CreateStageMaterialInvoiceErrors[keyof CreateStageMaterialInvoiceErrors];
+
+export type CreateStageMaterialInvoiceResponses = {
+    /**
+     * Счёт создан.
+     */
+    201: StageMaterialInvoice;
+};
+
+export type CreateStageMaterialInvoiceResponse = CreateStageMaterialInvoiceResponses[keyof CreateStageMaterialInvoiceResponses];
 
 export type UpdateMaterialInvoiceData = {
     body: UpdateMaterialInvoice;
@@ -2636,7 +3141,7 @@ export type UpdateMaterialInvoiceErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2645,9 +3150,9 @@ export type UpdateMaterialInvoiceError = UpdateMaterialInvoiceErrors[keyof Updat
 
 export type UpdateMaterialInvoiceResponses = {
     /**
-     * Счёт изменён
+     * Счёт этапа изменён
      */
-    200: MaterialInvoice;
+    200: StageMaterialInvoice;
 };
 
 export type UpdateMaterialInvoiceResponse = UpdateMaterialInvoiceResponses[keyof UpdateMaterialInvoiceResponses];
@@ -2679,7 +3184,7 @@ export type CreateMaterialShortageErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2722,7 +3227,7 @@ export type ResolveMaterialShortageErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2772,7 +3277,7 @@ export type UpdateChecklistItemErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2854,7 +3359,7 @@ export type CompleteFileUploadErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
     /**
@@ -2964,7 +3469,7 @@ export type CreateChecklistItemPhotoErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -2999,7 +3504,7 @@ export type DeleteChecklistItemPhotoErrors = {
      */
     404: ApiError;
     /**
-     * Конфликт версии, логина, зависимости, состояния, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
 };
@@ -3014,3 +3519,83 @@ export type DeleteChecklistItemPhotoResponses = {
 };
 
 export type DeleteChecklistItemPhotoResponse = DeleteChecklistItemPhotoResponses[keyof DeleteChecklistItemPhotoResponses];
+
+export type GetDashboardSummaryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Конечная календарная дата включительно. По умолчанию сегодня в Asia/Yekaterinburg; допустим диапазон от сегодня до сегодня + 30 календарных дней включительно.
+         */
+        through?: string;
+    };
+    url: '/dashboard/summary';
+};
+
+export type GetDashboardSummaryErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+};
+
+export type GetDashboardSummaryError = GetDashboardSummaryErrors[keyof GetDashboardSummaryErrors];
+
+export type GetDashboardSummaryResponses = {
+    /**
+     * Агрегаты на применённую дату.
+     */
+    200: DashboardSummary;
+};
+
+export type GetDashboardSummaryResponse = GetDashboardSummaryResponses[keyof GetDashboardSummaryResponses];
+
+export type ListDashboardProjectsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Размер страницы, от 1 до 100.
+         */
+        limit?: number;
+        /**
+         * Количество пропущенных записей после фильтрации и проверки доступа.
+         */
+        offset?: number;
+    };
+    url: '/dashboard/projects';
+};
+
+export type ListDashboardProjectsErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+};
+
+export type ListDashboardProjectsError = ListDashboardProjectsErrors[keyof ListDashboardProjectsErrors];
+
+export type ListDashboardProjectsResponses = {
+    /**
+     * Страница компактных строк объектов.
+     */
+    200: DashboardProjectPage;
+};
+
+export type ListDashboardProjectsResponse = ListDashboardProjectsResponses[keyof ListDashboardProjectsResponses];

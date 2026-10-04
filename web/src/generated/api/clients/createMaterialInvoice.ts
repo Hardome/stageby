@@ -12,6 +12,7 @@ import { createMaterialInvoiceResponseSchema, createMaterialInvoiceErrorSchema }
  * @description Только руководитель. Требуется успешно загруженный PDF или JPEG с назначением material_invoice.
  * @summary Добавить счёт к заказу
  * {@link /material-orders/:orderId/invoices}
+ * @deprecated
  */
 export function createMaterialInvoice<ThrowOnError extends boolean = true>(options: Options<CreateMaterialInvoiceOptions, ThrowOnError>): Unwrappable<RequestResult<CreateMaterialInvoiceResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options

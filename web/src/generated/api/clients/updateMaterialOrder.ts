@@ -12,6 +12,7 @@ import { updateMaterialOrderResponseSchema, updateMaterialOrderErrorSchema } fro
  * @description Только руководитель. Дата и автор отправки фиксируются сервером.
  * @summary Изменить отправку заказа
  * {@link /material-orders/:orderId}
+ * @deprecated
  */
 export function updateMaterialOrder<ThrowOnError extends boolean = true>(options: Options<UpdateMaterialOrderOptions, ThrowOnError>): Unwrappable<RequestResult<UpdateMaterialOrderResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options

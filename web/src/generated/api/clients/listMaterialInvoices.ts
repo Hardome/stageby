@@ -11,6 +11,7 @@ import { listMaterialInvoicesResponseSchema, listMaterialInvoicesErrorSchema } f
 /**
  * @summary Счета заказа
  * {@link /material-orders/:orderId/invoices}
+ * @deprecated
  */
 export function listMaterialInvoices<ThrowOnError extends boolean = true>(options: Options<ListMaterialInvoicesOptions, ThrowOnError>): Unwrappable<RequestResult<ListMaterialInvoicesResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options

@@ -1,0 +1,165 @@
+paths:
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [Dashboard]
+      summary: Финансовая сводка панели руководителя
+      description: Только руководитель. Считает работы, материалы и общий итог независимо от таблицы объектов. В расчёт входят этапы с plannedEndDate не позже through. Факт того же периметра включает все внесённые выплаты за работы и полные суммы оплаченных счетов; суммы не дублируются при соединении наборов данных.
+      parameters:
+        - name: through
+          in: query
+          required: false
+          description: Конечная календарная дата включительно. По умолчанию сегодня в Asia/Yekaterinburg; допустим диапазон от сегодня до сегодня + 30 календарных дней включительно.
+          schema:
+            type: string
+            format: date
+          example: '2026-11-03'
+      responses:
+        '200':
+          description: Агрегаты на применённую дату.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardSummary' }
+        '400': { $ref: ../common/common.yaml#/components/responses/ApiBadRequest }
+        '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
+        '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
+  /dashboard/projects:
+    get:
+      operationId: listDashboardProjects
+      tags: [Dashboard]
+      summary: Строки объектов панели руководителя
+      description: Только руководитель. Загружается независимо от summary. Для активного объекта selectedStage — первый включённый по position этап со статусом не paid; все даты, мастер, суммы и индикаторы внутри selectedStage относятся только к нему. Завершённый объект возвращается с selectedStage=null. Сортировка активных строк по plannedStartDate выбранного этапа ASC, затем projectId ASC; завершённые строки идут после активных по projectId ASC.
+      parameters:
+        - $ref: ../common/common.yaml#/components/parameters/Limit
+        - $ref: ../common/common.yaml#/components/parameters/Offset
+      responses:
+        '200':
+          description: Страница компактных строк объектов.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardProjectPage' }
+        '400': { $ref: ../common/common.yaml#/components/responses/ApiBadRequest }
+        '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
+        '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
+components:
+  schemas:
+    DashboardMoneyMetric:
+      type: object
+      description: План, факт, остаток и полнота плана одной финансовой категории.
+      additionalProperties: false
+      required: [plannedAmountMinor, actualAmountMinor, balanceAmountMinor, isPlanComplete]
+      properties:
+        plannedAmountMinor:
+          readOnly: true
+          description: Сумма заданных планов; null, если план соответствующей категории неполон хотя бы у одного включённого этапа.
+          allOf:
+            - $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
+        actualAmountMinor:
+          readOnly: true
+          description: Фактическая сумма соответствующей категории в том же периметре этапов.
+          allOf:
+            - $ref: ../common/common.yaml#/components/schemas/MoneyAmountMinor
+        balanceAmountMinor:
+          readOnly: true
+          description: План минус факт; отрицательное значение означает переплату, null — план неполон.
+          allOf:
+            - $ref: ../common/common.yaml#/components/schemas/SignedMoneyAmountMinor
+        isPlanComplete:
+          type: boolean
+          readOnly: true
+          example: true
+          description: true, если план категории задан у каждого включённого этапа. Нулевой план считается заданным.
+    DashboardSummary:
+      type: object
+      additionalProperties: false
+      required: [through, activeProjectCount, works, materials, total]
+      properties:
+        through:
+          type: string
+          format: date
+          readOnly: true
+          description: Применённая календарная дата в Asia/Yekaterinburg.
+          example: '2026-11-03'
+        activeProjectCount:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Количество неархивных объектов, у которых хотя бы один включённый этап не paid; от through не зависит.
+          example: 7
+        works:
+          $ref: '#/components/schemas/DashboardMoneyMetric'
+        materials:
+          $ref: '#/components/schemas/DashboardMoneyMetric'
+        total:
+          description: Общий итог работ и материалов. План и остаток равны null, если неполон план хотя бы одной категории.
+          allOf:
+            - $ref: '#/components/schemas/DashboardMoneyMetric'
+    MaterialIndicator:
+      type: object
+      description: Вычисляемое состояние счетов и нехваток выбранного этапа.
+      additionalProperties: false
+      required: [color, invoiceCount, paidInvoiceCount, deliveredInvoiceCount, openShortageCount, isPartiallyPaid, isPartiallyDelivered]
+      properties:
+        color:
+          type: string
+          enum: [red, yellow, green]
+          example: yellow
+          description: Красный — нет счетов или есть открытая нехватка; иначе жёлтый — не все счета оплачены или доставлены; иначе зелёный.
+        invoiceCount: { type: integer, minimum: 0, maximum: 10, example: 3, description: Количество счетов выбранного этапа. }
+        paidInvoiceCount: { type: integer, minimum: 0, maximum: 10, example: 2, description: Количество полностью оплаченных счетов выбранного этапа. }
+        deliveredInvoiceCount: { type: integer, minimum: 0, maximum: 10, example: 1, description: Количество доставленных счетов выбранного этапа. }
+        openShortageCount: { type: integer, minimum: 0, example: 0, description: Количество отдельно не устранённых нехваток выбранного этапа. }
+        isPartiallyPaid:
+          type: boolean
+          example: true
+          description: true, только если оплачено больше нуля, но меньше общего количества счетов.
+        isPartiallyDelivered:
+          type: boolean
+          example: true
+          description: true, только если доставлено больше нуля, но меньше общего количества счетов.
+    DashboardSelectedStage:
+      type: object
+      additionalProperties: false
+      required: [stageId, position, stageCount, title, plannedStartDate, plannedEndDate, assignee, status, progressPercent, materials, finances]
+      properties:
+        stageId: { type: integer, minimum: 1, maximum: 2147483647, example: 1001, description: "Единственный этап, к которому относятся все остальные поля этого объекта." }
+        position: { type: integer, minimum: 1, maximum: 8, example: 2, description: Позиция выбранного этапа среди типов справочника. }
+        stageCount: { type: integer, minimum: 1, maximum: 8, example: 6, description: Количество включённых этапов объекта для подписи «N из K». }
+        title: { type: string, minLength: 1, maxLength: 255, example: Стены, description: Отображаемое название выбранного этапа. }
+        plannedStartDate: { type: string, format: date, example: '2026-10-10', description: Плановое начало выбранного этапа. }
+        plannedEndDate: { type: string, format: date, example: '2026-10-25', description: Плановое окончание выбранного этапа. }
+        assignee:
+          description: Назначенный мастер выбранного этапа или null.
+          anyOf:
+            - $ref: ../users/users.yaml#/components/schemas/UserBrief
+            - type: 'null'
+        status: { $ref: ../common/common.yaml#/components/schemas/StageStatus }
+        progressPercent: { type: integer, minimum: 0, maximum: 100, example: 50, description: Вычисляемая готовность выбранного этапа. }
+        materials: { $ref: '#/components/schemas/MaterialIndicator' }
+        finances: { $ref: ../common/common.yaml#/components/schemas/StageFinancialSummary }
+    DashboardProjectRow:
+      type: object
+      additionalProperties: false
+      required: [projectId, ownerName, address, status, selectedStage]
+      properties:
+        projectId: { type: integer, minimum: 1, maximum: 2147483647, example: 101, description: Идентификатор объекта. }
+        ownerName: { type: string, minLength: 1, maxLength: 255, example: Анна Смирнова, description: Имя клиента. }
+        address: { type: string, minLength: 1, maxLength: 1000, example: 'Екатеринбург, ул. Лесная, д. 10', description: Адрес объекта. }
+        status: { $ref: ../common/common.yaml#/components/schemas/ProjectStatus }
+        selectedStage:
+          description: Первый по позиции невыплаченный этап или null, если все включённые этапы paid. Переходы к счёту, мастеру и чек-листу используют только его stageId.
+          anyOf:
+            - $ref: '#/components/schemas/DashboardSelectedStage'
+            - type: 'null'
+    DashboardProjectPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/DashboardProjectRow' }
+          description: Строки текущей страницы в документированном стабильном порядке.
+        total: { type: integer, minimum: 0, example: 12, description: Количество доступных строк до limit и offset. }
+        limit: { type: integer, minimum: 1, maximum: 100, example: 20, description: Применённый размер страницы. }
+        offset: { type: integer, minimum: 0, example: 0, description: Применённое смещение. }

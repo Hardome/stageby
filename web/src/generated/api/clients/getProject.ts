@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { getProjectResponseSchema, getProjectErrorSchema } from '../zod/getProjectSchema'
 
 /**
- * @description Руководитель и инженер-сметчик. Финансы выдаются отдельным методом.
+ * @description Только руководитель. Мастер получает только назначенные ему этапы через /stages.
  * @summary Карточка проекта
  * {@link /projects/:projectId}
  */

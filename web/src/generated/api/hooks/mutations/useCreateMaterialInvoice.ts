@@ -21,6 +21,7 @@ export function createMaterialInvoiceMutationOptions<TContext = unknown>(config:
 /**
  * @description Только руководитель. Требуется успешно загруженный PDF или JPEG с назначением material_invoice.
  * @summary Добавить счёт к заказу
+ * @deprecated
  * {@link /material-orders/:orderId/invoices}
  */
 export function useCreateMaterialInvoice<TContext>(options: {

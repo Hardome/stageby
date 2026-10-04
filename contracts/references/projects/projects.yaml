@@ -5,8 +5,8 @@ paths:
       tags:
         - Projects
       summary: Список объектов строительства
-      description: Руководитель и инженер-сметчик. Мастер и приёмщик работают через /stages без доступа к полной
-        карточке клиента. Сортировка createdAt DESC, id ASC. Фильтры AND.
+      description: Только руководитель. Мастер работает через /stages без доступа к полной карточке объекта и
+        общим суммам. Сортировка createdAt DESC, id ASC. Фильтры AND.
       parameters:
         - $ref: ../common/common.yaml#/components/parameters/Limit
         - $ref: ../common/common.yaml#/components/parameters/Offset
@@ -45,8 +45,12 @@ paths:
       summary: Составное создание объекта
       description: "Только руководитель. В одной транзакции создаёт проект, выбранные этапы и индивидуальные
         чек-листы. Если checklistItems этапа отсутствует, сервер копирует активный шаблон его типа. Ошибка любого
-        этапа откатывает всю операцию. Защита интерфейса от повторной отправки будет реализована на фронтенде.
-        Идентификаторы файлов относятся к предварительно успешно загруженным PDF проекта."
+        этапа откатывает всю операцию. Счета материалов в этот запрос не входят и добавляются отдельно к уже
+        созданному этапу. Идентификаторы файлов относятся только к предварительно успешно загруженным PDF проекта.
+        Повтор с тем же Idempotency-Key и тем же телом возвращает ранее созданный объект; тот же ключ с другим
+        телом возвращает 409 idempotency_conflict."
+      parameters:
+        - $ref: ../common/common.yaml#/components/parameters/IdempotencyKey
       requestBody:
         required: true
         content:
@@ -66,6 +70,8 @@ paths:
           $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
         "403":
           $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
   /projects/{projectId}:
     parameters:
       - name: projectId
@@ -81,7 +87,7 @@ paths:
       tags:
         - Projects
       summary: Карточка проекта
-      description: Руководитель и инженер-сметчик. Финансы выдаются отдельным методом.
+      description: Только руководитель. Мастер получает только назначенные ему этапы через /stages.
       responses:
         "200":
           description: Успешный ответ
