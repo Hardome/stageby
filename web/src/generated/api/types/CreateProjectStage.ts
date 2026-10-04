@@ -9,7 +9,7 @@ import type { StageTypeKey } from './StageType'
 
 export type CreateProjectStage = {
     /**
-     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
+     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
      * @example foundation
      * @type string
     */
@@ -30,12 +30,6 @@ export type CreateProjectStage = {
      * @type string
     */
     plannedEndDate: string;
-    /**
-     * @description Может ли этап выполняться параллельно с соседними этапами.
-     * @example false
-     * @type boolean
-    */
-    canRunInParallel: boolean;
     /**
      * @description Активный мастер этапа; null — мастер пока не назначен.
      * @minLength 1

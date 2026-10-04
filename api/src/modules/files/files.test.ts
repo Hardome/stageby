@@ -164,7 +164,6 @@ async function createFixture() {
           type: 'foundation',
           plannedStartDate: '2026-10-01',
           plannedEndDate: '2026-10-31',
-          canRunInParallel: false,
           assigneeId: foreman.user.id,
           plannedWorkAmountMinor: null,
           plannedMaterialAmountMinor: null,

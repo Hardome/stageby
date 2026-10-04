@@ -432,7 +432,6 @@ components:
         - type
         - title
         - position
-        - canRunInParallel
         - workSubtypes
         - assignee
         - status
@@ -502,10 +501,10 @@ components:
             - Фундамент
             - Стены
             - Крыша
-            - Окна
+            - Окна, двери
             - Фасад
             - Электрика
-            - Отделка
+            - Штукатурка
             - Отопление
           description: Название однозначно определяется type и не меняется.
         position:
@@ -515,11 +514,6 @@ components:
           minimum: 1
           maximum: 8
           description: Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
-        canRunInParallel:
-          examples:
-            - false
-          type: boolean
-          description: "Признак допустимости параллельного выполнения этапа."
         workSubtypes:
           description: "Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов."
           type: array

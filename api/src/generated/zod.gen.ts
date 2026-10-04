@@ -8,7 +8,7 @@ import * as z from 'zod';
 export const zExpectedVersion = z.int().gte(1);
 
 /**
- * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
+ * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
  */
 export const zStageType = z.enum([
     'foundation',
@@ -173,7 +173,6 @@ export const zCreateProjectStage = z.object({
     type: zStageType,
     plannedStartDate: z.iso.date(),
     plannedEndDate: z.iso.date(),
-    canRunInParallel: z.boolean(),
     assigneeId: z.int().gte(1).lte(2147483647).nullable(),
     plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
     plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
@@ -260,14 +259,13 @@ export const zStage = z.object({
         'Фундамент',
         'Стены',
         'Крыша',
-        'Окна',
+        'Окна, двери',
         'Фасад',
         'Электрика',
-        'Отделка',
+        'Штукатурка',
         'Отопление'
     ]),
     position: z.int().gte(1).lte(8),
-    canRunInParallel: z.boolean(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30),
     assignee: zUserBrief.nullable(),
     status: zStageStatus,
@@ -352,7 +350,7 @@ export const zChecklist = z.object({
     stageId: z.int().gte(1).lte(2147483647),
     items: z.array(zChecklistItem),
     progressPercent: z.int().gte(0).lte(100),
-    warnings: z.array(z.enum(['materials_incomplete'])),
+    warnings: z.array(z.enum(['materials_incomplete', 'predecessor_incomplete'])),
     version: z.int().gte(1),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()
@@ -651,14 +649,13 @@ export const zStageWritable = z.object({
         'Фундамент',
         'Стены',
         'Крыша',
-        'Окна',
+        'Окна, двери',
         'Фасад',
         'Электрика',
-        'Отделка',
+        'Штукатурка',
         'Отопление'
     ]),
     position: z.int().gte(1).lte(8),
-    canRunInParallel: z.boolean(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30),
     assignee: zUserBrief.nullable(),
     status: zStageStatus,

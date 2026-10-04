@@ -16,10 +16,10 @@ export const stageTitleEnum = {
     Фундамент: "\u0424\u0443\u043D\u0434\u0430\u043C\u0435\u043D\u0442",
     Стены: "\u0421\u0442\u0435\u043D\u044B",
     Крыша: "\u041A\u0440\u044B\u0448\u0430",
-    Окна: "\u041E\u043A\u043D\u0430",
+    "\u041E\u043A\u043D\u0430, \u0434\u0432\u0435\u0440\u0438": "\u041E\u043A\u043D\u0430, \u0434\u0432\u0435\u0440\u0438",
     Фасад: "\u0424\u0430\u0441\u0430\u0434",
     Электрика: "\u042D\u043B\u0435\u043A\u0442\u0440\u0438\u043A\u0430",
-    Отделка: "\u041E\u0442\u0434\u0435\u043B\u043A\u0430",
+    Штукатурка: "\u0428\u0442\u0443\u043A\u0430\u0442\u0443\u0440\u043A\u0430",
     Отопление: "\u041E\u0442\u043E\u043F\u043B\u0435\u043D\u0438\u0435"
 } as const;
 
@@ -70,7 +70,7 @@ export type Stage = {
     */
     projectIsArchived: boolean;
     /**
-     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
+     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
      * @example foundation
      * @type string
     */
@@ -89,12 +89,6 @@ export type Stage = {
      * @type integer
     */
     position: number;
-    /**
-     * @description Признак допустимости параллельного выполнения этапа.
-     * @example false
-     * @type boolean
-    */
-    canRunInParallel: boolean;
     /**
      * @description Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.
      * @type array

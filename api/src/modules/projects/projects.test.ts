@@ -95,7 +95,6 @@ function stage(type: StageType, overrides: Partial<CreateProject['stages'][numbe
     type,
     plannedStartDate: '2026-10-05',
     plannedEndDate: '2026-10-30',
-    canRunInParallel: false,
     assigneeId: null,
     plannedWorkAmountMinor: null,
     plannedMaterialAmountMinor: null,
@@ -193,7 +192,7 @@ describe('Composite project creation', () => {
     ).toBe(true);
   });
 
-  it('создаёт только выбранные этапы и сохраняет назначение, параллельность и планы', async () => {
+  it('создаёт только выбранные этапы и сохраняет назначение и планы', async () => {
     const manager = await createIdentity();
     const foreman = await createIdentity('foreman');
     const uploadedAt = new Date();
@@ -219,7 +218,6 @@ describe('Composite project creation', () => {
       documentFileIds: storedFiles.map(({ id }) => id),
       stages: [
         stage('walls', {
-          canRunInParallel: true,
           assigneeId: foreman.user.id,
           plannedWorkAmountMinor: 50_000_000,
           plannedMaterialAmountMinor: 70_000_000,
@@ -238,7 +236,6 @@ describe('Composite project creation', () => {
     expect(storedStage).toMatchObject({
       stageTypeCode: 'walls',
       assigneeId: foreman.user.id,
-      canRunInParallel: true,
       status: 'assigned',
       plannedWorkAmountMinor: 50_000_000,
       plannedMaterialAmountMinor: 70_000_000,
@@ -292,6 +289,21 @@ describe('Composite project creation', () => {
     );
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ code: 'invalid_request' });
+  });
+
+  it('разрешает пересекающиеся даты этапов внутри срока проекта', async () => {
+    const manager = await createIdentity();
+    const response = await createProject(
+      manager.cookie,
+      payload({
+        stages: [
+          stage('foundation', { plannedStartDate: '2026-10-05', plannedEndDate: '2026-11-15' }),
+          stage('walls', { plannedStartDate: '2026-10-20', plannedEndDate: '2026-12-01' }),
+        ],
+      }),
+    );
+
+    expect(response.statusCode, response.body).toBe(201);
   });
 
   it('отклоняет неактивного пользователя и пользователя не с ролью foreman', async () => {

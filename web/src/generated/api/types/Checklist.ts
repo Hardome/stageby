@@ -5,6 +5,13 @@
 
 import type { ChecklistItem } from './ChecklistItem'
 
+export const checklistWarningsEnum = {
+    materials_incomplete: "materials_incomplete",
+    predecessor_incomplete: "predecessor_incomplete"
+} as const;
+
+export type ChecklistWarningsEnumKey = (typeof checklistWarningsEnum)[keyof typeof checklistWarningsEnum];
+
 export type Checklist = {
     /**
      * @description Стабильный ID чек-листа этапа.
@@ -36,10 +43,10 @@ export type Checklist = {
     */
     progressPercent: number;
     /**
-     * @description Предупреждения текущего состояния. materials_incomplete означает, что работы начаты до полной комплектации материалами.
+     * @description Предупреждения текущего состояния. materials_incomplete означает, что работы начаты до полной комплектации материалами; predecessor_incomplete — что непосредственно предыдущий включённый этап ещё не выполнен. Предупреждения не блокируют работу.
      * @type array
     */
-    warnings: "materials_incomplete"[];
+    warnings: ChecklistWarningsEnumKey[];
     /**
      * @description Версия записи. Увеличивается при каждом изменении.
      * @minLength 1
