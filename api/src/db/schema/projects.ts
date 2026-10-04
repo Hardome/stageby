@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
 
@@ -27,10 +28,13 @@ export const projects = pgTable(
     plannedEndDate: date().notNull(),
     notes: text(),
     isArchived: boolean().notNull().default(false),
+    creationIdempotencyKey: varchar({ length: 100 }),
+    creationFingerprint: varchar({ length: 64 }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    uniqueIndex('projects_creation_idempotency_key_unique').on(table.creationIdempotencyKey),
     index('projects_archived_created_at_idx').on(table.isArchived, table.createdAt),
     check('projects_owner_name_not_blank_check', sql`btrim(${table.ownerName}) <> ''`),
     check('projects_address_not_blank_check', sql`btrim(${table.address}) <> ''`),

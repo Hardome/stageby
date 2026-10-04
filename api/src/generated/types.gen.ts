@@ -163,6 +163,64 @@ export type Session = {
 };
 
 /**
+ * Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.
+ */
+export type ProjectStatus = 'created' | 'in_progress' | 'acceptance' | 'completed';
+
+/**
+ * Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
+ */
+export type PlannedMoneyAmountMinor = number | null;
+
+/**
+ * Неотрицательная денежная сумма в копейках.
+ */
+export type MoneyAmountMinor = number;
+
+/**
+ * Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
+ */
+export type VariancePercent = number | null;
+
+/**
+ * Вычисляемые финансовые итоги проекта. Все поля доступны только для чтения; при неполном плане плановые итоги и отклонение равны null.
+ */
+export type ProjectFinancialSummary = {
+    /**
+     * Сумма планов работ включённых в расчёт этапов; null при неполном плане.
+     */
+    readonly plannedWorkAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Сумма платежей за работы включённых в расчёт этапов.
+     */
+    readonly actualWorkAmountMinor: MoneyAmountMinor;
+    /**
+     * Сумма планов материалов включённых в расчёт этапов; null при неполном плане.
+     */
+    readonly plannedMaterialAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Сумма оплаченных счетов за материалы включённых в расчёт этапов.
+     */
+    readonly actualMaterialAmountMinor: MoneyAmountMinor;
+    /**
+     * Общий план проекта по работам и материалам; null при неполном плане.
+     */
+    readonly totalPlannedAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Общие фактические затраты проекта на работы и материалы.
+     */
+    readonly totalActualAmountMinor: MoneyAmountMinor;
+    /**
+     * true, если планы работ и материалов заданы у всех включённых в расчёт этапов. Нулевые планы считаются заданными.
+     */
+    readonly isPlanComplete: boolean;
+    /**
+     * Процент отклонения общего плана проекта от общего факта.
+     */
+    readonly variancePercent: VariancePercent;
+};
+
+/**
  * Географические координаты объекта в десятичных градусах.
  */
 export type Coordinates = {
@@ -177,6 +235,12 @@ export type Coordinates = {
 };
 
 export type Project = {
+    status: ProjectStatus;
+    finances: ProjectFinancialSummary;
+    /**
+     * Загруженные PDF проекта в порядке position ASC.
+     */
+    documentFileIds: Array<number>;
     /**
      * Стабильный ID проекта — объекта строительства.
      */
@@ -249,11 +313,6 @@ export type ProjectPage = {
      */
     offset: number;
 };
-
-/**
- * Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
- */
-export type PlannedMoneyAmountMinor = number | null;
 
 export type CreateProjectChecklistItem = {
     /**
@@ -430,11 +489,6 @@ export type UserBrief = {
      */
     fullName: string;
 };
-
-/**
- * Неотрицательная денежная сумма в копейках.
- */
-export type MoneyAmountMinor = number;
 
 /**
  * Вычисляемая разница в копейках: положительное значение — остаток, отрицательное — переплата, null — план не задан.
@@ -650,10 +704,6 @@ export type UpdateStage = {
      * Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся.
      */
     plannedEndDate?: string;
-    /**
-     * ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.
-     */
-    predecessorStageIds?: Array<number>;
     /**
      * Новые примечания к этапу; null очищает сохранённые примечания.
      */
@@ -1191,16 +1241,6 @@ export type DashboardSummary = {
 };
 
 /**
- * Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.
- */
-export type ProjectStatus = 'created' | 'in_progress' | 'acceptance' | 'completed';
-
-/**
- * Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
- */
-export type VariancePercent = number | null;
-
-/**
  * Вычисляемые финансовые итоги одного этапа. Все поля доступны только для чтения.
  */
 export type StageFinancialSummary = {
@@ -1348,6 +1388,85 @@ export type LoginRequestWritable = {
      * Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.
      */
     password: string;
+};
+
+export type ProjectWritable = {
+    status: ProjectStatus;
+    /**
+     * Загруженные PDF проекта в порядке position ASC.
+     */
+    documentFileIds: Array<number>;
+    /**
+     * Стабильный ID проекта — объекта строительства.
+     */
+    id: number;
+    /**
+     * Имя клиента или собственника объекта строительства.
+     */
+    ownerName: string;
+    /**
+     * Обязательный адрес объекта строительства.
+     */
+    address: string;
+    /**
+     * Обязательные географические координаты объекта для отображения на карте.
+     */
+    coordinates: Coordinates;
+    /**
+     * Кадастровый номер объекта в текстовом виде; null — не указан.
+     */
+    cadastralNumber: string | null;
+    /**
+     * Название варианта дома, например «Семья 67»; null — не указан.
+     */
+    houseDesign: string | null;
+    /**
+     * Текстовый реквизит «договор» из исходной ведомости; null — не указан. Не является идентификатором пользователя.
+     */
+    contractLabel: string | null;
+    /**
+     * Плановая дата начала проекта в формате YYYY-MM-DD.
+     */
+    plannedStartDate: string;
+    /**
+     * Плановая дата окончания проекта в формате YYYY-MM-DD, не раньше даты начала.
+     */
+    plannedEndDate: string;
+    /**
+     * Примечания к проекту; null — отсутствуют.
+     */
+    notes: string | null;
+    /**
+     * Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.
+     */
+    isArchived: boolean;
+    /**
+     * Дата и время создания записи в UTC, формат RFC 3339.
+     */
+    createdAt: string;
+    /**
+     * Дата и время последнего изменения записи в UTC, формат RFC 3339.
+     */
+    updatedAt: string;
+};
+
+export type ProjectPageWritable = {
+    /**
+     * Проекты текущей страницы с учётом фильтров и прав доступа.
+     */
+    items: Array<ProjectWritable>;
+    /**
+     * Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.
+     */
+    total: number;
+    /**
+     * Применённый размер страницы; количество items может быть меньше.
+     */
+    limit: number;
+    /**
+     * Количество пропущенных записей после фильтрации и проверки доступа.
+     */
+    offset: number;
 };
 
 export type StageWritable = {

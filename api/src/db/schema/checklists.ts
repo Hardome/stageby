@@ -74,9 +74,12 @@ export const checklistItems = pgTable(
     requiresRework: boolean().notNull().default(false),
     completedAt: timestamp({ withTimezone: true }),
     completedByUserId: integer().references(() => users.id, { onDelete: 'restrict' }),
+    deletedAt: timestamp({ withTimezone: true }),
   },
   (table) => [
-    uniqueIndex('checklist_items_checklist_position_unique').on(table.checklistId, table.position),
+    uniqueIndex('checklist_items_checklist_position_unique')
+      .on(table.checklistId, table.position)
+      .where(sql`${table.deletedAt} is null`),
     index('checklist_items_completed_by_user_idx').on(table.completedByUserId),
     check('checklist_items_title_not_blank_check', sql`btrim(${table.title}) <> ''`),
     check('checklist_items_position_check', sql`${table.position} > 0`),

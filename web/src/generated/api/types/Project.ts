@@ -4,8 +4,26 @@
 */
 
 import type { Coordinates } from './Coordinates'
+import type { ProjectFinancialSummary } from './ProjectFinancialSummary'
+import type { ProjectStatusKey } from './ProjectStatus'
 
 export type Project = {
+    /**
+     * @description Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.
+     * @example in_progress
+     * @type string
+    */
+    status: ProjectStatusKey;
+    /**
+     * @description Вычисляемые финансовые итоги проекта. Все поля доступны только для чтения; при неполном плане плановые итоги и отклонение равны null.
+     * @type object
+    */
+    finances: ProjectFinancialSummary;
+    /**
+     * @description Загруженные PDF проекта в порядке position ASC.
+     * @type array
+    */
+    documentFileIds: number[];
     /**
      * @description Стабильный ID проекта — объекта строительства.
      * @minLength 1

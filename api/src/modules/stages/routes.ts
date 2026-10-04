@@ -1,19 +1,25 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import type { ApiError } from '#app/generated/types.gen';
+import type { ApiError, ConfigureChecklist, UpdateStage } from '#app/generated/types.gen';
 import {
   zAcceptStageBody,
   zAcceptStagePath,
   zApiError,
   zChangeStageStatusBody,
   zChangeStageStatusPath,
+  zConfigureStageChecklistBody,
   zGetStageChecklistPath,
   zGetStageChecklistResponse,
   zGetStagePath,
+  zListActiveStageTypesResponse,
+  zListProjectStagesPath,
+  zListStagesQuery,
+  zProjectStages,
   zReturnStageForReworkBody,
   zReturnStageForReworkPath,
   zStage,
+  zStagePage,
   zUpdateChecklistItemBody,
   zUpdateChecklistItemPath,
   zUpdateChecklistItemResponse,
@@ -23,6 +29,7 @@ import {
 import { requestAuditContext } from '#app/modules/audit/context';
 import type { StageRepository } from '#app/modules/stages/repository';
 import type { OperationResult, StageOperationError } from '#app/modules/stages/types';
+import { coerceRequestValues, definedValues } from '#app/plugins/request-values';
 
 function coercePathIds(value: unknown): unknown {
   if (typeof value !== 'object' || value === null) return value;
@@ -93,13 +100,89 @@ function send<T>(reply: FastifyReply, result: OperationResult<T>) {
 
 const errorResponses = { 400: zApiError, 401: zApiError, 403: zApiError, 404: zApiError, 409: zApiError };
 
-function parsePlannedAmount(amount: bigint | null): { valid: true; value: number | null } | { valid: false } {
-  if (amount === null) return { valid: true, value: null };
-  if (amount > BigInt(Number.MAX_SAFE_INTEGER) || amount % 100n !== 0n) return { valid: false };
-  return { valid: true, value: Number(amount) };
-}
+const updateStageBody = zUpdateStageBody
+  .strict()
+  .superRefine((body, context) => {
+    if (Object.keys(body).length < 2)
+      context.addIssue({ code: 'custom', message: 'Нужно передать хотя бы одно изменяемое поле.' });
+    for (const key of ['plannedWorkAmountMinor', 'plannedMaterialAmountMinor'] as const) {
+      const amount = body[key];
+      if (typeof amount === 'bigint' && (amount > BigInt(Number.MAX_SAFE_INTEGER) || amount % 100n !== 0n))
+        context.addIssue({
+          code: 'custom',
+          path: [key],
+          message: 'Сумма должна быть безопасным целым числом и кратна 100 копейкам.',
+        });
+    }
+    if (typeof body.notes === 'string' && !body.notes.trim())
+      context.addIssue({ code: 'custom', path: ['notes'], message: 'Примечание не может состоять из пробелов.' });
+    if (
+      body.workSubtypes?.some((value) => !value.trim()) ||
+      (body.workSubtypes && new Set(body.workSubtypes).size !== body.workSubtypes.length)
+    )
+      context.addIssue({
+        code: 'custom',
+        path: ['workSubtypes'],
+        message: 'Подтипы должны быть непустыми и не повторяться.',
+      });
+  })
+  .transform(
+    (body): UpdateStage =>
+      Object.fromEntries(
+        Object.entries(body)
+          .filter(([, value]) => value !== undefined)
+          .map(([key, value]) => [key, typeof value === 'bigint' ? Number(value) : value]),
+      ) as UpdateStage,
+  );
+
+const configureChecklistBody = zConfigureStageChecklistBody
+  .strict()
+  .superRefine((body, context) => {
+    for (const [index, item] of body.items.entries()) {
+      if (!item.title.trim())
+        context.addIssue({
+          code: 'custom',
+          path: ['items', index, 'title'],
+          message: 'Название не может состоять из пробелов.',
+        });
+      if (typeof item.photoHint === 'string' && !item.photoHint.trim())
+        context.addIssue({
+          code: 'custom',
+          path: ['items', index, 'photoHint'],
+          message: 'Подсказка не может состоять из пробелов.',
+        });
+    }
+  })
+  .transform(
+    (body): ConfigureChecklist => ({
+      ...body,
+      items: body.items.map(({ title, photoHint }) => ({ title, ...(photoHint === undefined ? {} : { photoHint }) })),
+    }),
+  );
 
 export function registerStageRoutes(app: FastifyInstance, repository: StageRepository): void {
+  app.get('/stage-types', {
+    preHandler: [app.authenticate, app.requireRoles('manager')],
+    schema: { response: { 200: zListActiveStageTypesResponse, ...errorResponses } },
+    handler: () => repository.activeTypes(),
+  });
+  app.get<{ Querystring: z.infer<typeof zListStagesQuery> }>('/stages', {
+    preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
+    schema: {
+      querystring: z.preprocess(coerceRequestValues, zListStagesQuery),
+      response: { 200: zStagePage.extend({ items: z.array(stageResponseSchema) }), ...errorResponses },
+    },
+    handler: (request) => repository.list(definedValues(request.query), request.auth!.user),
+  });
+  app.get<{ Params: z.infer<typeof zListProjectStagesPath> }>('/projects/:projectId/stages', {
+    preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
+    schema: {
+      params: z.preprocess(coerceRequestValues, zListProjectStagesPath),
+      response: { 200: zProjectStages.extend({ items: z.array(stageResponseSchema) }), ...errorResponses },
+    },
+    handler: async (request, reply) =>
+      send(reply, await repository.listProject(request.params.projectId, request.auth!.user)),
+  });
   app.get<{ Params: z.infer<typeof zGetStagePath> }>('/stages/:stageId', {
     preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
     schema: { params: getStagePathSchema, response: { 200: stageResponseSchema, ...errorResponses } },
@@ -136,68 +219,29 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
       ),
   });
 
-  app.patch<{ Params: z.infer<typeof zUpdateStagePath>; Body: z.infer<typeof zUpdateStageBody> }>('/stages/:stageId', {
+  app.patch<{ Params: z.infer<typeof zUpdateStagePath>; Body: UpdateStage }>('/stages/:stageId', {
     preHandler: [app.authenticate, app.requireRoles('manager')],
     schema: {
       params: updateStagePathSchema,
-      body: zUpdateStageBody,
+      body: updateStageBody,
       response: { 200: stageResponseSchema, ...errorResponses },
     },
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: the endpoint deliberately dispatches mutually exclusive patch fields.
-    handler: async (request, reply) => {
-      const keys = Object.keys(request.body).filter((key) => key !== 'expectedVersion');
-      if (keys.length !== 1) return send(reply, { status: 'forbidden' });
-      if (keys[0] === 'assigneeId' && request.body.assigneeId !== undefined) {
-        return send(
-          reply,
-          await repository.assign(
-            request.params.stageId,
-            request.body.expectedVersion,
-            request.body.assigneeId,
-            requestAuditContext(request),
-          ),
-        );
-      }
-      if (keys[0] === 'plannedWorkAmountMinor' && request.body.plannedWorkAmountMinor !== undefined) {
-        const amount = parsePlannedAmount(request.body.plannedWorkAmountMinor);
-        if (!amount.valid) {
-          return reply.status(400).send({
-            error: 'Bad Request',
-            code: 'invalid_request',
-            message: 'Сумма должна быть безопасным целым числом JavaScript и быть кратна 100 копейкам.',
-          });
-        }
-        return send(
-          reply,
-          await repository.updatePlannedWorkAmount(
-            request.params.stageId,
-            request.body.expectedVersion,
-            amount.value,
-            requestAuditContext(request),
-          ),
-        );
-      }
-      if (keys[0] === 'plannedMaterialAmountMinor' && request.body.plannedMaterialAmountMinor !== undefined) {
-        const amount = parsePlannedAmount(request.body.plannedMaterialAmountMinor);
-        if (!amount.valid) {
-          return reply.status(400).send({
-            error: 'Bad Request',
-            code: 'invalid_request',
-            message: 'Сумма должна быть безопасным целым числом JavaScript и быть кратна 100 копейкам.',
-          });
-        }
-        return send(
-          reply,
-          await repository.updatePlannedMaterialAmount(
-            request.params.stageId,
-            request.body.expectedVersion,
-            amount.value,
-            requestAuditContext(request),
-          ),
-        );
-      }
-      return send(reply, { status: 'forbidden' });
+    handler: async (request, reply) =>
+      send(reply, await repository.patch(request.params.stageId, request.body, requestAuditContext(request))),
+  });
+
+  app.put<{ Params: z.infer<typeof zGetStagePath>; Body: ConfigureChecklist }>('/stages/:stageId/checklist', {
+    preHandler: [app.authenticate, app.requireRoles('manager')],
+    schema: {
+      params: getStagePathSchema,
+      body: configureChecklistBody,
+      response: { 200: zGetStageChecklistResponse, ...errorResponses },
     },
+    handler: async (request, reply) =>
+      send(
+        reply,
+        await repository.configureChecklist(request.params.stageId, request.body, requestAuditContext(request)),
+      ),
   });
 
   app.put<{

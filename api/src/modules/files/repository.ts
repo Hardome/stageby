@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, isNull, lte, or, sql } from 'drizzle-orm';
 
 import { checklistItems, checklists } from '#app/db/schema/checklists';
-import { checklistItemPhotos, type FileRow, files } from '#app/db/schema/files';
+import { checklistItemPhotos, type FileRow, files, projectDocuments } from '#app/db/schema/files';
 import { materialInvoices } from '#app/db/schema/materials';
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
@@ -61,7 +61,7 @@ async function loadItemContext(database: Database | Transaction, itemId: number)
     .innerJoin(checklists, eq(checklistItems.checklistId, checklists.id))
     .innerJoin(stages, eq(checklists.stageId, stages.id))
     .innerJoin(projects, eq(stages.projectId, projects.id))
-    .where(eq(checklistItems.id, itemId));
+    .where(and(eq(checklistItems.id, itemId), isNull(checklistItems.deletedAt)));
   return context;
 }
 
@@ -243,12 +243,11 @@ export class FileRepository {
         file: files,
         photoId: checklistItemPhotos.id,
         photoAssigneeId: stages.assigneeId,
+        photoDeletedAt: checklistItemPhotos.deletedAt,
+        itemDeletedAt: checklistItems.deletedAt,
       })
       .from(files)
-      .leftJoin(
-        checklistItemPhotos,
-        and(eq(checklistItemPhotos.fileId, files.id), isNull(checklistItemPhotos.deletedAt)),
-      )
+      .leftJoin(checklistItemPhotos, eq(checklistItemPhotos.fileId, files.id))
       .leftJoin(checklistItems, eq(checklistItemPhotos.checklistItemId, checklistItems.id))
       .leftJoin(checklists, eq(checklistItems.checklistId, checklists.id))
       .leftJoin(stages, eq(checklists.stageId, stages.id))
@@ -262,11 +261,22 @@ export class FileRepository {
             .innerJoin(stages, eq(materialInvoices.stageId, stages.id))
             .where(eq(materialInvoices.fileId, fileId))
         : [];
+    const [document] =
+      row.file.purpose === 'project_document' && actor.role === 'foreman'
+        ? await this.#database
+            .select({ id: projectDocuments.id })
+            .from(projectDocuments)
+            .innerJoin(stages, eq(projectDocuments.projectId, stages.projectId))
+            .where(and(eq(projectDocuments.fileId, fileId), eq(stages.assigneeId, actor.id)))
+            .limit(1)
+        : [];
     const canRead =
       actor.role === 'manager' ||
       (row.file.purpose === 'checklist_photo' &&
-        (row.photoAssigneeId === actor.id || (row.photoId === null && row.file.uploadedByUserId === actor.id))) ||
-      (row.file.purpose === 'material_invoice' && material?.assigneeId === actor.id);
+        ((row.photoAssigneeId === actor.id && row.photoDeletedAt === null && row.itemDeletedAt === null) ||
+          (row.photoId === null && row.file.uploadedByUserId === actor.id))) ||
+      (row.file.purpose === 'material_invoice' && material?.assigneeId === actor.id) ||
+      document !== undefined;
     if (!canRead) return { status: 'not_found' };
     const request = await this.#storage.createDownloadRequest({
       key: row.file.storageKey,

@@ -508,7 +508,7 @@ paths:
       tags:
         - Stages
       summary: Карточка этапа
-      description: Доступ как у /stages. Карточка содержит адрес и координаты для выезда, но не имя клиента и договор. latestAcceptance хранит последнее решение, не журнал всех проверок.
+      description: Доступ как у /stages. Карточка содержит клиента, адрес и координаты для выезда. latestAcceptance хранит последнее решение, не журнал всех проверок.
       responses:
         '200':
           description: Успешный ответ
@@ -529,7 +529,7 @@ paths:
       tags:
         - Stages
       summary: Настроить этап
-      description: Руководитель меняет все входные поля. Назначенный мастер — только notes. Назначать можно только активного foreman. Первое назначение автоматически переводит created в assigned; снятие допускается только из assigned и возвращает created. В supplied/in_progress/acceptance/rework мастер обязателен, допускается его замена руководителем. completed и paid неизменяемы. После начала работ зависимости не меняются. Плановое окончание не раньше начала, сравнивается результирующая запись после PATCH. Предшественники — этапы того же проекта, без себя и циклов; проверка графа и запись выполняются атомарно. Удаление назначенного приёмщика во время acceptance запрещено. Архив — 409 project_archived. Передача запрещённого роли поля — 403, весь запрос отклоняется.
+      description: Только руководитель. Можно передать любое непустое сочетание полей; все проверки выполняются по результирующей записи, изменения атомарны и увеличивают version один раз. Назначать можно только активного foreman. created/assigned допускают снятие назначения; supplied/in_progress/acceptance/rework допускают только замену мастера. completed и paid неизменяемы. Даты находятся внутри срока проекта, окончание не раньше начала; соседние этапы не переносятся. Устаревшая expectedVersion — 409 version_conflict, архив — 409 project_archived.
       requestBody:
         required: true
         content:
@@ -706,7 +706,7 @@ paths:
       tags:
         - Checklists
       summary: Настроить контрольные точки
-      description: 'Только руководитель. Только до старта: created, assigned или supplied. Атомарно заменяет весь состав на непустой список. Создаёт новые ID пунктов, все отметки false, position начинается с 1; увеличивает версии чек-листа и этапа. expectedVersion относится к чек-листу. После старта состав фиксирован. Архив — 409 project_archived. Названия не должны состоять из пробелов.'
+      description: 'Только руководитель. Только до старта: created, assigned или supplied. Атомарно заменяет весь состав на непустой список. Создаёт новые ID пунктов, все отметки false, position начинается с 1; Старые пункты помечаются удалёнными, фото и история сохраняются. Увеличивает версии чек-листа и этапа. expectedVersion относится к чек-листу. После старта состав фиксирован. Архив — 409 project_archived. Названия не должны состоять из пробелов.'
       requestBody:
         required: true
         content:
@@ -1620,6 +1620,99 @@ components:
           format: date-time
         user:
           $ref: '#/components/schemas/User'
+    ProjectStatus:
+      type: string
+      enum:
+        - created
+        - in_progress
+        - acceptance
+        - completed
+      examples:
+        - in_progress
+      description: 'Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.'
+    PlannedMoneyAmountMinor:
+      type:
+        - integer
+        - 'null'
+      format: int64
+      minimum: 0
+      multipleOf: 100
+      examples:
+        - 12500000
+        - 0
+        - null
+      description: 'Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.'
+    MoneyAmountMinor:
+      type: integer
+      format: int64
+      minimum: 0
+      examples:
+        - 12500000
+      description: Неотрицательная денежная сумма в копейках.
+    VariancePercent:
+      type:
+        - number
+        - 'null'
+      examples:
+        - 10
+        - -10
+        - null
+      description: Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
+    ProjectFinancialSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - plannedWorkAmountMinor
+        - actualWorkAmountMinor
+        - plannedMaterialAmountMinor
+        - actualMaterialAmountMinor
+        - totalPlannedAmountMinor
+        - totalActualAmountMinor
+        - isPlanComplete
+        - variancePercent
+      properties:
+        plannedWorkAmountMinor:
+          readOnly: true
+          description: Сумма планов работ включённых в расчёт этапов; null при неполном плане.
+          allOf:
+            - $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        actualWorkAmountMinor:
+          readOnly: true
+          description: Сумма платежей за работы включённых в расчёт этапов.
+          allOf:
+            - $ref: '#/components/schemas/MoneyAmountMinor'
+        plannedMaterialAmountMinor:
+          readOnly: true
+          description: Сумма планов материалов включённых в расчёт этапов; null при неполном плане.
+          allOf:
+            - $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        actualMaterialAmountMinor:
+          readOnly: true
+          description: Сумма оплаченных счетов за материалы включённых в расчёт этапов.
+          allOf:
+            - $ref: '#/components/schemas/MoneyAmountMinor'
+        totalPlannedAmountMinor:
+          readOnly: true
+          description: Общий план проекта по работам и материалам; null при неполном плане.
+          allOf:
+            - $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        totalActualAmountMinor:
+          readOnly: true
+          description: Общие фактические затраты проекта на работы и материалы.
+          allOf:
+            - $ref: '#/components/schemas/MoneyAmountMinor'
+        isPlanComplete:
+          type: boolean
+          readOnly: true
+          examples:
+            - false
+          description: true, если планы работ и материалов заданы у всех включённых в расчёт этапов. Нулевые планы считаются заданными.
+        variancePercent:
+          readOnly: true
+          description: Процент отклонения общего плана проекта от общего факта.
+          allOf:
+            - $ref: '#/components/schemas/VariancePercent'
+      description: Вычисляемые финансовые итоги проекта. Все поля доступны только для чтения; при неполном плане плановые итоги и отклонение равны null.
     Coordinates:
       type: object
       additionalProperties: false
@@ -1657,9 +1750,23 @@ components:
         - plannedEndDate
         - notes
         - isArchived
+        - status
+        - finances
+        - documentFileIds
         - createdAt
         - updatedAt
       properties:
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        finances:
+          $ref: '#/components/schemas/ProjectFinancialSummary'
+        documentFileIds:
+          type: array
+          description: Загруженные PDF проекта в порядке position ASC.
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
         id:
           examples:
             - 101
@@ -1786,18 +1893,6 @@ components:
           description: Количество пропущенных записей после фильтрации и проверки доступа.
           type: integer
           minimum: 0
-    PlannedMoneyAmountMinor:
-      type:
-        - integer
-        - 'null'
-      format: int64
-      minimum: 0
-      multipleOf: 100
-      examples:
-        - 12500000
-        - 0
-        - null
-      description: 'Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.'
     CreateProjectChecklistItem:
       type: object
       additionalProperties: false
@@ -2133,13 +2228,6 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-    MoneyAmountMinor:
-      type: integer
-      format: int64
-      minimum: 0
-      examples:
-        - 12500000
-      description: Неотрицательная денежная сумма в копейках.
     SignedMoneyAmountMinor:
       type:
         - integer
@@ -2551,15 +2639,6 @@ components:
           description: Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся.
           type: string
           format: date
-        predecessorStageIds:
-          description: ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.
-          type: array
-          items:
-            type: integer
-            minimum: 1
-            maximum: 2147483647
-          maxItems: 7
-          uniqueItems: true
         notes:
           examples:
             - Согласовать время доставки бетона.
@@ -3502,25 +3581,6 @@ components:
           description: Общий итог работ и материалов. План и остаток равны null, если неполон план хотя бы одной категории.
           allOf:
             - $ref: '#/components/schemas/DashboardMoneyMetric'
-    ProjectStatus:
-      type: string
-      enum:
-        - created
-        - in_progress
-        - acceptance
-        - completed
-      examples:
-        - in_progress
-      description: 'Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.'
-    VariancePercent:
-      type:
-        - number
-        - 'null'
-      examples:
-        - 10
-        - -10
-        - null
-      description: Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
     StageFinancialSummary:
       type: object
       additionalProperties: false

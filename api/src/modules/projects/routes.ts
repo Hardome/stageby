@@ -1,11 +1,54 @@
 import type { FastifyInstance } from 'fastify';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import type { RouteHandlers } from '#app/generated/fastify.gen';
 import type { ApiError, CreateProject } from '#app/generated/types.gen';
-import { zApiError, zCreateProjectBody, zCreateProjectResponse } from '#app/generated/zod.gen';
+import {
+  zApiError,
+  zCreateProjectBody,
+  zCreateProjectHeaders,
+  zCreateProjectStage,
+  zGetProjectPath,
+  zListProjectsQuery,
+  zProject,
+  zProjectFinancialSummary,
+  zProjectPage,
+  zUpdateProjectBody,
+} from '#app/generated/zod.gen';
 import { requestAuditContext } from '#app/modules/audit/context';
 import type { ProjectService } from '#app/modules/projects/service';
+import { coerceRequestValues, definedValues } from '#app/plugins/request-values';
+
+const projectResponse = zProject.extend({
+  finances: zProjectFinancialSummary.extend({
+    plannedWorkAmountMinor: z.number().int().nonnegative().nullable(),
+    actualWorkAmountMinor: z.number().int().nonnegative(),
+    plannedMaterialAmountMinor: z.number().int().nonnegative().nullable(),
+    actualMaterialAmountMinor: z.number().int().nonnegative(),
+    totalPlannedAmountMinor: z.number().int().nonnegative().nullable(),
+    totalActualAmountMinor: z.number().int().nonnegative(),
+  }),
+});
+const projectPath = z.preprocess(coerceRequestValues, zGetProjectPath);
+const projectQuery = z.preprocess(coerceRequestValues, zListProjectsQuery);
+const updateProjectBody = zUpdateProjectBody.strict().superRefine((body, context) => {
+  if (Object.keys(body).length === 0)
+    context.addIssue({ code: 'custom', message: 'Нужно передать хотя бы одно поле.' });
+  for (const [key, value] of Object.entries(body)) {
+    if (typeof value === 'string' && !value.trim())
+      context.addIssue({ code: 'custom', path: [key], message: 'Поле не может состоять из пробелов.' });
+  }
+});
+const errorResponses = { 400: zApiError, 401: zApiError, 403: zApiError, 404: zApiError, 409: zApiError };
+
+function projectError(status: 'not_found' | 'invalid_request' | 'idempotency_conflict'): ApiError {
+  const errors = { not_found: 'Not Found', invalid_request: 'Bad Request', idempotency_conflict: 'Conflict' };
+  return {
+    error: errors[status],
+    code: status,
+    message: status === 'not_found' ? 'Объект не найден.' : 'Связанные данные запроса некорректны.',
+  };
+}
 
 type ParsedCreateProject = z.infer<typeof zCreateProjectBody>;
 type ParsedStage = ParsedCreateProject['stages'][number];
@@ -17,6 +60,10 @@ function validateProjectFields(body: ParsedCreateProject, addIssue: AddIssue): v
   }
   if (body.address.trim().length === 0) {
     addIssue(['address'], 'Адрес не может состоять только из пробелов.');
+  }
+  for (const key of ['cadastralNumber', 'houseDesign', 'contractLabel', 'notes'] as const) {
+    if (typeof body[key] === 'string' && !body[key].trim())
+      addIssue([key], 'Поле не может состоять только из пробелов.');
   }
   if (body.plannedEndDate < body.plannedStartDate) {
     addIssue(['plannedEndDate'], 'Дата окончания проекта не может быть раньше даты начала.');
@@ -72,14 +119,26 @@ function validateStage(
   validateChecklistItems(stage, index, addIssue);
 }
 
-const validatedCreateProjectBodySchema = zCreateProjectBody.superRefine((body, context) => {
-  const addIssue: AddIssue = (path, message) => context.addIssue({ code: 'custom', path, message });
-  validateProjectFields(body, addIssue);
-  const seenTypes = new Set<string>();
-  for (const [index, stage] of body.stages.entries()) {
-    validateStage(stage, index, body, seenTypes, addIssue);
-  }
-});
+const validatedCreateProjectBodySchema = zCreateProjectBody
+  .extend({
+    stages: zCreateProjectBody.shape.stages.element
+      .strict()
+      .extend({
+        checklistItems: zCreateProjectStage.shape.checklistItems.unwrap().element.strict().array().min(1).optional(),
+      })
+      .array()
+      .min(1)
+      .max(8),
+  })
+  .strict()
+  .superRefine((body, context) => {
+    const addIssue: AddIssue = (path, message) => context.addIssue({ code: 'custom', path, message });
+    validateProjectFields(body, addIssue);
+    const seenTypes = new Set<string>();
+    for (const [index, stage] of body.stages.entries()) {
+      validateStage(stage, index, body, seenTypes, addIssue);
+    }
+  });
 
 const createProjectBodySchema = validatedCreateProjectBodySchema.transform((body): CreateProject => {
   const { cadastralNumber, houseDesign, contractLabel, notes, ...required } = body;
@@ -116,8 +175,43 @@ const errors = {
 } satisfies Record<string, ApiError | ((details: NonNullable<ApiError['details']>) => ApiError)>;
 
 export function registerProjectRoutes(app: FastifyInstance, service: ProjectService): void {
+  app.get<{ Querystring: z.infer<typeof zListProjectsQuery> }>('/projects', {
+    preHandler: [app.authenticate, app.requireRoles('manager')],
+    schema: {
+      querystring: projectQuery,
+      response: { 200: zProjectPage.extend({ items: z.array(projectResponse) }), ...errorResponses },
+    },
+    handler: (request) => service.list(definedValues(request.query)),
+  });
+  app.get<{ Params: z.infer<typeof zGetProjectPath> }>('/projects/:projectId', {
+    preHandler: [app.authenticate, app.requireRoles('manager')],
+    schema: { params: projectPath, response: { 200: projectResponse, ...errorResponses } },
+    handler: async (request, reply) => {
+      const result = await service.get(request.params.projectId);
+      return result.status === 'ok' ? result.value : reply.status(404).send(projectError('not_found'));
+    },
+  });
+  app.patch<{ Params: z.infer<typeof zGetProjectPath>; Body: z.infer<typeof zUpdateProjectBody> }>(
+    '/projects/:projectId',
+    {
+      preHandler: [app.authenticate, app.requireRoles('manager')],
+      schema: { params: projectPath, body: updateProjectBody, response: { 200: projectResponse, ...errorResponses } },
+      handler: async (request, reply) => {
+        const input = Object.fromEntries(Object.entries(request.body).filter(([, value]) => value !== undefined));
+        const result = await service.update(request.params.projectId, input, requestAuditContext(request));
+        if (result.status === 'ok') return result.value;
+        const status = result.status === 'not_found' ? 'not_found' : 'invalid_request';
+        return reply.status(status === 'not_found' ? 404 : 400).send(projectError(status));
+      },
+    },
+  );
   const createProject: RouteHandlers['createProject'] = async (request, reply) => {
-    const result = await service.create(request.body, requestAuditContext(request));
+    const result = await service.create(
+      request.body,
+      request.headers['idempotency-key'] as string,
+      requestAuditContext(request),
+    );
+    if (result.status === 'idempotency_conflict') return reply.status(409).send(projectError(result.status));
     if (result.status === 'invalid') {
       return reply.status(400).send(errors.invalid(result.details));
     }
@@ -128,11 +222,13 @@ export function registerProjectRoutes(app: FastifyInstance, service: ProjectServ
     preHandler: [app.authenticate, app.requireRoles('manager')],
     schema: {
       body: createProjectBodySchema,
+      headers: z.object({ 'idempotency-key': zCreateProjectHeaders.shape['Idempotency-Key'] }).passthrough(),
       response: {
-        201: zCreateProjectResponse,
+        201: projectResponse,
         400: zApiError,
         401: zApiError,
         403: zApiError,
+        409: zApiError,
       },
     },
     handler: createProject,

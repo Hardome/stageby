@@ -89,7 +89,7 @@ async function createFixture(
   const response = await getApp().inject({
     method: 'POST',
     url: '/projects',
-    headers: { cookie: manager.cookie },
+    headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
     payload: {
       ownerName: `Клиент ${randomUUID()}`,
       address: 'Екатеринбург, ул. Тестовая, 1',
@@ -178,6 +178,181 @@ async function updateItem(
 }
 
 describe('Stage statuses and checklists', () => {
+  it('возвращает активные типы и 34 пункта шаблонов только руководителю', async () => {
+    const fixture = await createFixture();
+    const response = await getApp().inject({ url: '/stage-types', headers: { cookie: fixture.manager.cookie } });
+    expect(response.statusCode, response.body).toBe(200);
+    const types = response.json<Array<{ code: string; position: number; checklistItems: Array<{ title: string }> }>>();
+    expect(types.map((type) => type.position)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(types.flatMap((type) => type.checklistItems)).toHaveLength(34);
+    expect(types.every((type) => type.checklistItems.at(-1)?.title === 'Уборка')).toBe(true);
+    expect(
+      (await getApp().inject({ url: '/stage-types', headers: { cookie: fixture.foreman.cookie } })).statusCode,
+    ).toBe(403);
+  });
+
+  it('ограничивает списки и total назначением, включает paid и фильтрует архив', async () => {
+    const fixture = await createFixture();
+    const stranger = await createIdentity('foreman');
+    await getApp().db.update(stages).set({ status: 'paid' }).where(eq(stages.id, fixture.stage.id));
+    const list = (cookie: string, query = '') =>
+      getApp().inject({ url: `/stages?projectId=${fixture.project.id}${query}`, headers: { cookie } });
+    const own = await list(fixture.foreman.cookie, '&status=paid&limit=1&offset=0');
+    expect(own.statusCode, own.body).toBe(200);
+    expect(own.json()).toMatchObject({
+      total: 1,
+      limit: 1,
+      items: [
+        {
+          id: fixture.stage.id,
+          projectOwnerName: fixture.project.ownerName,
+          projectAddress: fixture.project.address,
+          status: 'paid',
+          plannedWorkAmountMinor: 10_000,
+          actualWorkAmountMinor: 0,
+        },
+      ],
+    });
+    const other = await list(stranger.cookie, `&assigneeId=${fixture.foreman.user.id}`);
+    expect(other.json()).toMatchObject({ total: 0, items: [] });
+    const projectList = await getApp().inject({
+      url: `/projects/${fixture.project.id}/stages`,
+      headers: { cookie: fixture.foreman.cookie },
+    });
+    expect(projectList.json().items).toHaveLength(1);
+    expect(
+      (await getApp().inject({ url: `/projects/${fixture.project.id}/stages`, headers: { cookie: stranger.cookie } }))
+        .statusCode,
+    ).toBe(404);
+    await getApp().db.update(projects).set({ isArchived: true }).where(eq(projects.id, fixture.project.id));
+    expect((await list(fixture.foreman.cookie)).json().total).toBe(0);
+    expect((await list(fixture.foreman.cookie, '&includeArchived=true')).json().total).toBe(1);
+    expect((await list(fixture.foreman.cookie, '&includeArchived=other')).statusCode).toBe(400);
+  });
+
+  it('атомарно меняет даты и планы, проверяет итоговый интервал и версию', async () => {
+    const fixture = await createFixture();
+    const [neighbor] = await getApp()
+      .db.insert(stages)
+      .values({
+        projectId: fixture.project.id,
+        stageTypeCode: 'walls',
+        position: 2,
+        plannedStartDate: '2026-11-01',
+        plannedEndDate: '2026-11-30',
+      })
+      .returning();
+    const patch = (body: object) =>
+      getApp().inject({
+        method: 'PATCH',
+        url: `/stages/${fixture.stage.id}`,
+        headers: { cookie: fixture.manager.cookie },
+        payload: body,
+      });
+    const valid = await patch({
+      expectedVersion: 1,
+      plannedStartDate: '2026-11-10',
+      plannedEndDate: '2026-11-20',
+      plannedWorkAmountMinor: 20_000,
+      plannedMaterialAmountMinor: 30_000,
+      notes: 'Новый срок',
+    });
+    expect(valid.statusCode, valid.body).toBe(200);
+    expect(valid.json()).toMatchObject({
+      version: 2,
+      plannedStartDate: '2026-11-10',
+      plannedEndDate: '2026-11-20',
+      totalPlannedAmountMinor: 50_000,
+    });
+    expect((await getApp().db.select().from(stages).where(eq(stages.id, neighbor!.id)))[0]).toEqual(neighbor);
+    const stale = await patch({ expectedVersion: 1, plannedEndDate: '2026-12-01' });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json()).toMatchObject({ code: 'version_conflict' });
+    for (const body of [
+      { plannedStartDate: '2026-12-01' },
+      { plannedEndDate: '2027-01-01', notes: 'Не сохранить' },
+      { plannedWorkAmountMinor: 123 },
+      { predecessorStageIds: [] },
+      {},
+    ]) {
+      const result = await patch({ expectedVersion: 2, ...body });
+      expect(result.statusCode, result.body).toBe(400);
+    }
+    const card = await getApp().inject({
+      url: `/stages/${fixture.stage.id}`,
+      headers: { cookie: fixture.manager.cookie },
+    });
+    expect(card.json()).toMatchObject({ version: 2, notes: 'Новый срок' });
+    expect((await auditRecords(getApp().db, fixture.manager.user.id, 'updateStage')).events).toHaveLength(1);
+  });
+
+  it('заменяет состав до старта, сохраняет старые пункты и фото, блокирует изменение после старта', async () => {
+    const fixture = await createFixture();
+    await attachUploadedPhoto(fixture.items[0]!.id);
+    const configure = (cookie: string, body: object) =>
+      getApp().inject({
+        method: 'PUT',
+        url: `/stages/${fixture.stage.id}/checklist`,
+        headers: { cookie },
+        payload: body,
+      });
+    const body = { expectedVersion: 1, items: [{ title: 'Новый пункт', photoHint: 'Новая подсказка' }] };
+    expect((await configure(fixture.foreman.cookie, body)).statusCode).toBe(403);
+    const response = await configure(fixture.manager.cookie, body);
+    expect(response.statusCode, response.body).toBe(200);
+    const checklist = response.json<Checklist>();
+    expect(checklist).toMatchObject({
+      version: 2,
+      progressPercent: 0,
+      items: [{ title: 'Новый пункт', photoHint: 'Новая подсказка', position: 1, isCompleted: false }],
+    });
+    expect(checklist.items[0]!.id).not.toBe(fixture.items[0]!.id);
+    const old = await getApp()
+      .db.select()
+      .from(checklistItems)
+      .where(
+        inArray(
+          checklistItems.id,
+          fixture.items.map((item) => item.id),
+        ),
+      );
+    expect(old.every((item) => item.deletedAt !== null)).toBe(true);
+    expect(
+      await getApp()
+        .db.select()
+        .from(checklistItemPhotos)
+        .where(eq(checklistItemPhotos.checklistItemId, fixture.items[0]!.id)),
+    ).toHaveLength(1);
+    expect((await updateItem(fixture.foreman.cookie, fixture.stage.id, fixture.items[0]!.id, 2)).statusCode).toBe(404);
+    expect((await configure(fixture.manager.cookie, body)).statusCode).toBe(409);
+    await attachUploadedPhoto(checklist.items[0]!.id);
+    expect((await updateItem(fixture.foreman.cookie, fixture.stage.id, checklist.items[0]!.id, 2)).statusCode).toBe(
+      200,
+    );
+    expect((await configure(fixture.manager.cookie, { ...body, expectedVersion: 3 })).statusCode).toBe(409);
+    const audit = await auditRecords(getApp().db, fixture.manager.user.id, 'configureStageChecklist');
+    expect(audit.events).toHaveLength(1);
+    expect(audit.changes.some((change) => change.entityType === 'checklist_items' && change.action === 'update')).toBe(
+      true,
+    );
+  });
+
+  it('отказывает в изменении архивного этапа и завершённого этапа', async () => {
+    const fixture = await createFixture();
+    const patch = () =>
+      getApp().inject({
+        method: 'PATCH',
+        url: `/stages/${fixture.stage.id}`,
+        headers: { cookie: fixture.manager.cookie },
+        payload: { expectedVersion: 1, notes: 'Новое' },
+      });
+    await getApp().db.update(projects).set({ isArchived: true }).where(eq(projects.id, fixture.project.id));
+    expect((await patch()).json()).toMatchObject({ code: 'project_archived' });
+    await getApp().db.update(projects).set({ isArchived: false }).where(eq(projects.id, fixture.project.id));
+    await getApp().db.update(stages).set({ status: 'completed' }).where(eq(stages.id, fixture.stage.id));
+    expect((await patch()).json()).toMatchObject({ code: 'invalid_transition' });
+  });
+
   it('назначает только активного мастера и переводит created в assigned', async () => {
     const fixture = await createFixture({ assigned: false });
     const before = await getApp().inject({
@@ -228,7 +403,7 @@ describe('Stage statuses and checklists', () => {
     const response = await getApp().inject({
       method: 'POST',
       url: '/projects',
-      headers: { cookie: manager.cookie },
+      headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
       payload: {
         ownerName: `Клиент ${randomUUID()}`,
         address: 'Екатеринбург, ул. Последовательная, 1',

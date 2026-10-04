@@ -21,7 +21,7 @@ export function getStageQueryOptions({ path }: GetStageOptions, config: Partial<
 }
 
 /**
- * @description Доступ как у /stages. Карточка содержит адрес и координаты для выезда, но не имя клиента и договор. latestAcceptance хранит последнее решение, не журнал всех проверок.
+ * @description Доступ как у /stages. Карточка содержит клиента, адрес и координаты для выезда. latestAcceptance хранит последнее решение, не журнал всех проверок.
  * @summary Карточка этапа
  * {@link /stages/:stageId}
  */

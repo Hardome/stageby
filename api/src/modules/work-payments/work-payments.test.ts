@@ -79,7 +79,7 @@ async function createFixture(plannedWorkAmountMinor: number | null = 10_000) {
   const response = await getApp().inject({
     method: 'POST',
     url: '/projects',
-    headers: { cookie: manager.cookie },
+    headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
     payload: {
       ownerName: `Клиент ${randomUUID()}`,
       address: 'Екатеринбург, ул. Платёжная, 1',

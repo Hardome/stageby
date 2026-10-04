@@ -171,9 +171,23 @@ components:
         - plannedEndDate
         - notes
         - isArchived
+        - status
+        - finances
+        - documentFileIds
         - createdAt
         - updatedAt
       properties:
+        status:
+          $ref: ../common/common.yaml#/components/schemas/ProjectStatus
+        finances:
+          $ref: ../common/common.yaml#/components/schemas/ProjectFinancialSummary
+        documentFileIds:
+          type: array
+          description: Загруженные PDF проекта в порядке position ASC.
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
         id:
           examples:
             - 101
