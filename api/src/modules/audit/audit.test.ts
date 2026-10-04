@@ -33,7 +33,7 @@ function context(): AuditContext {
 }
 
 async function events(requestId: string) {
-  return getApp().db.select().from(auditEvents).where(eq(auditEvents.requestId, requestId));
+  return getApp().db.select().from(auditEvents).where(eq(auditEvents.requestId, requestId)).orderBy(auditEvents.id);
 }
 
 async function identity() {
