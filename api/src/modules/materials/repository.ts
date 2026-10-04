@@ -16,6 +16,8 @@ import type {
 } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
+import { getMaximumSize } from '#app/modules/files/policy';
+import { isSupplyComplete, loadStageSummaries } from '#app/modules/materials/summary';
 import type { Actor, Database, MaterialOperationError, MaterialOperationResult } from '#app/modules/materials/types';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -24,8 +26,15 @@ const reporters = alias(users, 'reporter');
 const resolvers = alias(users, 'resolver');
 const payers = alias(users, 'payer');
 const deliverers = alias(users, 'deliverer');
-const maximumInvoiceFileSize = 10 * 1024 * 1024;
 const maximumInvoicesPerStage = 10;
+
+function isSameInvoice(existing: typeof materialInvoices.$inferSelect, stageId: number, input: CreateMaterialInvoice) {
+  return (
+    existing.stageId === stageId &&
+    existing.amountMinor === input.amountMinor &&
+    existing.supplierName === (input.supplierName ?? null)
+  );
+}
 
 function brief(id: number | null, name: string | null): UserBrief | null {
   return id === null || name === null ? null : { id, fullName: name };
@@ -125,12 +134,8 @@ async function loadInvoices(db: Db, stageId: number): Promise<StageMaterialInvoi
 async function syncSupplyStatus(transaction: Transaction, stageId: number, audit: AuditWriter): Promise<void> {
   const [stage] = await transaction.select().from(stages).where(eq(stages.id, stageId)).for('update');
   if (!stage || !['assigned', 'supplied'].includes(stage.status)) return;
-  const invoices = await transaction
-    .select({ deliveredAt: materialInvoices.deliveredAt })
-    .from(materialInvoices)
-    .where(eq(materialInvoices.stageId, stageId));
-  const status =
-    invoices.length > 0 && invoices.every(({ deliveredAt }) => deliveredAt !== null) ? 'supplied' : 'assigned';
+  const summary = (await loadStageSummaries(transaction, [stageId])).get(stageId)!;
+  const status = isSupplyComplete(summary.materialSummary) ? 'supplied' : 'assigned';
   if (status !== stage.status) {
     await audit.mutate(stages, eq(stages.id, stageId), () =>
       transaction
@@ -167,7 +172,7 @@ function invoiceStateUpdate(
 async function getInvoiceFileError(transaction: Transaction, fileId: number): Promise<MaterialOperationError | null> {
   const [file] = await transaction.select().from(files).where(eq(files.id, fileId)).for('update');
   if (!file || file.status !== 'uploaded' || file.purpose !== 'material_invoice') return 'invalid_request';
-  if (file.sizeBytes > maximumInvoiceFileSize) return 'file_too_large';
+  if (file.sizeBytes > getMaximumSize('material_invoice')) return 'file_too_large';
   if (file.mimeType !== 'application/pdf' && file.mimeType !== 'image/jpeg') return 'invalid_request';
   const [used] = await transaction
     .select({ id: materialInvoices.id })
@@ -199,6 +204,19 @@ export class MaterialRepository {
       if (!stageContext) return { status: 'not_found' };
       await transaction.select({ id: stages.id }).from(stages).where(eq(stages.id, stageId)).for('update');
       if (stageContext.isArchived) return { status: 'project_archived' };
+      // Lock the file before checking its unique attachment, including retries on another stage.
+      await transaction.select({ id: files.id }).from(files).where(eq(files.id, input.fileId)).for('update');
+      const [existing] = await transaction
+        .select()
+        .from(materialInvoices)
+        .where(eq(materialInvoices.fileId, input.fileId));
+      if (existing) {
+        if (!isSameInvoice(existing, stageId, input)) return { status: 'invalid_request' };
+        return {
+          status: 'ok',
+          value: (await loadInvoices(transaction, stageId)).find(({ id }) => id === existing.id)!,
+        };
+      }
       const [invoiceCount] = await transaction
         .select({ count: sql<number>`count(*)`.mapWith(Number) })
         .from(materialInvoices)

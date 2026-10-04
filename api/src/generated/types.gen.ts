@@ -441,6 +441,40 @@ export type MoneyAmountMinor = number;
  */
 export type SignedMoneyAmountMinor = number | null;
 
+/**
+ * Вычисляемое состояние счетов и нехваток выбранного этапа.
+ */
+export type MaterialIndicator = {
+    /**
+     * Красный — нет счетов или есть открытая нехватка; иначе жёлтый — не все счета оплачены или доставлены; иначе зелёный.
+     */
+    color: 'red' | 'yellow' | 'green';
+    /**
+     * Количество счетов выбранного этапа.
+     */
+    invoiceCount: number;
+    /**
+     * Количество полностью оплаченных счетов выбранного этапа.
+     */
+    paidInvoiceCount: number;
+    /**
+     * Количество доставленных счетов выбранного этапа.
+     */
+    deliveredInvoiceCount: number;
+    /**
+     * Количество отдельно не устранённых нехваток выбранного этапа.
+     */
+    openShortageCount: number;
+    /**
+     * true, только если оплачено больше нуля, но меньше общего количества счетов.
+     */
+    isPartiallyPaid: boolean;
+    /**
+     * true, только если доставлено больше нуля, но меньше общего количества счетов.
+     */
+    isPartiallyDelivered: boolean;
+};
+
 export type Acceptance = {
     /**
      * Решение по этапу: accepted — принят, rejected — возвращён на доработку.
@@ -525,23 +559,7 @@ export type Stage = {
     actualMaterialAmountMinor: MoneyAmountMinor;
     totalPlannedAmountMinor: PlannedMoneyAmountMinor;
     totalActualAmountMinor: MoneyAmountMinor;
-    /**
-     * Краткая сводка заказов, счетов, доставки и открытых нехваток этапа.
-     */
-    materialSummary: {
-        /**
-         * Количество счетов этапа.
-         */
-        invoiceCount: number;
-        /**
-         * Количество доставленных счетов.
-         */
-        deliveredInvoiceCount: number;
-        /**
-         * Количество открытых нехваток.
-         */
-        openShortageCount: number;
-    };
+    materialSummary: MaterialIndicator;
     /**
      * Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.
      */
@@ -1178,40 +1196,6 @@ export type DashboardSummary = {
 export type ProjectStatus = 'created' | 'in_progress' | 'acceptance' | 'completed';
 
 /**
- * Вычисляемое состояние счетов и нехваток выбранного этапа.
- */
-export type MaterialIndicator = {
-    /**
-     * Красный — нет счетов или есть открытая нехватка; иначе жёлтый — не все счета оплачены или доставлены; иначе зелёный.
-     */
-    color: 'red' | 'yellow' | 'green';
-    /**
-     * Количество счетов выбранного этапа.
-     */
-    invoiceCount: number;
-    /**
-     * Количество полностью оплаченных счетов выбранного этапа.
-     */
-    paidInvoiceCount: number;
-    /**
-     * Количество доставленных счетов выбранного этапа.
-     */
-    deliveredInvoiceCount: number;
-    /**
-     * Количество отдельно не устранённых нехваток выбранного этапа.
-     */
-    openShortageCount: number;
-    /**
-     * true, только если оплачено больше нуля, но меньше общего количества счетов.
-     */
-    isPartiallyPaid: boolean;
-    /**
-     * true, только если доставлено больше нуля, но меньше общего количества счетов.
-     */
-    isPartiallyDelivered: boolean;
-};
-
-/**
  * Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
  */
 export type VariancePercent = number | null;
@@ -1422,23 +1406,7 @@ export type StageWritable = {
     actualMaterialAmountMinor: MoneyAmountMinor;
     totalPlannedAmountMinor: PlannedMoneyAmountMinor;
     totalActualAmountMinor: MoneyAmountMinor;
-    /**
-     * Краткая сводка заказов, счетов, доставки и открытых нехваток этапа.
-     */
-    materialSummary: {
-        /**
-         * Количество счетов этапа.
-         */
-        invoiceCount: number;
-        /**
-         * Количество доставленных счетов.
-         */
-        deliveredInvoiceCount: number;
-        /**
-         * Количество открытых нехваток.
-         */
-        openShortageCount: number;
-    };
+    materialSummary: MaterialIndicator;
     /**
      * Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.
      */

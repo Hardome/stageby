@@ -239,6 +239,23 @@ export const zMoneyAmountMinor = z.coerce.bigint().gte(BigInt(0)).max(BigInt('92
  */
 export const zSignedMoneyAmountMinor = z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }).nullable();
 
+/**
+ * Вычисляемое состояние счетов и нехваток выбранного этапа.
+ */
+export const zMaterialIndicator = z.object({
+    color: z.enum([
+        'red',
+        'yellow',
+        'green'
+    ]),
+    invoiceCount: z.int().gte(0).lte(10),
+    paidInvoiceCount: z.int().gte(0).lte(10),
+    deliveredInvoiceCount: z.int().gte(0).lte(10),
+    openShortageCount: z.int().gte(0),
+    isPartiallyPaid: z.boolean(),
+    isPartiallyDelivered: z.boolean()
+});
+
 export const zAcceptance = z.object({
     decision: z.enum(['accepted', 'rejected']),
     comment: z.string().min(1).max(5000).nullable(),
@@ -278,11 +295,7 @@ export const zStage = z.object({
     actualMaterialAmountMinor: zMoneyAmountMinor,
     totalPlannedAmountMinor: zPlannedMoneyAmountMinor,
     totalActualAmountMinor: zMoneyAmountMinor,
-    materialSummary: z.object({
-        invoiceCount: z.int().gte(0),
-        deliveredInvoiceCount: z.int().gte(0),
-        openShortageCount: z.int().gte(0)
-    }),
+    materialSummary: zMaterialIndicator,
     actualStartDate: z.iso.date().nullable(),
     actualEndDate: z.iso.date().nullable(),
     predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7),
@@ -559,23 +572,6 @@ export const zProjectStatus = z.enum([
 ]);
 
 /**
- * Вычисляемое состояние счетов и нехваток выбранного этапа.
- */
-export const zMaterialIndicator = z.object({
-    color: z.enum([
-        'red',
-        'yellow',
-        'green'
-    ]),
-    invoiceCount: z.int().gte(0).lte(10),
-    paidInvoiceCount: z.int().gte(0).lte(10),
-    deliveredInvoiceCount: z.int().gte(0).lte(10),
-    openShortageCount: z.int().gte(0),
-    isPartiallyPaid: z.boolean(),
-    isPartiallyDelivered: z.boolean()
-});
-
-/**
  * Отклонение (план − факт) / план × 100. Плюс — экономия, минус — перерасход; null — план отсутствует, равен нулю или неполон.
  */
 export const zVariancePercent = z.number().nullable();
@@ -666,11 +662,7 @@ export const zStageWritable = z.object({
     actualMaterialAmountMinor: zMoneyAmountMinor,
     totalPlannedAmountMinor: zPlannedMoneyAmountMinor,
     totalActualAmountMinor: zMoneyAmountMinor,
-    materialSummary: z.object({
-        invoiceCount: z.int().gte(0),
-        deliveredInvoiceCount: z.int().gte(0),
-        openShortageCount: z.int().gte(0)
-    }),
+    materialSummary: zMaterialIndicator,
     actualStartDate: z.iso.date().nullable(),
     actualEndDate: z.iso.date().nullable(),
     predecessorStageIds: z.array(z.int().gte(1).lte(2147483647)).max(7),

@@ -5,6 +5,7 @@
 
 import type { Acceptance } from './Acceptance'
 import type { Coordinates } from './Coordinates'
+import type { MaterialIndicator } from './MaterialIndicator'
 import type { MoneyAmountMinor } from './MoneyAmountMinor'
 import type { PlannedMoneyAmountMinor } from './PlannedMoneyAmountMinor'
 import type { SignedMoneyAmountMinor } from './SignedMoneyAmountMinor'
@@ -191,32 +192,10 @@ export type Stage = {
     */
     totalActualAmountMinor: MoneyAmountMinor;
     /**
-     * @description Краткая сводка заказов, счетов, доставки и открытых нехваток этапа.
+     * @description Вычисляемое состояние счетов и нехваток выбранного этапа.
      * @type object
     */
-    materialSummary: {
-        /**
-         * @description Количество счетов этапа.
-         * @minLength 0
-         * @example 3
-         * @type integer
-        */
-        invoiceCount: number;
-        /**
-         * @description Количество доставленных счетов.
-         * @minLength 0
-         * @example 2
-         * @type integer
-        */
-        deliveredInvoiceCount: number;
-        /**
-         * @description Количество открытых нехваток.
-         * @minLength 0
-         * @example 1
-         * @type integer
-        */
-        openShortageCount: number;
-    };
+    materialSummary: MaterialIndicator;
     /**
      * @description Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.
      *
