@@ -106,6 +106,13 @@
       "when": 1791118226049,
       "tag": "0014_smart_sugar_man",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1791119455863,
+      "tag": "0015_warm_wiccan",
+      "breakpoints": true
     }
   ]
 }

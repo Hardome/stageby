@@ -74,7 +74,7 @@ components:
         - heating
       examples:
         - foundation
-      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна; facade — Фасад; electrical — Электрика; finishing — Отделка; heating — Отопление.
+      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
     StageStatus:
       type: string
       enum:

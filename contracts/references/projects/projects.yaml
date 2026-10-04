@@ -449,7 +449,6 @@ components:
         - type
         - plannedStartDate
         - plannedEndDate
-        - canRunInParallel
         - assigneeId
         - plannedWorkAmountMinor
         - plannedMaterialAmountMinor
@@ -468,11 +467,6 @@ components:
           type: string
           format: date
           description: "Плановое окончание этапа внутри срока проекта, не раньше начала этапа."
-        canRunInParallel:
-          examples:
-            - false
-          type: boolean
-          description: "Может ли этап выполняться параллельно с соседними этапами."
         assigneeId:
           examples:
             - 17
