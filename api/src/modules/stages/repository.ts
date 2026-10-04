@@ -29,18 +29,14 @@ import type {
 } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
+import { addCalendarDays, calendarDate } from '#app/modules/dashboard/calendar';
 import { isSupplyComplete, loadStageSummaries } from '#app/modules/materials/summary';
 import type { Actor, Database, OperationResult, StageOperationError } from '#app/modules/stages/types';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 function today(): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Yekaterinburg',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
+  return calendarDate();
 }
 
 function canRead(actor: Actor, assigneeId: number | null): boolean {
@@ -259,7 +255,7 @@ async function getStatusTransitionError(
     .select({ amount: sum(workPayments.amountMinor).mapWith(Number) })
     .from(workPayments)
     .where(eq(workPayments.stageId, stageId));
-  return locked.stage.plannedWorkAmountMinor - (paid?.amount ?? 0) === 0 ? null : 'invalid_transition';
+  return locked.stage.plannedWorkAmountMinor - (paid?.amount ?? 0) <= 0 ? null : 'invalid_transition';
 }
 
 function getChecklistUpdateError(
@@ -619,13 +615,15 @@ export class StageRepository {
     actor: Actor,
     context: AuditContext = { source: 'system' },
   ): Promise<OperationResult<Stage>> {
+    const currentDate = today();
+    const correctionDueDate = input.correctionDueDate ?? addCalendarDays(currentDate, 2);
     return auditedTransaction(this.#database, context, 'returnStageForRework', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       if (!locked) return { status: 'not_found' };
       if (locked.isArchived) return { status: 'project_archived' };
       if (locked.stage.version !== input.expectedVersion) return { status: 'version_conflict' };
       if (locked.stage.status !== 'acceptance') return { status: 'invalid_transition' };
-      if (input.correctionDueDate < today()) return { status: 'invalid_request' };
+      if (correctionDueDate < currentDate) return { status: 'invalid_request' };
       const [checklist] = await transaction.select().from(checklists).where(eq(checklists.stageId, stageId));
       if (!checklist || new Set(input.itemIds).size !== input.itemIds.length) return { status: 'invalid_request' };
       const selected = await transaction
@@ -647,7 +645,7 @@ export class StageRepository {
             stageId,
             decision: 'rejected',
             comment: input.comment,
-            correctionDueDate: input.correctionDueDate,
+            correctionDueDate,
             decidedByUserId: actor.id,
           })
           .returning(),

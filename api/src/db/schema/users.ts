@@ -13,6 +13,7 @@ export const users = pgTable(
     role: userRoleEnum().notNull(),
     phone: varchar({ length: 32 }),
     isActive: boolean().notNull().default(true),
+    passwordResetRequestedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },

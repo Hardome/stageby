@@ -15,12 +15,10 @@ type AuthModuleOptions = Pick<
 
 export const authModule: FastifyPluginAsync<AuthModuleOptions> = async (app, options) => {
   const sessions = new SessionRepository(app.db);
-  const loginService = new LoginService(
-    new UserRepository(app.db),
-    new SessionService(sessions, options.SESSION_TTL_HOURS),
-  );
+  const users = new UserRepository(app.db);
+  const loginService = new LoginService(users, new SessionService(sessions, options.SESSION_TTL_HOURS));
 
-  registerAuthRoutes(app, loginService, sessions, {
+  registerAuthRoutes(app, loginService, sessions, users, {
     loginRateLimitMax: options.LOGIN_RATE_LIMIT_MAX,
     loginRateLimitTimeWindow: options.LOGIN_RATE_LIMIT_TIME_WINDOW,
     secureCookie: options.NODE_ENV === 'production',

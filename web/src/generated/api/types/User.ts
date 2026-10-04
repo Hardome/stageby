@@ -28,6 +28,15 @@ export type User = {
     */
     login: string;
     /**
+     * @description Время открытого запроса сброса пароля; null означает отсутствие запроса. Руководитель закрывает запрос назначением нового пароля.
+     *
+     * Format: `date-time`
+     * @example 2026-10-04T08:00:00Z
+     * @example null
+     * @type string
+    */
+    readonly passwordResetRequestedAt: string | null;
+    /**
      * @description Полное имя сотрудника или исполнителя для отображения.
      * @minLength 1
      * @maxLength 255

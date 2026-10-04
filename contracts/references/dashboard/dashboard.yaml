@@ -4,7 +4,7 @@ paths:
       operationId: getDashboardSummary
       tags: [Dashboard]
       summary: Финансовая сводка панели руководителя
-      description: Только руководитель. Считает работы, материалы и общий итог независимо от таблицы объектов. В расчёт входят этапы с plannedEndDate не позже through. Факт того же периметра включает все внесённые выплаты за работы и полные суммы оплаченных счетов; суммы не дублируются при соединении наборов данных.
+      description: Только руководитель. Считает работы, материалы и общий итог независимо от таблицы объектов. В расчёт входят этапы неархивных объектов с plannedEndDate не позже through, включая paid. Факт того же периметра включает все внесённые выплаты за работы и полные суммы оплаченных счетов независимо от даты оплаты; суммы не дублируются при соединении наборов данных.
       parameters:
         - name: through
           in: query
@@ -140,12 +140,13 @@ components:
     DashboardProjectRow:
       type: object
       additionalProperties: false
-      required: [projectId, ownerName, address, status, selectedStage]
+      required: [projectId, ownerName, address, status, finances, selectedStage]
       properties:
         projectId: { type: integer, minimum: 1, maximum: 2147483647, example: 101, description: Идентификатор объекта. }
         ownerName: { type: string, minLength: 1, maxLength: 255, example: Анна Смирнова, description: Имя клиента. }
         address: { type: string, minLength: 1, maxLength: 1000, example: 'Екатеринбург, ул. Лесная, д. 10', description: Адрес объекта. }
         status: { $ref: ../common/common.yaml#/components/schemas/ProjectStatus }
+        finances: { $ref: ../common/common.yaml#/components/schemas/ProjectFinancialSummary }
         selectedStage:
           description: Первый по позиции невыплаченный этап или null, если все включённые этапы paid. Переходы к счёту, мастеру и чек-листу используют только его stageId.
           anyOf:

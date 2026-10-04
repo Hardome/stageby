@@ -246,7 +246,7 @@ export class UserRepository {
     try {
       return await auditedTransaction(this.#database, context, 'setUserPassword', async (transaction, audit) => {
         const [user] = await transaction
-          .select({ id: users.id })
+          .select({ id: users.id, passwordResetRequestedAt: users.passwordResetRequestedAt })
           .from(users)
           .where(eq(users.id, id))
           .limit(1)
@@ -257,7 +257,13 @@ export class UserRepository {
         }
 
         const changedAt = new Date();
-        await transaction.update(users).set({ passwordHash, updatedAt: changedAt }).where(eq(users.id, id));
+        const write = () =>
+          transaction
+            .update(users)
+            .set({ passwordHash, passwordResetRequestedAt: null, updatedAt: changedAt })
+            .where(eq(users.id, id));
+        if (user.passwordResetRequestedAt !== null) await audit.mutate(users, eq(users.id, id), write);
+        else await write();
         await transaction
           .update(sessions)
           .set({ revokedAt: changedAt })
@@ -268,5 +274,20 @@ export class UserRepository {
     } catch {
       throw new Error('Не удалось изменить пароль пользователя');
     }
+  }
+
+  async requestPasswordReset(login: string, context: AuditContext): Promise<void> {
+    await auditedTransaction(this.#database, context, 'requestPasswordReset', async (transaction, audit) => {
+      const [user] = await transaction
+        .select()
+        .from(users)
+        .where(and(eq(users.login, login), eq(users.isActive, true)))
+        .for('update');
+      if (!user || user.passwordResetRequestedAt !== null) return;
+      const now = new Date();
+      await audit.mutate(users, eq(users.id, user.id), () =>
+        transaction.update(users).set({ passwordResetRequestedAt: now, updatedAt: now }).where(eq(users.id, user.id)),
+      );
+    });
   }
 }

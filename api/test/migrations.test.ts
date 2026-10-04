@@ -76,6 +76,7 @@ const expectedIndexes = [
 ];
 
 const expectedForeignKeys = [
+  'work_payments_recipientId_users_id_fk',
   'audit_changes_eventId_audit_events_id_fk',
   'acceptance_items_acceptanceId_acceptances_id_fk',
   'acceptance_items_checklistItemId_checklist_items_id_fk',
@@ -212,7 +213,7 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('17');
+      expect(firstJournal.rows[0]?.count).toBe('18');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);

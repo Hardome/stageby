@@ -13,6 +13,7 @@ const user: User = {
   phone: '+7',
   createdAt: '2026-09-01T00:00:00Z',
   updatedAt: '2026-09-01T00:00:00Z',
+  passwordResetRequestedAt: null,
 };
 const creation = {
   login: 'new.user',

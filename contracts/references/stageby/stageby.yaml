@@ -44,6 +44,8 @@ paths:
     $ref: ../users/users.yaml#/paths/~1users~1{userId}~1password
   /auth/login:
     $ref: ../auth/auth.yaml#/paths/~1auth~1login
+  /auth/password-reset-requests:
+    $ref: ../auth/auth.yaml#/paths/~1auth~1password-reset-requests
   /auth/logout:
     $ref: ../auth/auth.yaml#/paths/~1auth~1logout
   /auth/me:

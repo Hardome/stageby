@@ -42,6 +42,10 @@ export type User = {
      */
     login: string;
     /**
+     * Время открытого запроса сброса пароля; null означает отсутствие запроса. Руководитель закрывает запрос назначением нового пароля.
+     */
+    readonly passwordResetRequestedAt: string | null;
+    /**
      * Полное имя сотрудника или исполнителя для отображения.
      */
     fullName: string;
@@ -160,6 +164,13 @@ export type Session = {
      */
     expiresAt: string;
     user: User;
+};
+
+export type PasswordResetRequest = {
+    /**
+     * Логин пользователя, которому требуется новый пароль.
+     */
+    login: string;
 };
 
 /**
@@ -733,9 +744,9 @@ export type RejectStage = {
      */
     comment: string;
     /**
-     * Обязательный срок исправления в формате YYYY-MM-DD, не раньше текущей даты объекта в часовом поясе Asia/Yekaterinburg.
+     * Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.
      */
-    correctionDueDate: string;
+    correctionDueDate?: string;
     /**
      * Пункты текущего чек-листа, требующие повторного выполнения.
      */
@@ -854,6 +865,10 @@ export type WorkPayment = {
     comment: string | null;
     createdBy: UserBrief;
     /**
+     * Получатель выплаты, сохранённый независимо от назначения этапа. null только у прежних записей без получателя.
+     */
+    recipient: UserBrief | null;
+    /**
      * Версия платежа для защиты от конкурентных изменений.
      */
     version: number;
@@ -868,6 +883,10 @@ export type WorkPayment = {
 };
 
 export type CreateWorkPayment = {
+    /**
+     * ID активного мастера из списка пользователей; может отличаться от текущего назначенного мастера.
+     */
+    recipientId: number;
     /**
      * Дата фактической оплаты в формате YYYY-MM-DD.
      */
@@ -884,6 +903,10 @@ export type DeleteWorkPayment = {
 };
 
 export type UpdateWorkPayment = {
+    /**
+     * Новый получатель — активный мастер. Изменение назначения этапа само по себе получателя не меняет.
+     */
+    recipientId?: number;
     expectedVersion: ExpectedVersion;
     /**
      * Новая дата фактической оплаты.
@@ -1334,6 +1357,7 @@ export type DashboardProjectRow = {
      */
     address: string;
     status: ProjectStatus;
+    finances: ProjectFinancialSummary;
     /**
      * Первый по позиции невыплаченный этап или null, если все включённые этапы paid. Переходы к счёту, мастеру и чек-листу используют только его stageId.
      */
@@ -1355,6 +1379,60 @@ export type DashboardProjectPage = {
     limit: number;
     /**
      * Применённое смещение.
+     */
+    offset: number;
+};
+
+/**
+ * Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.
+ */
+export type UserWritable = {
+    /**
+     * Стабильный ID пользователя.
+     */
+    id: number;
+    /**
+     * Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
+     */
+    login: string;
+    /**
+     * Полное имя сотрудника или исполнителя для отображения.
+     */
+    fullName: string;
+    role: UserRole;
+    /**
+     * Контактный телефон пользователя; null — не указан.
+     */
+    phone: string | null;
+    /**
+     * Признак активной учётной записи. Неактивный пользователь не может войти в систему.
+     */
+    isActive: boolean;
+    /**
+     * Дата и время создания записи в UTC, формат RFC 3339.
+     */
+    createdAt: string;
+    /**
+     * Дата и время последнего изменения записи в UTC, формат RFC 3339.
+     */
+    updatedAt: string;
+};
+
+export type UserPageWritable = {
+    /**
+     * Пользователи текущей страницы с учётом фильтров и прав доступа.
+     */
+    items: Array<UserWritable>;
+    /**
+     * Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.
+     */
+    total: number;
+    /**
+     * Применённый размер страницы; количество items может быть меньше.
+     */
+    limit: number;
+    /**
+     * Количество пропущенных записей после фильтрации и проверки доступа.
      */
     offset: number;
 };
@@ -1388,6 +1466,14 @@ export type LoginRequestWritable = {
      * Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.
      */
     password: string;
+};
+
+export type SessionWritable = {
+    /**
+     * Дата и время истечения сессии в UTC, формат RFC 3339. После истечения требуется новый вход.
+     */
+    expiresAt: string;
+    user: UserWritable;
 };
 
 export type ProjectWritable = {
@@ -1957,6 +2043,33 @@ export type LoginResponses = {
 };
 
 export type LoginResponse = LoginResponses[keyof LoginResponses];
+
+export type RequestPasswordResetData = {
+    body: PasswordResetRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/password-reset-requests';
+};
+
+export type RequestPasswordResetErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Превышен лимит запросов. Повторите через Retry-After секунд.
+     */
+    429: ApiError;
+};
+
+export type RequestPasswordResetError = RequestPasswordResetErrors[keyof RequestPasswordResetErrors];
+
+export type RequestPasswordResetResponses = {
+    /**
+     * Запрос принят; тело отсутствует, наличие пользователя не раскрывается.
+     */
+    202: unknown;
+};
 
 export type LogoutData = {
     body?: never;

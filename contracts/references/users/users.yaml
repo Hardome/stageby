@@ -192,6 +192,7 @@ components:
         - role
         - phone
         - isActive
+        - passwordResetRequestedAt
         - createdAt
         - updatedAt
       properties:
@@ -210,6 +211,12 @@ components:
           description: Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
           examples:
             - foreman.ivan
+        passwordResetRequestedAt:
+          examples: ['2026-10-04T08:00:00Z', null]
+          type: [string, 'null']
+          format: date-time
+          readOnly: true
+          description: Время открытого запроса сброса пароля; null означает отсутствие запроса. Руководитель закрывает запрос назначением нового пароля.
         fullName:
           examples:
             - "Иван Петров"

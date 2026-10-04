@@ -109,13 +109,105 @@ async function createFixture(plannedWorkAmountMinor: number | null = 10_000) {
 }
 
 describe('Оплата работ', () => {
+  it('сохраняет получателей при замене мастера и суммирует выплаты разным мастерам', async () => {
+    const fixture = await createFixture();
+    const replacement = await createIdentity('foreman');
+    for (const [recipientId, amountMinor] of [
+      [fixture.foreman.user.id, 4000],
+      [replacement.user.id, 6000],
+    ]) {
+      const response = await getApp().inject({
+        method: 'POST',
+        url: `/stages/${fixture.stage.id}/work-payments`,
+        headers: { cookie: fixture.manager.cookie },
+        payload: { recipientId, amountMinor, paidAt: '2026-10-04' },
+      });
+      expect(response.statusCode, response.body).toBe(201);
+      expect(response.json().recipient.id).toBe(recipientId);
+    }
+    const reassigned = await getApp().inject({
+      method: 'PATCH',
+      url: `/stages/${fixture.stage.id}`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { expectedVersion: 1, assigneeId: replacement.user.id },
+    });
+    expect(reassigned.statusCode, reassigned.body).toBe(200);
+    expect(reassigned.json()).toMatchObject({ actualWorkAmountMinor: 10_000, workBalanceAmountMinor: 0 });
+    const list = await getApp().inject({
+      url: `/stages/${fixture.stage.id}/work-payments`,
+      headers: { cookie: fixture.manager.cookie },
+    });
+    const payments = list.json<WorkPayment[]>();
+    expect(payments.map((payment) => payment.recipient!.id).sort((a, b) => a - b)).toEqual([
+      fixture.foreman.user.id,
+      replacement.user.id,
+    ]);
+    const audit = await auditRecords(getApp().db, fixture.manager.user.id, 'createWorkPayment');
+    expect(audit.changes.map((change) => change.after!.recipientId).sort()).toEqual(
+      [fixture.foreman.user.id, replacement.user.id].sort(),
+    );
+    const updated = await getApp().inject({
+      method: 'PATCH',
+      url: `/work-payments/${payments[0]!.id}`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { expectedVersion: 1, recipientId: fixture.foreman.user.id },
+    });
+    expect(updated.statusCode, updated.body).toBe(200);
+    expect(updated.json().recipient.id).toBe(fixture.foreman.user.id);
+  });
+
+  it('требует активного получателя с ролью мастера, отклоняет неизвестные поля без аудита', async () => {
+    const fixture = await createFixture();
+    const inactive = await createIdentity('foreman');
+    await getApp().db.update(users).set({ isActive: false }).where(eq(users.id, inactive.user.id));
+    for (const extra of [
+      {},
+      { recipientId: fixture.manager.user.id },
+      { recipientId: inactive.user.id },
+      { recipientId: 2_147_483_647 },
+      { recipientId: fixture.foreman.user.id, unknown: 1 },
+    ]) {
+      const response = await getApp().inject({
+        method: 'POST',
+        url: `/stages/${fixture.stage.id}/work-payments`,
+        headers: { cookie: fixture.manager.cookie },
+        payload: { paidAt: '2026-10-04', amountMinor: 1000, ...extra },
+      });
+      expect(response.statusCode, response.body).toBe(400);
+    }
+    expect((await auditRecords(getApp().db, fixture.manager.user.id, 'createWorkPayment')).events).toHaveLength(0);
+  });
+
+  it.each(['assigned', 'completed'] as const)(
+    'не разрешает paid при статусе %s без приёмки или без плана',
+    async (status) => {
+      const fixture = await createFixture(status === 'completed' ? null : 10_000);
+      await getApp().db.update(stages).set({ status }).where(eq(stages.id, fixture.stage.id));
+      const payment = await getApp().inject({
+        method: 'POST',
+        url: `/stages/${fixture.stage.id}/work-payments`,
+        headers: { cookie: fixture.manager.cookie },
+        payload: { paidAt: '2026-10-04', recipientId: fixture.foreman.user.id, amountMinor: 20_000 },
+      });
+      expect(payment.statusCode, payment.body).toBe(201);
+      expect((await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id)))[0]!.status).toBe(status);
+      const response = await getApp().inject({
+        method: 'PUT',
+        url: `/stages/${fixture.stage.id}/status`,
+        headers: { cookie: fixture.manager.cookie },
+        payload: { expectedVersion: 1, status: 'paid' },
+      });
+      expect(response.statusCode, response.body).toBe(409);
+    },
+  );
+
   it('создаёт частичные платежи, показывает переплату и поддерживает изменение и удаление', async () => {
     const fixture = await createFixture();
     const invalid = await getApp().inject({
       method: 'POST',
       url: `/stages/${fixture.stage.id}/work-payments`,
       headers: { cookie: fixture.manager.cookie },
-      payload: { paidAt: '2026-10-01', amountMinor: 150 },
+      payload: { paidAt: '2026-10-01', amountMinor: 150, recipientId: fixture.foreman.user.id },
     });
     expect(invalid.statusCode).toBe(400);
 
@@ -123,7 +215,7 @@ describe('Оплата работ', () => {
       method: 'POST',
       url: `/stages/${fixture.stage.id}/work-payments`,
       headers: { cookie: fixture.manager.cookie },
-      payload: { paidAt: '2026-10-01', amountMinor: 4000, comment: ' Аванс ' },
+      payload: { paidAt: '2026-10-01', amountMinor: 4000, comment: ' Аванс ', recipientId: fixture.foreman.user.id },
     });
     expect(firstResponse.statusCode, firstResponse.body).toBe(201);
     const first = firstResponse.json<WorkPayment>();
@@ -133,7 +225,7 @@ describe('Оплата работ', () => {
       method: 'POST',
       url: `/stages/${fixture.stage.id}/work-payments`,
       headers: { cookie: fixture.manager.cookie },
-      payload: { paidAt: '2026-10-02', amountMinor: 7000 },
+      payload: { paidAt: '2026-10-02', amountMinor: 7000, recipientId: fixture.foreman.user.id },
     });
     expect(secondResponse.statusCode, secondResponse.body).toBe(201);
     const second = secondResponse.json<WorkPayment>();
@@ -208,7 +300,7 @@ describe('Оплата работ', () => {
       method: 'POST',
       url: `/stages/${fixture.stage.id}/work-payments`,
       headers: { cookie: fixture.manager.cookie },
-      payload: { paidAt: '2026-10-01', amountMinor: 5000 },
+      payload: { paidAt: '2026-10-01', amountMinor: 5000, recipientId: fixture.foreman.user.id },
     });
     expect(payment.statusCode, payment.body).toBe(201);
 
@@ -257,14 +349,14 @@ describe('Оплата работ', () => {
     });
   });
 
-  it('переводит завершённый этап в paid только при точном нулевом остатке', async () => {
+  it.each([10_000, 11_000])('переводит завершённый этап в paid при достаточной выплате %i', async (amountMinor) => {
     const fixture = await createFixture();
     await getApp().db.update(stages).set({ status: 'completed' }).where(eq(stages.id, fixture.stage.id));
     await getApp().inject({
       method: 'POST',
       url: `/stages/${fixture.stage.id}/work-payments`,
       headers: { cookie: fixture.manager.cookie },
-      payload: { paidAt: '2026-10-01', amountMinor: 10_000 },
+      payload: { paidAt: '2026-10-01', amountMinor, recipientId: fixture.foreman.user.id },
     });
     const paid = await getApp().inject({
       method: 'PUT',
