@@ -8,7 +8,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { parseEnvironment } from '#app/config/env';
 import { checklistItems, checklists } from '#app/db/schema/checklists';
 import { checklistItemPhotos, files } from '#app/db/schema/files';
-import { materialInvoices, materialOrders } from '#app/db/schema/materials';
+import { materialInvoices } from '#app/db/schema/materials';
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
@@ -251,10 +251,9 @@ describe('Stage statuses and checklists', () => {
       payload: { expectedVersion: 1, status: 'supplied' },
     });
     expect(missing.statusCode).toBe(409);
-    const [order] = await getApp().db.insert(materialOrders).values({ stageId: fixture.stage.id }).returning();
     const file = await createUploadedMaterialFile();
     await getApp().db.insert(materialInvoices).values({
-      orderId: order!.id,
+      stageId: fixture.stage.id,
       fileId: file.id,
       amountMinor: 10_000,
       deliveredAt: new Date(),
@@ -444,10 +443,9 @@ describe('Stage statuses and checklists', () => {
 
   it('отклоняет supplied и paid из неправильных исходных статусов', async () => {
     const fixture = await createFixture({ assigned: false, itemCount: 1, plannedWorkAmountMinor: 0 });
-    const [order] = await getApp().db.insert(materialOrders).values({ stageId: fixture.stage.id }).returning();
     const file = await createUploadedMaterialFile();
     await getApp().db.insert(materialInvoices).values({
-      orderId: order!.id,
+      stageId: fixture.stage.id,
       fileId: file.id,
       amountMinor: 10_000,
       deliveredAt: new Date(),

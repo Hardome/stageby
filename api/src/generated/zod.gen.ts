@@ -281,7 +281,6 @@ export const zStage = z.object({
     totalPlannedAmountMinor: zPlannedMoneyAmountMinor,
     totalActualAmountMinor: zMoneyAmountMinor,
     materialSummary: z.object({
-        orderCount: z.int().gte(0),
         invoiceCount: z.int().gte(0),
         deliveredInvoiceCount: z.int().gte(0),
         openShortageCount: z.int().gte(0)
@@ -413,44 +412,6 @@ export const zMaterialShortage = z.object({
     version: z.int().gte(1)
 });
 
-export const zMaterialInvoice = z.object({
-    id: z.int().gte(1).lte(2147483647),
-    orderId: z.int().gte(1).lte(2147483647),
-    fileId: z.int().gte(1).lte(2147483647),
-    supplierName: z.string().min(1).max(255).nullable(),
-    amountMinor: zPositiveMoneyAmountMinor,
-    paidAt: z.iso.datetime().nullable(),
-    paidBy: zUserBrief.nullable(),
-    deliveredAt: z.iso.datetime().nullable(),
-    deliveredBy: zUserBrief.nullable(),
-    shortages: z.array(zMaterialShortage),
-    version: z.int().gte(1),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime()
-});
-
-export const zMaterialOrder = z.object({
-    id: z.int().gte(1).lte(2147483647),
-    stageId: z.int().gte(1).lte(2147483647),
-    sentAt: z.iso.datetime().nullable(),
-    sentBy: zUserBrief.nullable(),
-    invoices: z.array(zMaterialInvoice),
-    version: z.int().gte(1),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime()
-});
-
-export const zUpdateMaterialOrder = z.object({
-    expectedVersion: zExpectedVersion,
-    isSent: z.boolean()
-});
-
-export const zCreateMaterialInvoice = z.object({
-    fileId: z.int().gte(1).lte(2147483647),
-    supplierName: z.string().min(1).max(255).nullish(),
-    amountMinor: zPositiveMoneyAmountMinor
-});
-
 export const zStageMaterialInvoice = z.object({
     id: z.int().gte(1).lte(2147483647),
     stageId: z.int().gte(1).lte(2147483647),
@@ -465,6 +426,12 @@ export const zStageMaterialInvoice = z.object({
     version: z.int().gte(1),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()
+});
+
+export const zCreateMaterialInvoice = z.object({
+    fileId: z.int().gte(1).lte(2147483647),
+    supplierName: z.string().min(1).max(255).nullish(),
+    amountMinor: zPositiveMoneyAmountMinor
 });
 
 export const zUpdateMaterialInvoice = z.object({
@@ -703,7 +670,6 @@ export const zStageWritable = z.object({
     totalPlannedAmountMinor: zPlannedMoneyAmountMinor,
     totalActualAmountMinor: zMoneyAmountMinor,
     materialSummary: z.object({
-        orderCount: z.int().gte(0),
         invoiceCount: z.int().gte(0),
         deliveredInvoiceCount: z.int().gte(0),
         openShortageCount: z.int().gte(0)
@@ -778,8 +744,6 @@ export const zOffset = z.int().gte(0).default(0);
 export const zIdempotencyKey = z.string().min(16).max(100).regex(/^[A-Za-z0-9._:-]+$/);
 
 export const zStageId = z.int().gte(1).lte(2147483647);
-
-export const zOrderId = z.int().gte(1).lte(2147483647);
 
 export const zInvoiceId = z.int().gte(1).lte(2147483647);
 
@@ -1044,55 +1008,6 @@ export const zUpdateWorkPaymentPath = z.object({
  * Платёж изменён
  */
 export const zUpdateWorkPaymentResponse = zWorkPayment;
-
-export const zListMaterialOrdersPath = z.object({
-    stageId: z.int().gte(1).lte(2147483647)
-});
-
-/**
- * Список заказов со счетами и нехватками
- */
-export const zListMaterialOrdersResponse = z.array(zMaterialOrder);
-
-export const zCreateMaterialOrderPath = z.object({
-    stageId: z.int().gte(1).lte(2147483647)
-});
-
-/**
- * Заказ создан
- */
-export const zCreateMaterialOrderResponse = zMaterialOrder;
-
-export const zUpdateMaterialOrderBody = zUpdateMaterialOrder;
-
-export const zUpdateMaterialOrderPath = z.object({
-    orderId: z.int().gte(1).lte(2147483647)
-});
-
-/**
- * Заказ изменён
- */
-export const zUpdateMaterialOrderResponse = zMaterialOrder;
-
-export const zListMaterialInvoicesPath = z.object({
-    orderId: z.int().gte(1).lte(2147483647)
-});
-
-/**
- * Список счетов
- */
-export const zListMaterialInvoicesResponse = z.array(zMaterialInvoice);
-
-export const zCreateMaterialInvoiceBody = zCreateMaterialInvoice;
-
-export const zCreateMaterialInvoicePath = z.object({
-    orderId: z.int().gte(1).lte(2147483647)
-});
-
-/**
- * Счёт создан
- */
-export const zCreateMaterialInvoiceResponse = zMaterialInvoice;
 
 export const zListStageMaterialInvoicesPath = z.object({
     stageId: z.int().gte(1).lte(2147483647)

@@ -4,29 +4,20 @@ import { z } from 'zod';
 import type { ApiError } from '#app/generated/types.gen';
 import {
   zApiError,
-  zCreateMaterialInvoiceBody,
-  zCreateMaterialInvoicePath,
-  zCreateMaterialInvoiceResponse,
-  zCreateMaterialOrderPath,
-  zCreateMaterialOrderResponse,
   zCreateMaterialShortageBody,
   zCreateMaterialShortagePath,
   zCreateMaterialShortageResponse,
-  zListMaterialInvoicesPath,
-  zListMaterialInvoicesResponse,
-  zListMaterialOrdersPath,
-  zListMaterialOrdersResponse,
-  zMaterialInvoice,
-  zMaterialOrder,
+  zCreateStageMaterialInvoiceBody,
+  zCreateStageMaterialInvoicePath,
+  zCreateStageMaterialInvoiceResponse,
+  zListStageMaterialInvoicesPath,
   zResolveMaterialShortageBody,
   zResolveMaterialShortagePath,
   zResolveMaterialShortageResponse,
+  zStageMaterialInvoice,
   zUpdateMaterialInvoiceBody,
   zUpdateMaterialInvoicePath,
   zUpdateMaterialInvoiceResponse,
-  zUpdateMaterialOrderBody,
-  zUpdateMaterialOrderPath,
-  zUpdateMaterialOrderResponse,
 } from '#app/generated/zod.gen';
 import { requestAuditContext } from '#app/modules/audit/context';
 import type { MaterialRepository } from '#app/modules/materials/repository';
@@ -41,10 +32,22 @@ function pathId(key: string, schema: z.ZodType) {
   }, schema);
 }
 
-const errors: Record<MaterialOperationError, { statusCode: 400 | 403 | 404 | 409; error: ApiError }> = {
+const errors: Record<MaterialOperationError, { statusCode: 400 | 403 | 404 | 409 | 413; error: ApiError }> = {
   forbidden: {
     statusCode: 403,
     error: { error: 'Forbidden', code: 'forbidden', message: 'Операция запрещена для этой роли.' },
+  },
+  file_too_large: {
+    statusCode: 413,
+    error: { error: 'Payload Too Large', code: 'file_too_large', message: 'Файл счёта превышает 10 МиБ.' },
+  },
+  invoice_limit_exceeded: {
+    statusCode: 409,
+    error: {
+      error: 'Conflict',
+      code: 'invoice_limit_exceeded',
+      message: 'На этапе уже создано максимально допустимое количество счетов.',
+    },
   },
   invalid_request: {
     statusCode: 400,
@@ -72,9 +75,8 @@ function send<T>(reply: FastifyReply, result: MaterialOperationResult<T>, status
 }
 
 const responses = { 400: zApiError, 401: zApiError, 403: zApiError, 404: zApiError, 409: zApiError };
-const invoiceResponse = zMaterialInvoice.extend({ amountMinor: z.number().int().positive() });
-const orderResponse = zMaterialOrder.extend({ invoices: z.array(invoiceResponse) });
-const invoiceBody = zCreateMaterialInvoiceBody
+const invoiceResponse = zStageMaterialInvoice.extend({ amountMinor: z.number().int().positive() });
+const invoiceBody = zCreateStageMaterialInvoiceBody
   .superRefine((body, context) => {
     if (body.amountMinor > BigInt(Number.MAX_SAFE_INTEGER)) {
       context.addIssue({
@@ -100,68 +102,27 @@ const resolutionBody = zResolveMaterialShortageBody.transform((body) => ({
 }));
 
 export function registerMaterialRoutes(app: FastifyInstance, repository: MaterialRepository): void {
-  app.get('/stages/:stageId/material-orders', {
+  app.get('/stages/:stageId/material-invoices', {
     preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
     schema: {
-      params: pathId('stageId', zListMaterialOrdersPath),
-      response: { 200: z.array(orderResponse), ...responses },
+      params: pathId('stageId', zListStageMaterialInvoicesPath),
+      response: { 200: z.array(invoiceResponse).max(10), ...responses },
     },
     handler: async (request, reply) =>
-      send(reply, await repository.listOrders((request.params as { stageId: number }).stageId, request.auth!.user)),
+      send(reply, await repository.listInvoices((request.params as { stageId: number }).stageId, request.auth!.user)),
   });
-  app.post('/stages/:stageId/material-orders', {
-    preHandler: [app.authenticate, app.requireRoles('manager')],
-    schema: { params: pathId('stageId', zCreateMaterialOrderPath), response: { 201: orderResponse, ...responses } },
-    handler: async (request, reply) =>
-      send(
-        reply,
-        await repository.createOrder(
-          (request.params as { stageId: number }).stageId,
-          request.auth!.user,
-          requestAuditContext(request),
-        ),
-        201,
-      ),
-  });
-  app.patch('/material-orders/:orderId', {
+  app.post('/stages/:stageId/material-invoices', {
     preHandler: [app.authenticate, app.requireRoles('manager')],
     schema: {
-      params: pathId('orderId', zUpdateMaterialOrderPath),
-      body: zUpdateMaterialOrderBody,
-      response: { 200: orderResponse, ...responses },
-    },
-    handler: async (request, reply) =>
-      send(
-        reply,
-        await repository.updateOrder(
-          (request.params as { orderId: number }).orderId,
-          request.body as z.infer<typeof zUpdateMaterialOrderBody>,
-          request.auth!.user,
-          requestAuditContext(request),
-        ),
-      ),
-  });
-  app.get('/material-orders/:orderId/invoices', {
-    preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
-    schema: {
-      params: pathId('orderId', zListMaterialInvoicesPath),
-      response: { 200: z.array(invoiceResponse), ...responses },
-    },
-    handler: async (request, reply) =>
-      send(reply, await repository.listInvoices((request.params as { orderId: number }).orderId, request.auth!.user)),
-  });
-  app.post('/material-orders/:orderId/invoices', {
-    preHandler: [app.authenticate, app.requireRoles('manager')],
-    schema: {
-      params: pathId('orderId', zCreateMaterialInvoicePath),
+      params: pathId('stageId', zCreateStageMaterialInvoicePath),
       body: invoiceBody,
-      response: { 201: invoiceResponse, ...responses },
+      response: { 201: invoiceResponse, ...responses, 413: zApiError },
     },
     handler: async (request, reply) =>
       send(
         reply,
         await repository.createInvoice(
-          (request.params as { orderId: number }).orderId,
+          (request.params as { stageId: number }).stageId,
           request.body as z.infer<typeof invoiceBody>,
           requestAuditContext(request),
         ),

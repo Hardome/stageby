@@ -1,76 +1,4 @@
 paths:
-  /stages/{stageId}/material-orders:
-    parameters:
-      - $ref: '#/components/parameters/StageId'
-    get:
-      deprecated: true
-      operationId: listMaterialOrders
-      tags: [Materials]
-      summary: Заказы материалов этапа
-      description: Руководитель видит любой этап, мастер — только назначенный ему. Сортировка createdAt ASC, id ASC.
-      responses:
-        '200':
-          description: Список заказов со счетами и нехватками
-          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/MaterialOrder' } } } }
-        '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
-        '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
-        '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
-    post:
-      deprecated: true
-      operationId: createMaterialOrder
-      tags: [Materials]
-      summary: Создать заказ материалов
-      description: Только руководитель. Один этап может иметь несколько заказов.
-      responses:
-        '201': { description: Заказ создан, content: { application/json: { schema: { $ref: '#/components/schemas/MaterialOrder' } } } }
-        '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
-        '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
-        '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
-        '409': { $ref: ../common/common.yaml#/components/responses/ApiConflict }
-  /material-orders/{orderId}:
-    parameters:
-      - $ref: '#/components/parameters/OrderId'
-    patch:
-      deprecated: true
-      operationId: updateMaterialOrder
-      tags: [Materials]
-      summary: Изменить отправку заказа
-      description: Только руководитель. Дата и автор отправки фиксируются сервером.
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateMaterialOrder' } } } }
-      responses:
-        '200': { description: Заказ изменён, content: { application/json: { schema: { $ref: '#/components/schemas/MaterialOrder' } } } }
-        '400': { $ref: ../common/common.yaml#/components/responses/ApiBadRequest }
-        '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
-        '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
-        '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
-        '409': { $ref: ../common/common.yaml#/components/responses/ApiConflict }
-  /material-orders/{orderId}/invoices:
-    parameters:
-      - $ref: '#/components/parameters/OrderId'
-    get:
-      deprecated: true
-      operationId: listMaterialInvoices
-      tags: [Materials]
-      summary: Счета заказа
-      responses:
-        '200': { description: Список счетов, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/MaterialInvoice' } } } } }
-        '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
-        '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
-        '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
-    post:
-      deprecated: true
-      operationId: createMaterialInvoice
-      tags: [Materials]
-      summary: Добавить счёт к заказу
-      description: Только руководитель. Требуется успешно загруженный PDF или JPEG с назначением material_invoice.
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateMaterialInvoice' } } } }
-      responses:
-        '201': { description: Счёт создан, content: { application/json: { schema: { $ref: '#/components/schemas/MaterialInvoice' } } } }
-        '400': { $ref: ../common/common.yaml#/components/responses/ApiBadRequest }
-        '401': { $ref: ../common/common.yaml#/components/responses/ApiUnauthorized }
-        '403': { $ref: ../common/common.yaml#/components/responses/ApiForbidden }
-        '404': { $ref: ../common/common.yaml#/components/responses/ApiNotFound }
-        '409': { $ref: ../common/common.yaml#/components/responses/ApiConflict }
   /stages/{stageId}/material-invoices:
     parameters:
       - $ref: '#/components/parameters/StageId'
@@ -183,55 +111,12 @@ components:
       in: path
       required: true
       schema: { type: integer, minimum: 1, maximum: 2147483647 }
-    OrderId:
-      name: orderId
-      in: path
-      required: true
-      schema: { type: integer, minimum: 1, maximum: 2147483647 }
     InvoiceId:
       name: invoiceId
       in: path
       required: true
       schema: { type: integer, minimum: 1, maximum: 2147483647 }
   schemas:
-    MaterialOrder:
-      type: object
-      additionalProperties: false
-      required: [id, stageId, sentAt, sentBy, invoices, version, createdAt, updatedAt]
-      properties:
-        id: { type: integer, minimum: 1, maximum: 2147483647, example: 301, description: Идентификатор заказа. }
-        stageId: { type: integer, minimum: 1, maximum: 2147483647, example: 101, description: Идентификатор этапа. }
-        sentAt: { type: [string, 'null'], format: date-time, example: '2026-10-01T08:00:00Z', description: Время отправки или null. }
-        sentBy: { anyOf: [{ $ref: ../users/users.yaml#/components/schemas/UserBrief }, { type: 'null' }], description: Автор отправки или null. }
-        invoices: { type: array, items: { $ref: '#/components/schemas/MaterialInvoice' }, description: Счета этого заказа. }
-        version: { type: integer, minimum: 1, example: 1, description: Версия заказа. }
-        createdAt: { type: string, format: date-time, example: '2026-10-01T07:00:00Z', description: Время создания. }
-        updatedAt: { type: string, format: date-time, example: '2026-10-01T08:00:00Z', description: Время изменения. }
-    UpdateMaterialOrder:
-      type: object
-      additionalProperties: false
-      required: [expectedVersion, isSent]
-      properties:
-        expectedVersion: { $ref: ../common/common.yaml#/components/schemas/ExpectedVersion }
-        isSent: { type: boolean, example: true, description: Требуемая отметка отправки. }
-    MaterialInvoice:
-      type: object
-      additionalProperties: false
-      required: [id, orderId, fileId, supplierName, amountMinor, paidAt, paidBy, deliveredAt, deliveredBy, shortages, version, createdAt, updatedAt]
-      properties:
-        id: { type: integer, minimum: 1, maximum: 2147483647, example: 401, description: Идентификатор счёта. }
-        orderId: { type: integer, minimum: 1, maximum: 2147483647, example: 301, description: Идентификатор заказа. }
-        fileId: { type: integer, minimum: 1, maximum: 2147483647, example: 201, description: Идентификатор файла счёта. }
-        supplierName: { type: [string, 'null'], minLength: 1, maxLength: 255, example: Стройснаб, description: Поставщик или null. }
-        amountMinor: { $ref: ../common/common.yaml#/components/schemas/PositiveMoneyAmountMinor, description: Сумма счёта в копейках. }
-        paidAt: { type: [string, 'null'], format: date-time, example: '2026-10-02T08:00:00Z', description: Время оплаты или null. }
-        paidBy: { anyOf: [{ $ref: ../users/users.yaml#/components/schemas/UserBrief }, { type: 'null' }], description: Автор отметки оплаты или null. }
-        deliveredAt: { type: [string, 'null'], format: date-time, example: '2026-10-03T08:00:00Z', description: Время доставки или null. }
-        deliveredBy: { anyOf: [{ $ref: ../users/users.yaml#/components/schemas/UserBrief }, { type: 'null' }], description: Автор отметки доставки или null. }
-        shortages: { type: array, items: { $ref: '#/components/schemas/MaterialShortage' }, description: Сообщения о нехватке. }
-        version: { type: integer, minimum: 1, example: 1, description: Версия счёта. }
-        createdAt: { type: string, format: date-time, example: '2026-10-01T08:00:00Z', description: Время создания. }
-        updatedAt: { type: string, format: date-time, example: '2026-10-03T08:00:00Z', description: Время изменения. }
     StageMaterialInvoice:
       type: object
       additionalProperties: false

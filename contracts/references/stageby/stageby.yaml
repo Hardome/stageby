@@ -72,12 +72,6 @@ paths:
     $ref: ../work-payments/work-payments.yaml#/paths/~1stages~1{stageId}~1work-payments
   /work-payments/{paymentId}:
     $ref: ../work-payments/work-payments.yaml#/paths/~1work-payments~1{paymentId}
-  /stages/{stageId}/material-orders:
-    $ref: ../materials/materials.yaml#/paths/~1stages~1{stageId}~1material-orders
-  /material-orders/{orderId}:
-    $ref: ../materials/materials.yaml#/paths/~1material-orders~1{orderId}
-  /material-orders/{orderId}/invoices:
-    $ref: ../materials/materials.yaml#/paths/~1material-orders~1{orderId}~1invoices
   /stages/{stageId}/material-invoices:
     $ref: ../materials/materials.yaml#/paths/~1stages~1{stageId}~1material-invoices
   /material-invoices/{invoiceId}:

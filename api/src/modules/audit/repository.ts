@@ -98,7 +98,7 @@ export class AuditWriter {
       ...row,
       checklistItemId: photo?.checklistItemId,
       projectId: document?.projectId,
-      orderId: invoice?.orderId,
+      stageId: invoice?.stageId,
     };
   }
 
@@ -119,19 +119,15 @@ export class AuditWriter {
 
   async #materialStage(row: Row): Promise<number | null> {
     const tx = this.#transaction;
-    let orderId = typeof row.orderId === 'number' ? row.orderId : null;
+    let stageId = typeof row.stageId === 'number' ? row.stageId : null;
     if (typeof row.invoiceId === 'number') {
       const [invoice] = await tx
         .select()
         .from(schema.materialInvoices)
         .where(eq(schema.materialInvoices.id, row.invoiceId));
-      orderId = invoice?.orderId ?? null;
+      stageId = invoice?.stageId ?? null;
     }
-    if (orderId !== null) {
-      const [order] = await tx.select().from(schema.materialOrders).where(eq(schema.materialOrders.id, orderId));
-      return order?.stageId ?? null;
-    }
-    return null;
+    return stageId;
   }
 
   async #scope(entityType: string, original: Row): Promise<{ projectId: number | null; stageId: number | null }> {

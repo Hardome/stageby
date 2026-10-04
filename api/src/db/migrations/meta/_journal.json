@@ -99,6 +99,13 @@
       "when": 1791112622964,
       "tag": "0013_edited-ver2-checklist-templates",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791118226049,
+      "tag": "0014_smart_sugar_man",
+      "breakpoints": true
     }
   ]
 }

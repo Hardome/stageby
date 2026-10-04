@@ -202,13 +202,6 @@ export type Stage = {
     */
     materialSummary: {
         /**
-         * @description Количество заказов этапа.
-         * @minLength 0
-         * @example 2
-         * @type integer
-        */
-        orderCount: number;
-        /**
          * @description Количество счетов этапа.
          * @minLength 0
          * @example 3
