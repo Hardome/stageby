@@ -9,6 +9,7 @@ export function toUser(user: Omit<UserRow, 'passwordHash'>): User {
     role: user.role,
     phone: user.phone,
     isActive: user.isActive,
+    passwordResetRequestedAt: user.passwordResetRequestedAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
   };

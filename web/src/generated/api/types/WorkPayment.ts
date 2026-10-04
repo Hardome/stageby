@@ -55,6 +55,10 @@ export type WorkPayment = {
     */
     createdBy: UserBrief;
     /**
+     * @description Получатель выплаты, сохранённый независимо от назначения этапа. null только у прежних записей без получателя.
+    */
+    recipient: (UserBrief | null);
+    /**
      * @description Версия платежа для защиты от конкурентных изменений.
      * @minLength 1
      * @example 1

@@ -17,6 +17,7 @@ import type { Checklist, Project, Stage } from '#app/generated/types.gen';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 import { SessionRepository } from '#app/modules/auth/session-repository';
 import { SessionService } from '#app/modules/auth/session-service';
+import { addCalendarDays, calendarDate } from '#app/modules/dashboard/calendar';
 import { projectModule } from '#app/modules/projects/index';
 import { stageModule } from '#app/modules/stages/index';
 import { UserRepository } from '#app/modules/users/repository';
@@ -178,6 +179,54 @@ async function updateItem(
 }
 
 describe('Stage statuses and checklists', () => {
+  it.each([undefined, '2099-01-01'])(
+    'проверяет замечание и выбранные пункты, назначает срок доработки %s',
+    async (correctionDueDate) => {
+      const fixture = await createFixture();
+      await getApp().db.update(stages).set({ status: 'acceptance' }).where(eq(stages.id, fixture.stage.id));
+      await getApp()
+        .db.update(checklistItems)
+        .set({ isCompleted: true, completedAt: new Date(), completedByUserId: fixture.foreman.user.id })
+        .where(eq(checklistItems.checklistId, fixture.checklist.id));
+      const payload = { expectedVersion: fixture.stage.version, comment: 'Исправить', itemIds: [fixture.items[0]!.id] };
+      for (const extra of [
+        { comment: '' },
+        { comment: '   ' },
+        { itemIds: [] },
+        { itemIds: [fixture.items[0]!.id, fixture.items[0]!.id] },
+        { itemIds: [2_147_483_647] },
+        { correctionDueDate: addCalendarDays(calendarDate(), -1) },
+      ]) {
+        const response = await getApp().inject({
+          method: 'POST',
+          url: `/stages/${fixture.stage.id}/rework`,
+          headers: { cookie: fixture.manager.cookie },
+          payload: { ...payload, ...extra },
+        });
+        expect(response.statusCode, response.body).toBe(400);
+      }
+      expect((await auditRecords(getApp().db, fixture.manager.user.id, 'returnStageForRework')).events).toHaveLength(0);
+      const response = await getApp().inject({
+        method: 'POST',
+        url: `/stages/${fixture.stage.id}/rework`,
+        headers: { cookie: fixture.manager.cookie },
+        payload: { ...payload, ...(correctionDueDate ? { correctionDueDate } : {}) },
+      });
+      expect(response.statusCode, response.body).toBe(200);
+      expect(response.json<Stage>().latestAcceptance).toMatchObject({
+        comment: 'Исправить',
+        correctionDueDate: correctionDueDate ?? addCalendarDays(calendarDate(), 2),
+      });
+      const current = await getApp()
+        .db.select()
+        .from(checklistItems)
+        .where(eq(checklistItems.checklistId, fixture.checklist.id))
+        .orderBy(checklistItems.position);
+      expect(current[0]).toMatchObject({ isCompleted: false, requiresRework: true });
+      expect(current[1]).toMatchObject({ isCompleted: true, requiresRework: false });
+    },
+  );
+
   it('возвращает активные типы и 34 пункта шаблонов только руководителю', async () => {
     const fixture = await createFixture();
     const response = await getApp().inject({ url: '/stage-types', headers: { cookie: fixture.manager.cookie } });

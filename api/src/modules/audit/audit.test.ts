@@ -119,7 +119,7 @@ describe('Audit storage', () => {
       before: { fullName: 'New user' },
       after: { fullName: 'Changed user' },
     });
-    expect(JSON.stringify(changes)).not.toMatch(/password|secret-hash|stageby_session/);
+    expect(JSON.stringify(changes)).not.toMatch(/"password"|passwordHash|secret-hash|stageby_session/);
   });
 
   it('does not record failed or unchanged user operations', async () => {

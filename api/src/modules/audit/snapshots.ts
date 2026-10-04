@@ -93,10 +93,11 @@ const fields: Record<string, readonly string[]> = {
     'updatedAt',
   ],
   stage_predecessors: ['projectId', 'stageId', 'predecessorStageId'],
-  users: ['id', 'login', 'fullName', 'role', 'phone', 'isActive', 'createdAt', 'updatedAt'],
+  users: ['id', 'login', 'fullName', 'role', 'phone', 'isActive', 'passwordResetRequestedAt', 'createdAt', 'updatedAt'],
   work_payments: [
     'id',
     'stageId',
+    'recipientId',
     'paidAt',
     'amountMinor',
     'comment',

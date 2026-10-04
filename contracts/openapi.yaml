@@ -231,6 +231,27 @@ paths:
           $ref: '#/components/responses/ApiForbidden'
         '429':
           $ref: '#/components/responses/ApiTooManyRequests'
+  /auth/password-reset-requests:
+    post:
+      operationId: requestPasswordReset
+      tags:
+        - Auth
+      summary: Запросить назначение нового пароля
+      description: Публичный запрос по логину. Ответ одинаков для существующего, неизвестного и неактивного пользователя. Руководитель видит отметку в списке пользователей и закрывает запрос назначением нового пароля. Повтор открытого запроса не создаёт дубля. Применяется лимит запросов по IP и логину.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '202':
+          description: Запрос принят; тело отсутствует, наличие пользователя не раскрывается.
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '429':
+          $ref: '#/components/responses/ApiTooManyRequests'
   /auth/logout:
     post:
       operationId: logout
@@ -1232,7 +1253,7 @@ paths:
       tags:
         - Dashboard
       summary: Финансовая сводка панели руководителя
-      description: Только руководитель. Считает работы, материалы и общий итог независимо от таблицы объектов. В расчёт входят этапы с plannedEndDate не позже through. Факт того же периметра включает все внесённые выплаты за работы и полные суммы оплаченных счетов; суммы не дублируются при соединении наборов данных.
+      description: Только руководитель. Считает работы, материалы и общий итог независимо от таблицы объектов. В расчёт входят этапы неархивных объектов с plannedEndDate не позже through, включая paid. Факт того же периметра включает все внесённые выплаты за работы и полные суммы оплаченных счетов независимо от даты оплаты; суммы не дублируются при соединении наборов данных.
       parameters:
         - name: through
           in: query
@@ -1360,6 +1381,7 @@ components:
         - role
         - phone
         - isActive
+        - passwordResetRequestedAt
         - createdAt
         - updatedAt
       properties:
@@ -1378,6 +1400,16 @@ components:
           description: Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.
           examples:
             - foreman.ivan
+        passwordResetRequestedAt:
+          examples:
+            - '2026-10-04T08:00:00Z'
+            - null
+          type:
+            - string
+            - 'null'
+          format: date-time
+          readOnly: true
+          description: Время открытого запроса сброса пароля; null означает отсутствие запроса. Руководитель закрывает запрос назначением нового пароля.
         fullName:
           examples:
             - Иван Петров
@@ -1620,6 +1652,19 @@ components:
           format: date-time
         user:
           $ref: '#/components/schemas/User'
+    PasswordResetRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - login
+      properties:
+        login:
+          example: foreman.ivan
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: ^[a-z0-9][a-z0-9._-]{2,63}$
+          description: Логин пользователя, которому требуется новый пароль.
     ProjectStatus:
       type: string
       enum:
@@ -2691,7 +2736,6 @@ components:
       required:
         - expectedVersion
         - comment
-        - correctionDueDate
         - itemIds
       properties:
         expectedVersion:
@@ -2706,7 +2750,7 @@ components:
         correctionDueDate:
           examples:
             - '2026-09-27'
-          description: Обязательный срок исправления в формате YYYY-MM-DD, не раньше текущей даты объекта в часовом поясе Asia/Yekaterinburg.
+          description: Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.
           type: string
           format: date
         itemIds:
@@ -2905,6 +2949,7 @@ components:
         - amountMinor
         - comment
         - createdBy
+        - recipient
         - version
         - createdAt
         - updatedAt
@@ -2943,6 +2988,11 @@ components:
           description: Комментарий руководителя; null — комментарий отсутствует.
         createdBy:
           $ref: '#/components/schemas/UserBrief'
+        recipient:
+          description: Получатель выплаты, сохранённый независимо от назначения этапа. null только у прежних записей без получателя.
+          anyOf:
+            - $ref: '#/components/schemas/UserBrief'
+            - type: 'null'
         version:
           type: integer
           minimum: 1
@@ -2965,9 +3015,16 @@ components:
       type: object
       additionalProperties: false
       required:
+        - recipientId
         - paidAt
         - amountMinor
       properties:
+        recipientId:
+          example: 2
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: ID активного мастера из списка пользователей; может отличаться от текущего назначенного мастера.
         paidAt:
           type: string
           format: date
@@ -3001,6 +3058,12 @@ components:
       required:
         - expectedVersion
       properties:
+        recipientId:
+          example: 3
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Новый получатель — активный мастер. Изменение назначения этапа само по себе получателя не меняет.
         expectedVersion:
           $ref: '#/components/schemas/ExpectedVersion'
         paidAt:
@@ -3717,6 +3780,7 @@ components:
         - ownerName
         - address
         - status
+        - finances
         - selectedStage
       properties:
         projectId:
@@ -3739,6 +3803,8 @@ components:
           description: Адрес объекта.
         status:
           $ref: '#/components/schemas/ProjectStatus'
+        finances:
+          $ref: '#/components/schemas/ProjectFinancialSummary'
         selectedStage:
           description: Первый по позиции невыплаченный этап или null, если все включённые этапы paid. Переходы к счёту, мастеру и чек-листу используют только его stageId.
           anyOf:

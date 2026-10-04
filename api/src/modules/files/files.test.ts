@@ -278,7 +278,7 @@ describe('File uploads and checklist photos', () => {
       method: 'POST',
       url: `/stages/${fixture.stage.id}/work-payments`,
       headers: { cookie: fixture.manager.cookie },
-      payload: { paidAt: '2026-10-04', amountMinor: 5000 },
+      payload: { paidAt: '2026-10-04', amountMinor: 5000, recipientId: fixture.foreman.user.id },
     });
     expect(payment.statusCode, payment.body).toBe(201);
     const download = (cookie: string, fileId: number) =>

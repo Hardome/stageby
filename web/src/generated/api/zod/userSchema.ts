@@ -9,6 +9,7 @@ import { userRoleSchema } from './userRoleSchema'
 export const userSchema = z.object({
   id: z.int().min(1).max(2147483647).describe('Стабильный ID пользователя.').meta({ examples: [1] }),
   login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/).describe('Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.').meta({ examples: ['foreman.ivan'] }),
+  passwordResetRequestedAt: z.iso.datetime().nullable().describe('Время открытого запроса сброса пароля; null означает отсутствие запроса. Руководитель закрывает запрос назначением нового пароля.').meta({ examples: ['2026-10-04T08:00:00Z', ] }),
   fullName: z.string().min(1).max(255).describe('Полное имя сотрудника или исполнителя для отображения.').meta({ examples: ['Иван Петров'] }),
   role: userRoleSchema.describe('manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.').meta({ examples: ['foreman'] }),
   phone: z.string().min(1).max(32).nullable().describe('Контактный телефон пользователя; null — не указан.').meta({ examples: ['+7 900 000-00-00', ] }),

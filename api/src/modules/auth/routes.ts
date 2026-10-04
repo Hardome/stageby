@@ -3,7 +3,13 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import type { RouteHandlers } from '#app/generated/fastify.gen';
 import type { ApiError } from '#app/generated/types.gen';
-import { zApiError, zGetCurrentUserResponse, zLoginBody, zLoginResponse } from '#app/generated/zod.gen';
+import {
+  zApiError,
+  zGetCurrentUserResponse,
+  zLoginBody,
+  zLoginResponse,
+  zRequestPasswordResetBody,
+} from '#app/generated/zod.gen';
 import type { LoginService } from '#app/modules/auth/login-service';
 import {
   expiredSessionCookieOptions,
@@ -12,6 +18,7 @@ import {
 } from '#app/modules/auth/session-cookie';
 import type { SessionRepository } from '#app/modules/auth/session-repository';
 import { toUser } from '#app/modules/users/mapper';
+import type { UserRepository } from '#app/modules/users/repository';
 
 interface AuthRouteOptions {
   loginRateLimitMax: number;
@@ -35,6 +42,7 @@ export function registerAuthRoutes(
   app: FastifyInstance,
   loginService: LoginService,
   sessions: SessionRepository,
+  users: UserRepository,
   options: AuthRouteOptions,
 ): void {
   const login: RouteHandlers['login'] = async (request, reply) => {
@@ -102,6 +110,34 @@ export function registerAuthRoutes(
       }
     }
   };
+
+  const checkResetIp = app.createRateLimit({
+    ...rateLimitBase,
+    keyGenerator: (request) => `password-reset-ip:${normalizeIP(request.ip)}`,
+  });
+  const checkResetLogin = app.createRateLimit({
+    ...rateLimitBase,
+    keyGenerator: (request) => `password-reset:${normalizedLoginKey(request)}`,
+  });
+  app.post<{ Body: { login: string } }>('/auth/password-reset-requests', {
+    schema: { body: zRequestPasswordResetBody.strict(), response: { 400: zApiError, 429: zApiError } },
+    preHandler: async (request, reply) => {
+      for (const check of [checkResetIp, checkResetLogin]) {
+        const result = await check(request);
+        if (!result.isAllowed && (result.isExceeded || result.isBanned)) {
+          return reply.header('Retry-After', result.ttlInSeconds).status(429).send({
+            error: 'Too Many Requests',
+            code: 'rate_limited',
+            message: 'Превышен лимит запросов. Повторите попытку позже.',
+          });
+        }
+      }
+    },
+    handler: async (request, reply) => {
+      await users.requestPasswordReset(request.body.login, { source: 'api', requestId: request.id });
+      return reply.header('Cache-Control', 'no-store').status(202).send();
+    },
+  });
 
   app.post('/auth/login', {
     preHandler: enforceLoginRateLimit,

@@ -7,10 +7,12 @@ import type { FastifyPluginAsync } from 'fastify';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { parseEnvironment } from '#app/config/env';
+import { auditChanges, auditEvents } from '#app/db/schema/audit';
 import { users } from '#app/db/schema/users';
 import type { Session } from '#app/generated/types.gen';
 import { authModule } from '#app/modules/auth/index';
 import { hashPassword } from '#app/modules/auth/password-hasher';
+import { userModule } from '#app/modules/users/index';
 import { UserRepository } from '#app/modules/users/repository';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
@@ -39,6 +41,7 @@ function createTestModule(loginRateLimitMax: number): FastifyPluginAsync {
       LOGIN_RATE_LIMIT_MAX: loginRateLimitMax,
       LOGIN_RATE_LIMIT_TIME_WINDOW: '1 minute',
     });
+    await app.register(userModule);
   };
 }
 
@@ -94,6 +97,101 @@ function getSessionCookie(response: Awaited<ReturnType<ReturnType<typeof getApp>
 }
 
 describe('Auth API', () => {
+  it('принимает публичный запрос без раскрытия логина, сохраняет одну отметку и закрывает её при смене пароля', async () => {
+    const target = await createUser();
+    const manager = await createUser();
+    const inactive = await createUser({ isActive: false });
+    const requestReset = (login: string) =>
+      getApp().inject({ method: 'POST', url: '/auth/password-reset-requests', payload: { login } });
+    const login = async (user: typeof target) => {
+      const response = await getApp().inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { login: user.login, password: PASSWORD },
+      });
+      expect(response.statusCode, response.body).toBe(200);
+      return getSessionCookie(response);
+    };
+    const targetCookie = await login(target);
+    const managerCookie = await login(manager);
+    const first = await requestReset(target.login);
+    const repeated = await requestReset(target.login);
+    const unknown = await requestReset('unknown.login');
+    const disabled = await requestReset(inactive.login);
+    for (const response of [first, repeated, unknown, disabled]) {
+      expect(response.statusCode, response.body).toBe(202);
+      expect(response.body).toBe('');
+      expect(response.headers['cache-control']).toBe('no-store');
+    }
+    const [pending] = await getApp().db.select().from(users).where(eq(users.id, target.id));
+    expect(pending!.passwordResetRequestedAt).toBeInstanceOf(Date);
+    const list = await getApp().inject({ url: `/users?search=${target.login}`, headers: { cookie: managerCookie } });
+    expect(list.statusCode, list.body).toBe(200);
+    expect(list.json().items[0].passwordResetRequestedAt).toBe(pending!.passwordResetRequestedAt!.toISOString());
+    const requests = await getApp()
+      .db.select({ change: auditChanges, event: auditEvents })
+      .from(auditChanges)
+      .innerJoin(auditEvents, eq(auditChanges.eventId, auditEvents.id))
+      .where(eq(auditEvents.operation, 'requestPasswordReset'));
+    const recorded = requests.filter((row) => row.change.after?.id === target.id);
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0]!.event).toMatchObject({ source: 'api', actorUserId: null, requestId: expect.any(String) });
+    const password = await getApp().inject({
+      method: 'PUT',
+      url: `/users/${target.id}/password`,
+      headers: { cookie: managerCookie },
+      payload: { password: 'Replacement-password-456!' },
+    });
+    expect(password.statusCode, password.body).toBe(204);
+    const [closed] = await getApp().db.select().from(users).where(eq(users.id, target.id));
+    expect(closed!.passwordResetRequestedAt).toBeNull();
+    expect((await getApp().inject({ url: '/auth/me', headers: { cookie: targetCookie } })).statusCode).toBe(401);
+    const changed = await getApp()
+      .db.select({ change: auditChanges })
+      .from(auditChanges)
+      .innerJoin(auditEvents, eq(auditChanges.eventId, auditEvents.id))
+      .where(eq(auditEvents.operation, 'setUserPassword'));
+    expect(changed.find((row) => row.change.after?.id === target.id)!.change).toMatchObject({
+      before: { passwordResetRequestedAt: expect.any(String) },
+      after: { passwordResetRequestedAt: null },
+    });
+    expect(JSON.stringify(changed)).not.toMatch(/passwordHash|"password"|Replacement-password/);
+    const newLogin = await getApp().inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { login: target.login, password: 'Replacement-password-456!' },
+    });
+    expect(newLogin.statusCode, newLogin.body).toBe(200);
+    expect(
+      (
+        await getApp().inject({
+          method: 'POST',
+          url: '/auth/login',
+          payload: { login: target.login, password: PASSWORD },
+        })
+      ).statusCode,
+    ).toBe(401);
+  });
+
+  it('проверяет и ограничивает публичные запросы сброса по IP и логину', async () => {
+    const target = await createUser();
+    const requestReset = (login: string, remoteAddress: string) =>
+      getLimitedApp().inject({
+        method: 'POST',
+        url: '/auth/password-reset-requests',
+        remoteAddress,
+        payload: { login },
+      });
+    expect((await requestReset(target.login, '192.0.2.101')).statusCode).toBe(202);
+    expect((await requestReset(target.login, '192.0.2.102')).statusCode).toBe(429);
+    expect((await requestReset('another.login', '192.0.2.101')).statusCode).toBe(429);
+    for (const payload of [{}, { login: 'bad', extra: true }, { login: '  ' }, { login: 'invalid login' }]) {
+      expect(
+        (await getApp().inject({ method: 'POST', url: '/auth/password-reset-requests', payload })).statusCode,
+      ).toBe(400);
+    }
+  });
+
   it('создаёт сессию только при верном пароле активного пользователя', async () => {
     const user = await createUser();
     const response = await getApp().inject({
@@ -111,7 +209,8 @@ describe('Auth API', () => {
     expect(response.headers['set-cookie']).toContain('SameSite=Lax');
     expect(response.headers['set-cookie']).toContain('Path=/');
     expect(new Date(session.expiresAt).getTime()).toBeGreaterThan(Date.now());
-    expect(response.body).not.toContain('password');
+    expect(response.body).not.toContain('"password"');
+    expect(response.body).not.toContain('passwordHash');
     expect(response.body).not.toContain('accessToken');
     expect(response.body).not.toContain('tokenHash');
   });
@@ -157,7 +256,8 @@ describe('Auth API', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ id: user.id, fullName: 'Обновлённое имя' });
-    expect(response.body).not.toContain('password');
+    expect(response.body).not.toContain('"password"');
+    expect(response.body).not.toContain('passwordHash');
     expect(response.body).not.toContain('tokenHash');
   });
 

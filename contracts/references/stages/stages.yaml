@@ -775,7 +775,6 @@ components:
       required:
         - expectedVersion
         - comment
-        - correctionDueDate
         - itemIds
       properties:
         expectedVersion:
@@ -790,7 +789,7 @@ components:
         correctionDueDate:
           examples:
             - "2026-09-27"
-          description: "Обязательный срок исправления в формате YYYY-MM-DD, не раньше текущей даты объекта в часовом поясе Asia/Yekaterinburg."
+          description: "Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня."
           type: string
           format: date
         itemIds:

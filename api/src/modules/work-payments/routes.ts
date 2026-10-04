@@ -49,31 +49,46 @@ function validateAmountAndComment(
   }
 }
 
-const createBodySchema = zCreateWorkPaymentBody.superRefine(validateAmountAndComment).transform(
-  (body): CreateWorkPayment => ({
-    paidAt: body.paidAt,
-    amountMinor: Number(body.amountMinor),
-    ...(body.comment === undefined ? {} : { comment: typeof body.comment === 'string' ? body.comment.trim() : null }),
-  }),
-);
+const createBodySchema = zCreateWorkPaymentBody
+  .strict()
+  .superRefine(validateAmountAndComment)
+  .transform(
+    (body): CreateWorkPayment => ({
+      paidAt: body.paidAt,
+      recipientId: body.recipientId,
+      amountMinor: Number(body.amountMinor),
+      ...(body.comment === undefined ? {} : { comment: typeof body.comment === 'string' ? body.comment.trim() : null }),
+    }),
+  );
 
 const updateBodySchema = zUpdateWorkPaymentBody
+  .strict()
   .superRefine((body, context) => {
     validateAmountAndComment(body, context);
-    if (body.paidAt === undefined && body.amountMinor === undefined && body.comment === undefined) {
+    if (
+      body.recipientId === undefined &&
+      body.paidAt === undefined &&
+      body.amountMinor === undefined &&
+      body.comment === undefined
+    ) {
       context.addIssue({ code: 'custom', message: 'Нужно передать хотя бы одно изменяемое поле.' });
     }
   })
   .transform(
     (body): UpdateWorkPayment => ({
       expectedVersion: body.expectedVersion,
+      ...(body.recipientId === undefined ? {} : { recipientId: body.recipientId }),
       ...(body.paidAt === undefined ? {} : { paidAt: body.paidAt }),
       ...(body.amountMinor === undefined ? {} : { amountMinor: Number(body.amountMinor) }),
       ...(body.comment === undefined ? {} : { comment: typeof body.comment === 'string' ? body.comment.trim() : null }),
     }),
   );
 
-const errorDetails: Record<WorkPaymentOperationError, { statusCode: 404 | 409; error: ApiError }> = {
+const errorDetails: Record<WorkPaymentOperationError, { statusCode: 400 | 404 | 409; error: ApiError }> = {
+  invalid_request: {
+    statusCode: 400,
+    error: { error: 'Bad Request', code: 'invalid_request', message: 'Получателем должен быть активный мастер.' },
+  },
   not_found: {
     statusCode: 404,
     error: { error: 'Not Found', code: 'not_found', message: 'Этап или платёж не найден.' },

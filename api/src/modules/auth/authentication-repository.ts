@@ -23,6 +23,7 @@ export class AuthenticationRepository {
           role: users.role,
           phone: users.phone,
           isActive: users.isActive,
+          passwordResetRequestedAt: users.passwordResetRequestedAt,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
         },
