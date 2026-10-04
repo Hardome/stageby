@@ -10,11 +10,13 @@ import { files } from '#app/db/schema/files';
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
+import { workPayments } from '#app/db/schema/work-payments';
 import type { MaterialShortage, Project, Stage, StageMaterialInvoice } from '#app/generated/types.gen';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 import { SessionRepository } from '#app/modules/auth/session-repository';
 import { SessionService } from '#app/modules/auth/session-service';
 import { materialModule } from '#app/modules/materials/index';
+import { loadStageSummaries } from '#app/modules/materials/summary';
 import { projectModule } from '#app/modules/projects/index';
 import { stageModule } from '#app/modules/stages/index';
 import { UserRepository } from '#app/modules/users/repository';
@@ -144,6 +146,106 @@ async function createInvoice(stageId: number, fileId: number, amountMinor: numbe
 }
 
 describe('Материалы, счета и нехватки', () => {
+  it('возвращает прежний счёт при повторе и не пишет повторный аудит', async () => {
+    const data = await fixture();
+    const file = await uploadedInvoiceFile(data.manager.user.id);
+    const first = await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie);
+    const retry = await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie);
+    expect(retry.statusCode, retry.body).toBe(201);
+    expect(retry.json()).toEqual(first.json());
+    const changed = await createInvoice(data.stage.id, file.id, 20_000, data.manager.cookie);
+    expect(changed.statusCode).toBe(400);
+    for (let index = 0; index < 9; index++) {
+      const next = await uploadedInvoiceFile(data.manager.user.id);
+      expect((await createInvoice(data.stage.id, next.id, 10_000, data.manager.cookie)).statusCode).toBe(201);
+    }
+    expect((await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie)).json()).toEqual(first.json());
+    const audit = await auditRecords(getApp().db, data.manager.user.id, 'createMaterialInvoice');
+    expect(audit.events).toHaveLength(10);
+    expect(audit.changes[0]!.after).toMatchObject({ stageId: data.stage.id, amountMinor: 10_000 });
+  });
+
+  it('считает деньги без умножения сумм и отделяет цвет от комплектации после старта', async () => {
+    const data = await fixture();
+    const read = async () =>
+      (
+        await getApp().inject({
+          method: 'GET',
+          url: `/stages/${data.stage.id}`,
+          headers: { cookie: data.manager.cookie },
+        })
+      ).json<Stage>();
+    expect((await read()).materialSummary).toMatchObject({
+      color: 'red',
+      isPartiallyPaid: false,
+      isPartiallyDelivered: false,
+    });
+    const invoices: StageMaterialInvoice[] = [];
+    for (const amount of [10_000, 20_000]) {
+      const file = await uploadedInvoiceFile(data.manager.user.id);
+      invoices.push((await createInvoice(data.stage.id, file.id, amount, data.manager.cookie)).json());
+    }
+    const update = async (invoice: StageMaterialInvoice, isPaid: boolean, isDelivered: boolean) => {
+      const response = await getApp().inject({
+        method: 'PATCH',
+        url: `/material-invoices/${invoice.id}`,
+        headers: { cookie: data.manager.cookie },
+        payload: { expectedVersion: invoice.version, isPaid, isDelivered },
+      });
+      expect(response.statusCode, response.body).toBe(200);
+      return response.json<StageMaterialInvoice>();
+    };
+    invoices[0] = await update(invoices[0]!, true, true);
+    expect((await read()).materialSummary).toMatchObject({
+      color: 'yellow',
+      isPartiallyPaid: true,
+      isPartiallyDelivered: true,
+    });
+    await getApp()
+      .db.insert(workPayments)
+      .values([
+        { stageId: data.stage.id, amountMinor: 30_000, paidAt: '2026-10-04', createdByUserId: data.manager.user.id },
+        { stageId: data.stage.id, amountMinor: 40_000, paidAt: '2026-10-04', createdByUserId: data.manager.user.id },
+      ]);
+    await getApp()
+      .db.update(stages)
+      .set({ status: 'in_progress', plannedWorkAmountMinor: null })
+      .where(eq(stages.id, data.stage.id));
+    invoices[1] = await update(invoices[1]!, true, true);
+    expect(await read()).toMatchObject({
+      status: 'in_progress',
+      actualWorkAmountMinor: 70_000,
+      actualMaterialAmountMinor: 30_000,
+      totalActualAmountMinor: 100_000,
+      totalPlannedAmountMinor: null,
+      workBalanceAmountMinor: null,
+      materialSummary: { color: 'green', isPartiallyPaid: false, isPartiallyDelivered: false },
+    });
+    for (let index = 0; index < 2; index++) {
+      const shortage = await getApp().inject({
+        method: 'POST',
+        url: `/material-invoices/${invoices[0]!.id}/shortages`,
+        headers: { cookie: data.foreman.cookie },
+        payload: { comment: 'Не хватает материала' },
+      });
+      expect(shortage.statusCode).toBe(201);
+    }
+    expect(await read()).toMatchObject({
+      status: 'in_progress',
+      actualMaterialAmountMinor: 30_000,
+      materialSummary: { color: 'red', openShortageCount: 2, deliveredInvoiceCount: 2 },
+    });
+    const batch = await loadStageSummaries(getApp().db, [data.stage.id]);
+    expect(batch.get(data.stage.id)!.materialSummary).toEqual((await read()).materialSummary);
+    const other = await fixture();
+    const combined = await loadStageSummaries(getApp().db, [data.stage.id, other.stage.id]);
+    expect(combined.get(data.stage.id)!.totalActualAmountMinor).toBe(100_000);
+    expect(combined.get(other.stage.id)!).toMatchObject({
+      totalActualAmountMinor: 0,
+      materialSummary: { color: 'red', invoiceCount: 0 },
+    });
+    expect((await loadStageSummaries(getApp().db, [])).size).toBe(0);
+  });
   it('учитывает счета этапа, оплату и доставку независимо', async () => {
     const data = await fixture();
     const planned = await getApp().inject({

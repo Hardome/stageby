@@ -6,6 +6,7 @@
 import * as z from 'zod'
 import { acceptanceSchema } from './acceptanceSchema'
 import { coordinatesSchema } from './coordinatesSchema'
+import { materialIndicatorSchema } from './materialIndicatorSchema'
 import { moneyAmountMinorSchema } from './moneyAmountMinorSchema'
 import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { signedMoneyAmountMinorSchema } from './signedMoneyAmountMinorSchema'
@@ -35,11 +36,7 @@ export const stageSchema = z.object({
   actualMaterialAmountMinor: moneyAmountMinorSchema.describe('Неотрицательная денежная сумма в копейках.').meta({ examples: [12500000] }),
   totalPlannedAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
   totalActualAmountMinor: moneyAmountMinorSchema.describe('Неотрицательная денежная сумма в копейках.').meta({ examples: [12500000] }),
-  materialSummary: z.object({
-    invoiceCount: z.int().min(0).describe('Количество счетов этапа.').meta({ examples: [3] }),
-    deliveredInvoiceCount: z.int().min(0).describe('Количество доставленных счетов.').meta({ examples: [2] }),
-    openShortageCount: z.int().min(0).describe('Количество открытых нехваток.').meta({ examples: [1] }),
-  }).strict().describe('Краткая сводка заказов, счетов, доставки и открытых нехваток этапа.'),
+  materialSummary: materialIndicatorSchema.describe('Вычисляемое состояние счетов и нехваток выбранного этапа.'),
   actualStartDate: z.iso.date().nullable().describe('Фактическая дата первого старта в формате YYYY-MM-DD. Устанавливается сервером; null — этап ещё не стартовал.').meta({ examples: ['2026-09-21', ] }),
   actualEndDate: z.iso.date().nullable().describe('Фактическая дата завершения в формате YYYY-MM-DD. Устанавливается сервером при приёмке; null — этап ещё не принят.').meta({ examples: ['2026-09-28', ] }),
   predecessorStageIds: z.array(z.int().min(1).max(2147483647)).max(7).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).describe('ID обязательных предшественников из того же проекта. Все должны быть завершены до старта; пустой список допускает параллельную работу. Ссылки на себя и циклы запрещены.'),
