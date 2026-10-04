@@ -3,7 +3,6 @@ import { and, asc, desc, eq, inArray, lt, sql, sum } from 'drizzle-orm';
 import { acceptanceItems, acceptances } from '#app/db/schema/acceptances';
 import { type ChecklistItemRow, type ChecklistRow, checklistItems, checklists } from '#app/db/schema/checklists';
 import { checklistItemPhotos, files } from '#app/db/schema/files';
-import { materialInvoices, materialShortages } from '#app/db/schema/materials';
 import { projects } from '#app/db/schema/projects';
 import { stageTypes } from '#app/db/schema/stage-types';
 import { stagePredecessors, stages } from '#app/db/schema/stages';
@@ -12,6 +11,7 @@ import { workPayments } from '#app/db/schema/work-payments';
 import type { Checklist, RejectStage, Stage, UpdateChecklistItem } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
+import { isSupplyComplete, loadStageSummaries } from '#app/modules/materials/summary';
 import type { Actor, Database, OperationResult, StageOperationError } from '#app/modules/stages/types';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -30,11 +30,8 @@ function canRead(actor: Actor, assigneeId: number | null): boolean {
 }
 
 async function isMaterialSupplyComplete(database: Database | Transaction, stageId: number): Promise<boolean> {
-  const invoices = await database
-    .select({ deliveredAt: materialInvoices.deliveredAt })
-    .from(materialInvoices)
-    .where(eq(materialInvoices.stageId, stageId));
-  return invoices.length > 0 && invoices.every((invoice) => invoice.deliveredAt !== null);
+  const summary = (await loadStageSummaries(database, [stageId])).get(stageId);
+  return summary !== undefined && isSupplyComplete(summary.materialSummary);
 }
 
 async function loadChecklist(database: Database | Transaction, stageId: number): Promise<Checklist | null> {
@@ -122,43 +119,7 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
     .orderBy(desc(acceptances.decidedAt), desc(acceptances.id))
     .limit(1);
   const checklist = await loadChecklist(database, stageId);
-  const [workTotal] = await database
-    .select({ amount: sum(workPayments.amountMinor).mapWith(Number) })
-    .from(workPayments)
-    .where(eq(workPayments.stageId, stageId));
-  const actualWorkAmountMinor = workTotal?.amount ?? 0;
-  const invoiceRows = await database
-    .select({
-      id: materialInvoices.id,
-      amountMinor: materialInvoices.amountMinor,
-      paidAt: materialInvoices.paidAt,
-      deliveredAt: materialInvoices.deliveredAt,
-    })
-    .from(materialInvoices)
-    .where(eq(materialInvoices.stageId, stageId));
-  const [openShortage] =
-    invoiceRows.length > 0
-      ? await database
-          .select({ count: sql<number>`count(*)`.mapWith(Number) })
-          .from(materialShortages)
-          .where(
-            and(
-              inArray(
-                materialShortages.invoiceId,
-                invoiceRows.map(({ id }) => id),
-              ),
-              sql`${materialShortages.resolvedAt} is null`,
-            ),
-          )
-      : [{ count: 0 }];
-  const actualMaterialAmountMinor = invoiceRows.reduce(
-    (total, invoice) => total + (invoice.paidAt === null ? 0 : Number(invoice.amountMinor)),
-    0,
-  );
-  const totalPlannedAmountMinor =
-    row.stage.plannedWorkAmountMinor === null || row.stage.plannedMaterialAmountMinor === null
-      ? null
-      : row.stage.plannedWorkAmountMinor + row.stage.plannedMaterialAmountMinor;
+  const finances = (await loadStageSummaries(database, [stageId])).get(stageId)!;
   return {
     id: row.stage.id,
     projectId: row.stage.projectId,
@@ -174,19 +135,7 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
     status: row.stage.status,
     plannedStartDate: row.stage.plannedStartDate,
     plannedEndDate: row.stage.plannedEndDate,
-    plannedWorkAmountMinor: row.stage.plannedWorkAmountMinor,
-    actualWorkAmountMinor,
-    workBalanceAmountMinor:
-      row.stage.plannedWorkAmountMinor === null ? null : row.stage.plannedWorkAmountMinor - actualWorkAmountMinor,
-    plannedMaterialAmountMinor: row.stage.plannedMaterialAmountMinor,
-    actualMaterialAmountMinor,
-    totalPlannedAmountMinor,
-    totalActualAmountMinor: actualWorkAmountMinor + actualMaterialAmountMinor,
-    materialSummary: {
-      invoiceCount: invoiceRows.length,
-      deliveredInvoiceCount: invoiceRows.filter(({ deliveredAt }) => deliveredAt !== null).length,
-      openShortageCount: openShortage?.count ?? 0,
-    },
+    ...finances,
     actualStartDate: row.stage.actualStartDate,
     actualEndDate: row.stage.actualEndDate,
     predecessorStageIds: predecessors.map(({ id }) => id),

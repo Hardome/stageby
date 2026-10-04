@@ -884,7 +884,7 @@ paths:
       tags:
         - Materials
       summary: Добавить счёт материалов к этапу
-      description: Только руководитель. Привязывает к существующему этапу успешно загруженный PDF или JPEG назначения material_invoice размером не более 10 МиБ и положительную сумму. Один fileId можно привязать не более одного раза. Лимит десять счетов проверяется атомарно под блокировкой этапа; при двух конкурентных запросах на десятое место ровно один может завершиться успешно, второй получает 409 invoice_limit_exceeded.
+      description: Только руководитель. Привязывает к существующему этапу успешно загруженный PDF или JPEG назначения material_invoice размером не более 10 МиБ и положительную сумму. Один fileId можно привязать не более одного раза. Лимит десять счетов проверяется атомарно под блокировкой этапа; при двух конкурентных запросах на десятое место ровно один может завершиться успешно, второй получает 409 invoice_limit_exceeded. Повтор с тем же fileId, этапом, суммой и поставщиком возвращает прежний счёт (201), даже при заполненном лимите, без нового события аудита. Изменённые данные или другой этап для уже привязанного файла возвращают 400 invalid_request.
       requestBody:
         required: true
         content:
@@ -2150,6 +2150,58 @@ components:
         - -100000
         - null
       description: 'Вычисляемая разница в копейках: положительное значение — остаток, отрицательное — переплата, null — план не задан.'
+    MaterialIndicator:
+      type: object
+      description: Вычисляемое состояние счетов и нехваток выбранного этапа.
+      additionalProperties: false
+      required:
+        - color
+        - invoiceCount
+        - paidInvoiceCount
+        - deliveredInvoiceCount
+        - openShortageCount
+        - isPartiallyPaid
+        - isPartiallyDelivered
+      properties:
+        color:
+          type: string
+          enum:
+            - red
+            - yellow
+            - green
+          example: yellow
+          description: Красный — нет счетов или есть открытая нехватка; иначе жёлтый — не все счета оплачены или доставлены; иначе зелёный.
+        invoiceCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+          example: 3
+          description: Количество счетов выбранного этапа.
+        paidInvoiceCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+          example: 2
+          description: Количество полностью оплаченных счетов выбранного этапа.
+        deliveredInvoiceCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+          example: 1
+          description: Количество доставленных счетов выбранного этапа.
+        openShortageCount:
+          type: integer
+          minimum: 0
+          example: 0
+          description: Количество отдельно не устранённых нехваток выбранного этапа.
+        isPartiallyPaid:
+          type: boolean
+          example: true
+          description: true, только если оплачено больше нуля, но меньше общего количества счетов.
+        isPartiallyDelivered:
+          type: boolean
+          example: true
+          description: true, только если доставлено больше нуля, но меньше общего количества счетов.
     Acceptance:
       type: object
       additionalProperties: false
@@ -2339,29 +2391,7 @@ components:
         totalActualAmountMinor:
           $ref: '#/components/schemas/MoneyAmountMinor'
         materialSummary:
-          type: object
-          additionalProperties: false
-          description: Краткая сводка заказов, счетов, доставки и открытых нехваток этапа.
-          required:
-            - invoiceCount
-            - deliveredInvoiceCount
-            - openShortageCount
-          properties:
-            invoiceCount:
-              type: integer
-              minimum: 0
-              example: 3
-              description: Количество счетов этапа.
-            deliveredInvoiceCount:
-              type: integer
-              minimum: 0
-              example: 2
-              description: Количество доставленных счетов.
-            openShortageCount:
-              type: integer
-              minimum: 0
-              example: 1
-              description: Количество открытых нехваток.
+          $ref: '#/components/schemas/MaterialIndicator'
         actualStartDate:
           examples:
             - '2026-09-21'
@@ -3482,58 +3512,6 @@ components:
       examples:
         - in_progress
       description: 'Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.'
-    MaterialIndicator:
-      type: object
-      description: Вычисляемое состояние счетов и нехваток выбранного этапа.
-      additionalProperties: false
-      required:
-        - color
-        - invoiceCount
-        - paidInvoiceCount
-        - deliveredInvoiceCount
-        - openShortageCount
-        - isPartiallyPaid
-        - isPartiallyDelivered
-      properties:
-        color:
-          type: string
-          enum:
-            - red
-            - yellow
-            - green
-          example: yellow
-          description: Красный — нет счетов или есть открытая нехватка; иначе жёлтый — не все счета оплачены или доставлены; иначе зелёный.
-        invoiceCount:
-          type: integer
-          minimum: 0
-          maximum: 10
-          example: 3
-          description: Количество счетов выбранного этапа.
-        paidInvoiceCount:
-          type: integer
-          minimum: 0
-          maximum: 10
-          example: 2
-          description: Количество полностью оплаченных счетов выбранного этапа.
-        deliveredInvoiceCount:
-          type: integer
-          minimum: 0
-          maximum: 10
-          example: 1
-          description: Количество доставленных счетов выбранного этапа.
-        openShortageCount:
-          type: integer
-          minimum: 0
-          example: 0
-          description: Количество отдельно не устранённых нехваток выбранного этапа.
-        isPartiallyPaid:
-          type: boolean
-          example: true
-          description: true, только если оплачено больше нуля, но меньше общего количества счетов.
-        isPartiallyDelivered:
-          type: boolean
-          example: true
-          description: true, только если доставлено больше нуля, но меньше общего количества счетов.
     VariancePercent:
       type:
         - number
