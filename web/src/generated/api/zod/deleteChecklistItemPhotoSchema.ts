@@ -11,13 +11,25 @@ export const deleteChecklistItemPhotoPathPhotoIdSchema = entityIdSchema.describe
 
 export type DeleteChecklistItemPhotoPathPhotoIdSchemaType = z.infer<typeof deleteChecklistItemPhotoPathPhotoIdSchema>
 
+export const deleteChecklistItemPhotoQueryConfirmLastPhotoDeletionSchema = z.boolean().optional().describe('Подтверждение снятия выполнения при удалении последнего фото.')
+
+export type DeleteChecklistItemPhotoQueryConfirmLastPhotoDeletionSchemaType = z.infer<typeof deleteChecklistItemPhotoQueryConfirmLastPhotoDeletionSchema>
+
 export const deleteChecklistItemPhotoStatus204Schema = z.unknown()
 
 export type DeleteChecklistItemPhotoStatus204SchemaType = z.infer<typeof deleteChecklistItemPhotoStatus204Schema>
 
+export const deleteChecklistItemPhotoStatus400Schema = apiErrorSchema
+
+export type DeleteChecklistItemPhotoStatus400SchemaType = z.infer<typeof deleteChecklistItemPhotoStatus400Schema>
+
 export const deleteChecklistItemPhotoStatus401Schema = apiErrorSchema
 
 export type DeleteChecklistItemPhotoStatus401SchemaType = z.infer<typeof deleteChecklistItemPhotoStatus401Schema>
+
+export const deleteChecklistItemPhotoStatus403Schema = apiErrorSchema
+
+export type DeleteChecklistItemPhotoStatus403SchemaType = z.infer<typeof deleteChecklistItemPhotoStatus403Schema>
 
 export const deleteChecklistItemPhotoStatus404Schema = apiErrorSchema
 
@@ -31,7 +43,7 @@ export const deleteChecklistItemPhotoResponseSchema = deleteChecklistItemPhotoSt
 
 export type DeleteChecklistItemPhotoResponseSchemaType = z.infer<typeof deleteChecklistItemPhotoResponseSchema>
 
-export const deleteChecklistItemPhotoErrorSchema = z.union([deleteChecklistItemPhotoStatus401Schema, deleteChecklistItemPhotoStatus404Schema, deleteChecklistItemPhotoStatus409Schema])
+export const deleteChecklistItemPhotoErrorSchema = z.union([deleteChecklistItemPhotoStatus400Schema, deleteChecklistItemPhotoStatus401Schema, deleteChecklistItemPhotoStatus403Schema, deleteChecklistItemPhotoStatus404Schema, deleteChecklistItemPhotoStatus409Schema])
 
 export type DeleteChecklistItemPhotoErrorSchemaType = z.infer<typeof deleteChecklistItemPhotoErrorSchema>
 
@@ -41,10 +53,16 @@ export const deleteChecklistItemPhotoPathSchema = z.object({
 
 export type DeleteChecklistItemPhotoPathSchemaType = z.infer<typeof deleteChecklistItemPhotoPathSchema>
 
+export const deleteChecklistItemPhotoQuerySchema = z.object({
+  confirmLastPhotoDeletion: z.boolean().optional().describe('Подтверждение снятия выполнения при удалении последнего фото.'),
+})
+
+export type DeleteChecklistItemPhotoQuerySchemaType = z.infer<typeof deleteChecklistItemPhotoQuerySchema>
+
 export const deleteChecklistItemPhotoOptionsSchema = z.object({
   body: z.never().optional(),
   path: deleteChecklistItemPhotoPathSchema,
-  query: z.never().optional(),
+  query: deleteChecklistItemPhotoQuerySchema.optional(),
   headers: z.never().optional(),
 })
 
@@ -52,7 +70,9 @@ export type DeleteChecklistItemPhotoOptionsSchemaType = z.infer<typeof deleteChe
 
 export const deleteChecklistItemPhotoResponsesSchema = z.object({
   '204': deleteChecklistItemPhotoStatus204Schema,
+  '400': deleteChecklistItemPhotoStatus400Schema,
   '401': deleteChecklistItemPhotoStatus401Schema,
+  '403': deleteChecklistItemPhotoStatus403Schema,
   '404': deleteChecklistItemPhotoStatus404Schema,
   '409': deleteChecklistItemPhotoStatus409Schema,
 })

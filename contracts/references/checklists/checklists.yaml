@@ -90,7 +90,7 @@ paths:
         или supplied, устанавливает actualStartDate и возвращает предупреждение materials_incomplete при старте
         из assigned. Если непосредственно предыдущий включённый этап ещё не completed/paid, также возвращает
         predecessor_incomplete, но не блокирует выполнение. Для isCompleted=true нужна хотя бы одна успешно
-        загруженная активная фотография. Сама
+        загруженная активная фотография; при доработке она должна быть загружена после последнего возврата этого пункта. Сама
         загрузка фотографии пункт не выполняет. itemId должен принадлежать чек-листу данного этапа, иначе 404.
         expectedVersion — версия всего чек-листа. false→true устанавливает completedAt и completedBy на
         сервере; true→false очищает их. Повтор текущего значения с актуальной версией — без изменений.
@@ -133,6 +133,9 @@ components:
         - position
         - isCompleted
         - requiresRework
+        - photoCount
+        - photosDeletedByRetention
+        - reworkComment
         - completedAt
         - completedBy
       properties:
@@ -176,6 +179,20 @@ components:
             - false
           description: "Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку."
           type: boolean
+        photoCount:
+          type: integer
+          minimum: 0
+          maximum: 20
+          description: Число активных успешно загруженных фото; 0 означает отсутствие доступных фото.
+          examples: [1]
+        photosDeletedByRetention:
+          type: boolean
+          description: У пункта есть фото, удалённые автоматической очисткой по сроку хранения. Выполнение сохраняется.
+          examples: [false]
+        reworkComment:
+          type: [string, "null"]
+          description: Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.
+          examples: [null]
         completedAt:
           examples:
             - "2026-09-24T09:30:00Z"

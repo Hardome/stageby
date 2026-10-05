@@ -14,6 +14,7 @@ export type FileOperationError =
   | 'invalid_state'
   | 'not_found'
   | 'photo_limit_exceeded'
+  | 'photo_deletion_confirmation_required'
   | 'project_archived'
   | 'unsupported_mime_type'
   | 'upload_expired'

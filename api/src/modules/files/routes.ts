@@ -13,6 +13,7 @@ import {
   zCreateFileUploadBody,
   zCreateFileUploadResponse,
   zDeleteChecklistItemPhotoPath,
+  zDeleteChecklistItemPhotoQuery,
   zGetFileContentPath,
   zGetFileContentResponse,
   zListChecklistItemPhotosPath,
@@ -36,6 +37,13 @@ const filePathSchema = coercePathId('fileId', zGetFileContentPath);
 const listPhotosPathSchema = coercePathId('itemId', zListChecklistItemPhotosPath);
 const createPhotoPathSchema = coercePathId('itemId', zCreateChecklistItemPhotoPath);
 const deletePhotoPathSchema = coercePathId('photoId', zDeleteChecklistItemPhotoPath);
+const deletePhotoQuerySchema = z.preprocess((value) => {
+  if (typeof value !== 'object' || value === null) return value;
+  const query = { ...value } as Record<string, unknown>;
+  if (query.confirmLastPhotoDeletion === 'true') query.confirmLastPhotoDeletion = true;
+  if (query.confirmLastPhotoDeletion === 'false') query.confirmLastPhotoDeletion = false;
+  return query;
+}, zDeleteChecklistItemPhotoQuery);
 const idempotencyHeadersSchema = z.object({ 'idempotency-key': z.string().min(16).max(100) }).passthrough();
 const createUploadBodySchema = zCreateFileUploadBody
   .superRefine((body, context) => {
@@ -49,6 +57,14 @@ const createUploadBodySchema = zCreateFileUploadBody
   .transform((body) => ({ ...body, originalName: body.originalName.trim() }));
 
 const errors: Record<FileOperationError, { statusCode: 400 | 403 | 404 | 409 | 413; error: ApiError }> = {
+  photo_deletion_confirmation_required: {
+    statusCode: 409,
+    error: {
+      error: 'Conflict',
+      code: 'photo_deletion_confirmation_required',
+      message: 'Подтвердите снятие выполнения пункта.',
+    },
+  },
   checksum_mismatch: {
     statusCode: 409,
     error: { error: 'Conflict', code: 'checksum_mismatch', message: 'Контрольная сумма файла не совпадает.' },
@@ -180,14 +196,22 @@ export function registerFileRoutes(app: FastifyInstance, repository: FileReposit
       ),
   });
 
-  app.delete<{ Params: z.infer<typeof zDeleteChecklistItemPhotoPath> }>('/checklist/photos/:photoId', {
+  app.delete<{
+    Params: z.infer<typeof zDeleteChecklistItemPhotoPath>;
+    Querystring: z.infer<typeof deletePhotoQuerySchema>;
+  }>('/checklist/photos/:photoId', {
     preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
-    schema: { params: deletePhotoPathSchema, response: { 204: z.void(), ...errorResponses } },
+    schema: {
+      params: deletePhotoPathSchema,
+      querystring: deletePhotoQuerySchema,
+      response: { 204: z.void(), ...errorResponses },
+    },
     handler: async (request, reply) => {
       const result = await repository.deletePhoto(
         request.params.photoId,
         request.auth!.user,
         requestAuditContext(request),
+        request.query.confirmLastPhotoDeletion,
       );
       if (result.status !== 'ok') return send(reply, result);
       return reply.status(204).send();

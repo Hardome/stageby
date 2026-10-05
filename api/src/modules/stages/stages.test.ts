@@ -120,7 +120,7 @@ async function createFixture(
   return { manager, foreman, project, stage: stage!, checklist: checklist!, items };
 }
 
-async function attachUploadedPhoto(itemId: number) {
+async function attachUploadedPhoto(itemId: number, position = 1) {
   const uploadedAt = new Date();
   const [file] = await getApp()
     .db.insert(files)
@@ -139,7 +139,7 @@ async function attachUploadedPhoto(itemId: number) {
     })
     .returning();
   createdFileIds.push(file!.id);
-  await getApp().db.insert(checklistItemPhotos).values({ checklistItemId: itemId, fileId: file!.id, position: 1 });
+  await getApp().db.insert(checklistItemPhotos).values({ checklistItemId: itemId, fileId: file!.id, position });
 }
 
 async function createUploadedMaterialFile() {
@@ -614,6 +614,16 @@ describe('Stage statuses and checklists', () => {
       false,
     );
     expect(forbidden.statusCode).toBe(403);
+    expect(current.items[0]).toMatchObject({ reworkComment: 'Исправить выбранный пункт', photoCount: 1 });
+    const withoutNewPhoto = await updateItem(
+      fixture.foreman.cookie,
+      fixture.stage.id,
+      fixture.items[0]!.id,
+      current.version,
+    );
+    expect(withoutNewPhoto.statusCode).toBe(409);
+    expect(withoutNewPhoto.json()).toMatchObject({ code: 'invalid_transition' });
+    await attachUploadedPhoto(fixture.items[0]!.id, 2);
     const fixed = await updateItem(fixture.foreman.cookie, fixture.stage.id, fixture.items[0]!.id, current.version);
     expect(fixed.statusCode, fixed.body).toBe(200);
     const [acceptedAgain] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));

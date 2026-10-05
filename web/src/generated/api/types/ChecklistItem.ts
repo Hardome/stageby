@@ -51,6 +51,26 @@ export type ChecklistItem = {
     */
     requiresRework: boolean;
     /**
+     * @description Число активных успешно загруженных фото; 0 означает отсутствие доступных фото.
+     * @minLength 0
+     * @maxLength 20
+     * @example 1
+     * @type integer
+    */
+    photoCount: number;
+    /**
+     * @description У пункта есть фото, удалённые автоматической очисткой по сроку хранения. Выполнение сохраняется.
+     * @example false
+     * @type boolean
+    */
+    photosDeletedByRetention: boolean;
+    /**
+     * @description Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.
+     * @example null
+     * @type string
+    */
+    reworkComment: string | null;
+    /**
      * @description Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.
      *
      * Format: `date-time`

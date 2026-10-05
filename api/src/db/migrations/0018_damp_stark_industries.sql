@@ -1,0 +1,1 @@
+ALTER TABLE "checklist_item_photos" ADD COLUMN "deletedByRetention" boolean DEFAULT false NOT NULL;
