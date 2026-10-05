@@ -204,8 +204,20 @@ describe('Материалы, счета и нехватки', () => {
     await getApp()
       .db.insert(workPayments)
       .values([
-        { stageId: data.stage.id, amountMinor: 30_000, paidAt: '2026-10-04', createdByUserId: data.manager.user.id },
-        { stageId: data.stage.id, amountMinor: 40_000, paidAt: '2026-10-04', createdByUserId: data.manager.user.id },
+        {
+          stageId: data.stage.id,
+          recipientId: data.foreman.user.id,
+          amountMinor: 30_000,
+          paidAt: '2026-10-04',
+          createdByUserId: data.manager.user.id,
+        },
+        {
+          stageId: data.stage.id,
+          recipientId: data.foreman.user.id,
+          amountMinor: 40_000,
+          paidAt: '2026-10-04',
+          createdByUserId: data.manager.user.id,
+        },
       ]);
     await getApp()
       .db.update(stages)

@@ -75,7 +75,7 @@ async function hasUnfinishedAssignment(transaction: Transaction, userId: number)
   const [assignment] = await transaction
     .select({ id: stages.id })
     .from(stages)
-    .where(and(ne(stages.status, 'completed'), or(eq(stages.assigneeId, userId), eq(stages.inspectorId, userId))))
+    .where(and(ne(stages.status, 'completed'), eq(stages.assigneeId, userId)))
     .limit(1);
   return assignment !== undefined;
 }
