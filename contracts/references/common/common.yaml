@@ -234,6 +234,7 @@ components:
         - upload_incomplete
         - upload_expired
         - photo_limit_exceeded
+        - photo_deletion_confirmation_required
         - invoice_limit_exceeded
         - rate_limited
       examples:

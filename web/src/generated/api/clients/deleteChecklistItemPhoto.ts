@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { deleteChecklistItemPhotoResponseSchema, deleteChecklistItemPhotoErrorSchema } from '../zod/deleteChecklistItemPhotoSchema'
 
 /**
- * @description Помечает фото удалённым. Если это последнее активное фото выполненного пункта, отметка выполнения снимается в той же транзакции.
+ * @description Помечает фото удалённым. Если это последнее активное фото выполненного пункта, требуется confirmLastPhotoDeletion=true, иначе 409 photo_deletion_confirmation_required. Подтверждённое удаление снимает выполнение и пересчитывает прогресс и версии в той же транзакции. Мастер на приёмке имеет только доступ для чтения; при доработке меняет только возвращённые пункты. completed и paid запрещают изменения для всех ролей.
  * @summary Удалить фотографию пункта
  * {@link /checklist/photos/:photoId}
  */

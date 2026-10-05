@@ -5,6 +5,6 @@
 
 import * as z from 'zod'
 
-export const apiErrorCodeSchema = z.enum(['invalid_request', 'unauthenticated', 'forbidden', 'not_found', 'version_conflict', 'invalid_transition', 'idempotency_conflict', 'login_taken', 'last_manager', 'user_in_use', 'project_archived', 'unsupported_mime_type', 'file_too_large', 'checksum_mismatch', 'upload_incomplete', 'upload_expired', 'photo_limit_exceeded', 'invoice_limit_exceeded', 'rate_limited']).describe('Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.').meta({ examples: ['invalid_request'] })
+export const apiErrorCodeSchema = z.enum(['invalid_request', 'unauthenticated', 'forbidden', 'not_found', 'version_conflict', 'invalid_transition', 'idempotency_conflict', 'login_taken', 'last_manager', 'user_in_use', 'project_archived', 'unsupported_mime_type', 'file_too_large', 'checksum_mismatch', 'upload_incomplete', 'upload_expired', 'photo_limit_exceeded', 'photo_deletion_confirmation_required', 'invoice_limit_exceeded', 'rate_limited']).describe('Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.').meta({ examples: ['invalid_request'] })
 
 export type ApiErrorCodeSchemaType = z.infer<typeof apiErrorCodeSchema>

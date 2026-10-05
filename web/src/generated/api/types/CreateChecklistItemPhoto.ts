@@ -24,6 +24,8 @@ export type CreateChecklistItemPhotoStatus400 = ApiError;
 
 export type CreateChecklistItemPhotoStatus401 = ApiError;
 
+export type CreateChecklistItemPhotoStatus403 = ApiError;
+
 export type CreateChecklistItemPhotoStatus404 = ApiError;
 
 export type CreateChecklistItemPhotoStatus409 = ApiError;
@@ -50,6 +52,7 @@ export type CreateChecklistItemPhotoResponses = {
     "201": CreateChecklistItemPhotoStatus201;
     "400": CreateChecklistItemPhotoStatus400;
     "401": CreateChecklistItemPhotoStatus401;
+    "403": CreateChecklistItemPhotoStatus403;
     "404": CreateChecklistItemPhotoStatus404;
     "409": CreateChecklistItemPhotoStatus409;
 };
@@ -57,4 +60,4 @@ export type CreateChecklistItemPhotoResponses = {
 /**
  * @description Union of all possible responses
 */
-export type CreateChecklistItemPhotoResponse = (CreateChecklistItemPhotoStatus201 | CreateChecklistItemPhotoStatus400 | CreateChecklistItemPhotoStatus401 | CreateChecklistItemPhotoStatus404 | CreateChecklistItemPhotoStatus409);
+export type CreateChecklistItemPhotoResponse = (CreateChecklistItemPhotoStatus201 | CreateChecklistItemPhotoStatus400 | CreateChecklistItemPhotoStatus401 | CreateChecklistItemPhotoStatus403 | CreateChecklistItemPhotoStatus404 | CreateChecklistItemPhotoStatus409);

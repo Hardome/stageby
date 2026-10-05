@@ -30,7 +30,15 @@ const fields: Record<string, readonly string[]> = {
     'createdAt',
   ],
   project_documents: ['id', 'projectId', 'fileId', 'position', 'createdAt'],
-  checklist_item_photos: ['id', 'checklistItemId', 'fileId', 'position', 'deletedAt', 'createdAt'],
+  checklist_item_photos: [
+    'id',
+    'checklistItemId',
+    'fileId',
+    'position',
+    'deletedAt',
+    'deletedByRetention',
+    'createdAt',
+  ],
   material_invoices: [
     'id',
     'stageId',

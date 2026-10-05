@@ -1056,7 +1056,7 @@ paths:
       tags:
         - Checklists
       summary: Отметить или снять выполнение пункта
-      description: Руководитель или назначенный мастер. Первый явно выполненный пункт начинает этап из assigned или supplied, устанавливает actualStartDate и возвращает предупреждение materials_incomplete при старте из assigned. Если непосредственно предыдущий включённый этап ещё не completed/paid, также возвращает predecessor_incomplete, но не блокирует выполнение. Для isCompleted=true нужна хотя бы одна успешно загруженная активная фотография. Сама загрузка фотографии пункт не выполняет. itemId должен принадлежать чек-листу данного этапа, иначе 404. expectedVersion — версия всего чек-листа. false→true устанавливает completedAt и completedBy на сервере; true→false очищает их. Повтор текущего значения с актуальной версией — без изменений. Пересчитывает целочисленный прогресс и атомарно увеличивает версии чек-листа и этапа. Последний пункт непустого чек-листа автоматически переводит этап в acceptance. В rework мастер может менять только отмеченные для доработки пункты; повторное выполнение всех замечаний возвращает acceptance. Приёмка, completed и paid блокируют отметки; архив — 409 project_archived.
+      description: Руководитель или назначенный мастер. Первый явно выполненный пункт начинает этап из assigned или supplied, устанавливает actualStartDate и возвращает предупреждение materials_incomplete при старте из assigned. Если непосредственно предыдущий включённый этап ещё не completed/paid, также возвращает predecessor_incomplete, но не блокирует выполнение. Для isCompleted=true нужна хотя бы одна успешно загруженная активная фотография; при доработке она должна быть загружена после последнего возврата этого пункта. Сама загрузка фотографии пункт не выполняет. itemId должен принадлежать чек-листу данного этапа, иначе 404. expectedVersion — версия всего чек-листа. false→true устанавливает completedAt и completedBy на сервере; true→false очищает их. Повтор текущего значения с актуальной версией — без изменений. Пересчитывает целочисленный прогресс и атомарно увеличивает версии чек-листа и этапа. Последний пункт непустого чек-листа автоматически переводит этап в acceptance. В rework мастер может менять только отмеченные для доработки пункты; повторное выполнение всех замечаний возвращает acceptance. Приёмка, completed и paid блокируют отметки; архив — 409 project_archived.
       requestBody:
         required: true
         content:
@@ -1197,7 +1197,7 @@ paths:
         - Files
         - Checklists
       summary: Привязать загруженную фотографию
-      description: Атомарно привязывает фотографию и проверяет лимит двадцать активных фото. Пункт автоматически не выполняется.
+      description: Атомарно привязывает фотографию и проверяет лимит двадцать активных фото. Пункт автоматически не выполняется. Повтор привязки активного файла к тому же пункту возвращает ту же запись без изменений. Мастер на приёмке имеет только доступ для чтения; при доработке меняет только возвращённые пункты. completed и paid запрещают изменения для всех ролей.
       requestBody:
         required: true
         content:
@@ -1224,6 +1224,8 @@ paths:
           $ref: '#/components/responses/ApiBadRequest'
         '401':
           $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
         '404':
           $ref: '#/components/responses/ApiNotFound'
         '409':
@@ -1237,12 +1239,22 @@ paths:
         - Files
         - Checklists
       summary: Удалить фотографию пункта
-      description: Помечает фото удалённым. Если это последнее активное фото выполненного пункта, отметка выполнения снимается в той же транзакции.
+      description: Помечает фото удалённым. Если это последнее активное фото выполненного пункта, требуется confirmLastPhotoDeletion=true, иначе 409 photo_deletion_confirmation_required. Подтверждённое удаление снимает выполнение и пересчитывает прогресс и версии в той же транзакции. Мастер на приёмке имеет только доступ для чтения; при доработке меняет только возвращённые пункты. completed и paid запрещают изменения для всех ролей.
+      parameters:
+        - name: confirmLastPhotoDeletion
+          in: query
+          schema:
+            type: boolean
+          description: Подтверждение снятия выполнения при удалении последнего фото.
       responses:
         '204':
           description: Фотография удалена.
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
         '401':
           $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
         '404':
           $ref: '#/components/responses/ApiNotFound'
         '409':
@@ -1355,6 +1367,7 @@ components:
         - upload_incomplete
         - upload_expired
         - photo_limit_exceeded
+        - photo_deletion_confirmation_required
         - invoice_limit_exceeded
         - rate_limited
       examples:
@@ -2772,6 +2785,9 @@ components:
         - position
         - isCompleted
         - requiresRework
+        - photoCount
+        - photosDeletedByRetention
+        - reworkComment
         - completedAt
         - completedBy
       properties:
@@ -2815,6 +2831,25 @@ components:
             - false
           description: Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.
           type: boolean
+        photoCount:
+          type: integer
+          minimum: 0
+          maximum: 20
+          description: Число активных успешно загруженных фото; 0 означает отсутствие доступных фото.
+          examples:
+            - 1
+        photosDeletedByRetention:
+          type: boolean
+          description: У пункта есть фото, удалённые автоматической очисткой по сроку хранения. Выполнение сохраняется.
+          examples:
+            - false
+        reworkComment:
+          type:
+            - string
+            - 'null'
+          description: Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.
+          examples:
+            - null
         completedAt:
           examples:
             - '2026-09-24T09:30:00Z'

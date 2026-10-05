@@ -9,9 +9,10 @@ import { parseEnvironment } from '#app/config/env';
 import { checklistItems, checklists } from '#app/db/schema/checklists';
 import { checklistItemPhotos, files, projectDocuments } from '#app/db/schema/files';
 import { projects } from '#app/db/schema/projects';
+import { sessions } from '#app/db/schema/sessions';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
-import type { FileUpload, Project } from '#app/generated/types.gen';
+import type { Checklist, FileUpload, Project, Stage } from '#app/generated/types.gen';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 import { SessionRepository } from '#app/modules/auth/session-repository';
 import { SessionService } from '#app/modules/auth/session-service';
@@ -242,6 +243,283 @@ async function insertUploadedPhotos(userId: number, count: number) {
 }
 
 describe('File uploads and checklist photos', () => {
+  it('переводит этап на приёмку, если фото ранее выполненного пункта очищены', async () => {
+    const fixture = await createFixture();
+    const [secondItem] = await getApp()
+      .db.insert(checklistItems)
+      .values({ checklistId: fixture.checklist.id, title: 'Второй пункт', position: 2 })
+      .returning();
+    const first = await uploadPhoto(fixture.foreman.cookie);
+    await getApp().inject({
+      method: 'POST',
+      url: `/checklist/items/${fixture.item.id}/photos`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { fileId: first.upload!.fileId },
+    });
+    const done = await getApp().inject({
+      method: 'PATCH',
+      url: `/stages/${fixture.stage.id}/checklist/items/${fixture.item.id}`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { expectedVersion: 1, isCompleted: true },
+    });
+    expect(done.statusCode, done.body).toBe(200);
+    await getApp()
+      .db.update(files)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(files.id, first.upload!.fileId));
+    await cleanupExpiredFiles(new FileRepository(getApp().db, storage, 900), getApp().log);
+    const second = await uploadPhoto(fixture.foreman.cookie);
+    await getApp().inject({
+      method: 'POST',
+      url: `/checklist/items/${secondItem!.id}/photos`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { fileId: second.upload!.fileId },
+    });
+    const ready = await getApp().inject({
+      method: 'PATCH',
+      url: `/stages/${fixture.stage.id}/checklist/items/${secondItem!.id}`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { expectedVersion: 2, isCompleted: true },
+    });
+    expect(ready.statusCode, ready.body).toBe(200);
+    expect(ready.json<Checklist>()).toMatchObject({
+      progressPercent: 100,
+      items: [
+        { isCompleted: true, photoCount: 0, photosDeletedByRetention: true },
+        { isCompleted: true, photoCount: 1 },
+      ],
+    });
+    const [stage] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
+    expect(stage!.status).toBe('acceptance');
+  });
+
+  it('блокирует изменения фото на приёмке и разрешает мастеру только возвращённые пункты', async () => {
+    const fixture = await createFixture();
+    const uploaded = await insertUploadedPhotos(fixture.foreman.user.id, 2);
+    const attached = await getApp().inject({
+      method: 'POST',
+      url: `/checklist/items/${fixture.item.id}/photos`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { fileId: uploaded[0]!.id },
+    });
+    const photoId = attached.json<{ id: number }>().id;
+    const add = () =>
+      getApp().inject({
+        method: 'POST',
+        url: `/checklist/items/${fixture.item.id}/photos`,
+        headers: { cookie: fixture.foreman.cookie },
+        payload: { fileId: uploaded[1]!.id },
+      });
+    const remove = () =>
+      getApp().inject({
+        method: 'DELETE',
+        url: `/checklist/photos/${photoId}`,
+        headers: { cookie: fixture.foreman.cookie },
+      });
+    for (const status of ['acceptance', 'completed', 'paid'] as const) {
+      await getApp().db.update(stages).set({ status }).where(eq(stages.id, fixture.stage.id));
+      expect((await add()).statusCode).toBe(409);
+      expect((await remove()).statusCode).toBe(409);
+    }
+    await getApp().db.update(stages).set({ status: 'rework' }).where(eq(stages.id, fixture.stage.id));
+    expect((await add()).statusCode).toBe(403);
+    expect((await remove()).statusCode).toBe(403);
+    await getApp()
+      .db.update(checklistItems)
+      .set({ requiresRework: true })
+      .where(eq(checklistItems.id, fixture.item.id));
+    expect((await add()).statusCode).toBe(201);
+    expect((await remove()).statusCode).toBe(204);
+  });
+
+  it('пересчитывает прогресс и обе версии при удалении последнего фото в работе', async () => {
+    const fixture = await createFixture();
+    const [file] = await insertUploadedPhotos(fixture.foreman.user.id, 1);
+    const attached = await getApp().inject({
+      method: 'POST',
+      url: `/checklist/items/${fixture.item.id}/photos`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { fileId: file!.id },
+    });
+    await getApp()
+      .db.update(checklistItems)
+      .set({ isCompleted: true, completedAt: new Date(), completedByUserId: fixture.foreman.user.id })
+      .where(eq(checklistItems.id, fixture.item.id));
+    await getApp().db.update(stages).set({ status: 'in_progress' }).where(eq(stages.id, fixture.stage.id));
+    const removed = await getApp().inject({
+      method: 'DELETE',
+      url: `/checklist/photos/${attached.json<{ id: number }>().id}?confirmLastPhotoDeletion=true`,
+      headers: { cookie: fixture.foreman.cookie },
+    });
+    expect(removed.statusCode, removed.body).toBe(204);
+    const checklist = await getApp().inject({
+      method: 'GET',
+      url: `/stages/${fixture.stage.id}/checklist`,
+      headers: { cookie: fixture.foreman.cookie },
+    });
+    expect(checklist.json<Checklist>()).toMatchObject({
+      progressPercent: 0,
+      version: 2,
+      items: [{ isCompleted: false, photoCount: 0, photosDeletedByRetention: false }],
+    });
+    const [stage] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
+    expect(stage).toMatchObject({ status: 'in_progress', version: 2 });
+  });
+
+  it('повторяет привязку без дубля и аудита, сохраняет фото до отдельного выполнения', async () => {
+    const fixture = await createFixture();
+    const uploaded = await uploadPhoto(fixture.foreman.cookie);
+    const attach = () =>
+      getApp().inject({
+        method: 'POST',
+        url: `/checklist/items/${fixture.item.id}/photos`,
+        headers: { cookie: fixture.foreman.cookie },
+        payload: { fileId: uploaded.upload!.fileId },
+      });
+    const responses = await Promise.all([attach(), attach()]);
+    expect(responses.map((response) => response.statusCode)).toEqual([201, 201]);
+    expect(responses[0]!.json()).toEqual(responses[1]!.json());
+    const checklist = await getApp().inject({
+      method: 'GET',
+      url: `/stages/${fixture.stage.id}/checklist`,
+      headers: { cookie: fixture.foreman.cookie },
+    });
+    expect(checklist.json<Checklist>()).toMatchObject({
+      progressPercent: 0,
+      version: 1,
+      items: [{ isCompleted: false, photoCount: 1, photosDeletedByRetention: false, reworkComment: null }],
+    });
+    expect((await auditRecords(getApp().db, fixture.foreman.user.id, 'createChecklistItemPhoto')).events).toHaveLength(
+      1,
+    );
+  });
+
+  it('сохраняет выполнение после очистки, принимает этап и требует новое фото при доработке', async () => {
+    const fixture = await createFixture();
+    const uploaded = await uploadPhoto(fixture.foreman.cookie);
+    const attached = await getApp().inject({
+      method: 'POST',
+      url: `/checklist/items/${fixture.item.id}/photos`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { fileId: uploaded.upload!.fileId },
+    });
+    expect(attached.statusCode).toBe(201);
+    const done = await getApp().inject({
+      method: 'PATCH',
+      url: `/stages/${fixture.stage.id}/checklist/items/${fixture.item.id}`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { expectedVersion: 1, isCompleted: true },
+    });
+    expect(done.statusCode, done.body).toBe(200);
+    const ready = done.json<Checklist>();
+    expect(ready.progressPercent).toBe(100);
+    await getApp()
+      .db.update(files)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(files.id, uploaded.upload!.fileId));
+    await cleanupExpiredFiles(new FileRepository(getApp().db, storage, 900), getApp().log);
+    const read = await getApp().inject({
+      method: 'GET',
+      url: `/stages/${fixture.stage.id}/checklist`,
+      headers: { cookie: fixture.foreman.cookie },
+    });
+    expect(read.json<Checklist>()).toMatchObject({
+      progressPercent: 100,
+      version: ready.version,
+      items: [{ isCompleted: true, photoCount: 0, photosDeletedByRetention: true }],
+    });
+    expect(storage.objects.has(uploaded.key!)).toBe(false);
+    const [stage] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
+    expect(stage!.status).toBe('acceptance');
+    const rejected = await getApp().inject({
+      method: 'POST',
+      url: `/stages/${stage!.id}/rework`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { expectedVersion: stage!.version, comment: 'Нужно исправить', itemIds: [fixture.item.id] },
+    });
+    expect(rejected.statusCode, rejected.body).toBe(200);
+    const retry = await getApp().inject({
+      method: 'PATCH',
+      url: `/stages/${stage!.id}/checklist/items/${fixture.item.id}`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { expectedVersion: ready.version + 1, isCompleted: true },
+    });
+    expect(retry.statusCode).toBe(409);
+    expect(retry.json()).toMatchObject({ code: 'invalid_transition' });
+    const fresh = await uploadPhoto(fixture.foreman.cookie);
+    const freshAttached = await getApp().inject({
+      method: 'POST',
+      url: `/checklist/items/${fixture.item.id}/photos`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { fileId: fresh.upload!.fileId },
+    });
+    expect(freshAttached.statusCode, freshAttached.body).toBe(201);
+    const fixed = await getApp().inject({
+      method: 'PATCH',
+      url: `/stages/${stage!.id}/checklist/items/${fixture.item.id}`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { expectedVersion: ready.version + 1, isCompleted: true },
+    });
+    expect(fixed.statusCode, fixed.body).toBe(200);
+    await getApp()
+      .db.update(files)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(files.id, fresh.upload!.fileId));
+    await cleanupExpiredFiles(new FileRepository(getApp().db, storage, 900), getApp().log);
+    const [readyAgain] = await getApp().db.select().from(stages).where(eq(stages.id, stage!.id));
+    const accepted = await getApp().inject({
+      method: 'POST',
+      url: `/stages/${stage!.id}/acceptance`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { expectedVersion: readyAgain!.version },
+    });
+    expect(accepted.statusCode, accepted.body).toBe(200);
+    expect(accepted.json<Stage>()).toMatchObject({ status: 'completed', progressPercent: 100 });
+  });
+
+  it('не открывает чужую upload-сессию и запрещает операции после истечения авторизации', async () => {
+    const fixture = await createFixture();
+    const other = await createIdentity('foreman');
+    const uploaded = await uploadPhoto(fixture.foreman.cookie);
+    const foreignCompletion = await getApp().inject({
+      method: 'POST',
+      url: `/file-uploads/${uploaded.upload!.fileId}/completion`,
+      headers: { cookie: other.cookie, 'idempotency-key': randomUUID() },
+      payload: { checksumSha256: checksum },
+    });
+    expect(foreignCompletion.statusCode).toBe(404);
+    const foreignAttach = await getApp().inject({
+      method: 'POST',
+      url: `/checklist/items/${fixture.item.id}/photos`,
+      headers: { cookie: other.cookie },
+      payload: { fileId: uploaded.upload!.fileId },
+    });
+    expect(foreignAttach.statusCode).toBe(404);
+    await getApp()
+      .db.update(sessions)
+      .set({ createdAt: new Date(Date.now() - 2000), expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(sessions.userId, fixture.foreman.user.id));
+    for (const request of [
+      {
+        method: 'POST' as const,
+        url: `/file-uploads/${uploaded.upload!.fileId}/completion`,
+        payload: { checksumSha256: checksum },
+      },
+      {
+        method: 'POST' as const,
+        url: `/checklist/items/${fixture.item.id}/photos`,
+        payload: { fileId: uploaded.upload!.fileId },
+      },
+      { method: 'GET' as const, url: `/files/${uploaded.upload!.fileId}/content` },
+    ]) {
+      const response = await getApp().inject({
+        ...request,
+        headers: { cookie: fixture.foreman.cookie, 'idempotency-key': randomUUID() },
+      });
+      expect(response.statusCode, response.body).toBe(401);
+    }
+  });
+
   it('отзывает вложенные ресурсы у прежнего мастера после замены, открывает PDF назначенному мастеру', async () => {
     const fixture = await createFixture();
     const replacement = await createIdentity('foreman');
@@ -516,10 +794,23 @@ describe('File uploads and checklist photos', () => {
       .set({ isCompleted: true, completedAt: new Date(), completedByUserId: fixture.foreman.user.id })
       .where(eq(checklistItems.id, fixture.item.id));
     await getApp().db.update(stages).set({ status: 'acceptance' }).where(eq(stages.id, fixture.stage.id));
-    const response = await getApp().inject({
+    const blocked = await getApp().inject({
       method: 'DELETE',
       url: `/checklist/photos/${attached.json<{ id: number }>().id}`,
       headers: { cookie: fixture.foreman.cookie },
+    });
+    expect(blocked.statusCode).toBe(409);
+    const unconfirmed = await getApp().inject({
+      method: 'DELETE',
+      url: `/checklist/photos/${attached.json<{ id: number }>().id}`,
+      headers: { cookie: fixture.manager.cookie },
+    });
+    expect(unconfirmed.statusCode).toBe(409);
+    expect(unconfirmed.json()).toMatchObject({ code: 'photo_deletion_confirmation_required' });
+    const response = await getApp().inject({
+      method: 'DELETE',
+      url: `/checklist/photos/${attached.json<{ id: number }>().id}?confirmLastPhotoDeletion=true`,
+      headers: { cookie: fixture.manager.cookie },
     });
     expect(response.statusCode, response.body).toBe(204);
     const [storedItem] = await getApp().db.select().from(checklistItems).where(eq(checklistItems.id, fixture.item.id));
@@ -529,7 +820,7 @@ describe('File uploads and checklist photos', () => {
       .where(and(eq(checklistItemPhotos.checklistItemId, fixture.item.id), isNull(checklistItemPhotos.deletedAt)));
     expect(storedItem?.isCompleted).toBe(false);
     expect(activePhoto).toBeUndefined();
-    const audit = await auditRecords(getApp().db, fixture.foreman.user.id, 'deleteChecklistItemPhoto');
+    const audit = await auditRecords(getApp().db, fixture.manager.user.id, 'deleteChecklistItemPhoto');
     expect(audit.events).toHaveLength(1);
     expect(audit.changes.map((change) => change.entityType).sort()).toEqual([
       'checklist_item_photos',
@@ -581,6 +872,7 @@ describe('File uploads and checklist photos', () => {
       .where(eq(checklistItemPhotos.fileId, file!.id));
     expect(deleted?.status).toBe('deleted');
     expect(photo?.deletedAt).toBeInstanceOf(Date);
+    expect(photo?.deletedByRetention).toBe(true);
     expect(storage.objects.has(file!.storageKey)).toBe(false);
     await cleanupExpiredFiles(repository, getApp().log);
     const audit = await auditRecords(getApp().db, null, 'cleanupExpiredFile');
