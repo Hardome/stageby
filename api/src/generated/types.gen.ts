@@ -25,9 +25,9 @@ export type StageStatus = 'created' | 'assigned' | 'supplied' | 'in_progress' | 
 export type ApiErrorCode = 'invalid_request' | 'unauthenticated' | 'forbidden' | 'not_found' | 'version_conflict' | 'invalid_transition' | 'idempotency_conflict' | 'login_taken' | 'last_manager' | 'user_in_use' | 'project_archived' | 'unsupported_mime_type' | 'file_too_large' | 'checksum_mismatch' | 'upload_incomplete' | 'upload_expired' | 'photo_limit_exceeded' | 'photo_deletion_confirmation_required' | 'invoice_limit_exceeded' | 'rate_limited';
 
 /**
- * manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
+ * manager — руководитель; foreman — мастер/исполнитель.
  */
-export type UserRole = 'manager' | 'estimator' | 'foreman' | 'inspector';
+export type UserRole = 'manager' | 'foreman';
 
 /**
  * Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.
@@ -877,9 +877,9 @@ export type WorkPayment = {
     comment: string | null;
     createdBy: UserBrief;
     /**
-     * Получатель выплаты, сохранённый независимо от назначения этапа. null только у прежних записей без получателя.
+     * Получатель выплаты, сохранённый независимо от назначения этапа.
      */
-    recipient: UserBrief | null;
+    recipient: UserBrief;
     /**
      * Версия платежа для защиты от конкурентных изменений.
      */

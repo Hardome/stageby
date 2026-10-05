@@ -62,14 +62,9 @@ export const zApiErrorCode = z.enum([
 ]);
 
 /**
- * manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
+ * manager — руководитель; foreman — мастер/исполнитель.
  */
-export const zUserRole = z.enum([
-    'manager',
-    'estimator',
-    'foreman',
-    'inspector'
-]);
+export const zUserRole = z.enum(['manager', 'foreman']);
 
 /**
  * Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.
@@ -429,7 +424,7 @@ export const zWorkPayment = z.object({
     amountMinor: zPositiveMoneyAmountMinor,
     comment: z.string().min(1).max(1000).nullable(),
     createdBy: zUserBrief,
-    recipient: zUserBrief.nullable(),
+    recipient: zUserBrief,
     version: z.int().gte(1),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()

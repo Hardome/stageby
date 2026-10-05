@@ -662,6 +662,7 @@ describe('Stage statuses and checklists', () => {
     expect(unpaid.statusCode).toBe(409);
     await getApp().db.insert(workPayments).values({
       stageId: fixture.stage.id,
+      recipientId: fixture.foreman.user.id,
       paidAt: '2026-10-01',
       amountMinor: 10_000,
       createdByUserId: fixture.manager.user.id,

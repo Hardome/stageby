@@ -134,7 +134,7 @@ paths:
       tags:
         - Users
       summary: Изменить пользователя
-      description: 'Только руководитель. Деактивация и изменение роли отзывают все сессии пользователя. Нельзя лишить систему последнего активного manager (409 last_manager). Нельзя деактивировать или сменить роль назначенного мастера/приёмщика незавершённого этапа: сначала переназначьте этап (409 user_in_use). Удаления нет; история сохраняется.'
+      description: 'Только руководитель. Деактивация и изменение роли отзывают все сессии пользователя. Нельзя лишить систему последнего активного manager (409 last_manager). Нельзя деактивировать или сменить роль назначенного мастера незавершённого этапа: сначала переназначьте этап (409 user_in_use). Удаления нет; история сохраняется.'
       requestBody:
         required: true
         content:
@@ -1379,10 +1379,8 @@ components:
       type: string
       enum:
         - manager
-        - estimator
         - foreman
-        - inspector
-      description: manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
+      description: manager — руководитель; foreman — мастер/исполнитель.
     User:
       description: Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.
       type: object
@@ -3024,10 +3022,8 @@ components:
         createdBy:
           $ref: '#/components/schemas/UserBrief'
         recipient:
-          description: Получатель выплаты, сохранённый независимо от назначения этапа. null только у прежних записей без получателя.
-          anyOf:
-            - $ref: '#/components/schemas/UserBrief'
-            - type: 'null'
+          description: Получатель выплаты, сохранённый независимо от назначения этапа.
+          $ref: '#/components/schemas/UserBrief'
         version:
           type: integer
           minimum: 1

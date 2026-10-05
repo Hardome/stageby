@@ -35,6 +35,7 @@ describe('user forms', () => {
 
   it('requires a role, valid login and matching password', () => {
     expect(userCreationFormSchema.safeParse({ ...creation, role: undefined }).success).toBe(false);
+    expect(userCreationFormSchema.safeParse({ ...creation, role: 'unsupported' }).success).toBe(false);
     expect(userCreationFormSchema.safeParse({ ...creation, login: 'UPPER' }).success).toBe(false);
     expect(userCreationFormSchema.safeParse({ ...creation, fullName: ' ' }).success).toBe(false);
     expect(userCreationFormSchema.safeParse({ ...creation, confirmPassword: 'different' }).success).toBe(false);
@@ -46,8 +47,8 @@ describe('user forms', () => {
     const values = { fullName: user.fullName, role: user.role, phone: user.phone, isActive: user.isActive };
     expect(getUserChanges(user, editFormSchema.parse(values))).toEqual({});
     expect(getUserChanges(user, editFormSchema.parse({ ...values, phone: ' ' }))).toEqual({ phone: null });
-    expect(getUserChanges(user, editFormSchema.parse({ ...values, role: 'inspector', isActive: false }))).toEqual({
-      role: 'inspector',
+    expect(getUserChanges(user, editFormSchema.parse({ ...values, role: 'foreman', isActive: false }))).toEqual({
+      role: 'foreman',
       isActive: false,
     });
   });

@@ -23,9 +23,9 @@ describe('user creation draft', () => {
 
   it('keeps drafts separate for each manager and clears only the requested draft', () => {
     saveCreateDraft(1, { ...emptyDraft, fullName: 'Первый', role: 'manager' });
-    saveCreateDraft(2, { ...emptyDraft, fullName: 'Второй', role: 'inspector' });
+    saveCreateDraft(2, { ...emptyDraft, fullName: 'Второй', role: 'foreman' });
     expect(loadCreateDraft(1).fullName).toBe('Первый');
-    expect(loadCreateDraft(2).role).toBe('inspector');
+    expect(loadCreateDraft(2).role).toBe('foreman');
     clearCreateDraft(1);
     expect(loadCreateDraft(1)).toEqual(emptyDraft);
     expect(loadCreateDraft(2).fullName).toBe('Второй');

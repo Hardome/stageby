@@ -6,6 +6,8 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import { describe, expect, it } from 'vitest';
 
+// cspell:ignore tgname tgisinternal enumlabel enumtypid enumsortorder
+
 const migrationsFolder = fileURLToPath(new URL('../src/db/migrations', import.meta.url));
 
 const expectedTables = [
@@ -60,13 +62,13 @@ const expectedIndexes = [
   'project_documents_file_unique',
   'project_documents_project_position_unique',
   'projects_archived_created_at_idx',
+  'projects_creation_idempotency_key_unique',
   'sessions_expires_at_idx',
   'sessions_token_hash_unique',
   'sessions_user_id_idx',
   'stage_predecessors_predecessor_idx',
   'stage_types_position_unique',
   'stages_assignee_status_idx',
-  'stages_inspector_status_idx',
   'stages_project_position_unique',
   'stages_project_type_unique',
   'stages_status_idx',
@@ -103,7 +105,6 @@ const expectedForeignKeys = [
   'stage_predecessors_predecessor_fk',
   'stage_predecessors_stage_fk',
   'stages_assigneeId_users_id_fk',
-  'stages_inspectorId_users_id_fk',
   'stages_projectId_projects_id_fk',
   'stages_stageTypeCode_stage_types_code_fk',
   'work_payments_stageId_stages_id_fk',
@@ -156,8 +157,16 @@ describe('миграции БД', () => {
       const checkConstraints = await temporaryPool.query<{ count: string }>(
         "select count(*)::text as count from pg_constraint where contype = 'c' and connamespace = 'public'::regnamespace",
       );
+      const triggers = await temporaryPool.query<{ name: string }>(
+        'select tgname as name from pg_trigger where not tgisinternal order by tgname',
+      );
       const enumTypes = await temporaryPool.query<{ name: string }>(
         "select typname as name from pg_type where typtype = 'e' and typnamespace = 'public'::regnamespace order by typname",
+      );
+      const roles = await temporaryPool.query<{ role: string }>(
+        `select value.enumlabel as role from pg_enum value
+         join pg_type type on type.oid = value.enumtypid
+         where type.typname = 'user_role' order by value.enumsortorder`,
       );
       const stageTypes = await temporaryPool.query<{ code: string; title: string; position: number }>(
         'select code, title, position from stage_types order by position',
@@ -213,13 +222,26 @@ describe('миграции БД', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
 
-      expect(firstJournal.rows[0]?.count).toBe('19');
+      await expect(
+        temporaryPool.query(`update projects set "plannedStartDate" = '2026-01-02' where id = $1`, [projectId]),
+      ).rejects.toMatchObject({ code: '23514' });
+      const recipientColumn = await temporaryPool.query<{ is_nullable: string }>(
+        `select is_nullable from information_schema.columns
+         where table_schema = 'public' and table_name = 'work_payments' and column_name = 'recipientId'`,
+      );
+      expect(recipientColumn.rows).toEqual([{ is_nullable: 'NO' }]);
+      expect(firstJournal.rows[0]?.count).toBe('1');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
       expect(checkConstraints.rows[0]?.count).toBe('63');
+      expect(triggers.rows.map((row) => row.name)).toEqual([
+        'projects_stage_dates_trigger',
+        'stages_active_type_trigger',
+        'stages_project_dates_trigger',
+      ]);
       expect(enumTypes.rows.map((row) => row.name)).toEqual([
         'acceptance_decision',
         'file_purpose',
@@ -227,6 +249,7 @@ describe('миграции БД', () => {
         'stage_status',
         'user_role',
       ]);
+      expect(roles.rows.map((row) => row.role)).toEqual(['manager', 'foreman']);
       expect(stageTypes.rows).toEqual([
         { code: 'foundation', title: 'Фундамент', position: 1 },
         { code: 'walls', title: 'Стены', position: 2 },

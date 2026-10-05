@@ -21,7 +21,7 @@ afterEach(async () => {
   createdIds.length = 0;
 });
 
-async function legacyHash() {
+async function weakerPasswordHash() {
   const salt = randomBytes(16);
   const hash = await new Promise<Buffer>((resolve, reject) => {
     argon2(
@@ -95,7 +95,7 @@ describe('Выдача сессии при конкурентных измене
   });
 
   it('обновляет старый хеш только при успешном входе и сохраняет существующие сессии', async () => {
-    const oldHash = await legacyHash();
+    const oldHash = await weakerPasswordHash();
     const { repository, user, sessionService, login } = await setup(oldHash);
     const existing = await sessionService.issue(user.id);
     expect(await login.login(user.login, 'wrong-password')).toBeNull();
@@ -111,7 +111,7 @@ describe('Выдача сессии при конкурентных измене
   });
 
   it('не перезаписывает новый пароль при конкурентном обновлении старого хеша', async () => {
-    const { repository, user, sessionService, login } = await setup(await legacyHash());
+    const { repository, user, sessionService, login } = await setup(await weakerPasswordHash());
     const ready = Promise.withResolvers<void>();
     const resume = Promise.withResolvers<void>();
     const issue = sessionService.issueForVerifiedUser.bind(sessionService);

@@ -73,7 +73,7 @@ afterEach(async () => {
   }
 });
 
-async function createIdentity(role: 'manager' | 'foreman' | 'estimator' = 'manager', isActive = true) {
+async function createIdentity(role: 'manager' | 'foreman' = 'manager', isActive = true) {
   const suffix = randomUUID().replaceAll('-', '').slice(0, 20);
   const user = await new UserRepository(getApp().db).create({
     login: `projects.${suffix}`,
@@ -451,11 +451,10 @@ describe('Composite project creation', () => {
 
   it('отклоняет неактивного пользователя и пользователя не с ролью foreman', async () => {
     const manager = await createIdentity();
-    const estimator = await createIdentity('estimator');
     const inactiveForeman = await createIdentity('foreman', false);
     const wrongRole = await createProject(
       manager.cookie,
-      payload({ stages: [stage('foundation', { assigneeId: estimator.user.id })] }),
+      payload({ stages: [stage('foundation', { assigneeId: manager.user.id })] }),
     );
     const inactive = await createProject(
       manager.cookie,

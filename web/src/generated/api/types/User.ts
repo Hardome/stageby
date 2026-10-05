@@ -45,7 +45,7 @@ export type User = {
     */
     fullName: string;
     /**
-     * @description manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.
+     * @description manager — руководитель; foreman — мастер/исполнитель.
      * @example foreman
      * @type string
     */

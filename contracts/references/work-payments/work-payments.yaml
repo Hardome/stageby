@@ -175,10 +175,8 @@ components:
         createdBy:
           $ref: ../users/users.yaml#/components/schemas/UserBrief
         recipient:
-          description: Получатель выплаты, сохранённый независимо от назначения этапа. null только у прежних записей без получателя.
-          anyOf:
-            - $ref: ../users/users.yaml#/components/schemas/UserBrief
-            - type: 'null'
+          description: Получатель выплаты, сохранённый независимо от назначения этапа.
+          $ref: ../users/users.yaml#/components/schemas/UserBrief
         version:
           type: integer
           minimum: 1
