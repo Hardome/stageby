@@ -1,6 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -10,21 +8,7 @@ import { expect, it } from 'vitest';
 
 const migrationsFolder = fileURLToPath(new URL('../src/db/migrations', import.meta.url));
 
-async function previousMigrations(): Promise<string> {
-  const folder = await mkdtemp(`${tmpdir()}/stageby-before-template-update-`);
-  await mkdir(`${folder}/meta`);
-  const journal = JSON.parse(await readFile(`${migrationsFolder}/meta/_journal.json`, 'utf8')) as {
-    entries: Array<{ idx: number; tag: string }>;
-  };
-  journal.entries = journal.entries.filter((entry) => entry.idx < 13);
-  await Promise.all(
-    journal.entries.map((entry) => copyFile(`${migrationsFolder}/${entry.tag}.sql`, `${folder}/${entry.tag}.sql`)),
-  );
-  await writeFile(`${folder}/meta/_journal.json`, JSON.stringify(journal));
-  return folder;
-}
-
-it('updates active templates without changing individual checklists, progress or previous template items', {
+it('repeating the initial migration preserves templates and individual checklists', {
   timeout: 30_000,
 }, async () => {
   const databaseUrl = process.env.DATABASE_URL!;
@@ -32,7 +16,6 @@ it('updates active templates without changing individual checklists, progress or
   const temporaryUrl = new URL(databaseUrl);
   temporaryUrl.pathname = `/${databaseName}`;
   const administrationPool = new Pool({ connectionString: databaseUrl });
-  const folder = await previousMigrations();
   let temporaryPool: Pool | undefined;
   let databaseCreated = false;
 
@@ -41,7 +24,7 @@ it('updates active templates without changing individual checklists, progress or
     databaseCreated = true;
     temporaryPool = new Pool({ connectionString: temporaryUrl.toString() });
     const database = drizzle({ client: temporaryPool });
-    await migrate(database, { migrationsFolder: folder });
+    await migrate(database, { migrationsFolder });
     await temporaryPool.query(`
       with author as (
         insert into users (login, "passwordHash", "fullName", role)
@@ -68,38 +51,38 @@ it('updates active templates without changing individual checklists, progress or
         (values ('Индивидуальная электрика', 'Особая подсказка', 1, true),
                 ('Проверка соединений', null, 2, false)) as item(title, hint, position, done)
     `);
-    const oldItems = await temporaryPool.query('select * from checklist_template_items order by id');
-    const oldTemplates = await temporaryPool.query<{ id: number }>('select id from checklist_templates order by id');
-    const oldChecklist = await temporaryPool.query('select * from checklists order by id');
-    const oldChecklistItems = await temporaryPool.query('select * from checklist_items order by id');
-    const oldStages = await temporaryPool.query(
-      `select to_jsonb(stages) - 'canRunInParallel' as value from stages order by id`,
+    const initialItems = await temporaryPool.query('select * from checklist_template_items order by id');
+    const initialTemplates = await temporaryPool.query<{ id: number }>(
+      'select id from checklist_templates order by id',
     );
+    const initialChecklist = await temporaryPool.query('select * from checklists order by id');
+    const initialChecklistItems = await temporaryPool.query('select * from checklist_items order by id');
+    const initialStages = await temporaryPool.query(`select to_jsonb(stages) as value from stages order by id`);
 
     await migrate(database, { migrationsFolder });
     await migrate(database, { migrationsFolder });
 
-    expect((await temporaryPool.query('select * from checklists order by id')).rows).toEqual(oldChecklist.rows);
+    expect((await temporaryPool.query('select * from checklists order by id')).rows).toEqual(initialChecklist.rows);
     expect((await temporaryPool.query('select * from checklist_items order by id')).rows).toEqual(
-      oldChecklistItems.rows.map((row) => ({ ...row, deletedAt: null })),
+      initialChecklistItems.rows,
     );
     expect((await temporaryPool.query('select to_jsonb(stages) as value from stages order by id')).rows).toEqual(
-      oldStages.rows,
+      initialStages.rows,
     );
     expect(
       (
         await temporaryPool.query('select * from checklist_template_items where id = any($1) order by id', [
-          oldItems.rows.map((item) => item.id),
+          initialItems.rows.map((item) => item.id),
         ])
       ).rows,
-    ).toEqual(oldItems.rows);
+    ).toEqual(initialItems.rows);
     expect(
       (
         await temporaryPool.query('select "isActive" from checklist_templates where id = any($1)', [
-          oldTemplates.rows.map((template) => template.id),
+          initialTemplates.rows.map((template) => template.id),
         ])
       ).rows,
-    ).toEqual(oldTemplates.rows.map(() => ({ isActive: false })));
+    ).toEqual(initialTemplates.rows.map(() => ({ isActive: true })));
 
     const activeItems = await temporaryPool.query<{ code: string; title: string; photoHint: string | null }>(`
       select template."stageTypeCode" as code, item.title, item."photoHint"
@@ -126,6 +109,5 @@ it('updates active templates without changing individual checklists, progress or
       await administrationPool.query(`drop database "${databaseName}"`);
     }
     await administrationPool.end();
-    await rm(folder, { recursive: true, force: true });
   }
 });

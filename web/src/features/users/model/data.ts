@@ -12,9 +12,7 @@ export const emptyDraft: CreateDraft = { fullName: '', login: '', phone: '' };
 
 export const roleLabels: Record<UserRoleKey, string> = {
   manager: 'Руководитель',
-  estimator: 'Инженер-сметчик',
   foreman: 'Мастер / исполнитель',
-  inspector: 'Приёмщик',
 };
 
 export const roleItems = Object.entries(roleLabels).map(([value, label]) => ({ value, label }));

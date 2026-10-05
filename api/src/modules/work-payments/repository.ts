@@ -25,13 +25,13 @@ async function loadPayment(database: Database | Transaction, paymentId: number):
     })
     .from(workPayments)
     .innerJoin(users, eq(workPayments.createdByUserId, users.id))
-    .leftJoin(recipient, eq(workPayments.recipientId, recipient.id))
+    .innerJoin(recipient, eq(workPayments.recipientId, recipient.id))
     .where(eq(workPayments.id, paymentId));
   return row
     ? toWorkPayment(
         row.payment,
         { id: row.createdById, fullName: row.createdByName },
-        row.recipientId === null ? null : { id: row.recipientId, fullName: row.recipientName! },
+        { id: row.recipientId, fullName: row.recipientName },
       )
     : null;
 }
@@ -96,7 +96,7 @@ export class WorkPaymentRepository {
       })
       .from(workPayments)
       .innerJoin(users, eq(workPayments.createdByUserId, users.id))
-      .leftJoin(recipient, eq(workPayments.recipientId, recipient.id))
+      .innerJoin(recipient, eq(workPayments.recipientId, recipient.id))
       .where(eq(workPayments.stageId, stageId))
       .orderBy(desc(workPayments.paidAt), desc(workPayments.id));
     return {
@@ -105,7 +105,7 @@ export class WorkPaymentRepository {
         toWorkPayment(
           row.payment,
           { id: row.createdById, fullName: row.createdByName },
-          row.recipientId === null ? null : { id: row.recipientId, fullName: row.recipientName! },
+          { id: row.recipientId, fullName: row.recipientName },
         ),
       ),
     };

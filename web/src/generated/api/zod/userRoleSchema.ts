@@ -5,6 +5,6 @@
 
 import * as z from 'zod'
 
-export const userRoleSchema = z.enum(['manager', 'estimator', 'foreman', 'inspector']).describe('manager — руководитель; estimator — инженер-сметчик; foreman — мастер/исполнитель; inspector — приёмщик.').meta({ examples: ['foreman'] })
+export const userRoleSchema = z.enum(['manager', 'foreman']).describe('manager — руководитель; foreman — мастер/исполнитель.').meta({ examples: ['foreman'] })
 
 export type UserRoleSchemaType = z.infer<typeof userRoleSchema>

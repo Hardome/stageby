@@ -60,7 +60,7 @@ afterEach(async () => {
   }
 });
 
-async function createIdentity(role: 'manager' | 'estimator' | 'foreman' | 'inspector' = 'manager') {
+async function createIdentity(role: 'manager' | 'foreman' = 'manager') {
   const app = getApp();
   const suffix = randomUUID().replaceAll('-', '').slice(0, 20);
   const user = await new UserRepository(app.db).create({
@@ -135,6 +135,29 @@ describe('Users API', () => {
     expect(duplicateResponse.json()).toMatchObject({ code: 'login_taken' });
   });
 
+  it('отклоняет неподдерживаемую роль при создании, изменении и фильтрации пользователей', async () => {
+    const manager = await createIdentity();
+    const headers = authentication(manager.cookie);
+    const login = `invalid.role.${randomUUID().replaceAll('-', '').slice(0, 10)}`;
+    const creation = await getApp().inject({
+      method: 'POST',
+      url: '/users',
+      headers,
+      payload: { login, password: PASSWORD, fullName: 'Недопустимая роль', role: 'unsupported' },
+    });
+    const update = await getApp().inject({
+      method: 'PATCH',
+      url: `/users/${manager.user.id}`,
+      headers,
+      payload: { role: 'unsupported' },
+    });
+    const list = await getApp().inject({ method: 'GET', url: '/users?role=unsupported', headers });
+    expect([creation.statusCode, update.statusCode, list.statusCode]).toEqual([400, 400, 400]);
+    expect(await getApp().db.select().from(users).where(eq(users.login, login))).toEqual([]);
+    const [unchanged] = await getApp().db.select().from(users).where(eq(users.id, manager.user.id));
+    expect(unchanged!.role).toBe('manager');
+  });
+
   it('поддерживает фильтры, поиск, пагинацию, total и стабильную сортировку', async () => {
     const manager = await createIdentity();
     const marker = randomUUID().replaceAll('-', '').slice(0, 10);
@@ -143,25 +166,25 @@ describe('Users API', () => {
       login: `search.a.${marker}`,
       passwordHash,
       fullName: `Поиск ${marker}`,
-      role: 'estimator',
+      role: 'foreman',
     });
     const second = await repository.create({
       login: `search.b.${marker}`,
       passwordHash,
       fullName: `Поиск ${marker}`,
-      role: 'estimator',
+      role: 'foreman',
     });
     const excluded = await repository.create({
       login: `search.c.${marker}`,
       passwordHash,
       fullName: `Поиск ${marker}`,
-      role: 'foreman',
+      role: 'manager',
     });
     createdUserIds.push(first.id, second.id, excluded.id);
 
     const response = await getApp().inject({
       method: 'GET',
-      url: `/users?role=estimator&isActive=true&search=${marker}&limit=1&offset=1`,
+      url: `/users?role=foreman&isActive=true&search=${marker}&limit=1&offset=1`,
       headers: authentication(manager.cookie),
     });
 
@@ -193,7 +216,7 @@ describe('Users API', () => {
         method: 'PATCH',
         url: `/users/${identity.user.id}`,
         headers: authentication(identity.cookie),
-        payload: { role: 'estimator' },
+        payload: { role: 'foreman' },
       }),
     );
     const responses = await Promise.all(requests);
@@ -291,7 +314,7 @@ describe('Users API', () => {
   it('отзывает все сессии при смене роли и деактивации пользователя', async () => {
     const manager = await createIdentity();
     const roleTarget = await createIdentity('foreman');
-    const inactiveTarget = await createIdentity('estimator');
+    const inactiveTarget = await createIdentity('foreman');
     const sessionService = new SessionService(new SessionRepository(getApp().db), 12);
     const roleTargetSecondSession = await sessionService.issue(roleTarget.user.id);
     const inactiveTargetSecondSession = await sessionService.issue(inactiveTarget.user.id);
@@ -301,7 +324,7 @@ describe('Users API', () => {
       method: 'PATCH',
       url: `/users/${roleTarget.user.id}`,
       headers,
-      payload: { role: 'inspector' },
+      payload: { role: 'manager' },
     });
     const inactiveResponse = await getApp().inject({
       method: 'PATCH',

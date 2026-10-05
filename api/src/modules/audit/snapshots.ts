@@ -87,7 +87,6 @@ const fields: Record<string, readonly string[]> = {
     'position',
     'workSubtypes',
     'assigneeId',
-    'inspectorId',
     'status',
     'plannedStartDate',
     'plannedEndDate',

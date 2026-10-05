@@ -22,8 +22,8 @@ const authenticationTestModule: FastifyPluginAsync = async (app) => {
     allowed: true,
   }));
   app.get(
-    '/test/manager-or-estimator',
-    { preHandler: [app.authenticate, app.requireRoles('manager', 'estimator')] },
+    '/test/manager-or-foreman',
+    { preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')] },
     async () => ({ allowed: true }),
   );
   app.get('/test/role-without-authentication', { preHandler: app.requireRoles('manager') }, async () => ({
@@ -41,7 +41,7 @@ afterEach(async () => {
   }
 });
 
-async function createAuthenticatedUser(role: 'manager' | 'estimator' | 'foreman' | 'inspector' = 'manager') {
+async function createAuthenticatedUser(role: 'manager' | 'foreman' = 'manager') {
   const app = getApp();
   const suffix = randomUUID().replaceAll('-', '').slice(0, 20);
   const user = await new UserRepository(app.db).create({
@@ -139,7 +139,7 @@ describe('Плагин аутентификации', () => {
     const managerResponse = await getApp().inject({ method: 'GET', url: '/test/manager', headers });
     expect(managerResponse.statusCode).toBe(200);
 
-    await getApp().db.update(users).set({ role: 'estimator' }).where(eq(users.id, identity.user.id));
+    await getApp().db.update(users).set({ role: 'foreman' }).where(eq(users.id, identity.user.id));
 
     const forbiddenResponse = await getApp().inject({ method: 'GET', url: '/test/manager', headers });
     expect(forbiddenResponse.statusCode).toBe(403);
@@ -149,8 +149,8 @@ describe('Плагин аутентификации', () => {
       message: 'Недостаточно прав для выполнения операции.',
     });
 
-    const estimatorResponse = await getApp().inject({ method: 'GET', url: '/test/manager-or-estimator', headers });
-    expect(estimatorResponse.statusCode).toBe(200);
+    const foremanResponse = await getApp().inject({ method: 'GET', url: '/test/manager-or-foreman', headers });
+    expect(foremanResponse.statusCode).toBe(200);
   });
 
   it('закрывает role guard, если перед ним забыли выполнить аутентификацию', async () => {

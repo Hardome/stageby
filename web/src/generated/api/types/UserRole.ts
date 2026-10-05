@@ -5,9 +5,7 @@
 
 export const userRole = {
     manager: "manager",
-    estimator: "estimator",
-    foreman: "foreman",
-    inspector: "inspector"
+    foreman: "foreman"
 } as const;
 
 export type UserRoleKey = (typeof userRole)[keyof typeof userRole];

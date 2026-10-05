@@ -14,7 +14,7 @@ export const workPaymentSchema = z.object({
   amountMinor: positiveMoneyAmountMinorSchema.describe('Положительная сумма платежа или счёта в копейках. В первой версии минимум 100 копеек и только целые рубли.').meta({ examples: [500000] }),
   comment: z.string().min(1).max(1000).nullable().describe('Комментарий руководителя; null — комментарий отсутствует.').meta({ examples: ['Аванс', ] }),
   createdBy: userBriefSchema.describe('Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.'),
-  recipient: z.union([userBriefSchema, z.null()]).describe('Получатель выплаты, сохранённый независимо от назначения этапа. null только у прежних записей без получателя.'),
+  recipient: userBriefSchema.describe('Получатель выплаты, сохранённый независимо от назначения этапа.'),
   version: z.int().min(1).describe('Версия платежа для защиты от конкурентных изменений.').meta({ examples: [1] }),
   createdAt: z.iso.datetime().describe('Дата и время создания записи в UTC.').meta({ examples: ['2026-10-01T08:00:00Z'] }),
   updatedAt: z.iso.datetime().describe('Дата и время последнего изменения записи в UTC.').meta({ examples: ['2026-10-01T08:00:00Z'] }),
