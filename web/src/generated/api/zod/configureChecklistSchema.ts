@@ -12,6 +12,6 @@ export const configureChecklistSchema = z.object({
     title: z.string().min(1).max(500).describe('Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.').meta({ examples: ['Проверить соответствие выполненных работ проекту'] }),
     photoHint: z.string().min(1).max(1000).nullish().describe('Необязательная фотоподсказка; null удаляет подсказку.').meta({ examples: ['Фото перевязки углов и перехлёста арматуры', ] }),
   }).strict()).min(1).describe('Порядок массива определяет position. Равный вес каждого пункта.'),
-}).strict()
+}).strict().describe('Новый состав индивидуального чек-листа до фактического старта.')
 
 export type ConfigureChecklistSchemaType = z.infer<typeof configureChecklistSchema>

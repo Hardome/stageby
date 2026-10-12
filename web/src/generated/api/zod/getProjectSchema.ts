@@ -11,7 +11,7 @@ export const getProjectPathProjectIdSchema = z.int().min(1).max(2147483647).desc
 
 export type GetProjectPathProjectIdSchemaType = z.infer<typeof getProjectPathProjectIdSchema>
 
-export const getProjectStatus200Schema = projectSchema
+export const getProjectStatus200Schema = projectSchema.describe('Реквизиты, версия и вычисленные итоги объекта.')
 
 export type GetProjectStatus200SchemaType = z.infer<typeof getProjectStatus200Schema>
 

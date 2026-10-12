@@ -12,7 +12,7 @@ export const configureStageChecklistPathStageIdSchema = z.int().min(1).max(21474
 
 export type ConfigureStageChecklistPathStageIdSchemaType = z.infer<typeof configureStageChecklistPathStageIdSchema>
 
-export const configureStageChecklistStatus200Schema = checklistSchema
+export const configureStageChecklistStatus200Schema = checklistSchema.describe('Индивидуальный чек-лист этапа с версией и состоянием пунктов.')
 
 export type ConfigureStageChecklistStatus200SchemaType = z.infer<typeof configureStageChecklistStatus200Schema>
 
@@ -44,7 +44,7 @@ export const configureStageChecklistErrorSchema = z.union([configureStageCheckli
 
 export type ConfigureStageChecklistErrorSchemaType = z.infer<typeof configureStageChecklistErrorSchema>
 
-export const configureStageChecklistBodySchema = configureChecklistSchema
+export const configureStageChecklistBodySchema = configureChecklistSchema.describe('Новый состав индивидуального чек-листа до фактического старта.')
 
 export type ConfigureStageChecklistBodySchemaType = z.infer<typeof configureStageChecklistBodySchema>
 

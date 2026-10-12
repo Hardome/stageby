@@ -29,7 +29,7 @@ export const createProjectHeaderIdempotencyKeySchema = z.string().min(16).max(10
 
 export type CreateProjectHeaderIdempotencyKeySchemaType = z.infer<typeof createProjectHeaderIdempotencyKeySchema>
 
-export const createProjectStatus201Schema = projectSchema
+export const createProjectStatus201Schema = projectSchema.describe('Реквизиты, версия и вычисленные итоги объекта.')
 
 export type CreateProjectStatus201SchemaType = z.infer<typeof createProjectStatus201Schema>
 

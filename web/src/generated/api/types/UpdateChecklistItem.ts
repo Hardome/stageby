@@ -40,6 +40,10 @@ export type UpdateChecklistItemPath = {
     itemId: number;
 };
 
+/**
+ * @description Индивидуальный чек-лист этапа с версией и состоянием пунктов.
+ * @type object
+*/
 export type UpdateChecklistItemStatus200 = Checklist;
 
 export type UpdateChecklistItemStatus400 = ApiError;

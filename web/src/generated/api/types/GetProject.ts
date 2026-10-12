@@ -16,6 +16,10 @@ export type GetProjectPath = {
     projectId: number;
 };
 
+/**
+ * @description Реквизиты, версия и вычисленные итоги объекта.
+ * @type object
+*/
 export type GetProjectStatus200 = Project;
 
 export type GetProjectStatus400 = ApiError;

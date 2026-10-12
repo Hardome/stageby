@@ -9,6 +9,7 @@ import { workPlanRows } from '#app/db/schema/work-plan-rows';
 import type { CreateWorkPayment, UpdateWorkPayment, WorkPayment } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { auditedTransaction } from '#app/modules/audit/repository';
+import { lockProjectStage } from '#app/modules/stages/lock';
 import type { Actor } from '#app/modules/stages/types';
 import { toWorkPayment } from '#app/modules/work-payments/mapper';
 import { preservesPaidInvariant } from '#app/modules/work-payments/paid-invariant';
@@ -48,15 +49,7 @@ async function validRecipient(transaction: Transaction, id: number): Promise<boo
   return user !== undefined;
 }
 
-async function lockStage(transaction: Transaction, stageId: number) {
-  const [row] = await transaction
-    .select({ stage: stages, isArchived: projects.isArchived })
-    .from(stages)
-    .innerJoin(projects, eq(stages.projectId, projects.id))
-    .where(eq(stages.id, stageId))
-    .for('update');
-  return row;
-}
+const lockStage = lockProjectStage;
 
 async function lockPayment(transaction: Transaction, paymentId: number) {
   const [initial] = await transaction.select().from(workPayments).where(eq(workPayments.id, paymentId));

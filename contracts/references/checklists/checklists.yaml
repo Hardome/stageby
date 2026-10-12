@@ -208,6 +208,7 @@ components:
             - $ref: ../users/users.yaml#/components/schemas/UserBrief
             - type: "null"
     Checklist:
+      description: Индивидуальный чек-лист этапа с версией и состоянием пунктов.
       type: object
       additionalProperties: false
       required:
@@ -275,6 +276,7 @@ components:
           type: string
           format: date-time
     ConfigureChecklist:
+      description: Новый состав индивидуального чек-листа до фактического старта.
       type: object
       additionalProperties: false
       required:

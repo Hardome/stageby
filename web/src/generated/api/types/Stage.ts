@@ -27,6 +27,10 @@ export const stageTitleEnum = {
 
 export type StageTitleEnumKey = (typeof stageTitleEnum)[keyof typeof stageTitleEnum];
 
+/**
+ * @description Параметры, финансовые итоги и версия этапа.
+ * @type object
+*/
 export type Stage = {
     /**
      * @description Стабильный ID этапа строительства.

@@ -67,6 +67,7 @@ const fields: Record<string, readonly string[]> = {
     'version',
   ],
   projects: [
+    'version',
     'id',
     'ownerName',
     'address',

@@ -213,6 +213,13 @@ describe('миграции БД', () => {
         [projectId],
       );
       expect(retainedInactiveStage.rows[0]?.count).toBe(1);
+      const version = await temporaryPool.query<{ version: number }>('select version from projects where id = $1', [
+        projectId,
+      ]);
+      expect(version.rows[0]?.version).toBe(1);
+      await expect(
+        temporaryPool.query('update projects set version = 0 where id = $1', [projectId]),
+      ).rejects.toMatchObject({ code: '23514' });
       await expect(
         temporaryPool.query(
           `insert into stages ("projectId", "stageTypeCode", position, "plannedStartDate", "plannedEndDate")
@@ -266,13 +273,13 @@ describe('миграции БД', () => {
       await expect(
         temporaryPool.query(`update stages set "plannedEndDate" = '2026-12-31' where "projectId" = $1`, [projectId]),
       ).rejects.toMatchObject({ code: '23514' });
-      expect(firstJournal.rows[0]?.count).toBe('2');
+      expect(firstJournal.rows[0]?.count).toBe('3');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('67');
+      expect(checkConstraints.rows[0]?.count).toBe('68');
       expect(triggers.rows.map((row) => row.name)).toEqual([
         'projects_stage_dates_trigger',
         'stages_active_type_trigger',

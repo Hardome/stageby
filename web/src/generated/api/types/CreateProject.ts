@@ -105,6 +105,10 @@ export type CreateProjectHeaders = {
     "Idempotency-Key": string;
 };
 
+/**
+ * @description Реквизиты, версия и вычисленные итоги объекта.
+ * @type object
+*/
 export type CreateProjectStatus201 = Project;
 
 export type CreateProjectStatus400 = ApiError;

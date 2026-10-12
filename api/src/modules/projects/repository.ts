@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+
 // cspell:ignore hashtextextended
 
 import { and, asc, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
@@ -15,8 +16,8 @@ import { workPlanRows } from '#app/db/schema/work-plan-rows';
 import type { CreateProject, ListProjectsData, Project, ProjectPage, UpdateProject } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
+import { loadProjectEdit, saveProject } from '#app/modules/projects/edit';
 import { loadProjects } from '#app/modules/projects/read';
-import { stageDatesValid } from '#app/modules/stages/dates';
 import type { OperationResult } from '#app/modules/stages/types';
 
 type Database = NodePgDatabase<typeof databaseSchema>;
@@ -321,34 +322,17 @@ export class ProjectRepository {
     return { items: await loadProjects(this.#database, rows), total: totals[0]!.value, limit, offset };
   }
 
-  update(projectId: number, input: UpdateProject, context: AuditContext): Promise<OperationResult<Project>> {
-    return auditedTransaction(this.#database, context, 'updateProject', async (transaction, audit) => {
-      const [project] = await transaction.select().from(projects).where(eq(projects.id, projectId)).for('update');
-      if (!project) return { status: 'not_found' };
-      const { coordinates, ...fields } = input;
-      const start = input.plannedStartDate ?? project.plannedStartDate;
-      const end = input.plannedEndDate ?? project.plannedEndDate;
-      const included = await transaction.select().from(stages).where(eq(stages.projectId, projectId));
-      if (
-        end < start ||
-        included.some(
-          (stage) => stage.isIncluded && !stageDatesValid(stage.plannedStartDate, stage.plannedEndDate, start, end),
-        )
-      )
-        return { status: 'invalid_request' };
-      await audit.mutate(projects, eq(projects.id, projectId), () =>
-        transaction
-          .update(projects)
-          .set({
-            ...fields,
-            ...(coordinates ? { latitude: coordinates.latitude, longitude: coordinates.longitude } : {}),
-            updatedAt: new Date(),
-          })
-          .where(eq(projects.id, projectId)),
-      );
-      const [updated] = await transaction.select().from(projects).where(eq(projects.id, projectId));
-      return { status: 'ok', value: (await loadProjects(transaction, [updated!]))[0]! };
+  edit(projectId: number) {
+    return this.#database.transaction((transaction) => loadProjectEdit(transaction, projectId), {
+      isolationLevel: 'repeatable read',
+      accessMode: 'read only',
     });
+  }
+
+  update(projectId: number, input: UpdateProject, context: AuditContext) {
+    return auditedTransaction(this.#database, context, 'updateProject', (transaction, audit) =>
+      saveProject(transaction, audit, projectId, input, context.actorUserId),
+    );
   }
 
   createAtomically(

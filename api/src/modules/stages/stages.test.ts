@@ -551,6 +551,11 @@ describe('Stage statuses and checklists', () => {
     const fixture = await createFixture();
     await attachUploadedPhoto(fixture.items[0]!.id);
     const completed = await updateItem(fixture.foreman.cookie, fixture.stage.id, fixture.items[0]!.id, 1);
+    expect(completed.statusCode, completed.body).toBe(200);
+    const [started] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
+    expect(started!.actualStartDate).toBe(calendarDate());
+    const firstStartDate = addCalendarDays(calendarDate(), -1);
+    await getApp().db.update(stages).set({ actualStartDate: firstStartDate }).where(eq(stages.id, fixture.stage.id));
     const cleared = await updateItem(
       fixture.foreman.cookie,
       fixture.stage.id,
@@ -564,6 +569,17 @@ describe('Stage statuses and checklists', () => {
       completedAt: null,
       completedBy: null,
     });
+    const [afterClearing] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
+    expect(afterClearing!.actualStartDate).toBe(firstStartDate);
+    const repeated = await updateItem(
+      fixture.foreman.cookie,
+      fixture.stage.id,
+      fixture.items[0]!.id,
+      cleared.json<Checklist>().version,
+    );
+    expect(repeated.statusCode, repeated.body).toBe(200);
+    const [afterRepeating] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
+    expect(afterRepeating!.actualStartDate).toBe(firstStartDate);
   });
 
   it('разрешает supplied только после доставки всех счетов всех заказов', async () => {

@@ -5,10 +5,12 @@
 
 import * as z from 'zod'
 import { coordinatesSchema } from './coordinatesSchema'
+import { expectedVersionSchema } from './expectedVersionSchema'
 import { projectFinancialSummarySchema } from './projectFinancialSummarySchema'
 import { projectStatusSchema } from './projectStatusSchema'
 
 export const projectSchema = z.object({
+  version: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   status: projectStatusSchema.describe('Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.').meta({ examples: ['in_progress'] }),
   finances: projectFinancialSummarySchema.describe('Вычисляемые финансовые итоги проекта. Все поля доступны только для чтения; при неполном плане плановые итоги и отклонение равны null.'),
   documentFileIds: z.array(z.int().min(1).max(2147483647)).describe('Загруженные PDF проекта в порядке position ASC.'),
@@ -25,6 +27,6 @@ export const projectSchema = z.object({
   isArchived: z.boolean().describe('Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.').meta({ examples: [false] }),
   createdAt: z.iso.datetime().describe('Дата и время создания записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-20T08:00:00Z'] }),
   updatedAt: z.iso.datetime().describe('Дата и время последнего изменения записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-24T10:00:00Z'] }),
-}).strict()
+}).strict().describe('Реквизиты, версия и вычисленные итоги объекта.')
 
 export type ProjectSchemaType = z.infer<typeof projectSchema>

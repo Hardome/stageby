@@ -4,6 +4,7 @@ export { getCurrentUserQueryKey, getCurrentUserQueryOptions, useGetCurrentUser }
 export { getDashboardSummaryQueryKey, getDashboardSummaryQueryOptions, useGetDashboardSummary } from './useGetDashboardSummary'
 export { getFileContentQueryKey, getFileContentQueryOptions, useGetFileContent } from './useGetFileContent'
 export { getProjectQueryKey, getProjectQueryOptions, useGetProject } from './useGetProject'
+export { getProjectEditQueryKey, getProjectEditQueryOptions, useGetProjectEdit } from './useGetProjectEdit'
 export { getStageQueryKey, getStageQueryOptions, useGetStage } from './useGetStage'
 export { getStageChecklistQueryKey, getStageChecklistQueryOptions, useGetStageChecklist } from './useGetStageChecklist'
 export { getUserQueryKey, getUserQueryOptions, useGetUser } from './useGetUser'
