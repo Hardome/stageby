@@ -250,14 +250,14 @@ export const zCreateProjectStage = z.object({
     type: zStageType,
     plannedStartDate: z.iso.date().nullish(),
     plannedEndDate: z.iso.date().nullish(),
-    assigneeId: z.int().gte(1).lte(2147483647).nullable(),
-    plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
-    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
+    assigneeId: z.int().gte(1).lte(2147483647).nullish(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.optional(),
     checklistItems: z.array(zCreateProjectChecklistItem).min(1).optional()
 });
 
 export const zCreateProject = z.object({
-    ownerName: z.string().min(1).max(255),
+    ownerName: z.string().min(1).max(150),
     address: z.string().min(1).max(1000),
     coordinates: zCoordinates,
     cadastralNumber: z.string().min(1).max(100).nullish(),
