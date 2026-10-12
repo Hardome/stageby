@@ -11,7 +11,7 @@ export const getStageChecklistPathStageIdSchema = z.int().min(1).max(2147483647)
 
 export type GetStageChecklistPathStageIdSchemaType = z.infer<typeof getStageChecklistPathStageIdSchema>
 
-export const getStageChecklistStatus200Schema = checklistSchema
+export const getStageChecklistStatus200Schema = checklistSchema.describe('Индивидуальный чек-лист этапа с версией и состоянием пунктов.')
 
 export type GetStageChecklistStatus200SchemaType = z.infer<typeof getStageChecklistStatus200Schema>
 

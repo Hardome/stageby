@@ -5,13 +5,38 @@
 
 import type { ApiError } from './ApiError'
 import type { Coordinates } from './Coordinates'
+import type { CreateAdditionalStage } from './CreateAdditionalStage'
+import type { ExpectedVersion } from './ExpectedVersion'
 import type { Project } from './Project'
+import type { UpdateProjectStage } from './UpdateProjectStage'
 
 export type UpdateProject = {
     /**
+     * @description Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
+     * @minLength 1
+     * @example 1
+     * @type integer
+    */
+    expectedVersion: ExpectedVersion;
+    /**
+     * @description Полный список PDF. Существующие связи сохраняются; новые файлы предварительно загружены руководителем.
+     * @type array | undefined
+    */
+    documentFileIds?: number[];
+    /**
+     * @description Частичные изменения существующих этапов.
+     * @type array | undefined
+    */
+    stages?: UpdateProjectStage[];
+    /**
+     * @description Новый additional на последней позиции. Если запись уже существует, используйте stages с её ID для восстановления.
+     * @type object | undefined
+    */
+    additionalStage?: CreateAdditionalStage;
+    /**
      * @description Имя клиента или собственника объекта строительства.
      * @minLength 1
-     * @maxLength 255
+     * @maxLength 150
      * @example Анна Смирнова
      * @type string | undefined
     */
@@ -99,6 +124,10 @@ export type UpdateProjectPath = {
     projectId: number;
 };
 
+/**
+ * @description Реквизиты, версия и вычисленные итоги объекта.
+ * @type object
+*/
 export type UpdateProjectStatus200 = Project;
 
 export type UpdateProjectStatus400 = ApiError;
@@ -108,6 +137,8 @@ export type UpdateProjectStatus401 = ApiError;
 export type UpdateProjectStatus403 = ApiError;
 
 export type UpdateProjectStatus404 = ApiError;
+
+export type UpdateProjectStatus409 = ApiError;
 
 export type UpdateProjectBody = UpdateProject;
 
@@ -124,9 +155,10 @@ export type UpdateProjectResponses = {
     "401": UpdateProjectStatus401;
     "403": UpdateProjectStatus403;
     "404": UpdateProjectStatus404;
+    "409": UpdateProjectStatus409;
 };
 
 /**
  * @description Union of all possible responses
 */
-export type UpdateProjectResponse = (UpdateProjectStatus200 | UpdateProjectStatus400 | UpdateProjectStatus401 | UpdateProjectStatus403 | UpdateProjectStatus404);
+export type UpdateProjectResponse = (UpdateProjectStatus200 | UpdateProjectStatus400 | UpdateProjectStatus401 | UpdateProjectStatus403 | UpdateProjectStatus404 | UpdateProjectStatus409);

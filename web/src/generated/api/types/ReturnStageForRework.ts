@@ -17,6 +17,10 @@ export type ReturnStageForReworkPath = {
     stageId: number;
 };
 
+/**
+ * @description Параметры, финансовые итоги и версия этапа.
+ * @type object
+*/
 export type ReturnStageForReworkStatus200 = Stage;
 
 export type ReturnStageForReworkStatus400 = ApiError;

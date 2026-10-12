@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray, lte, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 
 import { projects } from '#app/db/schema/projects';
 import { stageTypes } from '#app/db/schema/stage-types';
@@ -30,19 +30,37 @@ export class DashboardRepository {
   }
 
   async summary(through: string): Promise<DashboardSummary> {
+    // Aggregate payments separately from invoices so neither set multiplies the other.
+    // Explicit row deadlines take precedence over the stage end, even when they are later.
     const rows = await this.#database
-      .select({ id: stages.id })
+      .select({
+        plannedEndDate: stages.plannedEndDate,
+        plannedMaterialAmountMinor: stages.plannedMaterialAmountMinor,
+        plannedWorkAmountMinor: sql<number | null>`case
+          when ${stages.plannedEndDate} <= ${through} and not exists
+            (select 1 from work_plan_rows r where r."stageId" = ${stages.id}) then null
+          else (select coalesce(sum(r."amountMinor"), 0) from work_plan_rows r
+            where r."stageId" = ${stages.id} and coalesce(r."dueDate", ${stages.plannedEndDate}) <= ${through})
+          end`.mapWith(Number),
+        actualWorkAmountMinor: sql<number>`(select coalesce(sum(p."amountMinor"), 0)
+          from work_payments p join work_plan_rows r on r.id = p."workPlanRowId"
+          where r."stageId" = ${stages.id} and coalesce(r."dueDate", ${stages.plannedEndDate}) <= ${through}
+            and p."paidAt" <= ${through})`.mapWith(Number),
+        actualMaterialAmountMinor: sql<number>`(select coalesce(sum(i."paidAmountMinor"), 0)
+          from material_invoices i where i."stageId" = ${stages.id} and i."paidDate" <= ${through})`.mapWith(Number),
+      })
       .from(stages)
       .innerJoin(projects, eq(stages.projectId, projects.id))
-      .where(and(eq(projects.isArchived, false), eq(stages.isIncluded, true), lte(stages.plannedEndDate, through)));
-    const summaries = [
-      ...(
-        await loadStageSummaries(
-          this.#database,
-          rows.map((row) => row.id),
-        )
-      ).values(),
-    ];
+      .where(and(eq(projects.isArchived, false), eq(stages.isIncluded, true)));
+    const materialRows = rows.filter((row) => row.plannedEndDate !== null && row.plannedEndDate <= through);
+    const works = metric(
+      rows.map((row) => row.plannedWorkAmountMinor),
+      rows.map((row) => row.actualWorkAmountMinor),
+    );
+    const materials = metric(
+      materialRows.map((row) => row.plannedMaterialAmountMinor),
+      materialRows.map((row) => row.actualMaterialAmountMinor),
+    );
     const [active] = await this.#database
       .select({ value: count() })
       .from(projects)
@@ -55,17 +73,11 @@ export class DashboardRepository {
     return {
       through,
       activeProjectCount: active?.value ?? 0,
-      works: metric(
-        summaries.map((row) => row.plannedWorkAmountMinor),
-        summaries.map((row) => row.actualWorkAmountMinor),
-      ),
-      materials: metric(
-        summaries.map((row) => row.plannedMaterialAmountMinor),
-        summaries.map((row) => row.actualMaterialAmountMinor),
-      ),
+      works,
+      materials,
       total: metric(
-        summaries.map((row) => row.totalPlannedAmountMinor),
-        summaries.map((row) => row.totalActualAmountMinor),
+        [works.plannedAmountMinor, materials.plannedAmountMinor],
+        [works.actualAmountMinor, materials.actualAmountMinor],
       ),
     };
   }

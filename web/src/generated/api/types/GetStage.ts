@@ -16,6 +16,10 @@ export type GetStagePath = {
     stageId: number;
 };
 
+/**
+ * @description Параметры, финансовые итоги и версия этапа.
+ * @type object
+*/
 export type GetStageStatus200 = Stage;
 
 export type GetStageStatus400 = ApiError;

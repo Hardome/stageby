@@ -87,7 +87,7 @@ paths:
       tags:
         - Stages
       summary: Этапы одного проекта
-      description: "Без пагинации: максимум восемь записей, position ASC. Руководитель видит все восемь;
+      description: "Без пагинации: максимум девять записей, position ASC. Руководитель видит включённые этапы;
         мастер — только назначенные ему. Для существующего проекта вне области доступа возвращается
         404."
       responses:
@@ -422,6 +422,7 @@ components:
           type: string
           format: date-time
     Stage:
+      description: Параметры, финансовые итоги и версия этапа.
       type: object
       additionalProperties: false
       required:
@@ -680,11 +681,11 @@ components:
         - items
       properties:
         items:
-          description: "Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации."
+          description: "Доступные пользователю включённые этапы одного проекта, максимум девять, в порядке position ASC. Без пагинации."
           type: array
           items:
             $ref: "#/components/schemas/Stage"
-          maxItems: 8
+          maxItems: 9
     UpdateStage:
       type: object
       additionalProperties: false

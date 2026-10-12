@@ -26,7 +26,7 @@ export const updateStagePathStageIdSchema = z.int().min(1).max(2147483647).descr
 
 export type UpdateStagePathStageIdSchemaType = z.infer<typeof updateStagePathStageIdSchema>
 
-export const updateStageStatus200Schema = stageSchema
+export const updateStageStatus200Schema = stageSchema.describe('Параметры, финансовые итоги и версия этапа.')
 
 export type UpdateStageStatus200SchemaType = z.infer<typeof updateStageStatus200Schema>
 

@@ -6,10 +6,17 @@
 import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 import { coordinatesSchema } from './coordinatesSchema'
+import { createAdditionalStageSchema } from './createAdditionalStageSchema'
+import { expectedVersionSchema } from './expectedVersionSchema'
 import { projectSchema } from './projectSchema'
+import { updateProjectStageSchema } from './updateProjectStageSchema'
 
 export const updateProjectSchema = z.object({
-  ownerName: z.string().min(1).max(255).optional().describe('Имя клиента или собственника объекта строительства.').meta({ examples: ['Анна Смирнова'] }),
+  expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
+  documentFileIds: z.array(z.int().min(1).max(2147483647)).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).optional().describe('Полный список PDF. Существующие связи сохраняются; новые файлы предварительно загружены руководителем.'),
+  stages: z.array(updateProjectStageSchema).max(9).optional().describe('Частичные изменения существующих этапов.'),
+  additionalStage: createAdditionalStageSchema.optional().describe('Новый additional на последней позиции. Если запись уже существует, используйте stages с её ID для восстановления.'),
+  ownerName: z.string().min(1).max(150).optional().describe('Имя клиента или собственника объекта строительства.').meta({ examples: ['Анна Смирнова'] }),
   address: z.string().min(1).max(1000).optional().describe('Новый обязательный адрес объекта строительства.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10'] }),
   coordinates: coordinatesSchema.optional().describe('Новые обязательные географические координаты объекта.'),
   cadastralNumber: z.string().min(1).max(100).nullish().describe('Кадастровый номер объекта; null очищает сохранённое значение.').meta({ examples: ['66:41:0000000:123', ] }),
@@ -27,7 +34,7 @@ export const updateProjectPathProjectIdSchema = z.int().min(1).max(2147483647).d
 
 export type UpdateProjectPathProjectIdSchemaType = z.infer<typeof updateProjectPathProjectIdSchema>
 
-export const updateProjectStatus200Schema = projectSchema
+export const updateProjectStatus200Schema = projectSchema.describe('Реквизиты, версия и вычисленные итоги объекта.')
 
 export type UpdateProjectStatus200SchemaType = z.infer<typeof updateProjectStatus200Schema>
 
@@ -47,11 +54,15 @@ export const updateProjectStatus404Schema = apiErrorSchema
 
 export type UpdateProjectStatus404SchemaType = z.infer<typeof updateProjectStatus404Schema>
 
+export const updateProjectStatus409Schema = apiErrorSchema
+
+export type UpdateProjectStatus409SchemaType = z.infer<typeof updateProjectStatus409Schema>
+
 export const updateProjectResponseSchema = updateProjectStatus200Schema
 
 export type UpdateProjectResponseSchemaType = z.infer<typeof updateProjectResponseSchema>
 
-export const updateProjectErrorSchema = z.union([updateProjectStatus400Schema, updateProjectStatus401Schema, updateProjectStatus403Schema, updateProjectStatus404Schema])
+export const updateProjectErrorSchema = z.union([updateProjectStatus400Schema, updateProjectStatus401Schema, updateProjectStatus403Schema, updateProjectStatus404Schema, updateProjectStatus409Schema])
 
 export type UpdateProjectErrorSchemaType = z.infer<typeof updateProjectErrorSchema>
 
@@ -80,6 +91,7 @@ export const updateProjectResponsesSchema = z.object({
   '401': updateProjectStatus401Schema,
   '403': updateProjectStatus403Schema,
   '404': updateProjectStatus404Schema,
+  '409': updateProjectStatus409Schema,
 })
 
 export type UpdateProjectResponsesSchemaType = z.infer<typeof updateProjectResponsesSchema>

@@ -32,6 +32,7 @@ import { type AuditWriter, auditedTransaction } from '#app/modules/audit/reposit
 import { addCalendarDays, calendarDate } from '#app/modules/dashboard/calendar';
 import { isSupplyComplete, loadStageSummaries } from '#app/modules/materials/summary';
 import { stageDatesValid } from '#app/modules/stages/dates';
+import { lockProjectStage } from '#app/modules/stages/lock';
 import type { Actor, Database, OperationResult, StageOperationError } from '#app/modules/stages/types';
 import { preservesPaidInvariant } from '#app/modules/work-payments/paid-invariant';
 
@@ -50,7 +51,7 @@ async function isMaterialSupplyComplete(database: Database | Transaction, stageI
   return summary !== undefined && isSupplyComplete(summary.materialSummary);
 }
 
-async function loadChecklist(database: Database | Transaction, stageId: number): Promise<Checklist | null> {
+export async function loadChecklist(database: Database | Transaction, stageId: number): Promise<Checklist | null> {
   const [row] = await database.select().from(checklists).where(eq(checklists.stageId, stageId));
   if (!row) return null;
   const items = await database
@@ -130,7 +131,7 @@ async function loadChecklist(database: Database | Transaction, stageId: number):
   };
 }
 
-async function loadStages(database: Database | Transaction, ids: number[]): Promise<Stage[]> {
+export async function loadStages(database: Database | Transaction, ids: number[]): Promise<Stage[]> {
   if (ids.length === 0) return [];
   const rows = await database
     .select({
@@ -219,15 +220,7 @@ async function loadStage(database: Database | Transaction, stageId: number): Pro
   return (await loadStages(database, [stageId]))[0] ?? null;
 }
 
-async function lockStage(transaction: Transaction, stageId: number) {
-  const [row] = await transaction
-    .select({ stage: stages, isArchived: projects.isArchived })
-    .from(stages)
-    .innerJoin(projects, eq(stages.projectId, projects.id))
-    .where(eq(stages.id, stageId))
-    .for('update');
-  return row;
-}
+const lockStage = lockProjectStage;
 
 type LockedStage = NonNullable<Awaited<ReturnType<typeof lockStage>>>;
 

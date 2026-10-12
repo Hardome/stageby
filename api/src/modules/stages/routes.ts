@@ -47,7 +47,7 @@ const updateStagePathSchema = z.preprocess(coercePathIds, zUpdateStagePath);
 const changeStageStatusPathSchema = z.preprocess(coercePathIds, zChangeStageStatusPath);
 const returnStageForReworkPathSchema = z.preprocess(coercePathIds, zReturnStageForReworkPath);
 const acceptStagePathSchema = z.preprocess(coercePathIds, zAcceptStagePath);
-const stageResponseSchema = zStage.extend({
+export const stageResponseSchema = zStage.extend({
   plannedWorkAmountMinor: z.number().int().nonnegative().nullable(),
   actualWorkAmountMinor: z.number().int().nonnegative(),
   workBalanceAmountMinor: z.number().int().nullable(),

@@ -5,6 +5,10 @@
 
 import type { ExpectedVersion } from './ExpectedVersion'
 
+/**
+ * @description Новый состав индивидуального чек-листа до фактического старта.
+ * @type object
+*/
 export type ConfigureChecklist = {
     /**
      * @description Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
