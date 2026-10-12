@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import { type FieldPath, type UseFormReturn, useWatch } from 'react-hook-form';
 
@@ -39,6 +39,7 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
   const [focusRequest, setFocusRequest] = useState(0);
   const errorGroupReference = useRef<HTMLElement>(null);
   const handledFocusRequest = useRef(0);
+  const { errors } = form.formState;
   const stages = useWatch({
     control: form.control,
     name: 'stages',
@@ -52,20 +53,17 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
     errorGroupReference.current = element;
   }, []);
 
-  const focusErrors = useCallback(
-    (element: HTMLFormElement | null) => {
-      if (!element || focusRequest === handledFocusRequest.current) return;
-      handledFocusRequest.current = focusRequest;
-      const errors = form.formState.errors;
-      const field =
-        typeof screen === 'number'
-          ? firstErrorPath(errors.stages?.[screen], `stages.${screen}`)
-          : firstErrorPath(errors);
-      if (screen === 'selection' || field?.endsWith('.checklistItems')) errorGroupReference.current?.focus();
-      else if (field) form.setFocus(field as FieldPath<ProjectFormValues>);
-    },
-    [focusRequest, screen, form],
-  );
+  useLayoutEffect(() => {
+    if (focusRequest === handledFocusRequest.current) return;
+    handledFocusRequest.current = focusRequest;
+    // Focus only after the requested screen and its field refs have been committed.
+    const field =
+      typeof screen === 'number'
+        ? firstErrorPath(errors.stages?.[screen], `stages.${screen}`)
+        : projectObjectFields.find((name) => errors[name]);
+    if (screen === 'selection' || field?.endsWith('.checklistItems')) errorGroupReference.current?.focus();
+    else if (field) form.setFocus(field as FieldPath<ProjectFormValues>);
+  }, [focusRequest, screen, form, errors]);
 
   function focusError() {
     setFocusRequest((request) => request + 1);
@@ -93,7 +91,7 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
       moveTo('object');
       return;
     }
-    if (!(await form.trigger([...projectObjectFields], { shouldFocus: true }))) {
+    if (!(await form.trigger([...projectObjectFields]))) {
       moveTo('object');
       focusError();
       return;
@@ -114,15 +112,13 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
     if (screen === 'object') return selectStep(2);
     if (screen === 'selection') return selectStep(3);
     if (nextIndex === undefined) return;
-    if (await form.trigger(`stages.${screen}`, { shouldFocus: true })) moveTo(nextIndex);
+    if (await form.trigger(`stages.${screen}`)) moveTo(nextIndex);
     else focusError();
   }
 
   return {
     screen,
     stages,
-    focusRequest,
-    focusErrors,
     registerErrorGroup,
     ...screenDetails(screen, stages, selectedIndexes, position),
     next,

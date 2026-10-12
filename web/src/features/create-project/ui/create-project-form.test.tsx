@@ -205,7 +205,7 @@ describe('project creation workflow', () => {
     expect(container.textContent).not.toContain('Создать объект');
     await submit();
     expect(input('ownerName').getAttribute('aria-invalid')).toBe('true');
-    expect(input('ownerName')).toHaveFocus();
+    await vi.waitFor(() => expect(input('ownerName')).toHaveFocus());
     expect(mocks.create).not.toHaveBeenCalled();
     expect(container.textContent).not.toContain('Включено этапов:');
   });
@@ -215,6 +215,31 @@ describe('project creation workflow', () => {
     expect(input('stages.0.plannedStartDate')).toHaveValue('');
     expect(input('stages.0.plannedStartDate')).toHaveAttribute('aria-invalid', 'false');
     expect(container.textContent).not.toContain('Укажите дату этапа.');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it('focuses on each failed attempt without stealing focus while editing', async () => {
+    await submit();
+    await vi.waitFor(() => expect(input('ownerName')).toHaveFocus());
+    await flush(() => input('address').focus());
+    await fill('address', 'Екатеринбург');
+    await vi.waitFor(() => expect(input('address')).toHaveFocus());
+    await submit();
+    await vi.waitFor(() => expect(input('ownerName')).toHaveFocus());
+  });
+  it('focuses the visible object error when a hidden stage also has errors', async () => {
+    await objectStep();
+    await fill('stages.0.checklistItems.0.title', ' ');
+    await clickStep(1);
+    await fill('ownerName', ' ');
+    await submit();
+    await vi.waitFor(() => expect(input('ownerName')).toHaveFocus());
+  });
+  it('mounts and focuses a nested checklist field when submitting from selection', async () => {
+    await objectStep();
+    await fill('stages.0.checklistItems.0.title', ' ');
+    await click('Назад');
+    await submit();
+    await vi.waitFor(() => expect(input('stages.0.checklistItems.0.title')).toHaveFocus());
     expect(mocks.create).not.toHaveBeenCalled();
   });
   it('creates from stage selection without opening stage editors', async () => {
@@ -234,7 +259,7 @@ describe('project creation workflow', () => {
     await click('Назад');
     await submit();
     expect(input('stages.0.plannedEndDate')).toHaveAttribute('aria-invalid', 'true');
-    expect(input('stages.0.plannedEndDate')).toHaveFocus();
+    await vi.waitFor(() => expect(input('stages.0.plannedEndDate')).toHaveFocus());
     expect(mocks.create).not.toHaveBeenCalled();
     expect(container.textContent).toContain('Дата должна находиться внутри сроков проекта.');
   });
@@ -246,7 +271,7 @@ describe('project creation workflow', () => {
     await fill('plannedEndDate', '2026-10-04');
     await submit();
     expect(container.textContent).toContain('Окончание проекта не может быть раньше начала.');
-    expect(input('plannedEndDate')).toHaveFocus();
+    await vi.waitFor(() => expect(input('plannedEndDate')).toHaveFocus());
     expect(container.textContent).not.toContain('Включено этапов:');
     await fill('plannedEndDate', '2026-12-31');
     await submit();
@@ -347,6 +372,7 @@ describe('project creation workflow', () => {
     });
     await submit();
     expect(input('stages.0.plannedEndDate').disabled).toBe(false);
+    await vi.waitFor(() => expect(input('stages.0.plannedEndDate')).toHaveFocus());
     expect(container.textContent).toContain('Срок изменился');
     expect(mocks.success).not.toHaveBeenCalled();
   });
@@ -402,7 +428,7 @@ describe('project creation workflow', () => {
     await toggleStage('foundation');
     await click('Заполнить этапы');
     expect(container.textContent).toContain('Включите хотя бы один этап.');
-    expect(container.querySelector('[role="checkbox"]')).toHaveFocus();
+    await vi.waitFor(() => expect(container.querySelector('[role="checkbox"]')).toHaveFocus());
     expect(container.querySelector('[id="project-stages.0.plannedStartDate"]')).toBeNull();
     await toggleStage('foundation');
     expect(container.textContent).not.toContain('Включите хотя бы один этап.');
@@ -448,11 +474,12 @@ describe('project creation workflow', () => {
     await fill('stages.0.plannedEndDate', '2027-01-01');
     await click('Следующий этап');
     expect(container.querySelector('h2')).toHaveTextContent('Фундамент');
+    await vi.waitFor(() => expect(input('stages.0.plannedEndDate')).toHaveFocus());
     await click('Назад');
     await submit();
     expect(mocks.create).not.toHaveBeenCalled();
     expect(container.querySelector('h2')).toHaveTextContent('Фундамент');
-    expect(input('stages.0.plannedEndDate')).toHaveFocus();
+    await vi.waitFor(() => expect(input('stages.0.plannedEndDate')).toHaveFocus());
     await click('Назад');
     await toggleStage('foundation');
     mocks.create.mockResolvedValueOnce({ id: 77 });
@@ -470,7 +497,7 @@ describe('project creation workflow', () => {
     });
     await submit();
     expect(container.querySelector('h2')).toHaveTextContent('Крыша');
-    expect(input('stages.2.plannedEndDate')).toHaveFocus();
+    await vi.waitFor(() => expect(input('stages.2.plannedEndDate')).toHaveFocus());
     expect(input('stages.2.plannedEndDate')).not.toBeDisabled();
     expect(container.textContent).toContain('Срок изменился');
   });
@@ -485,14 +512,14 @@ describe('project creation workflow', () => {
     await submit();
     expect(container.querySelector('h2')).toHaveTextContent('Фундамент');
     expect(container.textContent).toContain('Добавьте хотя бы один пункт.');
-    expect(container.querySelector('fieldset[aria-invalid="true"]')).toHaveFocus();
+    await vi.waitFor(() => expect(container.querySelector('fieldset[aria-invalid="true"]')).toHaveFocus());
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it('validates required object fields before opening selection or configuration by click', async () => {
     await clickStep(2);
     expect(container.querySelector('h2')).toHaveTextContent('Объект');
-    expect(input('ownerName')).toHaveFocus();
+    await vi.waitFor(() => expect(input('ownerName')).toHaveFocus());
     await clickStep(3);
     expect(container.querySelector('h2')).toHaveTextContent('Объект');
     expect(input('ownerName')).toHaveAttribute('aria-invalid', 'true');
@@ -528,7 +555,7 @@ describe('project creation workflow', () => {
     await clickStep(3);
     expect(container.querySelector('h2')).toHaveTextContent('Выбор этапов');
     expect(container.textContent).toContain('Включите хотя бы один этап.');
-    expect(container.querySelector('[role="checkbox"]')).toHaveFocus();
+    await vi.waitFor(() => expect(container.querySelector('[role="checkbox"]')).toHaveFocus());
     expect(mocks.create).not.toHaveBeenCalled();
   });
 });

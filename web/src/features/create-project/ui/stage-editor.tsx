@@ -78,9 +78,7 @@ export function StageEditor({ index, disabled, registerErrorGroup }: StageEditor
         />
       </FieldGroup>
       <FieldSet
-        ref={(element) => {
-          registerErrorGroup(element);
-        }}
+        ref={registerErrorGroup}
         tabIndex={-1}
         aria-invalid={Boolean(checklistError?.message)}
         aria-describedby={checklistError?.message ? `checklist-${index}-error` : undefined}

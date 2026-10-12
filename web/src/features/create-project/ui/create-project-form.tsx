@@ -32,11 +32,11 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
     defaultValues: initialProjectForm(types),
     resolver: zodResolver(projectFormSchema),
     mode: 'onChange',
+    shouldFocusError: false,
   });
 
   const navigation = useProjectNavigation(form);
-  const { screen, stages, step, title, description, nextLabel, revealErrors, focusErrors, registerErrorGroup, back } =
-    navigation;
+  const { screen, stages, step, title, description, nextLabel, revealErrors, registerErrorGroup, back } = navigation;
   const accessError = useAccessError();
   const uploads = useDocuments({ onAccessError: accessError });
 
@@ -71,14 +71,13 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
   return (
     <FormProvider {...form}>
       <form
-        ref={focusErrors}
         noValidate
         className="flex min-w-0 flex-col gap-6"
         onSubmit={(event) => {
           event.preventDefault();
           if (screen === 'object') next();
           else if (submission.hasSnapshot) void save(form.getValues());
-          else void form.handleSubmit(save, () => requestAnimationFrame(revealErrors))(event);
+          else void form.handleSubmit(save, revealErrors)(event);
         }}
       >
         <ProjectProgress
