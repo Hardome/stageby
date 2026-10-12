@@ -9,11 +9,12 @@ interface ProjectDateFieldProperties {
   name: FieldPathByValue<ProjectFormValues, string>;
   label: string;
   disabled: boolean;
+  required?: boolean;
   min?: string;
   max?: string;
 }
 
-export function ProjectDateField({ name, label, ...properties }: ProjectDateFieldProperties) {
+export function ProjectDateField({ name, label, required, ...properties }: ProjectDateFieldProperties) {
   const { control } = useFormContext<ProjectFormValues>();
   const id = `project-${name}`;
   return (
@@ -24,6 +25,7 @@ export function ProjectDateField({ name, label, ...properties }: ProjectDateFiel
         <Field className="min-w-0" data-invalid={Boolean(error)} data-disabled={properties.disabled}>
           <FieldLabel id={`${id}-label`} htmlFor={id}>
             {label}
+            {required && <span className="text-destructive">*</span>}
           </FieldLabel>
           <DatePicker
             {...field}

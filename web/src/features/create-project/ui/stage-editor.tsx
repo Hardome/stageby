@@ -105,7 +105,8 @@ export function StageEditor({ index, disabled }: StageEditorProperties) {
               <FieldGroup>
                 <ProjectField
                   name={`stages.${index}.checklistItems.${itemIndex}.title`}
-                  label="Название пункта *"
+                  label="Название пункта"
+                  required
                   maxLength={500}
                   disabled={disabled}
                 />

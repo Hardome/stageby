@@ -19,12 +19,12 @@ interface ObjectStepProperties {
 export function ObjectStep({ isLocked, uploads }: ObjectStepProperties) {
   return (
     <FieldGroup>
-      <ProjectField name="ownerName" label="Клиент *" maxLength={150} autoComplete="name" disabled={isLocked} />
-      <ProjectField name="address" label="Адрес *" autoComplete="street-address" disabled={isLocked} />
-      <ProjectField name="coordinates" label="Координаты *" placeholder="55.7558, 37.6176" disabled={isLocked} />
+      <ProjectField name="ownerName" label="Клиент" required maxLength={150} autoComplete="name" disabled={isLocked} />
+      <ProjectField name="address" label="Адрес" required autoComplete="street-address" disabled={isLocked} />
+      <ProjectField name="coordinates" label="Координаты" required placeholder="55.7558, 37.6176" disabled={isLocked} />
       <FieldGroup className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
-        <ProjectDateField name="plannedStartDate" label="Начало проекта *" disabled={isLocked} />
-        <ProjectDateField name="plannedEndDate" label="Окончание проекта *" disabled={isLocked} />
+        <ProjectDateField name="plannedStartDate" label="Начало проекта" required disabled={isLocked} />
+        <ProjectDateField name="plannedEndDate" label="Окончание проекта" required disabled={isLocked} />
       </FieldGroup>
       <DocumentPicker
         documents={uploads.documents}

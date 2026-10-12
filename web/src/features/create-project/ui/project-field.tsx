@@ -12,16 +12,20 @@ interface ProjectFieldProperties extends Omit<ComponentProps<typeof Input>, 'nam
   label: string;
 }
 
-export function ProjectField({ name, label, ...properties }: ProjectFieldProperties) {
+export function ProjectField({ name, label, required, ...properties }: ProjectFieldProperties) {
   const { register, getFieldState, formState } = useFormContext<ProjectFormValues>();
   const { error } = getFieldState(name, formState);
   const id = `project-${name}`;
   return (
     <Field data-invalid={Boolean(error)}>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <FieldLabel htmlFor={id}>
+        {label}
+        {required && <span className="text-destructive">*</span>}
+      </FieldLabel>
       <Input
         {...register(name)}
         {...properties}
+        required={required}
         id={id}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
