@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { listDashboardProjectsResponseSchema, listDashboardProjectsErrorSchema } from '../zod/listDashboardProjectsSchema'
 
 /**
- * @description Только руководитель. Загружается независимо от summary. Для активного объекта selectedStage — первый включённый по position этап со статусом не paid; все даты, мастер, суммы и индикаторы внутри selectedStage относятся только к нему. Завершённый объект возвращается с selectedStage=null. Сортировка активных строк по plannedStartDate выбранного этапа ASC, затем projectId ASC; завершённые строки идут после активных по projectId ASC.
+ * @description Только руководитель. Загружается независимо от summary. Для активного объекта selectedStage — первый включённый по position этап со статусом не paid; все даты, мастер, суммы и индикаторы внутри selectedStage относятся только к нему. Завершённый объект возвращается с selectedStage=null. Сортировка по plannedStartDate выбранного этапа ASC NULLS LAST, затем projectId ASC; строки без начала и завершённые объекты идут в конце. Исключённые этапы не участвуют в финансах и выборе текущего этапа.
  * @summary Строки объектов панели руководителя
  * {@link /dashboard/projects}
  */

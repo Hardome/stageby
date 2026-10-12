@@ -12,7 +12,7 @@ export const returnStageForReworkPathStageIdSchema = z.int().min(1).max(21474836
 
 export type ReturnStageForReworkPathStageIdSchemaType = z.infer<typeof returnStageForReworkPathStageIdSchema>
 
-export const returnStageForReworkStatus200Schema = stageSchema
+export const returnStageForReworkStatus200Schema = stageSchema.describe('Параметры, финансовые итоги и версия этапа.')
 
 export type ReturnStageForReworkStatus200SchemaType = z.infer<typeof returnStageForReworkStatus200Schema>
 

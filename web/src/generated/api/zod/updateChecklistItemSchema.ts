@@ -23,7 +23,7 @@ export const updateChecklistItemPathItemIdSchema = z.int().min(1).max(2147483647
 
 export type UpdateChecklistItemPathItemIdSchemaType = z.infer<typeof updateChecklistItemPathItemIdSchema>
 
-export const updateChecklistItemStatus200Schema = checklistSchema
+export const updateChecklistItemStatus200Schema = checklistSchema.describe('Индивидуальный чек-лист этапа с версией и состоянием пунктов.')
 
 export type UpdateChecklistItemStatus200SchemaType = z.infer<typeof updateChecklistItemStatus200Schema>
 

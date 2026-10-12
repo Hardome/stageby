@@ -4,10 +4,22 @@
 */
 
 import type { Coordinates } from './Coordinates'
+import type { ExpectedVersion } from './ExpectedVersion'
 import type { ProjectFinancialSummary } from './ProjectFinancialSummary'
 import type { ProjectStatusKey } from './ProjectStatus'
 
+/**
+ * @description Реквизиты, версия и вычисленные итоги объекта.
+ * @type object
+*/
 export type Project = {
+    /**
+     * @description Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
+     * @minLength 1
+     * @example 1
+     * @type integer
+    */
+    version: ExpectedVersion;
     /**
      * @description Вычисляемый статус проекта: created — работы фактически не начаты; in_progress — работы идут, включая доработку последнего этапа; acceptance — последний включённый этап принят или ожидает приёмки; completed — последний включённый этап выплачен.
      * @example in_progress

@@ -13,6 +13,7 @@ import type {
 } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
+import { lockProjectStage } from '#app/modules/stages/lock';
 import type { Actor, Database } from '#app/modules/stages/types';
 
 type Db = Database | Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -27,12 +28,13 @@ function map(row: typeof workPlanRows.$inferSelect): WorkPlanRow {
 }
 
 async function context(db: Db, stageId: number, lock = false) {
+  if (lock) return lockProjectStage(db as Transaction, stageId);
   const query = db
     .select({ stage: stages, isArchived: projects.isArchived })
     .from(stages)
     .innerJoin(projects, eq(stages.projectId, projects.id))
     .where(eq(stages.id, stageId));
-  const [row] = await (lock ? query.for('update') : query);
+  const [row] = await query;
   return row;
 }
 

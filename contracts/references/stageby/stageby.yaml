@@ -62,6 +62,8 @@ paths:
     $ref: ../projects/projects.yaml#/paths/~1projects
   /projects/{projectId}:
     $ref: ../projects/projects.yaml#/paths/~1projects~1{projectId}
+  /projects/{projectId}/edit:
+    $ref: ../projects/projects.yaml#/paths/~1projects~1{projectId}~1edit
   /stage-types:
     $ref: ../stages/stages.yaml#/paths/~1stage-types
   /stages:

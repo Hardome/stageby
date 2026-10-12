@@ -319,7 +319,11 @@ export type Coordinates = {
     longitude: number;
 };
 
+/**
+ * Реквизиты, версия и вычисленные итоги объекта.
+ */
 export type Project = {
+    version: ExpectedVersion;
     status: ProjectStatus;
     finances: ProjectFinancialSummary;
     /**
@@ -488,7 +492,133 @@ export type CreateProject = {
     notes?: string | null;
 };
 
+/**
+ * ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
+ */
+export type AssigneeId = number | null;
+
+/**
+ * Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта.
+ */
+export type PlannedStartDate = string | null;
+
+/**
+ * Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся.
+ */
+export type PlannedEndDate = string | null;
+
+/**
+ * Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
+ */
+export type WorkSubtypes = Array<string>;
+
+/**
+ * Новые примечания к этапу; null очищает сохранённые примечания.
+ */
+export type Notes = string | null;
+
+/**
+ * Новый состав индивидуального чек-листа до фактического старта.
+ */
+export type ConfigureChecklist = {
+    expectedVersion: ExpectedVersion;
+    /**
+     * Порядок массива определяет position. Равный вес каждого пункта.
+     */
+    items: Array<{
+        /**
+         * Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
+         */
+        title: string;
+        /**
+         * Необязательная фотоподсказка; null удаляет подсказку.
+         */
+        photoHint?: string | null;
+    }>;
+};
+
+/**
+ * Активный мастер или null.
+ */
+export type RecipientId = number | null;
+
+/**
+ * Срок выплаты или null.
+ */
+export type DueDate = string | null;
+
+export type ProjectWorkPlanRowChange = {
+    /**
+     * ID существующей записи.
+     */
+    id?: number;
+    expectedVersion?: ExpectedVersion;
+    amountMinor?: WritableMoneyAmountMinor;
+    recipientId?: RecipientId;
+    dueDate?: DueDate;
+    /**
+     * Удалить строку без выплат.
+     */
+    delete?: true;
+    /**
+     * Заменить нераспределённую строку строками с той же суммой.
+     */
+    distribute?: Array<CreateWorkPlanRow>;
+};
+
+export type UpdateProjectStage = {
+    /**
+     * ID существующей записи.
+     */
+    id: number;
+    expectedVersion: ExpectedVersion;
+    /**
+     * Явное включение или исключение этапа.
+     */
+    isIncluded?: boolean;
+    assigneeId?: AssigneeId;
+    plannedStartDate?: PlannedStartDate;
+    plannedEndDate?: PlannedEndDate;
+    plannedWorkAmountMinor?: PlannedMoneyAmountMinor;
+    plannedMaterialAmountMinor?: PlannedMoneyAmountMinor;
+    workSubtypes?: WorkSubtypes;
+    notes?: Notes;
+    /**
+     * Индивидуальный чек-лист и его версия.
+     */
+    checklist?: ConfigureChecklist;
+    /**
+     * Частичные операции. Пропущенные строки сохраняются. Новая строка требует amountMinor; существующая — id и expectedVersion. delete и distribute нельзя сочетать с правками полей.
+     */
+    workPlanRows?: Array<ProjectWorkPlanRowChange>;
+};
+
+/**
+ * Новый additional на последней позиции. Если запись уже существует, используйте stages с её ID для восстановления.
+ */
+export type CreateAdditionalStage = {
+    assigneeId?: AssigneeId;
+    plannedStartDate?: PlannedStartDate;
+    plannedEndDate?: PlannedEndDate;
+    plannedWorkAmountMinor?: PlannedMoneyAmountMinor;
+    plannedMaterialAmountMinor?: PlannedMoneyAmountMinor;
+    /**
+     * Непустой индивидуальный чек-лист дополнительного этапа.
+     */
+    checklistItems: Array<CreateProjectChecklistItem>;
+};
+
 export type UpdateProject = {
+    expectedVersion: ExpectedVersion;
+    /**
+     * Полный список PDF. Существующие связи сохраняются; новые файлы предварительно загружены руководителем.
+     */
+    documentFileIds?: Array<number>;
+    /**
+     * Частичные изменения существующих этапов.
+     */
+    stages?: Array<UpdateProjectStage>;
+    additionalStage?: CreateAdditionalStage;
     /**
      * Имя клиента или собственника объекта строительства.
      */
@@ -529,45 +659,6 @@ export type UpdateProject = {
      * Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.
      */
     isArchived?: boolean;
-};
-
-export type ChecklistTemplateItem = {
-    /**
-     * Идентификатор пункта активного шаблона.
-     */
-    id: number;
-    /**
-     * Порядок копирования пункта в индивидуальный чек-лист.
-     */
-    position: number;
-    /**
-     * Название, копируемое в новый этап.
-     */
-    title: string;
-    /**
-     * Фотоподсказка, копируемая в новый этап; null — подсказки нет.
-     */
-    photoHint: string | null;
-};
-
-export type ActiveStageType = {
-    code: StageType;
-    /**
-     * Отображаемое название активного типа.
-     */
-    title: string;
-    /**
-     * Порядок типа в объекте.
-     */
-    position: number;
-    /**
-     * Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
-     */
-    checklistTemplateId: number | null;
-    /**
-     * Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
-     */
-    checklistItems: Array<ChecklistTemplateItem>;
 };
 
 /**
@@ -643,6 +734,9 @@ export type Acceptance = {
     decidedAt: string;
 };
 
+/**
+ * Параметры, финансовые итоги и версия этапа.
+ */
 export type Stage = {
     /**
      * Стабильный ID этапа строительства.
@@ -750,6 +844,156 @@ export type Stage = {
     updatedAt: string;
 };
 
+export type ChecklistItem = {
+    /**
+     * ID пункта чек-листа. При замене состава чек-листа создаются новые идентификаторы пунктов.
+     */
+    id: number;
+    /**
+     * Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
+     */
+    title: string;
+    /**
+     * Необязательная подсказка из шаблона о том, что должно быть видно на фотографии.
+     */
+    photoHint: string | null;
+    /**
+     * Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.
+     */
+    position: number;
+    /**
+     * Признак выполнения контрольной точки.
+     */
+    isCompleted: boolean;
+    /**
+     * Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.
+     */
+    requiresRework: boolean;
+    /**
+     * Число активных успешно загруженных фото; 0 означает отсутствие доступных фото.
+     */
+    photoCount: number;
+    /**
+     * У пункта есть фото, удалённые автоматической очисткой по сроку хранения. Выполнение сохраняется.
+     */
+    photosDeletedByRetention: boolean;
+    /**
+     * Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.
+     */
+    reworkComment: string | null;
+    /**
+     * Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.
+     */
+    completedAt: string | null;
+    /**
+     * Пользователь, отметивший выполнение; null — пункт не выполнен. Устанавливается сервером.
+     */
+    completedBy: UserBrief | null;
+};
+
+/**
+ * Индивидуальный чек-лист этапа с версией и состоянием пунктов.
+ */
+export type Checklist = {
+    /**
+     * Стабильный ID чек-листа этапа.
+     */
+    id: number;
+    /**
+     * Стабильный ID этапа, которому принадлежит запись.
+     */
+    stageId: number;
+    /**
+     * Пункты индивидуального чек-листа в порядке position ASC; верхнего ограничения нет.
+     */
+    items: Array<ChecklistItem>;
+    /**
+     * 100 × выполненные пункты / все пункты, округление до целого. Пустой чек-лист — 0. Только вычисляется сервером.
+     */
+    progressPercent: number;
+    /**
+     * Предупреждения текущего состояния. materials_incomplete означает, что работы начаты до полной комплектации материалами; predecessor_incomplete — что непосредственно предыдущий включённый этап ещё не выполнен. Предупреждения не блокируют работу.
+     */
+    warnings: Array<'materials_incomplete' | 'predecessor_incomplete'>;
+    /**
+     * Версия записи. Увеличивается при каждом изменении.
+     */
+    version: number;
+    /**
+     * Дата и время создания записи в UTC, формат RFC 3339.
+     */
+    createdAt: string;
+    /**
+     * Дата и время последнего изменения записи в UTC, формат RFC 3339.
+     */
+    updatedAt: string;
+};
+
+export type ProjectEditStage = {
+    /**
+     * Параметры и версия этапа.
+     */
+    stage: Stage;
+    /**
+     * Индивидуальный чек-лист и его версия.
+     */
+    checklist: Checklist;
+    /**
+     * Строки плана выплат с ID и версиями.
+     */
+    workPlanRows: Array<WorkPlanRow>;
+};
+
+export type ProjectEdit = {
+    /**
+     * Реквизиты, документы, версия и вычисленные итоги объекта.
+     */
+    project: Project;
+    /**
+     * Все этапы, включая исключённые, по position ASC; только для руководителя.
+     */
+    stages: Array<ProjectEditStage>;
+};
+
+export type ChecklistTemplateItem = {
+    /**
+     * Идентификатор пункта активного шаблона.
+     */
+    id: number;
+    /**
+     * Порядок копирования пункта в индивидуальный чек-лист.
+     */
+    position: number;
+    /**
+     * Название, копируемое в новый этап.
+     */
+    title: string;
+    /**
+     * Фотоподсказка, копируемая в новый этап; null — подсказки нет.
+     */
+    photoHint: string | null;
+};
+
+export type ActiveStageType = {
+    code: StageType;
+    /**
+     * Отображаемое название активного типа.
+     */
+    title: string;
+    /**
+     * Порядок типа в объекте.
+     */
+    position: number;
+    /**
+     * Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
+     */
+    checklistTemplateId: number | null;
+    /**
+     * Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
+     */
+    checklistItems: Array<ChecklistTemplateItem>;
+};
+
 export type StagePage = {
     /**
      * Этапы текущей страницы с учётом фильтров и прав доступа.
@@ -771,7 +1015,7 @@ export type StagePage = {
 
 export type ProjectStages = {
     /**
-     * Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации.
+     * Доступные пользователю включённые этапы одного проекта, максимум девять, в порядке position ASC. Без пагинации.
      */
     items: Array<Stage>;
 };
@@ -838,105 +1082,6 @@ export type RejectStage = {
      * Пункты текущего чек-листа, требующие повторного выполнения.
      */
     itemIds: Array<number>;
-};
-
-export type ChecklistItem = {
-    /**
-     * ID пункта чек-листа. При замене состава чек-листа создаются новые идентификаторы пунктов.
-     */
-    id: number;
-    /**
-     * Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
-     */
-    title: string;
-    /**
-     * Необязательная подсказка из шаблона о том, что должно быть видно на фотографии.
-     */
-    photoHint: string | null;
-    /**
-     * Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.
-     */
-    position: number;
-    /**
-     * Признак выполнения контрольной точки.
-     */
-    isCompleted: boolean;
-    /**
-     * Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.
-     */
-    requiresRework: boolean;
-    /**
-     * Число активных успешно загруженных фото; 0 означает отсутствие доступных фото.
-     */
-    photoCount: number;
-    /**
-     * У пункта есть фото, удалённые автоматической очисткой по сроку хранения. Выполнение сохраняется.
-     */
-    photosDeletedByRetention: boolean;
-    /**
-     * Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.
-     */
-    reworkComment: string | null;
-    /**
-     * Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.
-     */
-    completedAt: string | null;
-    /**
-     * Пользователь, отметивший выполнение; null — пункт не выполнен. Устанавливается сервером.
-     */
-    completedBy: UserBrief | null;
-};
-
-export type Checklist = {
-    /**
-     * Стабильный ID чек-листа этапа.
-     */
-    id: number;
-    /**
-     * Стабильный ID этапа, которому принадлежит запись.
-     */
-    stageId: number;
-    /**
-     * Пункты индивидуального чек-листа в порядке position ASC; верхнего ограничения нет.
-     */
-    items: Array<ChecklistItem>;
-    /**
-     * 100 × выполненные пункты / все пункты, округление до целого. Пустой чек-лист — 0. Только вычисляется сервером.
-     */
-    progressPercent: number;
-    /**
-     * Предупреждения текущего состояния. materials_incomplete означает, что работы начаты до полной комплектации материалами; predecessor_incomplete — что непосредственно предыдущий включённый этап ещё не выполнен. Предупреждения не блокируют работу.
-     */
-    warnings: Array<'materials_incomplete' | 'predecessor_incomplete'>;
-    /**
-     * Версия записи. Увеличивается при каждом изменении.
-     */
-    version: number;
-    /**
-     * Дата и время создания записи в UTC, формат RFC 3339.
-     */
-    createdAt: string;
-    /**
-     * Дата и время последнего изменения записи в UTC, формат RFC 3339.
-     */
-    updatedAt: string;
-};
-
-export type ConfigureChecklist = {
-    expectedVersion: ExpectedVersion;
-    /**
-     * Порядок массива определяет position. Равный вес каждого пункта.
-     */
-    items: Array<{
-        /**
-         * Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
-         */
-        title: string;
-        /**
-         * Необязательная фотоподсказка; null удаляет подсказку.
-         */
-        photoHint?: string | null;
-    }>;
 };
 
 /**
@@ -1348,11 +1493,11 @@ export type ChecklistItemPhoto = {
  */
 export type DashboardMoneyMetric = {
     /**
-     * Сумма заданных планов; null, если план соответствующей категории неполон хотя бы у одного включённого этапа.
+     * Сумма планов обязательств в расчёте; null при неполноте категории. Для работ — строки выплат, для материалов — ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.
      */
     readonly plannedAmountMinor: PlannedMoneyAmountMinor;
     /**
-     * Фактическая сумма соответствующей категории в том же периметре этапов.
+     * Фактическая сумма оплат с датой не позже through по тем же строкам работ или этапам материалов, которые вошли в расчёт плана.
      */
     readonly actualAmountMinor: MoneyAmountMinor;
     /**
@@ -1360,7 +1505,7 @@ export type DashboardMoneyMetric = {
      */
     readonly balanceAmountMinor: SignedMoneyAmountMinor;
     /**
-     * true, если план категории задан у каждого включённого этапа. Нулевой план считается заданным.
+     * true, если план категории полон в выбранном периметре. Для работ неполнота означает отсутствие строк у этапа с окончанием не позже through; для материалов — незаданный план выбранного этапа. Нулевой план считается заданным.
      */
     readonly isPlanComplete: boolean;
 };
@@ -1595,7 +1740,11 @@ export type SessionWritable = {
     user: UserWritable;
 };
 
+/**
+ * Реквизиты, версия и вычисленные итоги объекта.
+ */
 export type ProjectWritable = {
+    version: ExpectedVersion;
     status: ProjectStatus;
     /**
      * Загруженные PDF проекта в порядке position ASC.
@@ -1674,6 +1823,9 @@ export type ProjectPageWritable = {
     offset: number;
 };
 
+/**
+ * Параметры, финансовые итоги и версия этапа.
+ */
 export type StageWritable = {
     /**
      * Стабильный ID этапа строительства.
@@ -1773,6 +1925,32 @@ export type StageWritable = {
     updatedAt: string;
 };
 
+export type ProjectEditStageWritable = {
+    /**
+     * Параметры и версия этапа.
+     */
+    stage: StageWritable;
+    /**
+     * Индивидуальный чек-лист и его версия.
+     */
+    checklist: Checklist;
+    /**
+     * Строки плана выплат с ID и версиями.
+     */
+    workPlanRows: Array<WorkPlanRow>;
+};
+
+export type ProjectEditWritable = {
+    /**
+     * Реквизиты, документы, версия и вычисленные итоги объекта.
+     */
+    project: ProjectWritable;
+    /**
+     * Все этапы, включая исключённые, по position ASC; только для руководителя.
+     */
+    stages: Array<ProjectEditStageWritable>;
+};
+
 export type StagePageWritable = {
     /**
      * Этапы текущей страницы с учётом фильтров и прав доступа.
@@ -1794,7 +1972,7 @@ export type StagePageWritable = {
 
 export type ProjectStagesWritable = {
     /**
-     * Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации.
+     * Доступные пользователю включённые этапы одного проекта, максимум девять, в порядке position ASC. Без пагинации.
      */
     items: Array<StageWritable>;
 };
@@ -2688,6 +2866,10 @@ export type UpdateProjectErrors = {
      * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
 };
 
 export type UpdateProjectError = UpdateProjectErrors[keyof UpdateProjectErrors];
@@ -2700,6 +2882,48 @@ export type UpdateProjectResponses = {
 };
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
+
+export type GetProjectEditData = {
+    body?: never;
+    path: {
+        /**
+         * ID объекта.
+         */
+        projectId: number;
+    };
+    query?: never;
+    url: '/projects/{projectId}/edit';
+};
+
+export type GetProjectEditErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+};
+
+export type GetProjectEditError = GetProjectEditErrors[keyof GetProjectEditErrors];
+
+export type GetProjectEditResponses = {
+    /**
+     * Данные формы.
+     */
+    200: ProjectEdit;
+};
+
+export type GetProjectEditResponse = GetProjectEditResponses[keyof GetProjectEditResponses];
 
 export type ListActiveStageTypesData = {
     body?: never;

@@ -215,7 +215,11 @@ export const zCoordinates = z.object({
     longitude: z.number().gte(-180).lte(180)
 });
 
+/**
+ * Реквизиты, версия и вычисленные итоги объекта.
+ */
 export const zProject = z.object({
+    version: zExpectedVersion,
     status: zProjectStatus,
     finances: zProjectFinancialSummary,
     documentFileIds: z.array(z.int().gte(1).lte(2147483647)),
@@ -270,8 +274,95 @@ export const zCreateProject = z.object({
     notes: z.string().min(1).max(5000).nullish()
 });
 
+/**
+ * ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
+ */
+export const zAssigneeId = z.int().gte(1).lte(2147483647).nullable();
+
+/**
+ * Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта.
+ */
+export const zPlannedStartDate = z.iso.date().nullable();
+
+/**
+ * Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся.
+ */
+export const zPlannedEndDate = z.iso.date().nullable();
+
+/**
+ * Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
+ */
+export const zWorkSubtypes = z.array(z.string().min(1).max(255)).max(30);
+
+/**
+ * Новые примечания к этапу; null очищает сохранённые примечания.
+ */
+export const zNotes = z.string().min(1).max(5000).nullable();
+
+/**
+ * Новый состав индивидуального чек-листа до фактического старта.
+ */
+export const zConfigureChecklist = z.object({
+    expectedVersion: zExpectedVersion,
+    items: z.array(z.object({
+        title: z.string().min(1).max(500),
+        photoHint: z.string().min(1).max(1000).nullish()
+    })).min(1)
+});
+
+/**
+ * Активный мастер или null.
+ */
+export const zRecipientId = z.int().gte(1).lte(2147483647).nullable();
+
+/**
+ * Срок выплаты или null.
+ */
+export const zDueDate = z.iso.date().nullable();
+
+export const zProjectWorkPlanRowChange = z.object({
+    id: z.int().gte(1).lte(2147483647).optional(),
+    expectedVersion: zExpectedVersion.optional(),
+    amountMinor: zWritableMoneyAmountMinor.optional(),
+    recipientId: zRecipientId.optional(),
+    dueDate: zDueDate.optional(),
+    delete: z.literal(true).optional(),
+    distribute: z.array(zCreateWorkPlanRow).min(2).optional()
+});
+
+export const zUpdateProjectStage = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    expectedVersion: zExpectedVersion,
+    isIncluded: z.boolean().optional(),
+    assigneeId: zAssigneeId.optional(),
+    plannedStartDate: zPlannedStartDate.optional(),
+    plannedEndDate: zPlannedEndDate.optional(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    workSubtypes: zWorkSubtypes.optional(),
+    notes: zNotes.optional(),
+    checklist: zConfigureChecklist.optional(),
+    workPlanRows: z.array(zProjectWorkPlanRowChange).optional()
+});
+
+/**
+ * Новый additional на последней позиции. Если запись уже существует, используйте stages с её ID для восстановления.
+ */
+export const zCreateAdditionalStage = z.object({
+    assigneeId: zAssigneeId.optional(),
+    plannedStartDate: zPlannedStartDate.optional(),
+    plannedEndDate: zPlannedEndDate.optional(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    checklistItems: z.array(zCreateProjectChecklistItem).min(1)
+});
+
 export const zUpdateProject = z.object({
-    ownerName: z.string().min(1).max(255).optional(),
+    expectedVersion: zExpectedVersion,
+    documentFileIds: z.array(z.int().gte(1).lte(2147483647)).optional(),
+    stages: z.array(zUpdateProjectStage).max(9).optional(),
+    additionalStage: zCreateAdditionalStage.optional(),
+    ownerName: z.string().min(1).max(150).optional(),
     address: z.string().min(1).max(1000).optional(),
     coordinates: zCoordinates.optional(),
     cadastralNumber: z.string().min(1).max(100).nullish(),
@@ -281,21 +372,6 @@ export const zUpdateProject = z.object({
     plannedEndDate: z.iso.date().optional(),
     notes: z.string().min(1).max(5000).nullish(),
     isArchived: z.boolean().optional()
-});
-
-export const zChecklistTemplateItem = z.object({
-    id: z.int().gte(1).lte(2147483647),
-    position: z.int().gte(1),
-    title: z.string().min(1).max(500),
-    photoHint: z.string().min(1).max(1000).nullable()
-});
-
-export const zActiveStageType = z.object({
-    code: zStageType,
-    title: z.string().min(1).max(255),
-    position: z.int().gte(1).lte(9),
-    checklistTemplateId: z.int().gte(1).lte(2147483647).nullable(),
-    checklistItems: z.array(zChecklistTemplateItem).min(0)
 });
 
 /**
@@ -336,6 +412,9 @@ export const zAcceptance = z.object({
     decidedAt: z.iso.datetime()
 });
 
+/**
+ * Параметры, финансовые итоги и версия этапа.
+ */
 export const zStage = z.object({
     id: z.int().gte(1).lte(2147483647),
     projectId: z.int().gte(1).lte(2147483647),
@@ -381,6 +460,60 @@ export const zStage = z.object({
     updatedAt: z.iso.datetime()
 });
 
+export const zChecklistItem = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    title: z.string().min(1).max(500),
+    photoHint: z.string().min(1).max(1000).nullable(),
+    position: z.int().gte(1),
+    isCompleted: z.boolean(),
+    requiresRework: z.boolean(),
+    photoCount: z.int().gte(0).lte(20),
+    photosDeletedByRetention: z.boolean(),
+    reworkComment: z.string().nullable(),
+    completedAt: z.iso.datetime().nullable(),
+    completedBy: zUserBrief.nullable()
+});
+
+/**
+ * Индивидуальный чек-лист этапа с версией и состоянием пунктов.
+ */
+export const zChecklist = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    stageId: z.int().gte(1).lte(2147483647),
+    items: z.array(zChecklistItem),
+    progressPercent: z.int().gte(0).lte(100),
+    warnings: z.array(z.enum(['materials_incomplete', 'predecessor_incomplete'])),
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zProjectEditStage = z.object({
+    stage: zStage,
+    checklist: zChecklist,
+    workPlanRows: z.array(zWorkPlanRow)
+});
+
+export const zProjectEdit = z.object({
+    project: zProject,
+    stages: z.array(zProjectEditStage)
+});
+
+export const zChecklistTemplateItem = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    position: z.int().gte(1),
+    title: z.string().min(1).max(500),
+    photoHint: z.string().min(1).max(1000).nullable()
+});
+
+export const zActiveStageType = z.object({
+    code: zStageType,
+    title: z.string().min(1).max(255),
+    position: z.int().gte(1).lte(9),
+    checklistTemplateId: z.int().gte(1).lte(2147483647).nullable(),
+    checklistItems: z.array(zChecklistTemplateItem).min(0)
+});
+
 export const zStagePage = z.object({
     items: z.array(zStage),
     total: z.int().gte(0),
@@ -389,7 +522,7 @@ export const zStagePage = z.object({
 });
 
 export const zProjectStages = z.object({
-    items: z.array(zStage).max(8)
+    items: z.array(zStage).max(9)
 });
 
 export const zUpdateStage = z.object({
@@ -418,39 +551,6 @@ export const zRejectStage = z.object({
     comment: z.string().min(1).max(5000),
     correctionDueDate: z.iso.date().optional(),
     itemIds: z.array(z.int().gte(1).lte(2147483647)).min(1)
-});
-
-export const zChecklistItem = z.object({
-    id: z.int().gte(1).lte(2147483647),
-    title: z.string().min(1).max(500),
-    photoHint: z.string().min(1).max(1000).nullable(),
-    position: z.int().gte(1),
-    isCompleted: z.boolean(),
-    requiresRework: z.boolean(),
-    photoCount: z.int().gte(0).lte(20),
-    photosDeletedByRetention: z.boolean(),
-    reworkComment: z.string().nullable(),
-    completedAt: z.iso.datetime().nullable(),
-    completedBy: zUserBrief.nullable()
-});
-
-export const zChecklist = z.object({
-    id: z.int().gte(1).lte(2147483647),
-    stageId: z.int().gte(1).lte(2147483647),
-    items: z.array(zChecklistItem),
-    progressPercent: z.int().gte(0).lte(100),
-    warnings: z.array(z.enum(['materials_incomplete', 'predecessor_incomplete'])),
-    version: z.int().gte(1),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime()
-});
-
-export const zConfigureChecklist = z.object({
-    expectedVersion: zExpectedVersion,
-    items: z.array(z.object({
-        title: z.string().min(1).max(500),
-        photoHint: z.string().min(1).max(1000).nullish()
-    })).min(1)
 });
 
 /**
@@ -729,7 +829,11 @@ export const zSessionWritable = z.object({
     user: zUserWritable
 });
 
+/**
+ * Реквизиты, версия и вычисленные итоги объекта.
+ */
 export const zProjectWritable = z.object({
+    version: zExpectedVersion,
     status: zProjectStatus,
     documentFileIds: z.array(z.int().gte(1).lte(2147483647)),
     id: z.int().gte(1).lte(2147483647),
@@ -754,6 +858,9 @@ export const zProjectPageWritable = z.object({
     offset: z.int().gte(0)
 });
 
+/**
+ * Параметры, финансовые итоги и версия этапа.
+ */
 export const zStageWritable = z.object({
     id: z.int().gte(1).lte(2147483647),
     projectId: z.int().gte(1).lte(2147483647),
@@ -797,6 +904,17 @@ export const zStageWritable = z.object({
     updatedAt: z.iso.datetime()
 });
 
+export const zProjectEditStageWritable = z.object({
+    stage: zStageWritable,
+    checklist: zChecklist,
+    workPlanRows: z.array(zWorkPlanRow)
+});
+
+export const zProjectEditWritable = z.object({
+    project: zProjectWritable,
+    stages: z.array(zProjectEditStageWritable)
+});
+
 export const zStagePageWritable = z.object({
     items: z.array(zStageWritable),
     total: z.int().gte(0),
@@ -805,7 +923,7 @@ export const zStagePageWritable = z.object({
 });
 
 export const zProjectStagesWritable = z.object({
-    items: z.array(zStageWritable).max(8)
+    items: z.array(zStageWritable).max(9)
 });
 
 export const zDashboardSummaryWritable = z.object({
@@ -1041,6 +1159,15 @@ export const zUpdateProjectPath = z.object({
  * Успешный ответ
  */
 export const zUpdateProjectResponse = zProject;
+
+export const zGetProjectEditPath = z.object({
+    projectId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Данные формы.
+ */
+export const zGetProjectEditResponse = zProjectEdit;
 
 /**
  * Активные типы этапов с шаблонами чек-листов.

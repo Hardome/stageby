@@ -9,10 +9,10 @@ import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { signedMoneyAmountMinorSchema } from './signedMoneyAmountMinorSchema'
 
 export const dashboardMoneyMetricSchema = z.object({
-  plannedAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Сумма заданных планов; null, если план соответствующей категории неполон хотя бы у одного включённого этапа.').meta({ examples: [12500000, 0, ] }),
-  actualAmountMinor: moneyAmountMinorSchema.describe('Фактическая сумма соответствующей категории в том же периметре этапов.').meta({ examples: [12500000] }),
+  plannedAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Сумма планов обязательств в расчёте; null при неполноте категории. Для работ — строки выплат, для материалов — ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.').meta({ examples: [12500000, 0, ] }),
+  actualAmountMinor: moneyAmountMinorSchema.describe('Фактическая сумма оплат с датой не позже through по тем же строкам работ или этапам материалов, которые вошли в расчёт плана.').meta({ examples: [12500000] }),
   balanceAmountMinor: signedMoneyAmountMinorSchema.nullable().describe('План минус факт; отрицательное значение означает переплату, null — план неполон.').meta({ examples: [250000, -100000, ] }),
-  isPlanComplete: z.boolean().describe('true, если план категории задан у каждого включённого этапа. Нулевой план считается заданным.').meta({ examples: [true] }),
+  isPlanComplete: z.boolean().describe('true, если план категории полон в выбранном периметре. Для работ неполнота означает отсутствие строк у этапа с окончанием не позже through; для материалов — незаданный план выбранного этапа. Нулевой план считается заданным.').meta({ examples: [true] }),
 }).strict().describe('План, факт, остаток и полнота плана одной финансовой категории.')
 
 export type DashboardMoneyMetricSchemaType = z.infer<typeof dashboardMoneyMetricSchema>

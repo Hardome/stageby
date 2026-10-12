@@ -13,6 +13,10 @@ export class ProjectService {
     return this.#repository.get(projectId);
   }
 
+  edit(projectId: number) {
+    return this.#repository.edit(projectId);
+  }
+
   list(query: NonNullable<ListProjectsData['query']>) {
     return this.#repository.list(query);
   }

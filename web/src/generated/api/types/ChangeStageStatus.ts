@@ -40,6 +40,10 @@ export type ChangeStageStatusPath = {
     stageId: number;
 };
 
+/**
+ * @description Параметры, финансовые итоги и версия этапа.
+ * @type object
+*/
 export type ChangeStageStatusStatus200 = Stage;
 
 export type ChangeStageStatusStatus400 = ApiError;

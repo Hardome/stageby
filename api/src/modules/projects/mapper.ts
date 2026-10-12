@@ -17,6 +17,7 @@ export function toProject(project: ProjectRow): Omit<Project, 'status' | 'financ
     plannedEndDate: project.plannedEndDate,
     notes: project.notes,
     isArchived: project.isArchived,
+    version: project.version,
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };

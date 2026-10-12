@@ -584,7 +584,7 @@ paths:
       tags:
         - Projects
       summary: Изменить или архивировать проект
-      description: Только руководитель. Архивирование не удаляет историю, делает этапы и чек-листы проекта доступными только для чтения. Разархивирование — isArchived=false. Физического удаления проекта и фиксированных этапов нет.
+      description: Только руководитель. Атомарно сохраняет реквизиты, документы, этапы, чек-листы, строки плана и дополнительный этап. Проверяет версии и итоговое состояние формы. Пропущенные поля и этапы сохраняются; null очищает nullable-поле. Исключение явно задаётся isIncluded=false, разрешено до фактического старта и без фото (включая удалённые), счетов и выплат. Восстановление сохраняет ID и историю. Минимум один включённый этап обязателен. Архивный объект допускает только отдельное разархивирование isArchived=false. Общие планы объекта не редактируются.
       requestBody:
         required: true
         content:
@@ -598,6 +598,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
+  /projects/{projectId}/edit:
+    get:
+      operationId: getProjectEdit
+      tags:
+        - Projects
+      summary: Загрузить форму редактирования объекта
+      description: Только руководитель. Согласованный снимок реквизитов, документов, всех этапов (включая исключённые), чек-листов, строк плана и версий.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          description: ID объекта.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+      responses:
+        '200':
+          description: Данные формы.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectEdit'
         '400':
           $ref: '#/components/responses/ApiBadRequest'
         '401':
@@ -692,7 +725,7 @@ paths:
       tags:
         - Stages
       summary: Этапы одного проекта
-      description: 'Без пагинации: максимум восемь записей, position ASC. Руководитель видит все восемь; мастер — только назначенные ему. Для существующего проекта вне области доступа возвращается 404.'
+      description: 'Без пагинации: максимум девять записей, position ASC. Руководитель видит включённые этапы; мастер — только назначенные ему. Для существующего проекта вне области доступа возвращается 404.'
       responses:
         '200':
           description: Успешный ответ
@@ -1459,7 +1492,7 @@ paths:
       tags:
         - Dashboard
       summary: Финансовая сводка панели руководителя
-      description: Только руководитель. Считает работы, материалы и общий итог независимо от таблицы объектов. В расчёт входят этапы неархивных объектов с plannedEndDate не позже through, включая paid. Факт того же периметра включает все внесённые выплаты за работы и полные суммы оплаченных счетов независимо от даты оплаты; суммы не дублируются при соединении наборов данных.
+      description: Только руководитель. Считает работы, материалы и общий итог независимо от таблицы объектов. Учитываются включённые этапы неархивных объектов, включая paid. Работы отбираются по dueDate строки, иначе по plannedEndDate этапа; дата должна быть не позже through. Явный срок строки всегда приоритетен; без обеих дат строка и её выплаты исключаются. План работ — сумма строк в этом периметре, отдельно от ручного плана этапа и общего плана объекта. Материалы отбираются по plannedEndDate не позже through; используется ручной план материалов. Факт включает только выплаты по выбранным строкам и фактические суммы оплаты счетов выбранных этапов с датой оплаты не позже through. Оплата не уменьшает план; остаток сохраняет переплату. Если окончание этапа не позже through, но строк работ нет, план работ неизвестен; незаданный план материалов выбранного этапа также даёт null. Суммы не дублируются при соединении наборов данных.
       parameters:
         - name: through
           in: query
@@ -1488,7 +1521,7 @@ paths:
       tags:
         - Dashboard
       summary: Строки объектов панели руководителя
-      description: Только руководитель. Загружается независимо от summary. Для активного объекта selectedStage — первый включённый по position этап со статусом не paid; все даты, мастер, суммы и индикаторы внутри selectedStage относятся только к нему. Завершённый объект возвращается с selectedStage=null. Сортировка активных строк по plannedStartDate выбранного этапа ASC, затем projectId ASC; завершённые строки идут после активных по projectId ASC.
+      description: Только руководитель. Загружается независимо от summary. Для активного объекта selectedStage — первый включённый по position этап со статусом не paid; все даты, мастер, суммы и индикаторы внутри selectedStage относятся только к нему. Завершённый объект возвращается с selectedStage=null. Сортировка по plannedStartDate выбранного этапа ASC NULLS LAST, затем projectId ASC; строки без начала и завершённые объекты идут в конце. Исключённые этапы не участвуют в финансах и выборе текущего этапа.
       parameters:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
@@ -2124,6 +2157,7 @@ components:
           minimum: -180
           maximum: 180
     Project:
+      description: Реквизиты, версия и вычисленные итоги объекта.
       type: object
       additionalProperties: false
       required:
@@ -2138,12 +2172,15 @@ components:
         - plannedEndDate
         - notes
         - isArchived
+        - version
         - status
         - finances
         - documentFileIds
         - createdAt
         - updatedAt
       properties:
+        version:
+          $ref: '#/components/schemas/ExpectedVersion'
         status:
           $ref: '#/components/schemas/ProjectStatus'
         finances:
@@ -2447,17 +2484,228 @@ components:
             - 'null'
           minLength: 1
           maxLength: 5000
-    UpdateProject:
+    assigneeId:
+      examples:
+        - 1
+        - null
+      description: ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
+      type:
+        - integer
+        - 'null'
+      minimum: 1
+      maximum: 2147483647
+    plannedStartDate:
+      examples:
+        - '2026-09-21'
+      description: Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта.
+      type:
+        - string
+        - 'null'
+      format: date
+    plannedEndDate:
+      examples:
+        - '2026-09-28'
+      description: Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся.
+      type:
+        - string
+        - 'null'
+      format: date
+    workSubtypes:
+      description: Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
+      type: array
+      items:
+        type: string
+        minLength: 1
+        maxLength: 255
+      maxItems: 30
+      uniqueItems: true
+    notes:
+      examples:
+        - Согласовать время доставки бетона.
+        - null
+      description: Новые примечания к этапу; null очищает сохранённые примечания.
+      type:
+        - string
+        - 'null'
+      minLength: 1
+      maxLength: 5000
+    ConfigureChecklist:
+      description: Новый состав индивидуального чек-листа до фактического старта.
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - items
+      properties:
+        expectedVersion:
+          $ref: '#/components/schemas/ExpectedVersion'
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+            properties:
+              title:
+                examples:
+                  - Проверить соответствие выполненных работ проекту
+                description: Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
+                type: string
+                minLength: 1
+                maxLength: 500
+              photoHint:
+                examples:
+                  - Фото перевязки углов и перехлёста арматуры
+                  - null
+                description: Необязательная фотоподсказка; null удаляет подсказку.
+                type:
+                  - string
+                  - 'null'
+                minLength: 1
+                maxLength: 1000
+          minItems: 1
+          description: Порядок массива определяет position. Равный вес каждого пункта.
+    recipientId:
+      type:
+        - integer
+        - 'null'
+      minimum: 1
+      maximum: 2147483647
+      description: Активный мастер или null.
+      example: null
+    dueDate:
+      type:
+        - string
+        - 'null'
+      format: date
+      description: Срок выплаты или null.
+      example: null
+    ProjectWorkPlanRowChange:
       type: object
       additionalProperties: false
       properties:
+        id:
+          description: ID существующей записи.
+          example: 1
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        expectedVersion:
+          $ref: '#/components/schemas/ExpectedVersion'
+        amountMinor:
+          $ref: '#/components/schemas/WritableMoneyAmountMinor'
+        recipientId:
+          $ref: '#/components/schemas/recipientId'
+        dueDate:
+          $ref: '#/components/schemas/dueDate'
+        delete:
+          description: Удалить строку без выплат.
+          example: true
+          type: boolean
+          enum:
+            - true
+        distribute:
+          description: Заменить нераспределённую строку строками с той же суммой.
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/CreateWorkPlanRow'
+    UpdateProjectStage:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - expectedVersion
+      properties:
+        id:
+          description: ID существующей записи.
+          example: 1
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        expectedVersion:
+          $ref: '#/components/schemas/ExpectedVersion'
+        isIncluded:
+          description: Явное включение или исключение этапа.
+          example: true
+          type: boolean
+        assigneeId:
+          $ref: '#/components/schemas/assigneeId'
+        plannedStartDate:
+          $ref: '#/components/schemas/plannedStartDate'
+        plannedEndDate:
+          $ref: '#/components/schemas/plannedEndDate'
+        plannedWorkAmountMinor:
+          $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        plannedMaterialAmountMinor:
+          $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        workSubtypes:
+          $ref: '#/components/schemas/workSubtypes'
+        notes:
+          $ref: '#/components/schemas/notes'
+        checklist:
+          description: Индивидуальный чек-лист и его версия.
+          $ref: '#/components/schemas/ConfigureChecklist'
+        workPlanRows:
+          type: array
+          description: Частичные операции. Пропущенные строки сохраняются. Новая строка требует amountMinor; существующая — id и expectedVersion. delete и distribute нельзя сочетать с правками полей.
+          items:
+            $ref: '#/components/schemas/ProjectWorkPlanRowChange'
+    CreateAdditionalStage:
+      type: object
+      additionalProperties: false
+      required:
+        - checklistItems
+      description: Новый additional на последней позиции. Если запись уже существует, используйте stages с её ID для восстановления.
+      properties:
+        assigneeId:
+          $ref: '#/components/schemas/assigneeId'
+        plannedStartDate:
+          $ref: '#/components/schemas/plannedStartDate'
+        plannedEndDate:
+          $ref: '#/components/schemas/plannedEndDate'
+        plannedWorkAmountMinor:
+          $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        plannedMaterialAmountMinor:
+          $ref: '#/components/schemas/PlannedMoneyAmountMinor'
+        checklistItems:
+          description: Непустой индивидуальный чек-лист дополнительного этапа.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateProjectChecklistItem'
+    UpdateProject:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          $ref: '#/components/schemas/ExpectedVersion'
+        documentFileIds:
+          type: array
+          uniqueItems: true
+          description: Полный список PDF. Существующие связи сохраняются; новые файлы предварительно загружены руководителем.
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+        stages:
+          description: Частичные изменения существующих этапов.
+          type: array
+          maxItems: 9
+          items:
+            $ref: '#/components/schemas/UpdateProjectStage'
+        additionalStage:
+          $ref: '#/components/schemas/CreateAdditionalStage'
         ownerName:
           examples:
             - Анна Смирнова
           description: Имя клиента или собственника объекта строительства.
           type: string
           minLength: 1
-          maxLength: 255
+          maxLength: 150
         address:
           examples:
             - Екатеринбург, ул. Лесная, д. 10
@@ -2525,79 +2773,7 @@ components:
             - false
           description: Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.
           type: boolean
-      minProperties: 1
-    ChecklistTemplateItem:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - position
-        - title
-        - photoHint
-      properties:
-        id:
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-          example: 501
-          description: Идентификатор пункта активного шаблона.
-        position:
-          type: integer
-          minimum: 1
-          example: 1
-          description: Порядок копирования пункта в индивидуальный чек-лист.
-        title:
-          type: string
-          minLength: 1
-          maxLength: 500
-          example: Армирование
-          description: Название, копируемое в новый этап.
-        photoHint:
-          type:
-            - string
-            - 'null'
-          minLength: 1
-          maxLength: 1000
-          example: Фото перевязки углов и перехлёста арматуры
-          description: Фотоподсказка, копируемая в новый этап; null — подсказки нет.
-    ActiveStageType:
-      type: object
-      additionalProperties: false
-      required:
-        - code
-        - title
-        - position
-        - checklistTemplateId
-        - checklistItems
-      properties:
-        code:
-          $ref: '#/components/schemas/StageType'
-        title:
-          type: string
-          minLength: 1
-          maxLength: 255
-          example: Фундамент
-          description: Отображаемое название активного типа.
-        position:
-          type: integer
-          minimum: 1
-          maximum: 9
-          example: 1
-          description: Порядок типа в объекте.
-        checklistTemplateId:
-          type:
-            - integer
-            - 'null'
-          minimum: 1
-          maximum: 2147483647
-          example: 81
-          description: Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
-        checklistItems:
-          type: array
-          minItems: 0
-          items:
-            $ref: '#/components/schemas/ChecklistTemplateItem'
-          description: Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
+      minProperties: 2
     UserBrief:
       description: Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
       type: object
@@ -2728,6 +2904,7 @@ components:
           type: string
           format: date-time
     Stage:
+      description: Параметры, финансовые итоги и версия этапа.
       type: object
       additionalProperties: false
       required:
@@ -2949,6 +3126,268 @@ components:
           description: Дата и время последнего изменения записи в UTC, формат RFC 3339.
           type: string
           format: date-time
+    ChecklistItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - photoHint
+        - position
+        - isCompleted
+        - requiresRework
+        - photoCount
+        - photosDeletedByRetention
+        - reworkComment
+        - completedAt
+        - completedBy
+      properties:
+        id:
+          examples:
+            - 3001
+          description: ID пункта чек-листа. При замене состава чек-листа создаются новые идентификаторы пунктов.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        title:
+          examples:
+            - Проверить соответствие выполненных работ проекту
+          description: Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
+          type: string
+          minLength: 1
+          maxLength: 500
+        photoHint:
+          examples:
+            - Фото перевязки углов и перехлёста арматуры
+            - null
+          description: Необязательная подсказка из шаблона о том, что должно быть видно на фотографии.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 1000
+        position:
+          examples:
+            - 1
+          description: Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.
+          type: integer
+          minimum: 1
+        isCompleted:
+          examples:
+            - true
+          description: Признак выполнения контрольной точки.
+          type: boolean
+        requiresRework:
+          examples:
+            - false
+          description: Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.
+          type: boolean
+        photoCount:
+          type: integer
+          minimum: 0
+          maximum: 20
+          description: Число активных успешно загруженных фото; 0 означает отсутствие доступных фото.
+          examples:
+            - 1
+        photosDeletedByRetention:
+          type: boolean
+          description: У пункта есть фото, удалённые автоматической очисткой по сроку хранения. Выполнение сохраняется.
+          examples:
+            - false
+        reworkComment:
+          type:
+            - string
+            - 'null'
+          description: Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.
+          examples:
+            - null
+        completedAt:
+          examples:
+            - '2026-09-24T09:30:00Z'
+            - null
+          description: Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.
+          type:
+            - string
+            - 'null'
+          format: date-time
+        completedBy:
+          description: Пользователь, отметивший выполнение; null — пункт не выполнен. Устанавливается сервером.
+          anyOf:
+            - $ref: '#/components/schemas/UserBrief'
+            - type: 'null'
+    Checklist:
+      description: Индивидуальный чек-лист этапа с версией и состоянием пунктов.
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - stageId
+        - items
+        - progressPercent
+        - warnings
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          examples:
+            - 2001
+          description: Стабильный ID чек-листа этапа.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        stageId:
+          examples:
+            - 1001
+          description: Стабильный ID этапа, которому принадлежит запись.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistItem'
+          description: Пункты индивидуального чек-листа в порядке position ASC; верхнего ограничения нет.
+        progressPercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: 100 × выполненные пункты / все пункты, округление до целого. Пустой чек-лист — 0. Только вычисляется сервером.
+          examples:
+            - 33
+        warnings:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - materials_incomplete
+              - predecessor_incomplete
+          description: Предупреждения текущего состояния. materials_incomplete означает, что работы начаты до полной комплектации материалами; predecessor_incomplete — что непосредственно предыдущий включённый этап ещё не выполнен. Предупреждения не блокируют работу.
+        version:
+          examples:
+            - 1
+          type: integer
+          minimum: 1
+          description: Версия записи. Увеличивается при каждом изменении.
+        createdAt:
+          examples:
+            - '2026-09-20T08:00:00Z'
+          description: Дата и время создания записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+        updatedAt:
+          examples:
+            - '2026-09-24T10:00:00Z'
+          description: Дата и время последнего изменения записи в UTC, формат RFC 3339.
+          type: string
+          format: date-time
+    ProjectEditStage:
+      type: object
+      additionalProperties: false
+      required:
+        - stage
+        - checklist
+        - workPlanRows
+      properties:
+        stage:
+          description: Параметры и версия этапа.
+          $ref: '#/components/schemas/Stage'
+        checklist:
+          description: Индивидуальный чек-лист и его версия.
+          $ref: '#/components/schemas/Checklist'
+        workPlanRows:
+          description: Строки плана выплат с ID и версиями.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkPlanRow'
+    ProjectEdit:
+      type: object
+      additionalProperties: false
+      required:
+        - project
+        - stages
+      properties:
+        project:
+          description: Реквизиты, документы, версия и вычисленные итоги объекта.
+          $ref: '#/components/schemas/Project'
+        stages:
+          type: array
+          description: Все этапы, включая исключённые, по position ASC; только для руководителя.
+          items:
+            $ref: '#/components/schemas/ProjectEditStage'
+    ChecklistTemplateItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - position
+        - title
+        - photoHint
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 501
+          description: Идентификатор пункта активного шаблона.
+        position:
+          type: integer
+          minimum: 1
+          example: 1
+          description: Порядок копирования пункта в индивидуальный чек-лист.
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: Армирование
+          description: Название, копируемое в новый этап.
+        photoHint:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 1000
+          example: Фото перевязки углов и перехлёста арматуры
+          description: Фотоподсказка, копируемая в новый этап; null — подсказки нет.
+    ActiveStageType:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - title
+        - position
+        - checklistTemplateId
+        - checklistItems
+      properties:
+        code:
+          $ref: '#/components/schemas/StageType'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Фундамент
+          description: Отображаемое название активного типа.
+        position:
+          type: integer
+          minimum: 1
+          maximum: 9
+          example: 1
+          description: Порядок типа в объекте.
+        checklistTemplateId:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 2147483647
+          example: 81
+          description: Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
+        checklistItems:
+          type: array
+          minItems: 0
+          items:
+            $ref: '#/components/schemas/ChecklistTemplateItem'
+          description: Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
     StagePage:
       type: object
       additionalProperties: false
@@ -2989,11 +3428,11 @@ components:
         - items
       properties:
         items:
-          description: Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации.
+          description: Доступные пользователю включённые этапы одного проекта, максимум девять, в порядке position ASC. Без пагинации.
           type: array
           items:
             $ref: '#/components/schemas/Stage'
-          maxItems: 8
+          maxItems: 9
     UpdateStage:
       type: object
       additionalProperties: false
@@ -3123,197 +3562,6 @@ components:
           minItems: 1
           uniqueItems: true
           description: Пункты текущего чек-листа, требующие повторного выполнения.
-    ChecklistItem:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - photoHint
-        - position
-        - isCompleted
-        - requiresRework
-        - photoCount
-        - photosDeletedByRetention
-        - reworkComment
-        - completedAt
-        - completedBy
-      properties:
-        id:
-          examples:
-            - 3001
-          description: ID пункта чек-листа. При замене состава чек-листа создаются новые идентификаторы пунктов.
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-        title:
-          examples:
-            - Проверить соответствие выполненных работ проекту
-          description: Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
-          type: string
-          minLength: 1
-          maxLength: 500
-        photoHint:
-          examples:
-            - Фото перевязки углов и перехлёста арматуры
-            - null
-          description: Необязательная подсказка из шаблона о том, что должно быть видно на фотографии.
-          type:
-            - string
-            - 'null'
-          minLength: 1
-          maxLength: 1000
-        position:
-          examples:
-            - 1
-          description: Порядковый номер пункта в чек-листе, начиная с 1; определяется порядком при настройке.
-          type: integer
-          minimum: 1
-        isCompleted:
-          examples:
-            - true
-          description: Признак выполнения контрольной точки.
-          type: boolean
-        requiresRework:
-          examples:
-            - false
-          description: Признак того, что пункт отмечен руководителем для повторного выполнения после возврата этапа на доработку.
-          type: boolean
-        photoCount:
-          type: integer
-          minimum: 0
-          maximum: 20
-          description: Число активных успешно загруженных фото; 0 означает отсутствие доступных фото.
-          examples:
-            - 1
-        photosDeletedByRetention:
-          type: boolean
-          description: У пункта есть фото, удалённые автоматической очисткой по сроку хранения. Выполнение сохраняется.
-          examples:
-            - false
-        reworkComment:
-          type:
-            - string
-            - 'null'
-          description: Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.
-          examples:
-            - null
-        completedAt:
-          examples:
-            - '2026-09-24T09:30:00Z'
-            - null
-          description: Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.
-          type:
-            - string
-            - 'null'
-          format: date-time
-        completedBy:
-          description: Пользователь, отметивший выполнение; null — пункт не выполнен. Устанавливается сервером.
-          anyOf:
-            - $ref: '#/components/schemas/UserBrief'
-            - type: 'null'
-    Checklist:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - stageId
-        - items
-        - progressPercent
-        - warnings
-        - version
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          examples:
-            - 2001
-          description: Стабильный ID чек-листа этапа.
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-        stageId:
-          examples:
-            - 1001
-          description: Стабильный ID этапа, которому принадлежит запись.
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChecklistItem'
-          description: Пункты индивидуального чек-листа в порядке position ASC; верхнего ограничения нет.
-        progressPercent:
-          type: integer
-          minimum: 0
-          maximum: 100
-          description: 100 × выполненные пункты / все пункты, округление до целого. Пустой чек-лист — 0. Только вычисляется сервером.
-          examples:
-            - 33
-        warnings:
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            enum:
-              - materials_incomplete
-              - predecessor_incomplete
-          description: Предупреждения текущего состояния. materials_incomplete означает, что работы начаты до полной комплектации материалами; predecessor_incomplete — что непосредственно предыдущий включённый этап ещё не выполнен. Предупреждения не блокируют работу.
-        version:
-          examples:
-            - 1
-          type: integer
-          minimum: 1
-          description: Версия записи. Увеличивается при каждом изменении.
-        createdAt:
-          examples:
-            - '2026-09-20T08:00:00Z'
-          description: Дата и время создания записи в UTC, формат RFC 3339.
-          type: string
-          format: date-time
-        updatedAt:
-          examples:
-            - '2026-09-24T10:00:00Z'
-          description: Дата и время последнего изменения записи в UTC, формат RFC 3339.
-          type: string
-          format: date-time
-    ConfigureChecklist:
-      type: object
-      additionalProperties: false
-      required:
-        - expectedVersion
-        - items
-      properties:
-        expectedVersion:
-          $ref: '#/components/schemas/ExpectedVersion'
-        items:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - title
-            properties:
-              title:
-                examples:
-                  - Проверить соответствие выполненных работ проекту
-                description: Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
-                type: string
-                minLength: 1
-                maxLength: 500
-              photoHint:
-                examples:
-                  - Фото перевязки углов и перехлёста арматуры
-                  - null
-                description: Необязательная фотоподсказка; null удаляет подсказку.
-                type:
-                  - string
-                  - 'null'
-                minLength: 1
-                maxLength: 1000
-          minItems: 1
-          description: Порядок массива определяет position. Равный вес каждого пункта.
     PositiveMoneyAmountMinor:
       type: integer
       format: int64
@@ -4004,12 +4252,12 @@ components:
       properties:
         plannedAmountMinor:
           readOnly: true
-          description: Сумма заданных планов; null, если план соответствующей категории неполон хотя бы у одного включённого этапа.
+          description: Сумма планов обязательств в расчёте; null при неполноте категории. Для работ — строки выплат, для материалов — ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.
           allOf:
             - $ref: '#/components/schemas/PlannedMoneyAmountMinor'
         actualAmountMinor:
           readOnly: true
-          description: Фактическая сумма соответствующей категории в том же периметре этапов.
+          description: Фактическая сумма оплат с датой не позже through по тем же строкам работ или этапам материалов, которые вошли в расчёт плана.
           allOf:
             - $ref: '#/components/schemas/MoneyAmountMinor'
         balanceAmountMinor:
@@ -4021,7 +4269,7 @@ components:
           type: boolean
           readOnly: true
           example: true
-          description: true, если план категории задан у каждого включённого этапа. Нулевой план считается заданным.
+          description: true, если план категории полон в выбранном периметре. Для работ неполнота означает отсутствие строк у этапа с окончанием не позже through; для материалов — незаданный план выбранного этапа. Нулевой план считается заданным.
     DashboardSummary:
       type: object
       additionalProperties: false

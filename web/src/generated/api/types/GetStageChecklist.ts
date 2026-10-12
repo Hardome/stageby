@@ -16,6 +16,10 @@ export type GetStageChecklistPath = {
     stageId: number;
 };
 
+/**
+ * @description Индивидуальный чек-лист этапа с версией и состоянием пунктов.
+ * @type object
+*/
 export type GetStageChecklistStatus200 = Checklist;
 
 export type GetStageChecklistStatus400 = ApiError;
