@@ -42,7 +42,7 @@ export async function loadStageSummaries(db: Db, stageIds: number[]) {
           Number,
         ),
       actualMaterialAmountMinor:
-        sql<number>`(select coalesce(sum(i."amountMinor"), 0) from material_invoices i where i."stageId" = "stages"."id" and i."paidAt" is not null)`.mapWith(
+        sql<number>`(select coalesce(sum(i."paidAmountMinor"), 0) from material_invoices i where i."stageId" = "stages"."id" and i."paidAt" is not null)`.mapWith(
           Number,
         ),
       invoiceCount: sql<number>`(select count(*) from material_invoices i where i."stageId" = "stages"."id")`.mapWith(

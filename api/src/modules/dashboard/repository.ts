@@ -34,7 +34,7 @@ export class DashboardRepository {
       .select({ id: stages.id })
       .from(stages)
       .innerJoin(projects, eq(stages.projectId, projects.id))
-      .where(and(eq(projects.isArchived, false), lte(stages.plannedEndDate, through)));
+      .where(and(eq(projects.isArchived, false), eq(stages.isIncluded, true), lte(stages.plannedEndDate, through)));
     const summaries = [
       ...(
         await loadStageSummaries(
@@ -49,7 +49,7 @@ export class DashboardRepository {
       .where(
         and(
           eq(projects.isArchived, false),
-          sql`exists (select 1 from stages s where s."projectId" = projects.id and s.status <> 'paid')`,
+          sql`exists (select 1 from stages s where s."projectId" = projects.id and s."isIncluded" and s.status <> 'paid')`,
         ),
       );
     return {
@@ -72,7 +72,7 @@ export class DashboardRepository {
 
   async list(limit: number, offset: number): Promise<DashboardProjectPage> {
     // Select the page in SQL before loading its stages; NULLS LAST places paid projects last.
-    const selectedStart = sql`(select s."plannedStartDate" from stages s where s."projectId" = projects.id and s.status <> 'paid' order by s.position, s.id limit 1)`;
+    const selectedStart = sql`(select s."plannedStartDate" from stages s where s."projectId" = projects.id and s."isIncluded" and s.status <> 'paid' order by s.position, s.id limit 1)`;
     const rows = await this.#database
       .select()
       .from(projects)
@@ -100,9 +100,12 @@ export class DashboardRepository {
       .innerJoin(stageTypes, eq(stages.stageTypeCode, stageTypes.code))
       .leftJoin(users, eq(stages.assigneeId, users.id))
       .where(
-        inArray(
-          stages.projectId,
-          rows.map((row) => row.id),
+        and(
+          eq(stages.isIncluded, true),
+          inArray(
+            stages.projectId,
+            rows.map((row) => row.id),
+          ),
         ),
       )
       .orderBy(asc(stages.position), asc(stages.id));

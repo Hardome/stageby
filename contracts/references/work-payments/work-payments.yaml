@@ -14,7 +14,7 @@ paths:
       tags:
         - Work payments
       summary: Платежи за работы этапа
-      description: Только руководитель. Платежи отсортированы по paidAt DESC, id DESC.
+      description: Руководитель видит все выплаты, назначенный мастер — собственные. Платежи отсортированы по paidAt DESC, id DESC.
       responses:
         "200":
           description: Успешный ответ
@@ -131,6 +131,7 @@ components:
       required:
         - id
         - stageId
+        - workPlanRowId
         - paidAt
         - amountMinor
         - comment
@@ -154,6 +155,12 @@ components:
           examples:
             - 1001
           description: Идентификатор оплачиваемого этапа.
+        workPlanRowId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Строка планирования выплаты своего этапа.
+          example: 10
         paidAt:
           type: string
           format: date
@@ -199,16 +206,16 @@ components:
       type: object
       additionalProperties: false
       required:
-        - recipientId
+        - workPlanRowId
         - paidAt
         - amountMinor
       properties:
-        recipientId:
+        workPlanRowId:
           example: 2
           type: integer
           minimum: 1
           maximum: 2147483647
-          description: ID активного мастера из списка пользователей; может отличаться от текущего назначенного мастера.
+          description: ID строки своего этапа. Получатель копируется из строки и должен быть активным мастером.
         paidAt:
           type: string
           format: date

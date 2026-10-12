@@ -9,3 +9,4 @@ export { stageTypes } from './stage-types.ts';
 export { stagePredecessors, stageStatusEnum, stages } from './stages.ts';
 export { userRoleEnum, users } from './users.ts';
 export { workPayments } from './work-payments.ts';
+export { workPlanRows } from './work-plan-rows.ts';

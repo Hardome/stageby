@@ -11,10 +11,12 @@ import { projects } from '#app/db/schema/projects';
 import { stageTypes } from '#app/db/schema/stage-types';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
+import { workPlanRows } from '#app/db/schema/work-plan-rows';
 import type { CreateProject, ListProjectsData, Project, ProjectPage, UpdateProject } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
 import { loadProjects } from '#app/modules/projects/read';
+import { stageDatesValid } from '#app/modules/stages/dates';
 import type { OperationResult } from '#app/modules/stages/types';
 
 type Database = NodePgDatabase<typeof databaseSchema>;
@@ -207,8 +209,8 @@ async function insertStage(
         position,
         assigneeId: stageInput.assigneeId,
         status: stageInput.assigneeId === null ? 'created' : 'assigned',
-        plannedStartDate: stageInput.plannedStartDate,
-        plannedEndDate: stageInput.plannedEndDate,
+        plannedStartDate: stageInput.plannedStartDate ?? null,
+        plannedEndDate: stageInput.plannedEndDate ?? null,
         plannedWorkAmountMinor: stageInput.plannedWorkAmountMinor,
         plannedMaterialAmountMinor: stageInput.plannedMaterialAmountMinor,
       })
@@ -216,6 +218,15 @@ async function insertStage(
   );
   if (!stage) {
     throw new Error('Не удалось создать этап');
+  }
+  if (stage.plannedWorkAmountMinor !== null) {
+    await audit.created(
+      workPlanRows,
+      await transaction
+        .insert(workPlanRows)
+        .values({ stageId: stage.id, amountMinor: stage.plannedWorkAmountMinor })
+        .returning(),
+    );
   }
   return stage;
 }
@@ -318,7 +329,12 @@ export class ProjectRepository {
       const start = input.plannedStartDate ?? project.plannedStartDate;
       const end = input.plannedEndDate ?? project.plannedEndDate;
       const included = await transaction.select().from(stages).where(eq(stages.projectId, projectId));
-      if (end < start || included.some((stage) => stage.plannedStartDate < start || stage.plannedEndDate > end))
+      if (
+        end < start ||
+        included.some(
+          (stage) => stage.isIncluded && !stageDatesValid(stage.plannedStartDate, stage.plannedEndDate, start, end),
+        )
+      )
         return { status: 'invalid_request' };
       await audit.mutate(projects, eq(projects.id, projectId), () =>
         transaction

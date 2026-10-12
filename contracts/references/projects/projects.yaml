@@ -461,8 +461,6 @@ components:
       additionalProperties: false
       required:
         - type
-        - plannedStartDate
-        - plannedEndDate
         - assigneeId
         - plannedWorkAmountMinor
         - plannedMaterialAmountMinor
@@ -472,13 +470,13 @@ components:
         plannedStartDate:
           examples:
             - "2026-10-05"
-          type: string
+          type: [string, "null"]
           format: date
           description: "Плановое начало этапа внутри срока проекта."
         plannedEndDate:
           examples:
             - "2026-10-30"
-          type: string
+          type: [string, "null"]
           format: date
           description: "Плановое окончание этапа внутри срока проекта, не раньше начала этапа."
         assigneeId:

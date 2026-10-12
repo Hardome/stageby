@@ -4,6 +4,11 @@ import type * as schema from '#app/db/schema/index';
 
 export type Database = NodePgDatabase<typeof schema>;
 
-export type WorkPaymentOperationError = 'not_found' | 'project_archived' | 'version_conflict' | 'invalid_request';
+export type WorkPaymentOperationError =
+  | 'not_found'
+  | 'project_archived'
+  | 'version_conflict'
+  | 'invalid_request'
+  | 'invalid_transition';
 
 export type WorkPaymentOperationResult<T> = { status: 'ok'; value: T } | { status: WorkPaymentOperationError };

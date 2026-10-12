@@ -21,7 +21,8 @@ export const stageTitleEnum = {
     Фасад: "\u0424\u0430\u0441\u0430\u0434",
     Электрика: "\u042D\u043B\u0435\u043A\u0442\u0440\u0438\u043A\u0430",
     Штукатурка: "\u0428\u0442\u0443\u043A\u0430\u0442\u0443\u0440\u043A\u0430",
-    Отопление: "\u041E\u0442\u043E\u043F\u043B\u0435\u043D\u0438\u0435"
+    Отопление: "\u041E\u0442\u043E\u043F\u043B\u0435\u043D\u0438\u0435",
+    "\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u044D\u0442\u0430\u043F": "\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u044D\u0442\u0430\u043F"
 } as const;
 
 export type StageTitleEnumKey = (typeof stageTitleEnum)[keyof typeof stageTitleEnum];
@@ -71,7 +72,7 @@ export type Stage = {
     */
     projectIsArchived: boolean;
     /**
-     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
+     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.
      * @example foundation
      * @type string
     */
@@ -85,11 +86,17 @@ export type Stage = {
     /**
      * @description Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
      * @minLength 1
-     * @maxLength 8
+     * @maxLength 9
      * @example 1
      * @type integer
     */
     position: number;
+    /**
+     * @description Включён ли этап в списки, расчёты и завершение объекта.
+     * @example true
+     * @type boolean
+    */
+    isIncluded: boolean;
     /**
      * @description Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.
      * @type array
@@ -112,7 +119,7 @@ export type Stage = {
      * @example 2026-09-21
      * @type string
     */
-    plannedStartDate: string;
+    plannedStartDate: string | null;
     /**
      * @description Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.
      *
@@ -120,7 +127,7 @@ export type Stage = {
      * @example 2026-09-28
      * @type string
     */
-    plannedEndDate: string;
+    plannedEndDate: string | null;
     /**
      * @description Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
      *

@@ -26,6 +26,7 @@ import { UserRepository } from '#app/modules/users/repository';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
 import { setupModuleTest } from '#test/setup-module-test';
+import { createPaymentPlanRow } from '#test/work-plan-row';
 
 const projectIds: number[] = [];
 const userIds: number[] = [];
@@ -132,6 +133,8 @@ async function invoice(stageId: number, userId: number, amountMinor: number, pai
       fileId: file!.id,
       amountMinor,
       paidAt: paid ? now : null,
+      paidAmountMinor: paid ? amountMinor : null,
+      paidDate: paid ? calendarDate(now) : null,
       paidByUserId: paid ? userId : null,
       deliveredAt: delivered ? now : null,
       deliveredByUserId: delivered ? userId : null,
@@ -222,11 +225,13 @@ describe('Dashboard API', () => {
       activeProjectCount: 1,
       total: { plannedAmountMinor: 0, actualAmountMinor: 0 },
     });
+    const planRow = await createPaymentPlanRow(getApp().db, first.id, foreman.user.id);
     await getApp()
       .db.insert(workPayments)
       .values(
         [3000, 4000].map((amountMinor) => ({
           stageId: first.id,
+          workPlanRowId: planRow.id,
           recipientId: foreman.user.id,
           createdByUserId: manager.user.id,
           paidAt: '2099-01-01',

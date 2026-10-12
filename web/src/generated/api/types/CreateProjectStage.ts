@@ -9,7 +9,7 @@ import type { StageTypeKey } from './StageType'
 
 export type CreateProjectStage = {
     /**
-     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
+     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.
      * @example foundation
      * @type string
     */
@@ -19,17 +19,17 @@ export type CreateProjectStage = {
      *
      * Format: `date`
      * @example 2026-10-05
-     * @type string
+     * @type string | undefined
     */
-    plannedStartDate: string;
+    plannedStartDate?: string | null;
     /**
      * @description Плановое окончание этапа внутри срока проекта, не раньше начала этапа.
      *
      * Format: `date`
      * @example 2026-10-30
-     * @type string
+     * @type string | undefined
     */
-    plannedEndDate: string;
+    plannedEndDate?: string | null;
     /**
      * @description Активный мастер этапа; null — мастер пока не назначен.
      * @minLength 1

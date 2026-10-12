@@ -17,6 +17,7 @@ import {
 } from '#app/generated/zod.gen';
 import { requestAuditContext } from '#app/modules/audit/context';
 import type { ProjectService } from '#app/modules/projects/service';
+import { stageDatesValid } from '#app/modules/stages/dates';
 import { coerceRequestValues, definedValues } from '#app/plugins/request-values';
 
 const projectResponse = zProject.extend({
@@ -101,10 +102,11 @@ function validateStage(
     addIssue(['stages', index, 'type'], 'Типы этапов не должны повторяться.');
   }
   seenTypes.add(stage.type);
-  if (stage.plannedEndDate < stage.plannedStartDate) {
-    addIssue(['stages', index, 'plannedEndDate'], 'Дата окончания этапа не может быть раньше даты начала.');
-  }
-  if (stage.plannedStartDate < project.plannedStartDate || stage.plannedEndDate > project.plannedEndDate) {
+  if (stage.type === 'additional')
+    addIssue(['stages', index, 'type'], 'Дополнительный этап доступен только при редактировании объекта.');
+  if (
+    !stageDatesValid(stage.plannedStartDate, stage.plannedEndDate, project.plannedStartDate, project.plannedEndDate)
+  ) {
     addIssue(['stages', index], 'Срок этапа должен находиться внутри срока проекта.');
   }
   for (const field of ['plannedWorkAmountMinor', 'plannedMaterialAmountMinor'] as const) {
@@ -150,6 +152,8 @@ const createProjectBodySchema = validatedCreateProjectBodySchema.transform((body
     ...(notes === undefined ? {} : { notes }),
     stages: required.stages.map(({ checklistItems, ...stage }) => ({
       ...stage,
+      plannedStartDate: stage.plannedStartDate ?? null,
+      plannedEndDate: stage.plannedEndDate ?? null,
       plannedWorkAmountMinor: stage.plannedWorkAmountMinor === null ? null : Number(stage.plannedWorkAmountMinor),
       plannedMaterialAmountMinor:
         stage.plannedMaterialAmountMinor === null ? null : Number(stage.plannedMaterialAmountMinor),
