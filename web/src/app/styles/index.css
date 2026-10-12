@@ -65,6 +65,7 @@
   --primary-text: #e8823a;
   --control-background: #f6f4ef;
   --control-border: #e2e5e3;
+  --control-hover: var(--muted);
   --control-selected: var(--foreground);
   --control-selected-foreground: var(--background);
   --warning: #e8823a;
@@ -150,6 +151,7 @@
   --primary-text: #e8823a;
   --control-background: #1c2128;
   --control-border: #8a8f96;
+  --control-hover: color-mix(in oklch, var(--popover), var(--foreground) 10%);
   --control-selected: var(--foreground);
   --control-selected-foreground: var(--background);
   --warning: #e8823a;
@@ -247,6 +249,7 @@
   --color-control-background: var(--control-background);
   --color-control-border: var(--control-border);
   --color-control-selected: var(--control-selected);
+  --color-control-hover: var(--control-hover);
   --color-control-selected-foreground: var(--control-selected-foreground);
   --color-warning: var(--warning);
   --color-info: var(--info);
