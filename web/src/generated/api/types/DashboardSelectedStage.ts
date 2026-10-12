@@ -42,21 +42,21 @@ export type DashboardSelectedStage = {
     */
     title: string;
     /**
-     * @description Плановое начало выбранного этапа.
+     * @description Плановое начало выбранного этапа или null.
      *
      * Format: `date`
      * @example 2026-10-10
      * @type string
     */
-    plannedStartDate: string;
+    plannedStartDate: string | null;
     /**
-     * @description Плановое окончание выбранного этапа.
+     * @description Плановое окончание выбранного этапа или null.
      *
      * Format: `date`
      * @example 2026-10-25
      * @type string
     */
-    plannedEndDate: string;
+    plannedEndDate: string | null;
     /**
      * @description Назначенный мастер выбранного этапа или null.
     */

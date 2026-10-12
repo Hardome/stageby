@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { listWorkPaymentsResponseSchema, listWorkPaymentsErrorSchema } from '../zod/listWorkPaymentsSchema'
 
 /**
- * @description Только руководитель. Платежи отсортированы по paidAt DESC, id DESC.
+ * @description Руководитель видит все выплаты, назначенный мастер — собственные. Платежи отсортированы по paidAt DESC, id DESC.
  * @summary Платежи за работы этапа
  * {@link /stages/:stageId/work-payments}
  */

@@ -24,6 +24,7 @@ import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
 import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
+import { createPaymentPlanRow } from '#test/work-plan-row';
 
 const PASSWORD = 'Materials-test-password-123!';
 const createdProjectIds: number[] = [];
@@ -146,6 +147,55 @@ async function createInvoice(stageId: number, fileId: number, amountMinor: numbe
 }
 
 describe('Материалы, счета и нехватки', () => {
+  it('считает факт по отдельной сумме оплаты и очищает её вместе с датой при снятии отметки', async () => {
+    const data = await fixture();
+    const file = await uploadedInvoiceFile(data.manager.user.id);
+    const created = await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie);
+    expect(created.statusCode, created.body).toBe(201);
+    const invoice = created.json<StageMaterialInvoice>();
+    expect(invoice).toMatchObject({ amountMinor: 10_000, paidAmountMinor: null, paidDate: null, paidAt: null });
+    const update = (fields: object) =>
+      getApp().inject({
+        method: 'PATCH',
+        url: `/material-invoices/${invoice.id}`,
+        headers: { cookie: data.manager.cookie },
+        payload: fields,
+      });
+    for (const fields of [
+      { isPaid: true },
+      { isPaid: true, paidAmountMinor: 0, paidDate: '2026-10-04' },
+      { isPaid: true, paidAmountMinor: 9500 },
+      { isPaid: false, paidAmountMinor: 9500, paidDate: '2026-10-04' },
+      { isPaid: true, paidAmountMinor: 9500, paidDate: '2026-02-30' },
+    ]) {
+      expect((await update({ expectedVersion: 1, ...fields })).statusCode).toBe(400);
+    }
+    expect((await auditRecords(getApp().db, data.manager.user.id, 'updateMaterialInvoice')).events).toHaveLength(0);
+    const paid = await update({ expectedVersion: 1, isPaid: true, paidAmountMinor: 9500, paidDate: '2026-10-04' });
+    expect(paid.statusCode, paid.body).toBe(200);
+    expect(paid.json()).toMatchObject({ amountMinor: 10_000, paidAmountMinor: 9500, paidDate: '2026-10-04' });
+    expect((await loadStageSummaries(getApp().db, [data.stage.id])).get(data.stage.id)).toMatchObject({
+      plannedMaterialAmountMinor: 100_000,
+      actualMaterialAmountMinor: 9500,
+    });
+    const unpaid = await update({ expectedVersion: 2, isPaid: false });
+    expect(unpaid.statusCode, unpaid.body).toBe(200);
+    expect(unpaid.json()).toMatchObject({
+      amountMinor: 10_000,
+      paidAmountMinor: null,
+      paidDate: null,
+      paidAt: null,
+      paidBy: null,
+    });
+    expect((await loadStageSummaries(getApp().db, [data.stage.id])).get(data.stage.id)).toMatchObject({
+      plannedMaterialAmountMinor: 100_000,
+      actualMaterialAmountMinor: 0,
+    });
+    const audit = await auditRecords(getApp().db, data.manager.user.id, 'updateMaterialInvoice');
+    expect(audit.changes[0]!.after).toMatchObject({ paidAmountMinor: 9500, paidDate: '2026-10-04' });
+    expect(audit.changes[1]!.after).toMatchObject({ paidAmountMinor: null, paidDate: null });
+  });
+
   it('возвращает прежний счёт при повторе и не пишет повторный аудит', async () => {
     const data = await fixture();
     const file = await uploadedInvoiceFile(data.manager.user.id);
@@ -190,7 +240,12 @@ describe('Материалы, счета и нехватки', () => {
         method: 'PATCH',
         url: `/material-invoices/${invoice.id}`,
         headers: { cookie: data.manager.cookie },
-        payload: { expectedVersion: invoice.version, isPaid, isDelivered },
+        payload: {
+          expectedVersion: invoice.version,
+          isPaid,
+          isDelivered,
+          ...(isPaid ? { paidAmountMinor: invoice.amountMinor, paidDate: '2026-10-04' } : {}),
+        },
       });
       expect(response.statusCode, response.body).toBe(200);
       return response.json<StageMaterialInvoice>();
@@ -201,11 +256,13 @@ describe('Материалы, счета и нехватки', () => {
       isPartiallyPaid: true,
       isPartiallyDelivered: true,
     });
+    const planRow = await createPaymentPlanRow(getApp().db, data.stage.id, data.foreman.user.id);
     await getApp()
       .db.insert(workPayments)
       .values([
         {
           stageId: data.stage.id,
+          workPlanRowId: planRow.id,
           recipientId: data.foreman.user.id,
           amountMinor: 30_000,
           paidAt: '2026-10-04',
@@ -213,6 +270,7 @@ describe('Материалы, счета и нехватки', () => {
         },
         {
           stageId: data.stage.id,
+          workPlanRowId: planRow.id,
           recipientId: data.foreman.user.id,
           amountMinor: 40_000,
           paidAt: '2026-10-04',
@@ -328,7 +386,7 @@ describe('Материалы, счета и нехватки', () => {
       method: 'PATCH',
       url: `/material-invoices/${invoices[0]!.id}`,
       headers: { cookie: data.manager.cookie },
-      payload: { expectedVersion: 1, isPaid: true },
+      payload: { expectedVersion: 1, isPaid: true, paidAmountMinor: 10_000, paidDate: '2026-10-04' },
     });
     expect(paid.statusCode, paid.body).toBe(200);
     stage = await getApp().inject({
@@ -342,7 +400,7 @@ describe('Материалы, счета и нехватки', () => {
       method: 'PATCH',
       url: `/material-invoices/${invoices[1]!.id}`,
       headers: { cookie: data.foreman.cookie },
-      payload: { expectedVersion: 1, isPaid: true },
+      payload: { expectedVersion: 1, isPaid: true, paidAmountMinor: 10_000, paidDate: '2026-10-04' },
     });
     expect(forbiddenPayment.statusCode).toBe(403);
 

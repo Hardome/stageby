@@ -120,13 +120,15 @@ components:
     StageMaterialInvoice:
       type: object
       additionalProperties: false
-      required: [id, stageId, fileId, supplierName, amountMinor, paidAt, paidBy, deliveredAt, deliveredBy, shortages, version, createdAt, updatedAt]
+      required: [id, stageId, fileId, supplierName, amountMinor, paidAmountMinor, paidDate, paidAt, paidBy, deliveredAt, deliveredBy, shortages, version, createdAt, updatedAt]
       properties:
         id: { type: integer, minimum: 1, maximum: 2147483647, example: 401, description: Идентификатор счёта. }
         stageId: { type: integer, minimum: 1, maximum: 2147483647, example: 101, description: "Этап, к которому напрямую относится счёт." }
         fileId: { type: integer, minimum: 1, maximum: 2147483647, example: 201, description: Идентификатор загруженного файла счёта. }
         supplierName: { type: [string, 'null'], minLength: 1, maxLength: 255, example: Стройснаб, description: Поставщик или null. }
-        amountMinor: { $ref: ../common/common.yaml#/components/schemas/PositiveMoneyAmountMinor, description: Полная сумма счёта в копейках. Частичная оплата одного счёта не поддерживается. }
+        amountMinor: { $ref: ../common/common.yaml#/components/schemas/PositiveMoneyAmountMinor, description: Сумма выставленного счёта в копейках; хранится независимо от суммы оплаты. }
+        paidAmountMinor: { $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor, description: Фактическая положительная сумма оплаты или null для неоплаченного счёта. }
+        paidDate: { type: [string, 'null'], format: date, example: '2026-10-02', description: Введённая календарная дата оплаты или null. }
         paidAt: { type: [string, 'null'], format: date-time, example: '2026-10-02T08:00:00Z', description: Серверное время отметки полной оплаты или null. }
         paidBy: { anyOf: [{ $ref: ../users/users.yaml#/components/schemas/UserBrief }, { type: 'null' }], description: Автор отметки оплаты или null. }
         deliveredAt: { type: [string, 'null'], format: date-time, example: '2026-10-03T08:00:00Z', description: Серверное время отметки доставки или null. }
@@ -150,7 +152,9 @@ components:
       required: [expectedVersion]
       properties:
         expectedVersion: { $ref: ../common/common.yaml#/components/schemas/ExpectedVersion }
-        isPaid: { type: boolean, example: true, description: Требуемая отметка оплаты. }
+        isPaid: { type: boolean, example: true, description: "Требуемая отметка оплаты. При true обязательны paidAmountMinor и paidDate, при false они очищаются." }
+        paidAmountMinor: { $ref: ../common/common.yaml#/components/schemas/PositiveMoneyAmountMinor, description: Фактическая сумма оплаты; обязательна вместе с isPaid true. }
+        paidDate: { type: string, format: date, example: '2026-10-02', description: Календарная дата оплаты; обязательна вместе с isPaid true. }
         isDelivered: { type: boolean, example: true, description: Требуемая отметка доставки. }
     MaterialShortage:
       type: object

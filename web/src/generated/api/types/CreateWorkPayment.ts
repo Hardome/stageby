@@ -9,13 +9,13 @@ import type { WorkPayment } from './WorkPayment'
 
 export type CreateWorkPayment = {
     /**
-     * @description ID активного мастера из списка пользователей; может отличаться от текущего назначенного мастера.
+     * @description ID строки своего этапа. Получатель копируется из строки и должен быть активным мастером.
      * @minLength 1
      * @maxLength 2147483647
      * @example 2
      * @type integer
     */
-    recipientId: number;
+    workPlanRowId: number;
     /**
      * @description Дата фактической оплаты в формате YYYY-MM-DD.
      *

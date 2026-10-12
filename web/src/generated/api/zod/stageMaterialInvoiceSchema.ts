@@ -5,6 +5,7 @@
 
 import * as z from 'zod'
 import { materialShortageSchema } from './materialShortageSchema'
+import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { positiveMoneyAmountMinorSchema } from './positiveMoneyAmountMinorSchema'
 import { userBriefSchema } from './userBriefSchema'
 
@@ -13,7 +14,9 @@ export const stageMaterialInvoiceSchema = z.object({
   stageId: z.int().min(1).max(2147483647).describe('Этап, к которому напрямую относится счёт.').meta({ examples: [101] }),
   fileId: z.int().min(1).max(2147483647).describe('Идентификатор загруженного файла счёта.').meta({ examples: [201] }),
   supplierName: z.string().min(1).max(255).nullable().describe('Поставщик или null.').meta({ examples: ['Стройснаб'] }),
-  amountMinor: positiveMoneyAmountMinorSchema.describe('Полная сумма счёта в копейках. Частичная оплата одного счёта не поддерживается.').meta({ examples: [500000] }),
+  amountMinor: positiveMoneyAmountMinorSchema.describe('Сумма выставленного счёта в копейках; хранится независимо от суммы оплаты.').meta({ examples: [500000] }),
+  paidAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Фактическая положительная сумма оплаты или null для неоплаченного счёта.').meta({ examples: [12500000, 0, ] }),
+  paidDate: z.iso.date().nullable().describe('Введённая календарная дата оплаты или null.').meta({ examples: ['2026-10-02'] }),
   paidAt: z.iso.datetime().nullable().describe('Серверное время отметки полной оплаты или null.').meta({ examples: ['2026-10-02T08:00:00Z'] }),
   paidBy: z.union([userBriefSchema, z.null()]).describe('Автор отметки оплаты или null.'),
   deliveredAt: z.iso.datetime().nullable().describe('Серверное время отметки доставки или null.').meta({ examples: ['2026-10-03T08:00:00Z'] }),

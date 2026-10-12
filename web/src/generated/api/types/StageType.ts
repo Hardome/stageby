@@ -11,7 +11,8 @@ export const stageType = {
     facade: "facade",
     electrical: "electrical",
     finishing: "finishing",
-    heating: "heating"
+    heating: "heating",
+    additional: "additional"
 } as const;
 
 export type StageTypeKey = (typeof stageType)[keyof typeof stageType];
