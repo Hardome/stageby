@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './../../app/routes/__root';
 import { Route as AuthRouteImport } from './../../app/routes/_auth';
 import { Route as AuthIndexRouteImport } from './../../app/routes/_auth/index';
 import { Route as AuthUsersRouteImport } from './../../app/routes/_auth/users';
+import { Route as AuthProjectsNewRouteImport } from './../../app/routes/_auth/projects/new';
 import { Route as AuthUsersIndexRouteImport } from './../../app/routes/_auth/users/index';
 import { Route as AuthUsersNewRouteImport } from './../../app/routes/_auth/users/new';
 import { Route as PublicLoginIndexRouteImport } from './../../app/routes/_public/login/index';
@@ -30,6 +31,11 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
 const AuthUsersRoute = AuthUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AuthRoute,
+} as any);
+const AuthProjectsNewRoute = AuthProjectsNewRouteImport.update({
+  id: '/projects/new',
+  path: '/projects/new',
   getParentRoute: () => AuthRoute,
 } as any);
 const AuthUsersIndexRoute = AuthUsersIndexRouteImport.update({
@@ -61,6 +67,7 @@ const AuthUsersUserIdPasswordRoute = AuthUsersUserIdPasswordRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute;
   '/users': typeof AuthUsersRouteWithChildren;
+  '/projects/new': typeof AuthProjectsNewRoute;
   '/users/new': typeof AuthUsersNewRoute;
   '/users/': typeof AuthUsersIndexRoute;
   '/login/': typeof PublicLoginIndexRoute;
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof AuthIndexRoute;
+  '/projects/new': typeof AuthProjectsNewRoute;
   '/users/new': typeof AuthUsersNewRoute;
   '/users': typeof AuthUsersIndexRoute;
   '/login': typeof PublicLoginIndexRoute;
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren;
   '/_auth/users': typeof AuthUsersRouteWithChildren;
   '/_auth/': typeof AuthIndexRoute;
+  '/_auth/projects/new': typeof AuthProjectsNewRoute;
   '/_auth/users/new': typeof AuthUsersNewRoute;
   '/_auth/users/': typeof AuthUsersIndexRoute;
   '/_public/login/': typeof PublicLoginIndexRoute;
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/users'
+    | '/projects/new'
     | '/users/new'
     | '/users/'
     | '/login/'
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | '/'
+    | '/projects/new'
     | '/users/new'
     | '/users'
     | '/login'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_auth/users'
     | '/_auth/'
+    | '/_auth/projects/new'
     | '/_auth/users/new'
     | '/_auth/users/'
     | '/_public/login/'
@@ -142,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/users';
       fullPath: '/users';
       preLoaderRoute: typeof AuthUsersRouteImport;
+      parentRoute: typeof AuthRoute;
+    };
+    '/_auth/projects/new': {
+      id: '/_auth/projects/new';
+      path: '/projects/new';
+      fullPath: '/projects/new';
+      preLoaderRoute: typeof AuthProjectsNewRouteImport;
       parentRoute: typeof AuthRoute;
     };
     '/_auth/users/': {
@@ -203,11 +222,13 @@ const AuthUsersRouteWithChildren = AuthUsersRoute._addFileChildren(
 interface AuthRouteChildren {
   AuthUsersRoute: typeof AuthUsersRouteWithChildren;
   AuthIndexRoute: typeof AuthIndexRoute;
+  AuthProjectsNewRoute: typeof AuthProjectsNewRoute;
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthUsersRoute: AuthUsersRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
+  AuthProjectsNewRoute: AuthProjectsNewRoute,
 };
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
