@@ -55,7 +55,7 @@ const createBodySchema = zCreateWorkPaymentBody
   .transform(
     (body): CreateWorkPayment => ({
       paidAt: body.paidAt,
-      recipientId: body.recipientId,
+      workPlanRowId: body.workPlanRowId,
       amountMinor: Number(body.amountMinor),
       ...(body.comment === undefined ? {} : { comment: typeof body.comment === 'string' ? body.comment.trim() : null }),
     }),
@@ -85,6 +85,14 @@ const updateBodySchema = zUpdateWorkPaymentBody
   );
 
 const errorDetails: Record<WorkPaymentOperationError, { statusCode: 400 | 404 | 409; error: ApiError }> = {
+  invalid_transition: {
+    statusCode: 409,
+    error: {
+      error: 'Conflict',
+      code: 'invalid_transition',
+      message: 'Изменение нарушает финансовые условия выплаченного этапа.',
+    },
+  },
   invalid_request: {
     statusCode: 400,
     error: { error: 'Bad Request', code: 'invalid_request', message: 'Получателем должен быть активный мастер.' },
@@ -113,9 +121,9 @@ const errorResponses = { 400: zApiError, 401: zApiError, 403: zApiError, 404: zA
 
 export function registerWorkPaymentRoutes(app: FastifyInstance, repository: WorkPaymentRepository): void {
   app.get<{ Params: z.infer<typeof zListWorkPaymentsPath> }>('/stages/:stageId/work-payments', {
-    preHandler: [app.authenticate, app.requireRoles('manager')],
+    preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
     schema: { params: listPathSchema, response: { 200: z.array(workPaymentResponseSchema), ...errorResponses } },
-    handler: async (request, reply) => send(reply, await repository.list(request.params.stageId)),
+    handler: async (request, reply) => send(reply, await repository.list(request.params.stageId, request.auth!.user)),
   });
 
   app.post<{

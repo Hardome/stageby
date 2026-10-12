@@ -199,7 +199,13 @@ describe('Проверка выпуска через HTTP, PostgreSQL и MinIO',
       await request(managerCookie, {
         method: 'PATCH',
         url: `/material-invoices/${invoice.id}`,
-        payload: { expectedVersion: invoice.version, isPaid: true, isDelivered: true },
+        payload: {
+          expectedVersion: invoice.version,
+          isPaid: true,
+          isDelivered: true,
+          paidAmountMinor: invoice.amountMinor,
+          paidDate: today,
+        },
       });
     }
 
@@ -230,13 +236,22 @@ describe('Проверка выпуска через HTTP, PostgreSQL и MinIO',
       payload: { expectedVersion: awaiting.version },
     });
     expect(accepted.status).toBe('completed');
+    const paymentRow = await request<{ id: number }>(
+      managerCookie,
+      {
+        method: 'POST',
+        url: `/stages/${stageId}/work-plan-rows`,
+        payload: { amountMinor: 10_000, recipientId: foremanId },
+      },
+      201,
+    );
     for (const amountMinor of [4000, 7000]) {
       await request(
         managerCookie,
         {
           method: 'POST',
           url: `/stages/${stageId}/work-payments`,
-          payload: { paidAt: today, amountMinor, recipientId: foremanId },
+          payload: { paidAt: today, amountMinor, workPlanRowId: paymentRow.id },
         },
         201,
       );

@@ -8,11 +8,11 @@ import { checklistTemplateItemSchema } from './checklistTemplateItemSchema'
 import { stageTypeSchema } from './stageTypeSchema'
 
 export const activeStageTypeSchema = z.object({
-  code: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.').meta({ examples: ['foundation'] }),
+  code: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.').meta({ examples: ['foundation'] }),
   title: z.string().min(1).max(255).describe('Отображаемое название активного типа.').meta({ examples: ['Фундамент'] }),
-  position: z.int().min(1).max(8).describe('Порядок типа в объекте.').meta({ examples: [1] }),
-  checklistTemplateId: z.int().min(1).max(2147483647).describe('Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.').meta({ examples: [81] }),
-  checklistItems: z.array(checklistTemplateItemSchema).min(1).describe('Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.'),
+  position: z.int().min(1).max(9).describe('Порядок типа в объекте.').meta({ examples: [1] }),
+  checklistTemplateId: z.int().min(1).max(2147483647).nullable().describe('Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.').meta({ examples: [81] }),
+  checklistItems: z.array(checklistTemplateItemSchema).min(0).describe('Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.'),
 }).strict()
 
 export type ActiveStageTypeSchemaType = z.infer<typeof activeStageTypeSchema>

@@ -5,6 +5,7 @@
 
 import type { ApiError } from './ApiError'
 import type { ExpectedVersion } from './ExpectedVersion'
+import type { PositiveMoneyAmountMinor } from './PositiveMoneyAmountMinor'
 import type { StageMaterialInvoice } from './StageMaterialInvoice'
 
 export type UpdateMaterialInvoice = {
@@ -16,11 +17,28 @@ export type UpdateMaterialInvoice = {
     */
     expectedVersion: ExpectedVersion;
     /**
-     * @description Требуемая отметка оплаты.
+     * @description Требуемая отметка оплаты. При true обязательны paidAmountMinor и paidDate, при false они очищаются.
      * @example true
      * @type boolean | undefined
     */
     isPaid?: boolean;
+    /**
+     * @description Фактическая сумма оплаты; обязательна вместе с isPaid true.
+     *
+     * Format: `int64`
+     * @minLength 100
+     * @example 500000
+     * @type integer | undefined
+    */
+    paidAmountMinor?: PositiveMoneyAmountMinor;
+    /**
+     * @description Календарная дата оплаты; обязательна вместе с isPaid true.
+     *
+     * Format: `date`
+     * @example 2026-10-02
+     * @type string | undefined
+    */
+    paidDate?: string;
     /**
      * @description Требуемая отметка доставки.
      * @example true

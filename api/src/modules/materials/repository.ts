@@ -120,6 +120,8 @@ async function loadInvoices(db: Db, stageId: number): Promise<StageMaterialInvoi
     fileId: row.invoice.fileId,
     supplierName: row.invoice.supplierName,
     amountMinor: Number(row.invoice.amountMinor),
+    paidAmountMinor: row.invoice.paidAmountMinor,
+    paidDate: row.invoice.paidDate,
     paidAt: row.invoice.paidAt?.toISOString() ?? null,
     paidBy: brief(row.paidById, row.paidByName),
     deliveredAt: row.invoice.deliveredAt?.toISOString() ?? null,
@@ -146,19 +148,28 @@ async function syncSupplyStatus(transaction: Transaction, stageId: number, audit
   }
 }
 
+function invoicePaidUpdate(
+  invoice: typeof materialInvoices.$inferSelect,
+  input: UpdateMaterialInvoice,
+  actor: Actor,
+  now: Date,
+) {
+  if (input.isPaid === undefined) return {};
+  return {
+    paidAt: input.isPaid ? (invoice.paidAt ?? now) : null,
+    paidByUserId: input.isPaid ? (invoice.paidByUserId ?? actor.id) : null,
+    paidAmountMinor: input.isPaid ? input.paidAmountMinor! : null,
+    paidDate: input.isPaid ? input.paidDate! : null,
+  };
+}
+
 function invoiceStateUpdate(
   invoice: typeof materialInvoices.$inferSelect,
   input: UpdateMaterialInvoice,
   actor: Actor,
   now: Date,
 ) {
-  const paid =
-    input.isPaid === undefined
-      ? {}
-      : {
-          paidAt: input.isPaid ? (invoice.paidAt ?? now) : null,
-          paidByUserId: input.isPaid ? (invoice.paidByUserId ?? actor.id) : null,
-        };
+  const paid = invoicePaidUpdate(invoice, input, actor, now);
   const delivered =
     input.isDelivered === undefined
       ? {}
@@ -167,6 +178,15 @@ function invoiceStateUpdate(
           deliveredByUserId: input.isDelivered ? (invoice.deliveredByUserId ?? actor.id) : null,
         };
   return { ...paid, ...delivered, version: sql`${materialInvoices.version} + 1`, updatedAt: now };
+}
+
+function invoicePaymentError(input: UpdateMaterialInvoice, actor: Actor): MaterialOperationError | null {
+  const hasPaymentFields = input.paidAmountMinor !== undefined || input.paidDate !== undefined;
+  if (actor.role === 'foreman' && (input.isPaid !== undefined || hasPaymentFields)) return 'forbidden';
+  if (input.isPaid === true && (input.paidAmountMinor === undefined || input.paidDate === undefined))
+    return 'invalid_request';
+  if (input.isPaid !== true && hasPaymentFields) return 'invalid_request';
+  return null;
 }
 
 async function getInvoiceFileError(transaction: Transaction, fileId: number): Promise<MaterialOperationError | null> {
@@ -258,7 +278,8 @@ export class MaterialRepository {
       if (!invoice || !stageContext || !canRead(actor, stageContext.stage.assigneeId)) return { status: 'not_found' };
       if (stageContext.isArchived) return { status: 'project_archived' };
       if (invoice.version !== input.expectedVersion) return { status: 'version_conflict' };
-      if (actor.role === 'foreman' && input.isPaid !== undefined) return { status: 'forbidden' };
+      const paymentError = invoicePaymentError(input, actor);
+      if (paymentError) return { status: paymentError };
       await audit.mutate(materialInvoices, eq(materialInvoices.id, invoiceId), () =>
         transaction
           .update(materialInvoices)

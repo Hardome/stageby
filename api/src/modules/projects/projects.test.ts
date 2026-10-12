@@ -132,6 +132,66 @@ async function createProject(cookie: string, body: CreateProject, key = randomUU
 }
 
 describe('Composite project creation', () => {
+  it.each([
+    [null, null],
+    ['2026-10-05', null],
+    [null, '2027-05-28'],
+    ['2026-10-05', '2027-05-28'],
+  ])('создаёт этап с независимыми датами %s / %s', async (plannedStartDate, plannedEndDate) => {
+    const manager = await createIdentity();
+    const response = await createProject(
+      manager.cookie,
+      payload({ stages: [stage('foundation', { plannedStartDate, plannedEndDate })] }),
+    );
+    expect(response.statusCode, response.body).toBe(201);
+    const [created] = await getApp().db.select().from(stages).where(eq(stages.projectId, response.json().id));
+    expect(created).toMatchObject({ plannedStartDate, plannedEndDate, isIncluded: true });
+  });
+
+  it('принимает отсутствие обеих дат, запрещает additional при создании', async () => {
+    const manager = await createIdentity();
+    const value = stage('foundation');
+    const { plannedStartDate: _start, plannedEndDate: _end, ...withoutDates } = value;
+    const response = await createProject(manager.cookie, payload({ stages: [withoutDates] }));
+    expect(response.statusCode, response.body).toBe(201);
+    const [created] = await getApp().db.select().from(stages).where(eq(stages.projectId, response.json().id));
+    expect(created).toMatchObject({ plannedStartDate: null, plannedEndDate: null });
+    const invalid = await createProject(
+      manager.cookie,
+      payload({ stages: [stage('additional', { checklistItems: [{ title: 'Свой пункт' }] })] }),
+    );
+    expect(invalid.statusCode).toBe(400);
+  });
+
+  it('вычисляет общий план из ручных планов включённых этапов, исключает additional из итогов', async () => {
+    const manager = await createIdentity();
+    const response = await createProject(
+      manager.cookie,
+      payload({
+        stages: [stage('foundation', { plannedWorkAmountMinor: 10_000, plannedMaterialAmountMinor: 20_000 })],
+      }),
+    );
+    expect(response.statusCode, response.body).toBe(201);
+    const project = response.json<Project>();
+    await getApp().db.insert(stages).values({
+      projectId: project.id,
+      stageTypeCode: 'additional',
+      position: 9,
+      isIncluded: false,
+      plannedWorkAmountMinor: 99_000,
+      plannedMaterialAmountMinor: 99_000,
+    });
+    const read = await getApp().inject({ url: `/projects/${project.id}`, headers: { cookie: manager.cookie } });
+    expect(read.json().finances).toMatchObject({
+      plannedWorkAmountMinor: 10_000,
+      plannedMaterialAmountMinor: 20_000,
+      totalPlannedAmountMinor: 30_000,
+    });
+    await expect(
+      getApp().db.insert(stages).values({ projectId: project.id, stageTypeCode: 'additional', position: 8 }),
+    ).rejects.toThrow();
+  });
+
   it('повторяет создание без дубля и аудита, отклоняет изменение тела с тем же ключом', async () => {
     const manager = await createIdentity();
     const body = payload();

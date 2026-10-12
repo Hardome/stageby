@@ -1,5 +1,16 @@
 import { sql } from 'drizzle-orm';
-import { bigint, check, index, integer, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import {
+  bigint,
+  check,
+  date,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 import { files } from './files.ts';
 import { stages } from './stages.ts';
@@ -17,6 +28,8 @@ export const materialInvoices = pgTable(
       .references(() => files.id, { onDelete: 'restrict' }),
     supplierName: varchar({ length: 255 }),
     amountMinor: bigint({ mode: 'number' }).notNull(),
+    paidAmountMinor: bigint({ mode: 'number' }),
+    paidDate: date(),
     paidAt: timestamp({ withTimezone: true }),
     paidByUserId: integer().references(() => users.id, { onDelete: 'restrict' }),
     deliveredAt: timestamp({ withTimezone: true }),
@@ -34,6 +47,14 @@ export const materialInvoices = pgTable(
       sql`${table.supplierName} is null or btrim(${table.supplierName}) <> ''`,
     ),
     check('material_invoices_amount_check', sql`${table.amountMinor} > 0 and ${table.amountMinor} % 100 = 0`),
+    check(
+      'material_invoices_paid_amount_check',
+      sql`${table.paidAmountMinor} is null or (${table.paidAmountMinor} > 0 and ${table.paidAmountMinor} % 100 = 0)`,
+    ),
+    check(
+      'material_invoices_paid_details_check',
+      sql`(${table.paidAt} is null and ${table.paidAmountMinor} is null and ${table.paidDate} is null) or (${table.paidAt} is not null and ${table.paidAmountMinor} is not null and ${table.paidDate} is not null)`,
+    ),
     check(
       'material_invoices_paid_author_check',
       sql`(${table.paidAt} is null and ${table.paidByUserId} is null) or (${table.paidAt} is not null and ${table.paidByUserId} is not null)`,

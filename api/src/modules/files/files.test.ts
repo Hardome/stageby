@@ -552,11 +552,18 @@ describe('File uploads and checklist photos', () => {
       payload: { fileId: invoiceFile.upload!.fileId, amountMinor: 10_000, supplierName: 'Поставщик' },
     });
     expect(invoice.statusCode, invoice.body).toBe(201);
+    const plannedPayment = await getApp().inject({
+      method: 'POST',
+      url: `/stages/${fixture.stage.id}/work-plan-rows`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { amountMinor: 5000, recipientId: fixture.foreman.user.id },
+    });
+    expect(plannedPayment.statusCode, plannedPayment.body).toBe(201);
     const payment = await getApp().inject({
       method: 'POST',
       url: `/stages/${fixture.stage.id}/work-payments`,
       headers: { cookie: fixture.manager.cookie },
-      payload: { paidAt: '2026-10-04', amountMinor: 5000, recipientId: fixture.foreman.user.id },
+      payload: { paidAt: '2026-10-04', amountMinor: 5000, workPlanRowId: plannedPayment.json().id },
     });
     expect(payment.statusCode, payment.body).toBe(201);
     const download = (cookie: string, fileId: number) =>
@@ -592,10 +599,13 @@ describe('File uploads and checklist photos', () => {
       headers: { cookie: fixture.foreman.cookie },
     });
     expect(oldList.json()).toMatchObject({ total: 0, items: [] });
-    for (const cookie of [fixture.foreman.cookie, replacement.cookie]) {
+    for (const [cookie, statusCode] of [
+      [fixture.foreman.cookie, 404],
+      [replacement.cookie, 200],
+    ] as const) {
       expect(
         (await getApp().inject({ url: `/stages/${fixture.stage.id}/work-payments`, headers: { cookie } })).statusCode,
-      ).toBe(403);
+      ).toBe(statusCode);
       expect(
         (
           await getApp().inject({

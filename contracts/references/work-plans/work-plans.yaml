@@ -1,0 +1,330 @@
+paths:
+  /stages/{stageId}/work-plan-rows:
+    parameters:
+      - name: stageId
+        in: path
+        required: true
+        description: Идентификатор ресурса.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: listWorkPlanRows
+      tags:
+        - Work plans
+      summary: Строки планирования выплат
+      description: Изменения доступны руководителю. Назначенный мастер читает только
+        собственные строки. Архивный объект не изменяется.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkPlanRow"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+    post:
+      operationId: createWorkPlanRow
+      tags:
+        - Work plans
+      summary: Добавить строку выплаты
+      description: Изменения доступны руководителю. Назначенный мастер читает только
+        собственные строки. Архивный объект не изменяется.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkPlanRow"
+      responses:
+        "201":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkPlanRow"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /work-plan-rows/{rowId}:
+    parameters:
+      - name: rowId
+        in: path
+        required: true
+        description: Идентификатор ресурса.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    get:
+      operationId: getWorkPlanRow
+      tags:
+        - Work plans
+      summary: Прочитать строку выплаты
+      description: Изменения доступны руководителю. Назначенный мастер читает только
+        собственные строки. Архивный объект не изменяется.
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkPlanRow"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+    patch:
+      operationId: updateWorkPlanRow
+      tags:
+        - Work plans
+      summary: Изменить строку выплаты
+      description: Изменения доступны руководителю. Назначенный мастер читает только
+        собственные строки. Архивный объект не изменяется.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkPlanRow"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkPlanRow"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+    delete:
+      operationId: deleteWorkPlanRow
+      tags:
+        - Work plans
+      summary: Удалить строку без выплат
+      description: Изменения доступны руководителю. Назначенный мастер читает только
+        собственные строки. Архивный объект не изменяется.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteWorkPlanRow"
+      responses:
+        "204":
+          description: Строка удалена
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+  /work-plan-rows/{rowId}/distribute:
+    parameters:
+      - name: rowId
+        in: path
+        required: true
+        description: Идентификатор ресурса.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    post:
+      operationId: distributeWorkPlanRow
+      tags:
+        - Work plans
+      summary: Распределить строку без получателя и выплат
+      description: Изменения доступны руководителю. Назначенный мастер читает только
+        собственные строки. Архивный объект не изменяется.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DistributeWorkPlanRow"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkPlanRow"
+        "400":
+          $ref: ../common/common.yaml#/components/responses/ApiBadRequest
+        "401":
+          $ref: ../common/common.yaml#/components/responses/ApiUnauthorized
+        "403":
+          $ref: ../common/common.yaml#/components/responses/ApiForbidden
+        "404":
+          $ref: ../common/common.yaml#/components/responses/ApiNotFound
+        "409":
+          $ref: ../common/common.yaml#/components/responses/ApiConflict
+components:
+  schemas:
+    WorkPlanRow:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - stageId
+        - amountMinor
+        - recipientId
+        - dueDate
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Идентификатор строки.
+          example: 1
+        stageId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Этап строки.
+          example: 1
+        amountMinor:
+          $ref: ../common/common.yaml#/components/schemas/WritableMoneyAmountMinor
+        recipientId:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 2147483647
+          description: Текущий получатель или null.
+          example: null
+        dueDate:
+          type:
+            - string
+            - "null"
+          format: date
+          description: Срок выплаты; не ограничен датами проекта.
+          example: null
+        version:
+          type: integer
+          minimum: 1
+          description: Версия строки.
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          example: 2026-10-12T08:00:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Время изменения.
+          example: 2026-10-12T08:00:00Z
+    CreateWorkPlanRow:
+      type: object
+      additionalProperties: false
+      required:
+        - amountMinor
+      properties:
+        amountMinor:
+          $ref: ../common/common.yaml#/components/schemas/WritableMoneyAmountMinor
+        recipientId:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 2147483647
+          description: Активный мастер или null.
+          example: null
+        dueDate:
+          type:
+            - string
+            - "null"
+          format: date
+          description: Срок выплаты или null.
+          example: null
+    UpdateWorkPlanRow:
+      type: object
+      additionalProperties: false
+      minProperties: 2
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
+        amountMinor:
+          $ref: ../common/common.yaml#/components/schemas/WritableMoneyAmountMinor
+        recipientId:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 2147483647
+          description: Новый получатель; прошлые выплаты не изменяются.
+          example: null
+        dueDate:
+          type:
+            - string
+            - "null"
+          format: date
+          description: Новый срок или null.
+          example: null
+    DeleteWorkPlanRow:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
+    DistributeWorkPlanRow:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+        - rows
+      properties:
+        expectedVersion:
+          $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
+        rows:
+          type: array
+          minItems: 2
+          items:
+            $ref: "#/components/schemas/CreateWorkPlanRow"
+          description: Новые строки с суммой, равной исходному плану.

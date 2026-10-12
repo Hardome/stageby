@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import type { ApiError } from '#app/generated/types.gen';
+import type { ApiError, UpdateMaterialInvoice } from '#app/generated/types.gen';
 import {
   zApiError,
   zCreateMaterialShortageBody,
@@ -75,7 +75,38 @@ function send<T>(reply: FastifyReply, result: MaterialOperationResult<T>, status
 }
 
 const responses = { 400: zApiError, 401: zApiError, 403: zApiError, 404: zApiError, 409: zApiError };
-const invoiceResponse = zStageMaterialInvoice.extend({ amountMinor: z.number().int().positive() });
+const invoiceResponse = zStageMaterialInvoice.extend({
+  amountMinor: z.number().int().positive(),
+  paidAmountMinor: z.number().int().positive().nullable(),
+});
+const updateInvoiceBody = zUpdateMaterialInvoiceBody
+  .strict()
+  .superRefine((body, context) => {
+    if (
+      body.paidAmountMinor !== undefined &&
+      (body.paidAmountMinor > BigInt(Number.MAX_SAFE_INTEGER) || body.paidAmountMinor % 100n !== 0n)
+    )
+      context.addIssue({
+        code: 'custom',
+        path: ['paidAmountMinor'],
+        message: 'Сумма должна быть безопасным целым числом и кратна 100 копейкам.',
+      });
+    if (body.isPaid === true && (body.paidAmountMinor === undefined || body.paidDate === undefined))
+      context.addIssue({ code: 'custom', message: 'Для оплаты обязательны фактическая сумма и дата.' });
+    if (body.isPaid !== true && (body.paidAmountMinor !== undefined || body.paidDate !== undefined))
+      context.addIssue({ code: 'custom', message: 'Сумма и дата передаются вместе с отметкой оплаты.' });
+    if (Object.values(body).filter((value) => value !== undefined).length < 2)
+      context.addIssue({ code: 'custom', message: 'Нужно передать изменяемое поле.' });
+  })
+  .transform(
+    (body): UpdateMaterialInvoice => ({
+      expectedVersion: body.expectedVersion,
+      ...(body.isPaid === undefined ? {} : { isPaid: body.isPaid }),
+      ...(body.isDelivered === undefined ? {} : { isDelivered: body.isDelivered }),
+      ...(body.paidAmountMinor === undefined ? {} : { paidAmountMinor: Number(body.paidAmountMinor) }),
+      ...(body.paidDate === undefined ? {} : { paidDate: body.paidDate }),
+    }),
+  );
 const invoiceBody = zCreateStageMaterialInvoiceBody
   .superRefine((body, context) => {
     if (body.amountMinor > BigInt(Number.MAX_SAFE_INTEGER)) {
@@ -133,14 +164,16 @@ export function registerMaterialRoutes(app: FastifyInstance, repository: Materia
     preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
     schema: {
       params: pathId('invoiceId', zUpdateMaterialInvoicePath),
-      body: zUpdateMaterialInvoiceBody,
+      body: updateInvoiceBody,
       response: { 200: invoiceResponse, ...responses },
     },
     handler: async (request, reply) => {
-      const body = request.body as z.infer<typeof zUpdateMaterialInvoiceBody>;
+      const body = request.body as z.infer<typeof updateInvoiceBody>;
       const input = {
         expectedVersion: body.expectedVersion,
         ...(body.isPaid === undefined ? {} : { isPaid: body.isPaid }),
+        ...(body.paidAmountMinor === undefined ? {} : { paidAmountMinor: body.paidAmountMinor }),
+        ...(body.paidDate === undefined ? {} : { paidDate: body.paidDate }),
         ...(body.isDelivered === undefined ? {} : { isDelivered: body.isDelivered }),
       };
       return send(

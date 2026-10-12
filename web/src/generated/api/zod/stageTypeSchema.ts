@@ -5,6 +5,6 @@
 
 import * as z from 'zod'
 
-export const stageTypeSchema = z.enum(['foundation', 'walls', 'roof', 'windows', 'facade', 'electrical', 'finishing', 'heating']).describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.').meta({ examples: ['foundation'] })
+export const stageTypeSchema = z.enum(['foundation', 'walls', 'roof', 'windows', 'facade', 'electrical', 'finishing', 'heating', 'additional']).describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.').meta({ examples: ['foundation'] })
 
 export type StageTypeSchemaType = z.infer<typeof stageTypeSchema>

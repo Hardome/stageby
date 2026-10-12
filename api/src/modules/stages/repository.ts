@@ -31,7 +31,9 @@ import type { AuditContext } from '#app/modules/audit/context';
 import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
 import { addCalendarDays, calendarDate } from '#app/modules/dashboard/calendar';
 import { isSupplyComplete, loadStageSummaries } from '#app/modules/materials/summary';
+import { stageDatesValid } from '#app/modules/stages/dates';
 import type { Actor, Database, OperationResult, StageOperationError } from '#app/modules/stages/types';
+import { preservesPaidInvariant } from '#app/modules/work-payments/paid-invariant';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
@@ -86,7 +88,9 @@ async function loadChecklist(database: Database | Transaction, stageId: number):
     ? await database
         .select({ status: stages.status })
         .from(stages)
-        .where(and(eq(stages.projectId, stage.projectId), lt(stages.position, stage.position)))
+        .where(
+          and(eq(stages.projectId, stage.projectId), eq(stages.isIncluded, true), lt(stages.position, stage.position)),
+        )
         .orderBy(desc(stages.position))
         .limit(1)
     : [];
@@ -177,6 +181,7 @@ async function loadStages(database: Database | Transaction, ids: number[]): Prom
         type: row.stage.stageTypeCode as Stage['type'],
         title: row.stageType.title as Stage['title'],
         position: row.stage.position,
+        isIncluded: row.stage.isIncluded,
         workSubtypes: row.stage.workSubtypes,
         assignee: row.assigneeId === null ? null : { id: row.assigneeId, fullName: row.assigneeName! },
         status: row.stage.status,
@@ -244,16 +249,20 @@ async function getStagePatchError(
   locked: LockedStage,
   input: UpdateStage,
 ): Promise<StageOperationError | null> {
-  if (['completed', 'paid'].includes(locked.stage.status)) return 'invalid_transition';
   const [project] = await transaction.select().from(projects).where(eq(projects.id, locked.stage.projectId));
-  const start = input.plannedStartDate ?? locked.stage.plannedStartDate;
-  const end = input.plannedEndDate ?? locked.stage.plannedEndDate;
-  if (end < start || start < project!.plannedStartDate || end > project!.plannedEndDate) return 'invalid_request';
-  if (input.assigneeId !== undefined) {
-    if (input.assigneeId === null && !['created', 'assigned'].includes(locked.stage.status))
-      return 'invalid_transition';
-    if (!(await isActiveForeman(transaction, input.assigneeId))) return 'invalid_request';
-  }
+  const start = input.plannedStartDate === undefined ? locked.stage.plannedStartDate : input.plannedStartDate;
+  const end = input.plannedEndDate === undefined ? locked.stage.plannedEndDate : input.plannedEndDate;
+  if (!stageDatesValid(start, end, project!.plannedStartDate, project!.plannedEndDate)) return 'invalid_request';
+  if (
+    !(await preservesPaidInvariant(transaction, {
+      ...locked.stage,
+      plannedWorkAmountMinor:
+        input.plannedWorkAmountMinor === undefined ? locked.stage.plannedWorkAmountMinor : input.plannedWorkAmountMinor,
+    }))
+  )
+    return 'invalid_transition';
+  if (input.assigneeId !== undefined && !(await isActiveForeman(transaction, input.assigneeId)))
+    return 'invalid_request';
   return null;
 }
 
@@ -379,13 +388,15 @@ export class StageRepository {
 
   async get(stageId: number, actor: Actor): Promise<OperationResult<Stage>> {
     const [stage] = await this.#database.select().from(stages).where(eq(stages.id, stageId));
-    if (!stage || !canRead(actor, stage.assigneeId)) return { status: 'not_found' };
+    if (!stage || (!stage.isIncluded && actor.role !== 'manager') || !canRead(actor, stage.assigneeId))
+      return { status: 'not_found' };
     return { status: 'ok', value: (await loadStage(this.#database, stageId))! };
   }
 
   async getChecklist(stageId: number, actor: Actor): Promise<OperationResult<Checklist>> {
     const [stage] = await this.#database.select().from(stages).where(eq(stages.id, stageId));
-    if (!stage || !canRead(actor, stage.assigneeId)) return { status: 'not_found' };
+    if (!stage || (!stage.isIncluded && actor.role !== 'manager') || !canRead(actor, stage.assigneeId))
+      return { status: 'not_found' };
     const checklist = await loadChecklist(this.#database, stageId);
     return checklist ? { status: 'ok', value: checklist } : { status: 'not_found' };
   }
@@ -393,6 +404,7 @@ export class StageRepository {
   async list(query: NonNullable<ListStagesData['query']>, actor: Actor): Promise<StagePage> {
     const { limit = 20, offset = 0 } = query;
     const where = and(
+      eq(stages.isIncluded, true),
       actor.role === 'manager' ? undefined : eq(stages.assigneeId, actor.id),
       query.projectId === undefined ? undefined : eq(stages.projectId, query.projectId),
       query.assigneeId === undefined ? undefined : eq(stages.assigneeId, query.assigneeId),
@@ -432,7 +444,11 @@ export class StageRepository {
       .select({ id: stages.id })
       .from(stages)
       .where(
-        and(eq(stages.projectId, projectId), actor.role === 'manager' ? undefined : eq(stages.assigneeId, actor.id)),
+        and(
+          eq(stages.projectId, projectId),
+          eq(stages.isIncluded, true),
+          actor.role === 'manager' ? undefined : eq(stages.assigneeId, actor.id),
+        ),
       )
       .orderBy(asc(stages.position), asc(stages.id));
     if (actor.role !== 'manager' && rows.length === 0) return { status: 'not_found' };
@@ -451,7 +467,7 @@ export class StageRepository {
     const rows = await this.#database
       .select({ type: stageTypes, template: checklistTemplates })
       .from(stageTypes)
-      .innerJoin(
+      .leftJoin(
         checklistTemplates,
         and(eq(checklistTemplates.stageTypeCode, stageTypes.code), eq(checklistTemplates.isActive, true)),
       )
@@ -466,26 +482,28 @@ export class StageRepository {
             .where(
               inArray(
                 checklistTemplateItems.checklistTemplateId,
-                rows.map((row) => row.template.id),
+                rows.flatMap((row) => (row.template ? [row.template.id] : [])),
               ),
             )
             .orderBy(asc(checklistTemplateItems.position), asc(checklistTemplateItems.id));
     const byTemplate = Map.groupBy(items, (item) => item.checklistTemplateId);
     return rows.flatMap(({ type, template }) => {
-      const checklistItems = (byTemplate.get(template.id) ?? []).map(({ id, position, title, photoHint }) => ({
-        id,
-        position,
-        title,
-        photoHint,
-      }));
-      return checklistItems.length === 0
+      const checklistItems = (template ? (byTemplate.get(template.id) ?? []) : []).map(
+        ({ id, position, title, photoHint }) => ({
+          id,
+          position,
+          title,
+          photoHint,
+        }),
+      );
+      return checklistItems.length === 0 && type.code !== 'additional'
         ? []
         : [
             {
               code: type.code as ActiveStageType['code'],
               title: type.title,
               position: type.position,
-              checklistTemplateId: template.id,
+              checklistTemplateId: template?.id ?? null,
               checklistItems,
             },
           ];
@@ -537,7 +555,7 @@ export class StageRepository {
         .for('update');
       if (!checklist) return { status: 'not_found' };
       if (checklist.version !== input.expectedVersion) return { status: 'version_conflict' };
-      if (!['created', 'assigned', 'supplied'].includes(locked.stage.status)) return { status: 'invalid_transition' };
+      if (locked.stage.actualStartDate !== null) return { status: 'invalid_transition' };
       const now = new Date();
       const active = and(eq(checklistItems.checklistId, checklist.id), isNull(checklistItems.deletedAt));
       await audit.mutate(checklistItems, active, () =>

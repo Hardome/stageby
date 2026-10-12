@@ -9,9 +9,9 @@ import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { stageTypeSchema } from './stageTypeSchema'
 
 export const createProjectStageSchema = z.object({
-  type: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.').meta({ examples: ['foundation'] }),
-  plannedStartDate: z.iso.date().describe('Плановое начало этапа внутри срока проекта.').meta({ examples: ['2026-10-05'] }),
-  plannedEndDate: z.iso.date().describe('Плановое окончание этапа внутри срока проекта, не раньше начала этапа.').meta({ examples: ['2026-10-30'] }),
+  type: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.').meta({ examples: ['foundation'] }),
+  plannedStartDate: z.iso.date().nullish().describe('Плановое начало этапа внутри срока проекта.').meta({ examples: ['2026-10-05'] }),
+  plannedEndDate: z.iso.date().nullish().describe('Плановое окончание этапа внутри срока проекта, не раньше начала этапа.').meta({ examples: ['2026-10-30'] }),
   assigneeId: z.int().min(1).max(2147483647).nullable().describe('Активный мастер этапа; null — мастер пока не назначен.').meta({ examples: [17, ] }),
   plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
   plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
