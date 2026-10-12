@@ -35,6 +35,8 @@ export default defineConfig(
       'react-hooks/exhaustive-deps': 'off',
       'react-hooks/rules-of-hooks': 'off',
       'sonarjs/cognitive-complexity': 'off',
+      // SonarJS uses TypeScript 6 type flags, but the project parser uses TypeScript 5.
+      'sonarjs/null-dereference': 'off',
       'sonarjs/no-skipped-tests': 'off',
       'unicorn/filename-case': 'off',
       'unicorn/no-array-for-each': 'off',

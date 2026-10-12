@@ -34,7 +34,8 @@ function ToastList() {
               toast={item}
               data-type={item.type}
               className={cn(
-                'pointer-events-auto flex items-start gap-3 rounded-lg border bg-popover p-3',
+                'pointer-events-auto flex gap-3 rounded-lg border bg-popover p-3',
+                item.description ? 'items-start' : 'items-center',
                 'text-popover-foreground shadow-lg data-[type=error]:border-destructive-border',
                 'data-[type=error]:bg-destructive-subtle data-[type=error]:text-destructive',
                 'data-[type=success]:border-success-border data-[type=success]:bg-success-subtle',
@@ -43,7 +44,7 @@ function ToastList() {
               )}
             >
               <Icon
-                className="mt-0.5 size-5 shrink-0 data-[type=loading]:animate-spin"
+                className={cn('size-5 shrink-0 data-[type=loading]:animate-spin', item.description && 'mt-0.5')}
                 data-type={item.type}
                 aria-hidden="true"
               />
@@ -57,7 +58,7 @@ function ToastList() {
               <ToastPrimitive.Close
                 render={<Button variant="ghost" size="icon" />}
                 aria-label="Закрыть уведомление"
-                className="size-8 shrink-0"
+                className={cn('shrink-0', item.description ? 'size-8' : 'size-5')}
               >
                 <XIcon aria-hidden="true" />
               </ToastPrimitive.Close>

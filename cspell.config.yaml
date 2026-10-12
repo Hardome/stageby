@@ -17,6 +17,7 @@ words:
   - isready
   - Kubb
   - nosniff
+  - nonoptional
   - Redocly
   - regnamespace
   - schemaname
@@ -34,6 +35,7 @@ words:
   - xact
   - автоинкремент
   - агрегируются
+  - бэкенда
   - включённость
   - включённости
   - дашборд
