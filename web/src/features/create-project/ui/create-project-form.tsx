@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -35,8 +35,8 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
   });
 
   const navigation = useProjectNavigation(form);
-  const { screen, stages, step, title, description, nextLabel, revealErrors } = navigation;
-  const formElement = useRef<HTMLFormElement>(null);
+  const { screen, stages, step, title, description, nextLabel, revealErrors, focusErrors, registerErrorGroup, back } =
+    navigation;
   const accessError = useAccessError();
   const uploads = useDocuments({ onAccessError: accessError });
 
@@ -56,10 +56,6 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
   const isLocked = submission.isPending || submission.hasSnapshot;
   const hasUnfinishedUploads = uploads.documents.some((document) => document.status !== 'uploaded');
 
-  useEffect(() => {
-    if (navigation.focusRequest > 0) formElement.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
-  }, [navigation.focusRequest]);
-
   function next() {
     if (!isLocked) void navigation.next();
   }
@@ -75,7 +71,7 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
   return (
     <FormProvider {...form}>
       <form
-        ref={formElement}
+        ref={focusErrors}
         noValidate
         className="flex min-w-0 flex-col gap-6"
         onSubmit={(event) => {
@@ -110,7 +106,13 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
             <CardDescription>{description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <ProjectStep screen={screen} stages={stages} isLocked={isLocked} uploads={uploads} />
+            <ProjectStep
+              screen={screen}
+              stages={stages}
+              isLocked={isLocked}
+              uploads={uploads}
+              registerErrorGroup={registerErrorGroup}
+            />
             {screen !== 'object' && hasUnfinishedUploads && <UnfinishedUploadsWarning />}
           </CardContent>
         </Card>
@@ -125,7 +127,7 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
           hasConflict={submission.hasConflict}
           hasUnfinishedUploads={hasUnfinishedUploads}
           onCancel={onCancel}
-          onBack={navigation.back}
+          onBack={back}
         />
       </form>
     </FormProvider>

@@ -12,9 +12,10 @@ import { ProjectField } from './project-field';
 interface StageEditorProperties {
   index: number;
   disabled: boolean;
+  registerErrorGroup: (element: HTMLElement | null) => void;
 }
 
-export function StageEditor({ index, disabled }: StageEditorProperties) {
+export function StageEditor({ index, disabled, registerErrorGroup }: StageEditorProperties) {
   const { control, setValue, getFieldState, formState } = useFormContext<ProjectFormValues>();
   const checklist = useFieldArray({ control, name: `stages.${index}.checklistItems` });
   const [start, end, assigneeName] = useWatch({
@@ -77,6 +78,9 @@ export function StageEditor({ index, disabled }: StageEditorProperties) {
         />
       </FieldGroup>
       <FieldSet
+        ref={(element) => {
+          registerErrorGroup(element);
+        }}
         tabIndex={-1}
         aria-invalid={Boolean(checklistError?.message)}
         aria-describedby={checklistError?.message ? `checklist-${index}-error` : undefined}

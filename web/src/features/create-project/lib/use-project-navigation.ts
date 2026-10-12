@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
-import { type UseFormReturn, useWatch } from 'react-hook-form';
+import { type FieldPath, type UseFormReturn, useWatch } from 'react-hook-form';
 
 import { projectObjectFields } from '../model/data';
 import type { ProjectFormValues } from '../model/types';
+import { firstErrorPath } from './first-error-path';
 
 type ProjectScreen = 'object' | 'selection' | number;
 type StageSummary = Pick<ProjectFormValues['stages'][number], 'type' | 'title' | 'enabled'>;
@@ -36,6 +37,8 @@ function screenDetails(screen: ProjectScreen, stages: StageSummary[], selectedIn
 export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
   const [screen, setScreen] = useState<ProjectScreen>('object');
   const [focusRequest, setFocusRequest] = useState(0);
+  const errorGroupReference = useRef<HTMLElement>(null);
+  const handledFocusRequest = useRef(0);
   const stages = useWatch({
     control: form.control,
     name: 'stages',
@@ -45,6 +48,24 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
   const position = typeof screen === 'number' ? stages.slice(0, screen).filter((stage) => stage.enabled).length : -1;
   const nextIndex = selectedIndexes[position + 1];
   const previousIndex = selectedIndexes[position - 1];
+  const registerErrorGroup = useCallback((element: HTMLElement | null) => {
+    errorGroupReference.current = element;
+  }, []);
+
+  const focusErrors = useCallback(
+    (element: HTMLFormElement | null) => {
+      if (!element || focusRequest === handledFocusRequest.current) return;
+      handledFocusRequest.current = focusRequest;
+      const errors = form.formState.errors;
+      const field =
+        typeof screen === 'number'
+          ? firstErrorPath(errors.stages?.[screen], `stages.${screen}`)
+          : firstErrorPath(errors);
+      if (screen === 'selection' || field?.endsWith('.checklistItems')) errorGroupReference.current?.focus();
+      else if (field) form.setFocus(field as FieldPath<ProjectFormValues>);
+    },
+    [focusRequest, screen, form],
+  );
 
   function focusError() {
     setFocusRequest((request) => request + 1);
@@ -101,6 +122,8 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
     screen,
     stages,
     focusRequest,
+    focusErrors,
+    registerErrorGroup,
     ...screenDetails(screen, stages, selectedIndexes, position),
     next,
     selectStep,

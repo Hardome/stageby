@@ -42,9 +42,10 @@ export function ObjectStep({ isLocked, uploads }: ObjectStepProperties) {
 interface StagesStepProperties {
   stages: Pick<ProjectFormValues['stages'][number], 'type' | 'title' | 'enabled'>[];
   isLocked: boolean;
+  registerErrorGroup: (element: HTMLElement | null) => void;
 }
 
-export function StagesStep({ stages, isLocked }: StagesStepProperties) {
+export function StagesStep({ stages, isLocked, registerErrorGroup }: StagesStepProperties) {
   const {
     control,
     clearErrors,
@@ -67,7 +68,10 @@ export function StagesStep({ stages, isLocked }: StagesStepProperties) {
               name={`stages.${index}.enabled`}
               render={({ field }) => (
                 <Checkbox
-                  ref={field.ref}
+                  ref={(element) => {
+                    field.ref(element);
+                    if (index === 0) registerErrorGroup(element);
+                  }}
                   id={`include-${stage.type}`}
                   checked={field.value}
                   onCheckedChange={(checked) => {
@@ -102,16 +106,22 @@ interface ProjectStepProperties extends ObjectStepProperties, StagesStepProperti
   screen: 'object' | 'selection' | number;
 }
 
-export function ProjectStep({ screen, stages, isLocked, uploads }: ProjectStepProperties) {
+export function ProjectStep({ screen, stages, isLocked, uploads, registerErrorGroup }: ProjectStepProperties) {
   const {
     formState: { errors },
   } = useFormContext<ProjectFormValues>();
   if (screen === 'object') return <ObjectStep isLocked={isLocked} uploads={uploads} />;
-  if (screen === 'selection') return <StagesStep stages={stages} isLocked={isLocked} />;
+  if (screen === 'selection')
+    return <StagesStep stages={stages} isLocked={isLocked} registerErrorGroup={registerErrorGroup} />;
   return (
     <>
       {errors.stages?.[screen]?.message && <FieldError>{errors.stages[screen].message}</FieldError>}
-      <StageEditor key={stages[screen]?.type} index={screen} disabled={isLocked} />
+      <StageEditor
+        key={stages[screen]?.type}
+        index={screen}
+        disabled={isLocked}
+        registerErrorGroup={registerErrorGroup}
+      />
     </>
   );
 }

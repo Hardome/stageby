@@ -1,5 +1,6 @@
 import { completeFileUpload } from '@api/clients/completeFileUpload';
 import { createFileUpload } from '@api/clients/createFileUpload';
+import type { ApiError } from '@api/types';
 import { createFileUploadSchema as fileUploadSchema } from '@api/zod/createFileUploadSchema';
 
 import type { DocumentUpload } from '../model/types';
@@ -25,6 +26,23 @@ export async function uploadDocument(document: DocumentUpload, update: (values: 
     ).join('');
 
   let session = document.session;
+  let key = document.key;
+
+  if (session && Date.parse(session.expiresAt) <= Date.now()) {
+    try {
+      const file = await completeFileUpload({
+        path: { uploadId: session.fileId },
+        body: { checksumSha256: checksum },
+        headers: { 'Idempotency-Key': key },
+      }).unwrap();
+      update({ fileId: file.id, status: 'uploaded', error: undefined });
+      return;
+    } catch (error) {
+      const failure = error as { status?: number; data?: ApiError } | null;
+      if (failure?.status !== 409 || failure.data?.code !== 'upload_expired') throw error;
+    }
+    key = crypto.randomUUID();
+  }
 
   if (!session || Date.parse(session.expiresAt) <= Date.now()) {
     session = await createFileUpload({
@@ -38,7 +56,7 @@ export async function uploadDocument(document: DocumentUpload, update: (values: 
     }).unwrap();
   }
 
-  update({ session, checksum });
+  update({ session, checksum, key });
 
   const response = await fetch(session.uploadUrl, {
     method: session.method,
@@ -52,7 +70,7 @@ export async function uploadDocument(document: DocumentUpload, update: (values: 
   const file = await completeFileUpload({
     path: { uploadId: session.fileId },
     body: { checksumSha256: checksum },
-    headers: { 'Idempotency-Key': document.key },
+    headers: { 'Idempotency-Key': key },
   }).unwrap();
 
   update({ fileId: file.id, status: 'uploaded', error: undefined });
