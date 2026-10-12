@@ -19,6 +19,7 @@ import { type AuditWriter, auditedTransaction } from '#app/modules/audit/reposit
 import { getMaximumSize } from '#app/modules/files/policy';
 import { isSupplyComplete, loadStageSummaries } from '#app/modules/materials/summary';
 import type { Actor, Database, MaterialOperationError, MaterialOperationResult } from '#app/modules/materials/types';
+import { lockProjectStage } from '#app/modules/stages/lock';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 type Db = Database | Transaction;
@@ -44,7 +45,8 @@ function canRead(actor: Actor, assigneeId: number | null): boolean {
   return actor.role === 'manager' || assigneeId === actor.id;
 }
 
-async function stageContextByStage(db: Db, stageId: number) {
+async function stageContextByStage(db: Db, stageId: number, lock = false) {
+  if (lock) return lockProjectStage(db as Transaction, stageId);
   const [row] = await db
     .select({ stage: stages, isArchived: projects.isArchived })
     .from(stages)
@@ -53,13 +55,17 @@ async function stageContextByStage(db: Db, stageId: number) {
   return row;
 }
 
-async function stageContextByInvoice(db: Db, invoiceId: number) {
+async function stageContextByInvoice(db: Db, invoiceId: number, lock = false) {
   const [row] = await db
     .select({ invoice: materialInvoices, stage: stages, isArchived: projects.isArchived })
     .from(materialInvoices)
     .innerJoin(stages, eq(materialInvoices.stageId, stages.id))
     .innerJoin(projects, eq(stages.projectId, projects.id))
     .where(eq(materialInvoices.id, invoiceId));
+  if (lock && row) {
+    const locked = await lockProjectStage(db as Transaction, row.stage.id);
+    return locked ? { invoice: row.invoice, ...locked } : undefined;
+  }
   return row;
 }
 
@@ -120,6 +126,8 @@ async function loadInvoices(db: Db, stageId: number): Promise<StageMaterialInvoi
     fileId: row.invoice.fileId,
     supplierName: row.invoice.supplierName,
     amountMinor: Number(row.invoice.amountMinor),
+    paidAmountMinor: row.invoice.paidAmountMinor,
+    paidDate: row.invoice.paidDate,
     paidAt: row.invoice.paidAt?.toISOString() ?? null,
     paidBy: brief(row.paidById, row.paidByName),
     deliveredAt: row.invoice.deliveredAt?.toISOString() ?? null,
@@ -146,19 +154,28 @@ async function syncSupplyStatus(transaction: Transaction, stageId: number, audit
   }
 }
 
+function invoicePaidUpdate(
+  invoice: typeof materialInvoices.$inferSelect,
+  input: UpdateMaterialInvoice,
+  actor: Actor,
+  now: Date,
+) {
+  if (input.isPaid === undefined) return {};
+  return {
+    paidAt: input.isPaid ? (invoice.paidAt ?? now) : null,
+    paidByUserId: input.isPaid ? (invoice.paidByUserId ?? actor.id) : null,
+    paidAmountMinor: input.isPaid ? input.paidAmountMinor! : null,
+    paidDate: input.isPaid ? input.paidDate! : null,
+  };
+}
+
 function invoiceStateUpdate(
   invoice: typeof materialInvoices.$inferSelect,
   input: UpdateMaterialInvoice,
   actor: Actor,
   now: Date,
 ) {
-  const paid =
-    input.isPaid === undefined
-      ? {}
-      : {
-          paidAt: input.isPaid ? (invoice.paidAt ?? now) : null,
-          paidByUserId: input.isPaid ? (invoice.paidByUserId ?? actor.id) : null,
-        };
+  const paid = invoicePaidUpdate(invoice, input, actor, now);
   const delivered =
     input.isDelivered === undefined
       ? {}
@@ -167,6 +184,15 @@ function invoiceStateUpdate(
           deliveredByUserId: input.isDelivered ? (invoice.deliveredByUserId ?? actor.id) : null,
         };
   return { ...paid, ...delivered, version: sql`${materialInvoices.version} + 1`, updatedAt: now };
+}
+
+function invoicePaymentError(input: UpdateMaterialInvoice, actor: Actor): MaterialOperationError | null {
+  const hasPaymentFields = input.paidAmountMinor !== undefined || input.paidDate !== undefined;
+  if (actor.role === 'foreman' && (input.isPaid !== undefined || hasPaymentFields)) return 'forbidden';
+  if (input.isPaid === true && (input.paidAmountMinor === undefined || input.paidDate === undefined))
+    return 'invalid_request';
+  if (input.isPaid !== true && hasPaymentFields) return 'invalid_request';
+  return null;
 }
 
 async function getInvoiceFileError(transaction: Transaction, fileId: number): Promise<MaterialOperationError | null> {
@@ -200,9 +226,8 @@ export class MaterialRepository {
     context: AuditContext = { source: 'system' },
   ): Promise<MaterialOperationResult<StageMaterialInvoice>> {
     return auditedTransaction(this.database, context, 'createMaterialInvoice', async (transaction, audit) => {
-      const stageContext = await stageContextByStage(transaction, stageId);
-      if (!stageContext) return { status: 'not_found' };
-      await transaction.select({ id: stages.id }).from(stages).where(eq(stages.id, stageId)).for('update');
+      const stageContext = await stageContextByStage(transaction, stageId, true);
+      if (!stageContext || !stageContext.stage.isIncluded) return { status: 'not_found' };
       if (stageContext.isArchived) return { status: 'project_archived' };
       // Lock the file before checking its unique attachment, including retries on another stage.
       await transaction.select({ id: files.id }).from(files).where(eq(files.id, input.fileId)).for('update');
@@ -221,7 +246,7 @@ export class MaterialRepository {
         .select({ count: sql<number>`count(*)`.mapWith(Number) })
         .from(materialInvoices)
         .where(eq(materialInvoices.stageId, stageId));
-      if ((invoiceCount?.count ?? 0) >= maximumInvoicesPerStage) return { status: 'invoice_limit_exceeded' };
+      if (invoiceCount!.count >= maximumInvoicesPerStage) return { status: 'invoice_limit_exceeded' };
       const fileError = await getInvoiceFileError(transaction, input.fileId);
       if (fileError) return { status: fileError };
       const [invoice] = await audit.created(
@@ -249,16 +274,18 @@ export class MaterialRepository {
     context: AuditContext = { source: 'system' },
   ): Promise<MaterialOperationResult<StageMaterialInvoice>> {
     return auditedTransaction(this.database, context, 'updateMaterialInvoice', async (transaction, audit) => {
+      const stageContext = await stageContextByInvoice(transaction, invoiceId, true);
       const [invoice] = await transaction
         .select()
         .from(materialInvoices)
         .where(eq(materialInvoices.id, invoiceId))
         .for('update');
-      const stageContext = await stageContextByInvoice(transaction, invoiceId);
       if (!invoice || !stageContext || !canRead(actor, stageContext.stage.assigneeId)) return { status: 'not_found' };
+      if (!stageContext.stage.isIncluded) return { status: 'not_found' };
       if (stageContext.isArchived) return { status: 'project_archived' };
       if (invoice.version !== input.expectedVersion) return { status: 'version_conflict' };
-      if (actor.role === 'foreman' && input.isPaid !== undefined) return { status: 'forbidden' };
+      const paymentError = invoicePaymentError(input, actor);
+      if (paymentError) return { status: paymentError };
       await audit.mutate(materialInvoices, eq(materialInvoices.id, invoiceId), () =>
         transaction
           .update(materialInvoices)
@@ -278,8 +305,9 @@ export class MaterialRepository {
     context: AuditContext = { source: 'system' },
   ): Promise<MaterialOperationResult<MaterialShortage>> {
     return auditedTransaction(this.database, context, 'createMaterialShortage', async (transaction, audit) => {
-      const stageContext = await stageContextByInvoice(transaction, invoiceId);
+      const stageContext = await stageContextByInvoice(transaction, invoiceId, true);
       if (!stageContext || !canRead(actor, stageContext.stage.assigneeId)) return { status: 'not_found' };
+      if (!stageContext.stage.isIncluded) return { status: 'not_found' };
       if (stageContext.isArchived) return { status: 'project_archived' };
       const [shortage] = await audit.created(
         materialShortages,
@@ -300,14 +328,17 @@ export class MaterialRepository {
     context: AuditContext = { source: 'system' },
   ): Promise<MaterialOperationResult<MaterialShortage>> {
     return auditedTransaction(this.database, context, 'resolveMaterialShortage', async (transaction, audit) => {
+      const [initial] = await transaction.select().from(materialShortages).where(eq(materialShortages.id, shortageId));
+      if (!initial) return { status: 'not_found' };
+      const stageContext = await stageContextByInvoice(transaction, initial.invoiceId, true);
       const [shortage] = await transaction
         .select()
         .from(materialShortages)
         .where(eq(materialShortages.id, shortageId))
         .for('update');
       if (!shortage) return { status: 'not_found' };
-      const stageContext = await stageContextByInvoice(transaction, shortage.invoiceId);
       if (!stageContext) return { status: 'not_found' };
+      if (!stageContext.stage.isIncluded) return { status: 'not_found' };
       if (stageContext.isArchived) return { status: 'project_archived' };
       if (shortage.version !== input.expectedVersion) return { status: 'version_conflict' };
       if (shortage.resolvedAt !== null) return { status: 'invalid_transition' };

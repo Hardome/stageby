@@ -8,7 +8,7 @@ import * as z from 'zod';
 export const zExpectedVersion = z.int().gte(1);
 
 /**
- * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
+ * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.
  */
 export const zStageType = z.enum([
     'foundation',
@@ -18,7 +18,8 @@ export const zStageType = z.enum([
     'facade',
     'electrical',
     'finishing',
-    'heating'
+    'heating',
+    'additional'
 ]);
 
 /**
@@ -62,6 +63,54 @@ export const zApiErrorCode = z.enum([
 ]);
 
 /**
+ * Денежная сумма в копейках, вводимая пользователем. В первой версии принимает только целые рубли.
+ */
+export const zWritableMoneyAmountMinor = z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' });
+
+export const zWorkPlanRow = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    stageId: z.int().gte(1).lte(2147483647),
+    amountMinor: zWritableMoneyAmountMinor,
+    recipientId: z.int().gte(1).lte(2147483647).nullable(),
+    dueDate: z.iso.date().nullable(),
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zApiError = z.object({
+    error: z.string().min(1).max(255),
+    code: zApiErrorCode,
+    message: z.string().min(1).max(2000),
+    details: z.array(z.object({
+        path: z.string().min(1).max(255),
+        message: z.string().min(1).max(1000)
+    })).optional()
+});
+
+export const zCreateWorkPlanRow = z.object({
+    amountMinor: zWritableMoneyAmountMinor,
+    recipientId: z.int().gte(1).lte(2147483647).nullish(),
+    dueDate: z.iso.date().nullish()
+});
+
+export const zDeleteWorkPlanRow = z.object({
+    expectedVersion: zExpectedVersion
+});
+
+export const zUpdateWorkPlanRow = z.object({
+    expectedVersion: zExpectedVersion,
+    amountMinor: zWritableMoneyAmountMinor.optional(),
+    recipientId: z.int().gte(1).lte(2147483647).nullish(),
+    dueDate: z.iso.date().nullish()
+});
+
+export const zDistributeWorkPlanRow = z.object({
+    expectedVersion: zExpectedVersion,
+    rows: z.array(zCreateWorkPlanRow).min(2)
+});
+
+/**
  * manager — руководитель; foreman — мастер/исполнитель.
  */
 export const zUserRole = z.enum(['manager', 'foreman']);
@@ -86,16 +135,6 @@ export const zUserPage = z.object({
     total: z.int().gte(0),
     limit: z.int().gte(1).lte(100),
     offset: z.int().gte(0)
-});
-
-export const zApiError = z.object({
-    error: z.string().min(1).max(255),
-    code: zApiErrorCode,
-    message: z.string().min(1).max(2000),
-    details: z.array(z.object({
-        path: z.string().min(1).max(255),
-        message: z.string().min(1).max(1000)
-    })).optional()
 });
 
 export const zCreateUser = z.object({
@@ -176,7 +215,11 @@ export const zCoordinates = z.object({
     longitude: z.number().gte(-180).lte(180)
 });
 
+/**
+ * Реквизиты, версия и вычисленные итоги объекта.
+ */
 export const zProject = z.object({
+    version: zExpectedVersion,
     status: zProjectStatus,
     finances: zProjectFinancialSummary,
     documentFileIds: z.array(z.int().gte(1).lte(2147483647)),
@@ -209,16 +252,16 @@ export const zCreateProjectChecklistItem = z.object({
 
 export const zCreateProjectStage = z.object({
     type: zStageType,
-    plannedStartDate: z.iso.date(),
-    plannedEndDate: z.iso.date(),
-    assigneeId: z.int().gte(1).lte(2147483647).nullable(),
-    plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
-    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
+    plannedStartDate: z.iso.date().nullish(),
+    plannedEndDate: z.iso.date().nullish(),
+    assigneeId: z.int().gte(1).lte(2147483647).nullish(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.optional(),
     checklistItems: z.array(zCreateProjectChecklistItem).min(1).optional()
 });
 
 export const zCreateProject = z.object({
-    ownerName: z.string().min(1).max(255),
+    ownerName: z.string().min(1).max(150),
     address: z.string().min(1).max(1000),
     coordinates: zCoordinates,
     cadastralNumber: z.string().min(1).max(100).nullish(),
@@ -231,8 +274,95 @@ export const zCreateProject = z.object({
     notes: z.string().min(1).max(5000).nullish()
 });
 
+/**
+ * ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
+ */
+export const zAssigneeId = z.int().gte(1).lte(2147483647).nullable();
+
+/**
+ * Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта.
+ */
+export const zPlannedStartDate = z.iso.date().nullable();
+
+/**
+ * Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся.
+ */
+export const zPlannedEndDate = z.iso.date().nullable();
+
+/**
+ * Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
+ */
+export const zWorkSubtypes = z.array(z.string().min(1).max(255)).max(30);
+
+/**
+ * Новые примечания к этапу; null очищает сохранённые примечания.
+ */
+export const zNotes = z.string().min(1).max(5000).nullable();
+
+/**
+ * Новый состав индивидуального чек-листа до фактического старта.
+ */
+export const zConfigureChecklist = z.object({
+    expectedVersion: zExpectedVersion,
+    items: z.array(z.object({
+        title: z.string().min(1).max(500),
+        photoHint: z.string().min(1).max(1000).nullish()
+    })).min(1)
+});
+
+/**
+ * Активный мастер или null.
+ */
+export const zRecipientId = z.int().gte(1).lte(2147483647).nullable();
+
+/**
+ * Срок выплаты или null.
+ */
+export const zDueDate = z.iso.date().nullable();
+
+export const zProjectWorkPlanRowChange = z.object({
+    id: z.int().gte(1).lte(2147483647).optional(),
+    expectedVersion: zExpectedVersion.optional(),
+    amountMinor: zWritableMoneyAmountMinor.optional(),
+    recipientId: zRecipientId.optional(),
+    dueDate: zDueDate.optional(),
+    delete: z.literal(true).optional(),
+    distribute: z.array(zCreateWorkPlanRow).min(2).optional()
+});
+
+export const zUpdateProjectStage = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    expectedVersion: zExpectedVersion,
+    isIncluded: z.boolean().optional(),
+    assigneeId: zAssigneeId.optional(),
+    plannedStartDate: zPlannedStartDate.optional(),
+    plannedEndDate: zPlannedEndDate.optional(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    workSubtypes: zWorkSubtypes.optional(),
+    notes: zNotes.optional(),
+    checklist: zConfigureChecklist.optional(),
+    workPlanRows: z.array(zProjectWorkPlanRowChange).optional()
+});
+
+/**
+ * Новый additional на последней позиции. Если запись уже существует, используйте stages с её ID для восстановления.
+ */
+export const zCreateAdditionalStage = z.object({
+    assigneeId: zAssigneeId.optional(),
+    plannedStartDate: zPlannedStartDate.optional(),
+    plannedEndDate: zPlannedEndDate.optional(),
+    plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.optional(),
+    checklistItems: z.array(zCreateProjectChecklistItem).min(1)
+});
+
 export const zUpdateProject = z.object({
-    ownerName: z.string().min(1).max(255).optional(),
+    expectedVersion: zExpectedVersion,
+    documentFileIds: z.array(z.int().gte(1).lte(2147483647)).optional(),
+    stages: z.array(zUpdateProjectStage).max(9).optional(),
+    additionalStage: zCreateAdditionalStage.optional(),
+    ownerName: z.string().min(1).max(150).optional(),
     address: z.string().min(1).max(1000).optional(),
     coordinates: zCoordinates.optional(),
     cadastralNumber: z.string().min(1).max(100).nullish(),
@@ -242,21 +372,6 @@ export const zUpdateProject = z.object({
     plannedEndDate: z.iso.date().optional(),
     notes: z.string().min(1).max(5000).nullish(),
     isArchived: z.boolean().optional()
-});
-
-export const zChecklistTemplateItem = z.object({
-    id: z.int().gte(1).lte(2147483647),
-    position: z.int().gte(1),
-    title: z.string().min(1).max(500),
-    photoHint: z.string().min(1).max(1000).nullable()
-});
-
-export const zActiveStageType = z.object({
-    code: zStageType,
-    title: z.string().min(1).max(255),
-    position: z.int().gte(1).lte(8),
-    checklistTemplateId: z.int().gte(1).lte(2147483647),
-    checklistItems: z.array(zChecklistTemplateItem).min(1)
 });
 
 /**
@@ -297,6 +412,9 @@ export const zAcceptance = z.object({
     decidedAt: z.iso.datetime()
 });
 
+/**
+ * Параметры, финансовые итоги и версия этапа.
+ */
 export const zStage = z.object({
     id: z.int().gte(1).lte(2147483647),
     projectId: z.int().gte(1).lte(2147483647),
@@ -313,14 +431,16 @@ export const zStage = z.object({
         'Фасад',
         'Электрика',
         'Штукатурка',
-        'Отопление'
+        'Отопление',
+        'Дополнительный этап'
     ]),
-    position: z.int().gte(1).lte(8),
+    position: z.int().gte(1).lte(9),
+    isIncluded: z.boolean(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30),
     assignee: zUserBrief.nullable(),
     status: zStageStatus,
-    plannedStartDate: z.iso.date(),
-    plannedEndDate: z.iso.date(),
+    plannedStartDate: z.iso.date().nullable(),
+    plannedEndDate: z.iso.date().nullable(),
     plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
     actualWorkAmountMinor: zMoneyAmountMinor.readonly(),
     workBalanceAmountMinor: zSignedMoneyAmountMinor.readonly(),
@@ -340,6 +460,60 @@ export const zStage = z.object({
     updatedAt: z.iso.datetime()
 });
 
+export const zChecklistItem = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    title: z.string().min(1).max(500),
+    photoHint: z.string().min(1).max(1000).nullable(),
+    position: z.int().gte(1),
+    isCompleted: z.boolean(),
+    requiresRework: z.boolean(),
+    photoCount: z.int().gte(0).lte(20),
+    photosDeletedByRetention: z.boolean(),
+    reworkComment: z.string().nullable(),
+    completedAt: z.iso.datetime().nullable(),
+    completedBy: zUserBrief.nullable()
+});
+
+/**
+ * Индивидуальный чек-лист этапа с версией и состоянием пунктов.
+ */
+export const zChecklist = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    stageId: z.int().gte(1).lte(2147483647),
+    items: z.array(zChecklistItem),
+    progressPercent: z.int().gte(0).lte(100),
+    warnings: z.array(z.enum(['materials_incomplete', 'predecessor_incomplete'])),
+    version: z.int().gte(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+});
+
+export const zProjectEditStage = z.object({
+    stage: zStage,
+    checklist: zChecklist,
+    workPlanRows: z.array(zWorkPlanRow)
+});
+
+export const zProjectEdit = z.object({
+    project: zProject,
+    stages: z.array(zProjectEditStage)
+});
+
+export const zChecklistTemplateItem = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    position: z.int().gte(1),
+    title: z.string().min(1).max(500),
+    photoHint: z.string().min(1).max(1000).nullable()
+});
+
+export const zActiveStageType = z.object({
+    code: zStageType,
+    title: z.string().min(1).max(255),
+    position: z.int().gte(1).lte(9),
+    checklistTemplateId: z.int().gte(1).lte(2147483647).nullable(),
+    checklistItems: z.array(zChecklistTemplateItem).min(0)
+});
+
 export const zStagePage = z.object({
     items: z.array(zStage),
     total: z.int().gte(0),
@@ -348,7 +522,7 @@ export const zStagePage = z.object({
 });
 
 export const zProjectStages = z.object({
-    items: z.array(zStage).max(8)
+    items: z.array(zStage).max(9)
 });
 
 export const zUpdateStage = z.object({
@@ -357,8 +531,8 @@ export const zUpdateStage = z.object({
     plannedWorkAmountMinor: zPlannedMoneyAmountMinor.optional(),
     plannedMaterialAmountMinor: zPlannedMoneyAmountMinor.optional(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30).optional(),
-    plannedStartDate: z.iso.date().optional(),
-    plannedEndDate: z.iso.date().optional(),
+    plannedStartDate: z.iso.date().nullish(),
+    plannedEndDate: z.iso.date().nullish(),
     notes: z.string().min(1).max(5000).nullish()
 });
 
@@ -379,39 +553,6 @@ export const zRejectStage = z.object({
     itemIds: z.array(z.int().gte(1).lte(2147483647)).min(1)
 });
 
-export const zChecklistItem = z.object({
-    id: z.int().gte(1).lte(2147483647),
-    title: z.string().min(1).max(500),
-    photoHint: z.string().min(1).max(1000).nullable(),
-    position: z.int().gte(1),
-    isCompleted: z.boolean(),
-    requiresRework: z.boolean(),
-    photoCount: z.int().gte(0).lte(20),
-    photosDeletedByRetention: z.boolean(),
-    reworkComment: z.string().nullable(),
-    completedAt: z.iso.datetime().nullable(),
-    completedBy: zUserBrief.nullable()
-});
-
-export const zChecklist = z.object({
-    id: z.int().gte(1).lte(2147483647),
-    stageId: z.int().gte(1).lte(2147483647),
-    items: z.array(zChecklistItem),
-    progressPercent: z.int().gte(0).lte(100),
-    warnings: z.array(z.enum(['materials_incomplete', 'predecessor_incomplete'])),
-    version: z.int().gte(1),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime()
-});
-
-export const zConfigureChecklist = z.object({
-    expectedVersion: zExpectedVersion,
-    items: z.array(z.object({
-        title: z.string().min(1).max(500),
-        photoHint: z.string().min(1).max(1000).nullish()
-    })).min(1)
-});
-
 /**
  * Положительная сумма платежа или счёта в копейках. В первой версии минимум 100 копеек и только целые рубли.
  */
@@ -420,6 +561,7 @@ export const zPositiveMoneyAmountMinor = z.coerce.bigint().gte(BigInt(100)).max(
 export const zWorkPayment = z.object({
     id: z.int().gte(1).lte(2147483647),
     stageId: z.int().gte(1).lte(2147483647),
+    workPlanRowId: z.int().gte(1).lte(2147483647),
     paidAt: z.iso.date(),
     amountMinor: zPositiveMoneyAmountMinor,
     comment: z.string().min(1).max(1000).nullable(),
@@ -431,7 +573,7 @@ export const zWorkPayment = z.object({
 });
 
 export const zCreateWorkPayment = z.object({
-    recipientId: z.int().gte(1).lte(2147483647),
+    workPlanRowId: z.int().gte(1).lte(2147483647),
     paidAt: z.iso.date(),
     amountMinor: zPositiveMoneyAmountMinor,
     comment: z.string().min(1).max(1000).nullish()
@@ -467,6 +609,8 @@ export const zStageMaterialInvoice = z.object({
     fileId: z.int().gte(1).lte(2147483647),
     supplierName: z.string().min(1).max(255).nullable(),
     amountMinor: zPositiveMoneyAmountMinor,
+    paidAmountMinor: zPlannedMoneyAmountMinor,
+    paidDate: z.iso.date().nullable(),
     paidAt: z.iso.datetime().nullable(),
     paidBy: zUserBrief.nullable(),
     deliveredAt: z.iso.datetime().nullable(),
@@ -486,6 +630,8 @@ export const zCreateMaterialInvoice = z.object({
 export const zUpdateMaterialInvoice = z.object({
     expectedVersion: zExpectedVersion,
     isPaid: z.boolean().optional(),
+    paidAmountMinor: zPositiveMoneyAmountMinor.optional(),
+    paidDate: z.iso.date().optional(),
     isDelivered: z.boolean().optional()
 });
 
@@ -619,8 +765,8 @@ export const zDashboardSelectedStage = z.object({
     position: z.int().gte(1).lte(8),
     stageCount: z.int().gte(1).lte(8),
     title: z.string().min(1).max(255),
-    plannedStartDate: z.iso.date(),
-    plannedEndDate: z.iso.date(),
+    plannedStartDate: z.iso.date().nullable(),
+    plannedEndDate: z.iso.date().nullable(),
     assignee: zUserBrief.nullable(),
     status: zStageStatus,
     progressPercent: z.int().gte(0).lte(100),
@@ -683,7 +829,11 @@ export const zSessionWritable = z.object({
     user: zUserWritable
 });
 
+/**
+ * Реквизиты, версия и вычисленные итоги объекта.
+ */
 export const zProjectWritable = z.object({
+    version: zExpectedVersion,
     status: zProjectStatus,
     documentFileIds: z.array(z.int().gte(1).lte(2147483647)),
     id: z.int().gte(1).lte(2147483647),
@@ -708,6 +858,9 @@ export const zProjectPageWritable = z.object({
     offset: z.int().gte(0)
 });
 
+/**
+ * Параметры, финансовые итоги и версия этапа.
+ */
 export const zStageWritable = z.object({
     id: z.int().gte(1).lte(2147483647),
     projectId: z.int().gte(1).lte(2147483647),
@@ -724,14 +877,16 @@ export const zStageWritable = z.object({
         'Фасад',
         'Электрика',
         'Штукатурка',
-        'Отопление'
+        'Отопление',
+        'Дополнительный этап'
     ]),
-    position: z.int().gte(1).lte(8),
+    position: z.int().gte(1).lte(9),
+    isIncluded: z.boolean(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30),
     assignee: zUserBrief.nullable(),
     status: zStageStatus,
-    plannedStartDate: z.iso.date(),
-    plannedEndDate: z.iso.date(),
+    plannedStartDate: z.iso.date().nullable(),
+    plannedEndDate: z.iso.date().nullable(),
     plannedWorkAmountMinor: zPlannedMoneyAmountMinor,
     plannedMaterialAmountMinor: zPlannedMoneyAmountMinor,
     actualMaterialAmountMinor: zMoneyAmountMinor,
@@ -749,6 +904,17 @@ export const zStageWritable = z.object({
     updatedAt: z.iso.datetime()
 });
 
+export const zProjectEditStageWritable = z.object({
+    stage: zStageWritable,
+    checklist: zChecklist,
+    workPlanRows: z.array(zWorkPlanRow)
+});
+
+export const zProjectEditWritable = z.object({
+    project: zProjectWritable,
+    stages: z.array(zProjectEditStageWritable)
+});
+
 export const zStagePageWritable = z.object({
     items: z.array(zStageWritable),
     total: z.int().gte(0),
@@ -757,7 +923,7 @@ export const zStagePageWritable = z.object({
 });
 
 export const zProjectStagesWritable = z.object({
-    items: z.array(zStageWritable).max(8)
+    items: z.array(zStageWritable).max(9)
 });
 
 export const zDashboardSummaryWritable = z.object({
@@ -769,8 +935,8 @@ export const zDashboardSelectedStageWritable = z.object({
     position: z.int().gte(1).lte(8),
     stageCount: z.int().gte(1).lte(8),
     title: z.string().min(1).max(255),
-    plannedStartDate: z.iso.date(),
-    plannedEndDate: z.iso.date(),
+    plannedStartDate: z.iso.date().nullable(),
+    plannedEndDate: z.iso.date().nullable(),
     assignee: zUserBrief.nullable(),
     status: zStageStatus,
     progressPercent: z.int().gte(0).lte(100),
@@ -818,6 +984,68 @@ export const zFileId = zEntityId;
 export const zItemId = zEntityId;
 
 export const zPhotoId = zEntityId;
+
+export const zListWorkPlanRowsPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zListWorkPlanRowsResponse = z.array(zWorkPlanRow);
+
+export const zCreateWorkPlanRowBody = zCreateWorkPlanRow;
+
+export const zCreateWorkPlanRowPath = z.object({
+    stageId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zCreateWorkPlanRowResponse = zWorkPlanRow;
+
+export const zDeleteWorkPlanRowBody = zDeleteWorkPlanRow;
+
+export const zDeleteWorkPlanRowPath = z.object({
+    rowId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Строка удалена
+ */
+export const zDeleteWorkPlanRowResponse = z.void();
+
+export const zGetWorkPlanRowPath = z.object({
+    rowId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zGetWorkPlanRowResponse = zWorkPlanRow;
+
+export const zUpdateWorkPlanRowBody = zUpdateWorkPlanRow;
+
+export const zUpdateWorkPlanRowPath = z.object({
+    rowId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zUpdateWorkPlanRowResponse = zWorkPlanRow;
+
+export const zDistributeWorkPlanRowBody = zDistributeWorkPlanRow;
+
+export const zDistributeWorkPlanRowPath = z.object({
+    rowId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Успешный ответ
+ */
+export const zDistributeWorkPlanRowResponse = z.array(zWorkPlanRow);
 
 export const zListUsersQuery = z.object({
     limit: z.int().gte(1).lte(100).optional().default(20),
@@ -932,10 +1160,19 @@ export const zUpdateProjectPath = z.object({
  */
 export const zUpdateProjectResponse = zProject;
 
+export const zGetProjectEditPath = z.object({
+    projectId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Данные формы.
+ */
+export const zGetProjectEditResponse = zProjectEdit;
+
 /**
  * Активные типы этапов с шаблонами чек-листов.
  */
-export const zListActiveStageTypesResponse = z.array(zActiveStageType).max(8);
+export const zListActiveStageTypesResponse = z.array(zActiveStageType).max(9);
 
 export const zListStagesQuery = z.object({
     limit: z.int().gte(1).lte(100).optional().default(20),

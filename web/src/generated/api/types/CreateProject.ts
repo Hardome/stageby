@@ -12,7 +12,7 @@ export type CreateProject = {
     /**
      * @description Имя клиента или собственника объекта строительства.
      * @minLength 1
-     * @maxLength 255
+     * @maxLength 150
      * @example Анна Смирнова
      * @type string
     */
@@ -79,7 +79,7 @@ export type CreateProject = {
     */
     documentFileIds: number[];
     /**
-     * @description Выбранные этапы объекта. Типы этапов не повторяются, порядок массива не влияет на position.
+     * @description Все включённые стандартные этапы, включая неоткрытые в форме. Для неоткрытого этапа достаточно type. Пропущенные типы не создаются; additional запрещён. Типы не повторяются, порядок массива не влияет на position.
      * @type array
     */
     stages: CreateProjectStage[];
@@ -105,6 +105,10 @@ export type CreateProjectHeaders = {
     "Idempotency-Key": string;
 };
 
+/**
+ * @description Реквизиты, версия и вычисленные итоги объекта.
+ * @type object
+*/
 export type CreateProjectStatus201 = Project;
 
 export type CreateProjectStatus400 = ApiError;

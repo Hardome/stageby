@@ -18,6 +18,7 @@ export function initialProjectForm(types: ActiveStageType[]): ProjectFormValues 
     plannedStartDate: '',
     plannedEndDate: '',
     stages: types
+      .filter((stage) => stage.code !== 'additional')
       .toSorted((first, second) => first.position - second.position)
       .map((stage) => ({
         type: stage.code,

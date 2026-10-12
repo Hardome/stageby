@@ -6,11 +6,14 @@
 import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 import { expectedVersionSchema } from './expectedVersionSchema'
+import { positiveMoneyAmountMinorSchema } from './positiveMoneyAmountMinorSchema'
 import { stageMaterialInvoiceSchema } from './stageMaterialInvoiceSchema'
 
 export const updateMaterialInvoiceSchema = z.object({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
-  isPaid: z.boolean().optional().describe('Требуемая отметка оплаты.').meta({ examples: [true] }),
+  isPaid: z.boolean().optional().describe('Требуемая отметка оплаты. При true обязательны paidAmountMinor и paidDate, при false они очищаются.').meta({ examples: [true] }),
+  paidAmountMinor: positiveMoneyAmountMinorSchema.optional().describe('Фактическая сумма оплаты; обязательна вместе с isPaid true.').meta({ examples: [500000] }),
+  paidDate: z.iso.date().optional().describe('Календарная дата оплаты; обязательна вместе с isPaid true.').meta({ examples: ['2026-10-02'] }),
   isDelivered: z.boolean().optional().describe('Требуемая отметка доставки.').meta({ examples: [true] }),
 }).strict()
 

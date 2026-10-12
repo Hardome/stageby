@@ -17,6 +17,10 @@ export type ConfigureStageChecklistPath = {
     stageId: number;
 };
 
+/**
+ * @description Индивидуальный чек-лист этапа с версией и состоянием пунктов.
+ * @type object
+*/
 export type ConfigureStageChecklistStatus200 = Checklist;
 
 export type ConfigureStageChecklistStatus400 = ApiError;
@@ -29,6 +33,10 @@ export type ConfigureStageChecklistStatus404 = ApiError;
 
 export type ConfigureStageChecklistStatus409 = ApiError;
 
+/**
+ * @description Новый состав индивидуального чек-листа до фактического старта.
+ * @type object
+*/
 export type ConfigureStageChecklistBody = ConfigureChecklist;
 
 export type ConfigureStageChecklistOptions = {

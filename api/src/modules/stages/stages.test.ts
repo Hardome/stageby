@@ -25,6 +25,7 @@ import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
 import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
+import { createPaymentPlanRow } from '#test/work-plan-row';
 
 const PASSWORD = 'Stages-test-password-123!';
 const createdUserIds: number[] = [];
@@ -179,6 +180,33 @@ async function updateItem(
 }
 
 describe('Stage statuses and checklists', () => {
+  it('очищает даты независимо и проверяет каждую по обеим границам проекта', async () => {
+    const fixture = await createFixture();
+    const patch = (expectedVersion: number, fields: object) =>
+      getApp().inject({
+        method: 'PATCH',
+        url: `/stages/${fixture.stage.id}`,
+        headers: { cookie: fixture.manager.cookie },
+        payload: { expectedVersion, ...fields },
+      });
+    const startOnly = await patch(1, { plannedEndDate: null });
+    expect(startOnly.statusCode, startOnly.body).toBe(200);
+    expect(startOnly.json()).toMatchObject({ plannedStartDate: '2026-10-01', plannedEndDate: null });
+    for (const fields of [
+      { plannedStartDate: '2027-01-01' },
+      { plannedEndDate: '2026-09-30' },
+      { plannedStartDate: '2026-10-31', plannedEndDate: '2026-10-01' },
+    ]) {
+      expect((await patch(2, fields)).statusCode).toBe(400);
+    }
+    const endOnly = await patch(2, { plannedStartDate: null, plannedEndDate: '2026-12-31' });
+    expect(endOnly.statusCode, endOnly.body).toBe(200);
+    expect(endOnly.json()).toMatchObject({ plannedStartDate: null, plannedEndDate: '2026-12-31' });
+    const neither = await patch(3, { plannedEndDate: null });
+    expect(neither.statusCode, neither.body).toBe(200);
+    expect(neither.json()).toMatchObject({ plannedStartDate: null, plannedEndDate: null });
+  });
+
   it.each([undefined, '2099-01-01'])(
     'проверяет замечание и выбранные пункты, назначает срок доработки %s',
     async (correctionDueDate) => {
@@ -232,9 +260,14 @@ describe('Stage statuses and checklists', () => {
     const response = await getApp().inject({ url: '/stage-types', headers: { cookie: fixture.manager.cookie } });
     expect(response.statusCode, response.body).toBe(200);
     const types = response.json<Array<{ code: string; position: number; checklistItems: Array<{ title: string }> }>>();
-    expect(types.map((type) => type.position)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(types.map((type) => type.position)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(types.flatMap((type) => type.checklistItems)).toHaveLength(34);
-    expect(types.every((type) => type.checklistItems.at(-1)?.title === 'Уборка')).toBe(true);
+    expect(
+      types
+        .filter((type) => type.code !== 'additional')
+        .every((type) => type.checklistItems.at(-1)?.title === 'Уборка'),
+    ).toBe(true);
+    expect(types.at(-1)).toMatchObject({ code: 'additional', checklistTemplateId: null, checklistItems: [] });
     expect(
       (await getApp().inject({ url: '/stage-types', headers: { cookie: fixture.foreman.cookie } })).statusCode,
     ).toBe(403);
@@ -386,7 +419,7 @@ describe('Stage statuses and checklists', () => {
     );
   });
 
-  it('отказывает в изменении архивного этапа и завершённого этапа', async () => {
+  it('отказывает в изменении архивного этапа, разрешает правку завершённого', async () => {
     const fixture = await createFixture();
     const patch = () =>
       getApp().inject({
@@ -399,7 +432,9 @@ describe('Stage statuses and checklists', () => {
     expect((await patch()).json()).toMatchObject({ code: 'project_archived' });
     await getApp().db.update(projects).set({ isArchived: false }).where(eq(projects.id, fixture.project.id));
     await getApp().db.update(stages).set({ status: 'completed' }).where(eq(stages.id, fixture.stage.id));
-    expect((await patch()).json()).toMatchObject({ code: 'invalid_transition' });
+    const changed = await patch();
+    expect(changed.statusCode, changed.body).toBe(200);
+    expect(changed.json()).toMatchObject({ status: 'completed', notes: 'Новое' });
   });
 
   it('назначает только активного мастера и переводит created в assigned', async () => {
@@ -516,6 +551,11 @@ describe('Stage statuses and checklists', () => {
     const fixture = await createFixture();
     await attachUploadedPhoto(fixture.items[0]!.id);
     const completed = await updateItem(fixture.foreman.cookie, fixture.stage.id, fixture.items[0]!.id, 1);
+    expect(completed.statusCode, completed.body).toBe(200);
+    const [started] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
+    expect(started!.actualStartDate).toBe(calendarDate());
+    const firstStartDate = addCalendarDays(calendarDate(), -1);
+    await getApp().db.update(stages).set({ actualStartDate: firstStartDate }).where(eq(stages.id, fixture.stage.id));
     const cleared = await updateItem(
       fixture.foreman.cookie,
       fixture.stage.id,
@@ -529,6 +569,17 @@ describe('Stage statuses and checklists', () => {
       completedAt: null,
       completedBy: null,
     });
+    const [afterClearing] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
+    expect(afterClearing!.actualStartDate).toBe(firstStartDate);
+    const repeated = await updateItem(
+      fixture.foreman.cookie,
+      fixture.stage.id,
+      fixture.items[0]!.id,
+      cleared.json<Checklist>().version,
+    );
+    expect(repeated.statusCode, repeated.body).toBe(200);
+    const [afterRepeating] = await getApp().db.select().from(stages).where(eq(stages.id, fixture.stage.id));
+    expect(afterRepeating!.actualStartDate).toBe(firstStartDate);
   });
 
   it('разрешает supplied только после доставки всех счетов всех заказов', async () => {
@@ -660,13 +711,16 @@ describe('Stage statuses and checklists', () => {
       payload: { expectedVersion: completed.version, status: 'paid' },
     });
     expect(unpaid.statusCode).toBe(409);
-    await getApp().db.insert(workPayments).values({
-      stageId: fixture.stage.id,
-      recipientId: fixture.foreman.user.id,
-      paidAt: '2026-10-01',
-      amountMinor: 10_000,
-      createdByUserId: fixture.manager.user.id,
-    });
+    await getApp()
+      .db.insert(workPayments)
+      .values({
+        stageId: fixture.stage.id,
+        workPlanRowId: (await createPaymentPlanRow(getApp().db, fixture.stage.id, fixture.foreman.user.id)).id,
+        recipientId: fixture.foreman.user.id,
+        paidAt: '2026-10-01',
+        amountMinor: 10_000,
+        createdByUserId: fixture.manager.user.id,
+      });
     const paid = await getApp().inject({
       method: 'PUT',
       url: `/stages/${fixture.stage.id}/status`,

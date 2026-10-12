@@ -5,10 +5,14 @@ import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
 import { workPayments } from '#app/db/schema/work-payments';
+import { workPlanRows } from '#app/db/schema/work-plan-rows';
 import type { CreateWorkPayment, UpdateWorkPayment, WorkPayment } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { auditedTransaction } from '#app/modules/audit/repository';
+import { lockProjectStage } from '#app/modules/stages/lock';
+import type { Actor } from '#app/modules/stages/types';
 import { toWorkPayment } from '#app/modules/work-payments/mapper';
+import { preservesPaidInvariant } from '#app/modules/work-payments/paid-invariant';
 import type { Database, WorkPaymentOperationError, WorkPaymentOperationResult } from '#app/modules/work-payments/types';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -45,25 +49,15 @@ async function validRecipient(transaction: Transaction, id: number): Promise<boo
   return user !== undefined;
 }
 
-async function lockStage(transaction: Transaction, stageId: number) {
-  const [row] = await transaction
-    .select({ stageId: stages.id, isArchived: projects.isArchived })
-    .from(stages)
-    .innerJoin(projects, eq(stages.projectId, projects.id))
-    .where(eq(stages.id, stageId))
-    .for('update');
-  return row;
-}
+const lockStage = lockProjectStage;
 
 async function lockPayment(transaction: Transaction, paymentId: number) {
-  const [row] = await transaction
-    .select({ payment: workPayments, isArchived: projects.isArchived })
-    .from(workPayments)
-    .innerJoin(stages, eq(workPayments.stageId, stages.id))
-    .innerJoin(projects, eq(stages.projectId, projects.id))
-    .where(eq(workPayments.id, paymentId))
-    .for('update');
-  return row;
+  const [initial] = await transaction.select().from(workPayments).where(eq(workPayments.id, paymentId));
+  if (!initial) return;
+  const lockedStage = await lockStage(transaction, initial.stageId);
+  if (!lockedStage) return;
+  const [row] = await transaction.select().from(workPayments).where(eq(workPayments.id, paymentId)).for('update');
+  return row ? { payment: row, ...lockedStage } : undefined;
 }
 
 function getMutationError(
@@ -83,9 +77,10 @@ export class WorkPaymentRepository {
     this.#database = database;
   }
 
-  async list(stageId: number): Promise<WorkPaymentOperationResult<WorkPayment[]>> {
-    const [stage] = await this.#database.select({ id: stages.id }).from(stages).where(eq(stages.id, stageId));
-    if (!stage) return { status: 'not_found' };
+  async list(stageId: number, actor: Actor): Promise<WorkPaymentOperationResult<WorkPayment[]>> {
+    const [stage] = await this.#database.select().from(stages).where(eq(stages.id, stageId));
+    if (!stage || !stage.isIncluded || (actor.role !== 'manager' && stage.assigneeId !== actor.id))
+      return { status: 'not_found' };
     const rows = await this.#database
       .select({
         payment: workPayments,
@@ -97,7 +92,12 @@ export class WorkPaymentRepository {
       .from(workPayments)
       .innerJoin(users, eq(workPayments.createdByUserId, users.id))
       .innerJoin(recipient, eq(workPayments.recipientId, recipient.id))
-      .where(eq(workPayments.stageId, stageId))
+      .where(
+        and(
+          eq(workPayments.stageId, stageId),
+          actor.role === 'manager' ? undefined : eq(workPayments.recipientId, actor.id),
+        ),
+      )
       .orderBy(desc(workPayments.paidAt), desc(workPayments.id));
     return {
       status: 'ok',
@@ -120,15 +120,24 @@ export class WorkPaymentRepository {
     return auditedTransaction(this.#database, context, 'createWorkPayment', async (transaction, audit) => {
       const locked = await lockStage(transaction, stageId);
       if (!locked) return { status: 'not_found' };
+      if (!locked.stage.isIncluded) return { status: 'not_found' };
       if (locked.isArchived) return { status: 'project_archived' };
-      if (!(await validRecipient(transaction, input.recipientId))) return { status: 'invalid_request' };
+      const [row] = await transaction
+        .select()
+        .from(workPlanRows)
+        .where(and(eq(workPlanRows.id, input.workPlanRowId), eq(workPlanRows.stageId, stageId)))
+        .for('update');
+      if (!row) return { status: 'not_found' };
+      if (row.recipientId === null || !(await validRecipient(transaction, row.recipientId)))
+        return { status: 'invalid_request' };
       const [created] = await audit.created(
         workPayments,
         await transaction
           .insert(workPayments)
           .values({
             stageId,
-            recipientId: input.recipientId,
+            workPlanRowId: row.id,
+            recipientId: row.recipientId,
             paidAt: input.paidAt,
             amountMinor: input.amountMinor,
             comment: input.comment ?? null,
@@ -149,6 +158,15 @@ export class WorkPaymentRepository {
       const locked = await lockPayment(transaction, paymentId);
       const error = getMutationError(locked, input.expectedVersion);
       if (error) return { status: error };
+      if (!locked!.stage.isIncluded) return { status: 'not_found' };
+      if (
+        !(await preservesPaidInvariant(
+          transaction,
+          locked!.stage,
+          (input.amountMinor ?? locked!.payment.amountMinor) - locked!.payment.amountMinor,
+        ))
+      )
+        return { status: 'invalid_transition' };
       if (input.recipientId !== undefined && !(await validRecipient(transaction, input.recipientId)))
         return { status: 'invalid_request' };
       await audit.mutate(
@@ -180,6 +198,9 @@ export class WorkPaymentRepository {
       const locked = await lockPayment(transaction, paymentId);
       const error = getMutationError(locked, expectedVersion);
       if (error) return { status: error };
+      if (!locked!.stage.isIncluded) return { status: 'not_found' };
+      if (!(await preservesPaidInvariant(transaction, locked!.stage, -locked!.payment.amountMinor)))
+        return { status: 'invalid_transition' };
       await audit.mutate(workPayments, eq(workPayments.id, paymentId), () =>
         transaction.delete(workPayments).where(eq(workPayments.id, paymentId)),
       );

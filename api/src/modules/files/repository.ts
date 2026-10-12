@@ -14,6 +14,7 @@ import { type AuditWriter, auditedTransaction } from '#app/modules/audit/reposit
 import { toChecklistItemPhoto, toFile } from '#app/modules/files/mapper';
 import { getMaximumSize, isAllowedMimeType, validateUploadPolicy } from '#app/modules/files/policy';
 import type { Actor, Database, FileOperationError, FileOperationResult } from '#app/modules/files/types';
+import { lockProjectStage } from '#app/modules/stages/lock';
 import type { FileStorage, StoredObjectMetadata } from '#app/storage/file-storage';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -86,18 +87,13 @@ async function loadItemContext(database: Database | Transaction, itemId: number)
 async function lockItemContext(transaction: Transaction, itemId: number) {
   const initial = await loadItemContext(transaction, itemId);
   if (!initial) return;
-  // Use the same lock order as checklist completion and acceptance.
-  await transaction
-    .select({ id: stages.id })
-    .from(stages)
-    .innerJoin(projects, eq(stages.projectId, projects.id))
-    .where(eq(stages.id, initial.stage.id))
-    .for('update');
+  await lockProjectStage(transaction, initial.stage.id);
   await transaction.select().from(checklists).where(eq(checklists.id, initial.checklist.id)).for('update');
   return loadItemContext(transaction, itemId);
 }
 
 function photoMutationError(context: NonNullable<Awaited<ReturnType<typeof loadItemContext>>>, actor: Actor) {
+  if (!context.stage.isIncluded) return 'not_found';
   if (context.projectIsArchived) return 'project_archived';
   if (['completed', 'paid'].includes(context.stage.status)) return 'invalid_state';
   if (actor.role === 'foreman') {

@@ -199,7 +199,13 @@ describe('Проверка выпуска через HTTP, PostgreSQL и MinIO',
       await request(managerCookie, {
         method: 'PATCH',
         url: `/material-invoices/${invoice.id}`,
-        payload: { expectedVersion: invoice.version, isPaid: true, isDelivered: true },
+        payload: {
+          expectedVersion: invoice.version,
+          isPaid: true,
+          isDelivered: true,
+          paidAmountMinor: invoice.amountMinor,
+          paidDate: today,
+        },
       });
     }
 
@@ -230,13 +236,22 @@ describe('Проверка выпуска через HTTP, PostgreSQL и MinIO',
       payload: { expectedVersion: awaiting.version },
     });
     expect(accepted.status).toBe('completed');
+    const paymentRow = await request<{ id: number }>(
+      managerCookie,
+      {
+        method: 'POST',
+        url: `/stages/${stageId}/work-plan-rows`,
+        payload: { amountMinor: 10_000, recipientId: foremanId },
+      },
+      201,
+    );
     for (const amountMinor of [4000, 7000]) {
       await request(
         managerCookie,
         {
           method: 'POST',
           url: `/stages/${stageId}/work-payments`,
-          payload: { paidAt: today, amountMinor, recipientId: foremanId },
+          payload: { paidAt: today, amountMinor, workPlanRowId: paymentRow.id },
         },
         201,
       );
@@ -252,11 +267,13 @@ describe('Проверка выпуска через HTTP, PostgreSQL и MinIO',
     });
     const card = await request<Project>(managerCookie, { url: `/projects/${project.id}` });
     expect(card.finances).toMatchObject({ totalPlannedAmountMinor: 30_000, totalActualAmountMinor: 31_000 });
+    // The deadline summary includes both the initial unallocated row and the additional recipient row.
+    // The project and stage retain their independently entered work plan.
     expect(await request(managerCookie, { url: `/dashboard/summary?through=${today}` })).toMatchObject({
       activeProjectCount: 1,
-      works: { plannedAmountMinor: 10_000, actualAmountMinor: 11_000, balanceAmountMinor: -1000 },
+      works: { plannedAmountMinor: 20_000, actualAmountMinor: 11_000, balanceAmountMinor: 9000 },
       materials: { plannedAmountMinor: 20_000, actualAmountMinor: 20_000, balanceAmountMinor: 0 },
-      total: { plannedAmountMinor: 30_000, actualAmountMinor: 31_000, balanceAmountMinor: -1000 },
+      total: { plannedAmountMinor: 40_000, actualAmountMinor: 31_000, balanceAmountMinor: 9000 },
     });
     await request(managerCookie, {
       method: 'PUT',

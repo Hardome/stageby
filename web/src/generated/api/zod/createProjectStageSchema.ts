@@ -9,12 +9,12 @@ import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { stageTypeSchema } from './stageTypeSchema'
 
 export const createProjectStageSchema = z.object({
-  type: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.').meta({ examples: ['foundation'] }),
-  plannedStartDate: z.iso.date().describe('Плановое начало этапа внутри срока проекта.').meta({ examples: ['2026-10-05'] }),
-  plannedEndDate: z.iso.date().describe('Плановое окончание этапа внутри срока проекта, не раньше начала этапа.').meta({ examples: ['2026-10-30'] }),
-  assigneeId: z.int().min(1).max(2147483647).nullable().describe('Активный мастер этапа; null — мастер пока не назначен.').meta({ examples: [17, ] }),
-  plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
-  plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
+  type: stageTypeSchema.describe('Стандартный тип этапа; дополнительный этап доступен только при редактировании.').meta({ examples: ['foundation'] }),
+  plannedStartDate: z.iso.date().nullish().describe('Необязательное независимое начало внутри срока проекта. Отсутствие или null означает незаданную дату.').meta({ examples: ['2026-10-05'] }),
+  plannedEndDate: z.iso.date().nullish().describe('Необязательное независимое окончание внутри срока проекта; при заданном начале не раньше него. Отсутствие или null означает незаданную дату.').meta({ examples: ['2026-10-30'] }),
+  assigneeId: z.int().min(1).max(2147483647).nullish().describe('Активный мастер этапа; отсутствие или null — мастер пока не назначен. Не становится получателем строки плана автоматически.').meta({ examples: [17, ] }),
+  plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Ручной план работ. Отсутствие или null — план не задан, строка не создаётся. При заданном плане, включая 0, создаётся одна строка без получателя и срока.').meta({ examples: [12500000, 0, ] }),
+  plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Ручной план материалов. Отсутствие или null — план не задан. Счета добавляются после создания объекта.').meta({ examples: [12500000, 0, ] }),
   checklistItems: z.array(createProjectChecklistItemSchema).min(1).optional().describe('Изменённый индивидуальный список. Если поле отсутствует, копируется активный шаблон типа этапа.'),
 }).strict()
 

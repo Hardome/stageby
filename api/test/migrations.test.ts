@@ -31,6 +31,7 @@ const expectedTables = [
   'stages',
   'users',
   'work_payments',
+  'work_plan_rows',
 ];
 
 const expectedIndexes = [
@@ -75,6 +76,9 @@ const expectedIndexes = [
   'users_login_unique',
   'users_role_active_idx',
   'work_payments_stage_paid_at_idx',
+  'work_payments_plan_row_idx',
+  'work_plan_rows_stage_due_date_idx',
+  'work_plan_rows_recipient_idx',
 ];
 
 const expectedForeignKeys = [
@@ -109,6 +113,9 @@ const expectedForeignKeys = [
   'stages_stageTypeCode_stage_types_code_fk',
   'work_payments_stageId_stages_id_fk',
   'work_payments_createdByUserId_users_id_fk',
+  'work_payments_plan_row_stage_fk',
+  'work_plan_rows_stageId_stages_id_fk',
+  'work_plan_rows_recipientId_users_id_fk',
 ];
 
 describe('миграции БД', () => {
@@ -206,6 +213,13 @@ describe('миграции БД', () => {
         [projectId],
       );
       expect(retainedInactiveStage.rows[0]?.count).toBe(1);
+      const version = await temporaryPool.query<{ version: number }>('select version from projects where id = $1', [
+        projectId,
+      ]);
+      expect(version.rows[0]?.version).toBe(1);
+      await expect(
+        temporaryPool.query('update projects set version = 0 where id = $1', [projectId]),
+      ).rejects.toMatchObject({ code: '23514' });
       await expect(
         temporaryPool.query(
           `insert into stages ("projectId", "stageTypeCode", position, "plannedStartDate", "plannedEndDate")
@@ -230,13 +244,42 @@ describe('миграции БД', () => {
          where table_schema = 'public' and table_name = 'work_payments' and column_name = 'recipientId'`,
       );
       expect(recipientColumn.rows).toEqual([{ is_nullable: 'NO' }]);
-      expect(firstJournal.rows[0]?.count).toBe('1');
+      // The deferred checks validate the final state, including a simultaneous date move.
+      const client = await temporaryPool.connect();
+      try {
+        await client.query('begin');
+        await client.query(
+          `update projects set "plannedStartDate" = '2027-01-01', "plannedEndDate" = '2027-12-31' where id = $1`,
+          [projectId],
+        );
+        await client.query(
+          `update stages set "plannedStartDate" = '2027-01-01', "plannedEndDate" = '2027-01-31' where "projectId" = $1`,
+          [projectId],
+        );
+        await client.query('commit');
+      } finally {
+        client.release();
+      }
+      const moved = await temporaryPool.query<{ plannedStartDate: string }>(
+        `select "plannedStartDate"::text from projects where id = $1`,
+        [projectId],
+      );
+      expect(moved.rows[0]?.plannedStartDate).toBe('2027-01-01');
+      await temporaryPool.query(`update stages set "plannedEndDate" = null where "projectId" = $1`, [projectId]);
+      await expect(
+        temporaryPool.query(`update stages set "plannedStartDate" = '2028-01-01' where "projectId" = $1`, [projectId]),
+      ).rejects.toMatchObject({ code: '23514' });
+      await temporaryPool.query(`update stages set "plannedStartDate" = null where "projectId" = $1`, [projectId]);
+      await expect(
+        temporaryPool.query(`update stages set "plannedEndDate" = '2026-12-31' where "projectId" = $1`, [projectId]),
+      ).rejects.toMatchObject({ code: '23514' });
+      expect(firstJournal.rows[0]?.count).toBe('3');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('63');
+      expect(checkConstraints.rows[0]?.count).toBe('68');
       expect(triggers.rows.map((row) => row.name)).toEqual([
         'projects_stage_dates_trigger',
         'stages_active_type_trigger',
@@ -259,6 +302,7 @@ describe('миграции БД', () => {
         { code: 'electrical', title: 'Электрика', position: 6 },
         { code: 'finishing', title: 'Штукатурка', position: 7 },
         { code: 'heating', title: 'Отопление', position: 8 },
+        { code: 'additional', title: 'Дополнительный этап', position: 9 },
       ]);
       expect(templateItemCounts.rows.map(({ code, count }) => [code, count])).toEqual([
         ['foundation', 5],

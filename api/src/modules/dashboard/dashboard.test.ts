@@ -13,6 +13,7 @@ import { sessions } from '#app/db/schema/sessions';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
 import { workPayments } from '#app/db/schema/work-payments';
+import { workPlanRows } from '#app/db/schema/work-plan-rows';
 import type { DashboardProjectPage, DashboardSummary, Project, Stage } from '#app/generated/types.gen';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 import { SessionRepository } from '#app/modules/auth/session-repository';
@@ -26,6 +27,7 @@ import { UserRepository } from '#app/modules/users/repository';
 import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
 import { setupModuleTest } from '#test/setup-module-test';
+import { createPaymentPlanRow } from '#test/work-plan-row';
 
 const projectIds: number[] = [];
 const userIds: number[] = [];
@@ -132,6 +134,8 @@ async function invoice(stageId: number, userId: number, amountMinor: number, pai
       fileId: file!.id,
       amountMinor,
       paidAt: paid ? now : null,
+      paidAmountMinor: paid ? amountMinor : null,
+      paidDate: paid ? calendarDate(now) : null,
       paidByUserId: paid ? userId : null,
       deliveredAt: delivered ? now : null,
       deliveredByUserId: delivered ? userId : null,
@@ -144,6 +148,12 @@ async function page(cookie: string, query = '') {
   const response = await getApp().inject({ url: `/dashboard/projects${query}`, headers: { cookie } });
   if (response.statusCode !== 200) throw new Error(`Dashboard request failed: ${response.body}`);
   return response.json<DashboardProjectPage>();
+}
+
+async function summary(cookie: string, through: string) {
+  const response = await getApp().inject({ url: `/dashboard/summary?through=${through}`, headers: { cookie } });
+  if (response.statusCode !== 200) throw new Error(`Dashboard summary request failed: ${response.body}`);
+  return response.json<DashboardSummary>();
 }
 
 describe('Dashboard API', () => {
@@ -222,14 +232,16 @@ describe('Dashboard API', () => {
       activeProjectCount: 1,
       total: { plannedAmountMinor: 0, actualAmountMinor: 0 },
     });
+    const planRow = await createPaymentPlanRow(getApp().db, first.id, foreman.user.id);
     await getApp()
       .db.insert(workPayments)
       .values(
         [3000, 4000].map((amountMinor) => ({
           stageId: first.id,
+          workPlanRowId: planRow.id,
           recipientId: foreman.user.id,
           createdByUserId: manager.user.id,
-          paidAt: '2099-01-01',
+          paidAt: calendarDate(),
           amountMinor,
         })),
       );
@@ -278,6 +290,7 @@ describe('Dashboard API', () => {
     const foreman = await identity('foreman');
     const { included } = await fixture(manager.cookie, foreman.user.id);
     const first = included[0]!;
+    await getApp().db.delete(workPlanRows).where(eq(workPlanRows.stageId, first.id));
     await getApp()
       .db.update(stages)
       .set({ plannedWorkAmountMinor: null, plannedMaterialAmountMinor: 0 })
@@ -293,6 +306,170 @@ describe('Dashboard API', () => {
       materials: { plannedAmountMinor: 0, actualAmountMinor: 1000, balanceAmountMinor: -1000, isPlanComplete: true },
       total: { plannedAmountMinor: null, actualAmountMinor: 1000, balanceAmountMinor: null, isPlanComplete: false },
     });
+  });
+
+  it('отбирает строки по приоритетному сроку, а факт — по тому же периметру и дате оплаты', async () => {
+    const manager = await identity();
+    const foreman = await identity('foreman');
+    const { included } = await fixture(manager.cookie, foreman.user.id);
+    const [first, second, third] = included;
+    const through = first!.plannedEndDate!;
+    await getApp()
+      .db.delete(workPlanRows)
+      .where(
+        inArray(
+          workPlanRows.stageId,
+          included.map((stage) => stage.id),
+        ),
+      );
+    await getApp().db.update(stages).set({ plannedEndDate: null }).where(eq(stages.id, third!.id));
+    const rows = await getApp()
+      .db.insert(workPlanRows)
+      .values([
+        { stageId: first!.id, amountMinor: 1000 },
+        { stageId: first!.id, amountMinor: 2000, dueDate: addCalendarDays(through, 1) },
+        { stageId: first!.id, amountMinor: 3000, dueDate: addCalendarDays(through, -1) },
+        { stageId: second!.id, amountMinor: 4000, dueDate: through },
+        { stageId: third!.id, amountMinor: 5000, dueDate: through },
+        { stageId: third!.id, amountMinor: 6000 },
+      ])
+      .returning();
+    await getApp()
+      .db.insert(workPayments)
+      .values(
+        [
+          { row: rows[0]!, amountMinor: 400, paidAt: addCalendarDays(through, -1) },
+          { row: rows[0]!, amountMinor: 600, paidAt: through },
+          { row: rows[0]!, amountMinor: 900, paidAt: addCalendarDays(through, 1) },
+          { row: rows[1]!, amountMinor: 2000, paidAt: addCalendarDays(through, -1) },
+          { row: rows[2]!, amountMinor: 3100, paidAt: through },
+          { row: rows[3]!, amountMinor: 500, paidAt: through },
+          { row: rows[4]!, amountMinor: 500, paidAt: through },
+          { row: rows[5]!, amountMinor: 600, paidAt: through },
+        ].map(({ row, amountMinor, paidAt }) => ({
+          stageId: row.stageId,
+          workPlanRowId: row.id,
+          recipientId: foreman.user.id,
+          createdByUserId: manager.user.id,
+          amountMinor,
+          paidAt,
+        })),
+      );
+    for (const [days, paidAmountMinor] of [
+      [-1, 1300],
+      [0, 700],
+      [1, 900],
+    ] as const) {
+      const value = await invoice(first!.id, manager.user.id, 99_900, true, false);
+      await getApp()
+        .db.update(materialInvoices)
+        .set({
+          paidAmountMinor,
+          paidDate: addCalendarDays(through, days),
+        })
+        .where(eq(materialInvoices.id, value.id));
+    }
+    await invoice(first!.id, manager.user.id, 1000, false, true);
+    await invoice(second!.id, manager.user.id, 1000, true, false);
+    await invoice(third!.id, manager.user.id, 1000, true, false);
+    expect(await summary(manager.cookie, through)).toMatchObject({
+      works: { plannedAmountMinor: 13_000, actualAmountMinor: 5100, balanceAmountMinor: 7900, isPlanComplete: true },
+      materials: {
+        plannedAmountMinor: 20_000,
+        actualAmountMinor: 2000,
+        balanceAmountMinor: 18_000,
+        isPlanComplete: true,
+      },
+      total: { plannedAmountMinor: 33_000, actualAmountMinor: 7100, balanceAmountMinor: 25_900, isPlanComplete: true },
+    });
+  });
+
+  it.each([
+    [1000, 1000, 0],
+    [1000, 1200, -200],
+    [0, 100, -100],
+  ])('сохраняет план строки %i при выплате %i и остатке %i', async (plan, payment, balance) => {
+    const manager = await identity();
+    const foreman = await identity('foreman');
+    const { included } = await fixture(manager.cookie, foreman.user.id);
+    const first = included[0]!;
+    await getApp().db.update(stages).set({ plannedWorkAmountMinor: null }).where(eq(stages.id, first.id));
+    const [row] = await getApp()
+      .db.update(workPlanRows)
+      .set({ amountMinor: plan })
+      .where(eq(workPlanRows.stageId, first.id))
+      .returning();
+    await getApp().db.insert(workPayments).values({
+      stageId: first.id,
+      workPlanRowId: row!.id,
+      recipientId: foreman.user.id,
+      createdByUserId: manager.user.id,
+      paidAt: first.plannedEndDate!,
+      amountMinor: payment,
+    });
+    expect((await summary(manager.cookie, first.plannedEndDate!)).works).toEqual({
+      plannedAmountMinor: plan,
+      actualAmountMinor: payment,
+      balanceAmountMinor: balance,
+      isPlanComplete: true,
+    });
+  });
+
+  it('неизвестный план материалов делает общий план неполным, обязательства вне даты не влияют на полноту', async () => {
+    const manager = await identity();
+    const foreman = await identity('foreman');
+    const { included } = await fixture(manager.cookie, foreman.user.id);
+    const first = included[0]!;
+    await getApp()
+      .db.update(stages)
+      .set({ plannedMaterialAmountMinor: null })
+      .where(eq(stages.projectId, first.projectId));
+    await getApp()
+      .db.delete(workPlanRows)
+      .where(
+        inArray(
+          workPlanRows.stageId,
+          included.slice(1).map((stage) => stage.id),
+        ),
+      );
+    await invoice(first.id, manager.user.id, 1000, true, false);
+    expect(await summary(manager.cookie, first.plannedEndDate!)).toMatchObject({
+      works: { plannedAmountMinor: 10_000, isPlanComplete: true },
+      materials: { plannedAmountMinor: null, actualAmountMinor: 1000, balanceAmountMinor: null, isPlanComplete: false },
+      total: { plannedAmountMinor: null, actualAmountMinor: 1000, balanceAmountMinor: null, isPlanComplete: false },
+    });
+  });
+
+  it('исключённые этапы не влияют на финансы, текущий этап и активный счётчик', async () => {
+    const manager = await identity();
+    const foreman = await identity('foreman');
+    const { project, included } = await fixture(manager.cookie, foreman.user.id);
+    const first = included[0]!;
+    await invoice(first.id, manager.user.id, 1000, true, false);
+    await getApp().db.update(stages).set({ isIncluded: false }).where(eq(stages.id, first.id));
+    expect((await page(manager.cookie)).items[0]).toMatchObject({
+      selectedStage: { stageId: included[1]!.id, stageCount: 2 },
+      finances: { totalPlannedAmountMinor: 60_000, totalActualAmountMinor: 0 },
+    });
+    expect(await summary(manager.cookie, first.plannedEndDate!)).toMatchObject({
+      activeProjectCount: 1,
+      total: { plannedAmountMinor: 0, actualAmountMinor: 0, balanceAmountMinor: 0, isPlanComplete: true },
+    });
+    await getApp()
+      .db.update(stages)
+      .set({ status: 'paid' })
+      .where(
+        inArray(
+          stages.id,
+          included.slice(1).map((stage) => stage.id),
+        ),
+      );
+    expect((await page(manager.cookie)).items[0]).toMatchObject({
+      projectId: project.id,
+      selectedStage: null,
+      status: 'completed',
+    });
+    expect((await summary(manager.cookie, first.plannedEndDate!)).activeProjectCount).toBe(0);
   });
 
   it('выбирает первый невыплаченный этап для всех данных, переключает его после paid и завершает только после всех выплат', async () => {
@@ -359,6 +536,8 @@ describe('Dashboard API', () => {
   it('сортирует по началу выбранного этапа и ID, применяет пагинацию и помещает завершённые объекты в конец', async () => {
     const manager = await identity();
     const foreman = await identity('foreman');
+    const undated = await fixture(manager.cookie, foreman.user.id);
+    await getApp().db.update(stages).set({ plannedStartDate: null }).where(eq(stages.id, undated.included[0]!.id));
     const first = await fixture(manager.cookie, foreman.user.id);
     const second = await fixture(manager.cookie, foreman.user.id);
     const earlier = await fixture(manager.cookie, foreman.user.id, addCalendarDays(calendarDate(), -1));
@@ -369,12 +548,13 @@ describe('Dashboard API', () => {
       earlier.project.id,
       first.project.id,
       second.project.id,
+      undated.project.id,
       completed.project.id,
     ]);
     const fullPageQueryCount = selectQueries.mock.calls.length;
     selectQueries.mockClear();
     expect(await page(manager.cookie, '?limit=1&offset=2')).toMatchObject({
-      total: 4,
+      total: 5,
       limit: 1,
       offset: 2,
       items: [{ projectId: second.project.id }],

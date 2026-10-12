@@ -27,6 +27,8 @@ tags:
     description: Фиксированные виды работ, назначения, зависимости и приёмка.
   - name: Checklists
     description: Один чек-лист с контрольными точками и фотографиями на этап.
+  - name: Work plans
+    description: Планирование выплат мастерам по строкам.
   - name: Work payments
     description: Фактические платежи за выполненные работы этапа. Изменение доступно только руководителю.
   - name: Files
@@ -36,6 +38,12 @@ tags:
   - name: Dashboard
     description: Независимые агрегаты и строки панели руководителя.
 paths:
+  /stages/{stageId}/work-plan-rows:
+    $ref: ../work-plans/work-plans.yaml#/paths/~1stages~1{stageId}~1work-plan-rows
+  /work-plan-rows/{rowId}:
+    $ref: ../work-plans/work-plans.yaml#/paths/~1work-plan-rows~1{rowId}
+  /work-plan-rows/{rowId}/distribute:
+    $ref: ../work-plans/work-plans.yaml#/paths/~1work-plan-rows~1{rowId}~1distribute
   /users:
     $ref: ../users/users.yaml#/paths/~1users
   /users/{userId}:
@@ -54,6 +62,8 @@ paths:
     $ref: ../projects/projects.yaml#/paths/~1projects
   /projects/{projectId}:
     $ref: ../projects/projects.yaml#/paths/~1projects~1{projectId}
+  /projects/{projectId}/edit:
+    $ref: ../projects/projects.yaml#/paths/~1projects~1{projectId}~1edit
   /stage-types:
     $ref: ../stages/stages.yaml#/paths/~1stage-types
   /stages:

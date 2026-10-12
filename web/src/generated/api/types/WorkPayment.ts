@@ -24,6 +24,14 @@ export type WorkPayment = {
     */
     stageId: number;
     /**
+     * @description Строка планирования выплаты своего этапа.
+     * @minLength 1
+     * @maxLength 2147483647
+     * @example 10
+     * @type integer
+    */
+    workPlanRowId: number;
+    /**
      * @description Дата фактической оплаты в формате YYYY-MM-DD.
      *
      * Format: `date`

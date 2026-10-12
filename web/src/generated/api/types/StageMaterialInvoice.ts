@@ -4,6 +4,7 @@
 */
 
 import type { MaterialShortage } from './MaterialShortage'
+import type { PlannedMoneyAmountMinor } from './PlannedMoneyAmountMinor'
 import type { PositiveMoneyAmountMinor } from './PositiveMoneyAmountMinor'
 import type { UserBrief } from './UserBrief'
 
@@ -41,7 +42,7 @@ export type StageMaterialInvoice = {
     */
     supplierName: string | null;
     /**
-     * @description Полная сумма счёта в копейках. Частичная оплата одного счёта не поддерживается.
+     * @description Сумма выставленного счёта в копейках; хранится независимо от суммы оплаты.
      *
      * Format: `int64`
      * @minLength 100
@@ -49,6 +50,25 @@ export type StageMaterialInvoice = {
      * @type integer
     */
     amountMinor: PositiveMoneyAmountMinor;
+    /**
+     * @description Фактическая положительная сумма оплаты или null для неоплаченного счёта.
+     *
+     * Format: `int64`
+     * @minLength 0
+     * @example 12500000
+     * @example 0
+     * @example null
+     * @type integer
+    */
+    paidAmountMinor: PlannedMoneyAmountMinor | null;
+    /**
+     * @description Введённая календарная дата оплаты или null.
+     *
+     * Format: `date`
+     * @example 2026-10-02
+     * @type string
+    */
+    paidDate: string | null;
     /**
      * @description Серверное время отметки полной оплаты или null.
      *

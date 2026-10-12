@@ -1,4 +1,4 @@
-import { asc, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 
 import { projectDocuments } from '#app/db/schema/files';
 import type { ProjectRow } from '#app/db/schema/projects';
@@ -58,7 +58,7 @@ export async function loadProjects(db: Db, rows: ProjectRow[]): Promise<Project[
   const stageRows = await db
     .select()
     .from(stages)
-    .where(inArray(stages.projectId, ids))
+    .where(and(inArray(stages.projectId, ids), eq(stages.isIncluded, true)))
     .orderBy(asc(stages.position), asc(stages.id));
   const documents = await db
     .select()

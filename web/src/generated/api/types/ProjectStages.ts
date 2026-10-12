@@ -7,7 +7,7 @@ import type { Stage } from './Stage'
 
 export type ProjectStages = {
     /**
-     * @description Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации.
+     * @description Доступные пользователю включённые этапы одного проекта, максимум девять, в порядке position ASC. Без пагинации.
      * @type array
     */
     items: Stage[];

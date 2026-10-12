@@ -74,6 +74,7 @@ const checklistFormSchema = checklistItemSchema.extend({
     }),
 });
 const stageDraftSchema = stageSchema.pick({ type: true, assigneeId: true }).extend({
+  assigneeId: stageSchema.shape.assigneeId.nonoptional(),
   title: z.string(),
   enabled: z.literal(false),
   plannedStartDate: z.string(),

@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   bigint,
+  boolean,
   check,
   date,
   foreignKey,
@@ -42,11 +43,12 @@ export const stages = pgTable(
       .notNull()
       .references(() => stageTypes.code, { onDelete: 'restrict' }),
     position: integer().notNull(),
+    isIncluded: boolean().notNull().default(true),
     workSubtypes: varchar({ length: 255 }).array().notNull().default(sql`'{}'::varchar[]`),
     assigneeId: integer().references(() => users.id, { onDelete: 'restrict' }),
     status: stageStatusEnum().notNull().default('created'),
-    plannedStartDate: date().notNull(),
-    plannedEndDate: date().notNull(),
+    plannedStartDate: date(),
+    plannedEndDate: date(),
     plannedWorkAmountMinor: bigint({ mode: 'number' }),
     plannedMaterialAmountMinor: bigint({ mode: 'number' }),
     actualStartDate: date(),
@@ -62,10 +64,13 @@ export const stages = pgTable(
     unique('stages_project_id_id_unique').on(table.projectId, table.id),
     index('stages_assignee_status_idx').on(table.assigneeId, table.status),
     index('stages_status_idx').on(table.status),
-    check('stages_position_check', sql`${table.position} between 1 and 8`),
+    check('stages_position_check', sql`${table.position} between 1 and 9`),
     check('stages_work_subtypes_count_check', sql`cardinality(${table.workSubtypes}) <= 30`),
     check('stages_work_subtypes_no_null_check', sql`array_position(${table.workSubtypes}, null) is null`),
-    check('stages_planned_dates_check', sql`${table.plannedEndDate} >= ${table.plannedStartDate}`),
+    check(
+      'stages_planned_dates_check',
+      sql`${table.plannedStartDate} is null or ${table.plannedEndDate} is null or ${table.plannedEndDate} >= ${table.plannedStartDate}`,
+    ),
     check(
       'stages_planned_work_amount_check',
       sql`${table.plannedWorkAmountMinor} is null or ${table.plannedWorkAmountMinor} >= 0`,

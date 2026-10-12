@@ -8,7 +8,7 @@ import type { StageTypeKey } from './StageType'
 
 export type ActiveStageType = {
     /**
-     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
+     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.
      * @example foundation
      * @type string
     */
@@ -24,7 +24,7 @@ export type ActiveStageType = {
     /**
      * @description Порядок типа в объекте.
      * @minLength 1
-     * @maxLength 8
+     * @maxLength 9
      * @example 1
      * @type integer
     */
@@ -36,7 +36,7 @@ export type ActiveStageType = {
      * @example 81
      * @type integer
     */
-    checklistTemplateId: number;
+    checklistTemplateId: number | null;
     /**
      * @description Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
      * @type array

@@ -72,9 +72,10 @@ components:
         - electrical
         - finishing
         - heating
+        - additional
       examples:
         - foundation
-      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
+      description: foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.
     StageStatus:
       type: string
       enum:

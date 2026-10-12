@@ -15,6 +15,6 @@ export const checklistSchema = z.object({
   version: z.int().min(1).describe('Версия записи. Увеличивается при каждом изменении.').meta({ examples: [1] }),
   createdAt: z.iso.datetime().describe('Дата и время создания записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-20T08:00:00Z'] }),
   updatedAt: z.iso.datetime().describe('Дата и время последнего изменения записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-24T10:00:00Z'] }),
-}).strict()
+}).strict().describe('Индивидуальный чек-лист этапа с версией и состоянием пунктов.')
 
 export type ChecklistSchemaType = z.infer<typeof checklistSchema>

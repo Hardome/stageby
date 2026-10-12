@@ -12,6 +12,10 @@ export const checklistWarningsEnum = {
 
 export type ChecklistWarningsEnumKey = (typeof checklistWarningsEnum)[keyof typeof checklistWarningsEnum];
 
+/**
+ * @description Индивидуальный чек-лист этапа с версией и состоянием пунктов.
+ * @type object
+*/
 export type Checklist = {
     /**
      * @description Стабильный ID чек-листа этапа.

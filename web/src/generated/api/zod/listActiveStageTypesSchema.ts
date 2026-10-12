@@ -7,7 +7,7 @@ import * as z from 'zod'
 import { activeStageTypeSchema } from './activeStageTypeSchema'
 import { apiErrorSchema } from './apiErrorSchema'
 
-export const listActiveStageTypesStatus200Schema = z.array(activeStageTypeSchema).max(8)
+export const listActiveStageTypesStatus200Schema = z.array(activeStageTypeSchema).max(9)
 
 export type ListActiveStageTypesStatus200SchemaType = z.infer<typeof listActiveStageTypesStatus200Schema>
 

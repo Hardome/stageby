@@ -45,6 +45,8 @@ const fields: Record<string, readonly string[]> = {
     'fileId',
     'supplierName',
     'amountMinor',
+    'paidAmountMinor',
+    'paidDate',
     'paidAt',
     'paidByUserId',
     'deliveredAt',
@@ -65,6 +67,7 @@ const fields: Record<string, readonly string[]> = {
     'version',
   ],
   projects: [
+    'version',
     'id',
     'ownerName',
     'address',
@@ -85,6 +88,7 @@ const fields: Record<string, readonly string[]> = {
     'projectId',
     'stageTypeCode',
     'position',
+    'isIncluded',
     'workSubtypes',
     'assigneeId',
     'status',
@@ -104,6 +108,7 @@ const fields: Record<string, readonly string[]> = {
   work_payments: [
     'id',
     'stageId',
+    'workPlanRowId',
     'recipientId',
     'paidAt',
     'amountMinor',
@@ -113,6 +118,7 @@ const fields: Record<string, readonly string[]> = {
     'createdAt',
     'updatedAt',
   ],
+  work_plan_rows: ['id', 'stageId', 'amountMinor', 'recipientId', 'dueDate', 'version', 'createdAt', 'updatedAt'],
 };
 
 export function snapshot(entityType: string, row: Record<string, unknown>): Record<string, unknown> {

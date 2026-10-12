@@ -48,6 +48,18 @@ describe('project creation validation', () => {
     expect(testStageTypes[0]?.checklistItems[0]?.title).toBe('Армирование');
   });
 
+  it('excludes the additional stage that is available only when editing a project', () => {
+    const additional: ActiveStageType = {
+      code: 'additional',
+      title: 'Дополнительный этап',
+      position: 9,
+      checklistTemplateId: null,
+      checklistItems: [],
+    };
+    const values = initialProjectForm([...testStageTypes, additional]);
+    expect(values.stages.map((stage) => stage.type)).toEqual(['foundation', 'walls']);
+  });
+
   it.each(['90, 180', '-90, -180', ' 56.838011, 60.597474 '])('accepts coordinates %s', (value) => {
     expect(parseCoordinates(value)).toBeDefined();
   });

@@ -10,9 +10,9 @@ export type ClientOptions = {
 export type ExpectedVersion = number;
 
 /**
- * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.
+ * foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.
  */
-export type StageType = 'foundation' | 'walls' | 'roof' | 'windows' | 'facade' | 'electrical' | 'finishing' | 'heating';
+export type StageType = 'foundation' | 'walls' | 'roof' | 'windows' | 'facade' | 'electrical' | 'finishing' | 'heating' | 'additional';
 
 /**
  * Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
@@ -23,6 +23,105 @@ export type StageStatus = 'created' | 'assigned' | 'supplied' | 'in_progress' | 
  * Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.
  */
 export type ApiErrorCode = 'invalid_request' | 'unauthenticated' | 'forbidden' | 'not_found' | 'version_conflict' | 'invalid_transition' | 'idempotency_conflict' | 'login_taken' | 'last_manager' | 'user_in_use' | 'project_archived' | 'unsupported_mime_type' | 'file_too_large' | 'checksum_mismatch' | 'upload_incomplete' | 'upload_expired' | 'photo_limit_exceeded' | 'photo_deletion_confirmation_required' | 'invoice_limit_exceeded' | 'rate_limited';
+
+/**
+ * Денежная сумма в копейках, вводимая пользователем. В первой версии принимает только целые рубли.
+ */
+export type WritableMoneyAmountMinor = number;
+
+export type WorkPlanRow = {
+    /**
+     * Идентификатор строки.
+     */
+    id: number;
+    /**
+     * Этап строки.
+     */
+    stageId: number;
+    amountMinor: WritableMoneyAmountMinor;
+    /**
+     * Текущий получатель или null.
+     */
+    recipientId: number | null;
+    /**
+     * Срок выплаты; не ограничен датами проекта.
+     */
+    dueDate: string | null;
+    /**
+     * Версия строки.
+     */
+    version: number;
+    /**
+     * Время создания.
+     */
+    createdAt: string;
+    /**
+     * Время изменения.
+     */
+    updatedAt: string;
+};
+
+export type ApiError = {
+    /**
+     * Краткое название ошибки HTTP, соответствующее статусу ответа.
+     */
+    error: string;
+    code: ApiErrorCode;
+    /**
+     * Описание причины ошибки для человека.
+     */
+    message: string;
+    /**
+     * Подробности ошибок отдельных полей запроса; могут отсутствовать.
+     */
+    details?: Array<{
+        /**
+         * Путь к полю: body.plannedEndDate, query.limit и т. п.
+         */
+        path: string;
+        /**
+         * Описание ошибки в поле запроса, указанном в path.
+         */
+        message: string;
+    }>;
+};
+
+export type CreateWorkPlanRow = {
+    amountMinor: WritableMoneyAmountMinor;
+    /**
+     * Активный мастер или null.
+     */
+    recipientId?: number | null;
+    /**
+     * Срок выплаты или null.
+     */
+    dueDate?: string | null;
+};
+
+export type DeleteWorkPlanRow = {
+    expectedVersion: ExpectedVersion;
+};
+
+export type UpdateWorkPlanRow = {
+    expectedVersion: ExpectedVersion;
+    amountMinor?: WritableMoneyAmountMinor;
+    /**
+     * Новый получатель; прошлые выплаты не изменяются.
+     */
+    recipientId?: number | null;
+    /**
+     * Новый срок или null.
+     */
+    dueDate?: string | null;
+};
+
+export type DistributeWorkPlanRow = {
+    expectedVersion: ExpectedVersion;
+    /**
+     * Новые строки с суммой, равной исходному плану.
+     */
+    rows: Array<CreateWorkPlanRow>;
+};
 
 /**
  * manager — руководитель; foreman — мастер/исполнитель.
@@ -85,31 +184,6 @@ export type UserPage = {
      * Количество пропущенных записей после фильтрации и проверки доступа.
      */
     offset: number;
-};
-
-export type ApiError = {
-    /**
-     * Краткое название ошибки HTTP, соответствующее статусу ответа.
-     */
-    error: string;
-    code: ApiErrorCode;
-    /**
-     * Описание причины ошибки для человека.
-     */
-    message: string;
-    /**
-     * Подробности ошибок отдельных полей запроса; могут отсутствовать.
-     */
-    details?: Array<{
-        /**
-         * Путь к полю: body.plannedEndDate, query.limit и т. п.
-         */
-        path: string;
-        /**
-         * Описание ошибки в поле запроса, указанном в path.
-         */
-        message: string;
-    }>;
 };
 
 export type CreateUser = {
@@ -245,7 +319,11 @@ export type Coordinates = {
     longitude: number;
 };
 
+/**
+ * Реквизиты, версия и вычисленные итоги объекта.
+ */
 export type Project = {
+    version: ExpectedVersion;
     status: ProjectStatus;
     finances: ProjectFinancialSummary;
     /**
@@ -337,21 +415,30 @@ export type CreateProjectChecklistItem = {
 };
 
 export type CreateProjectStage = {
+    /**
+     * Стандартный тип этапа; дополнительный этап доступен только при редактировании.
+     */
     type: StageType;
     /**
-     * Плановое начало этапа внутри срока проекта.
+     * Необязательное независимое начало внутри срока проекта. Отсутствие или null означает незаданную дату.
      */
-    plannedStartDate: string;
+    plannedStartDate?: string | null;
     /**
-     * Плановое окончание этапа внутри срока проекта, не раньше начала этапа.
+     * Необязательное независимое окончание внутри срока проекта; при заданном начале не раньше него. Отсутствие или null означает незаданную дату.
      */
-    plannedEndDate: string;
+    plannedEndDate?: string | null;
     /**
-     * Активный мастер этапа; null — мастер пока не назначен.
+     * Активный мастер этапа; отсутствие или null — мастер пока не назначен. Не становится получателем строки плана автоматически.
      */
-    assigneeId: number | null;
-    plannedWorkAmountMinor: PlannedMoneyAmountMinor;
-    plannedMaterialAmountMinor: PlannedMoneyAmountMinor;
+    assigneeId?: number | null;
+    /**
+     * Ручной план работ. Отсутствие или null — план не задан, строка не создаётся. При заданном плане, включая 0, создаётся одна строка без получателя и срока.
+     */
+    plannedWorkAmountMinor?: PlannedMoneyAmountMinor;
+    /**
+     * Ручной план материалов. Отсутствие или null — план не задан. Счета добавляются после создания объекта.
+     */
+    plannedMaterialAmountMinor?: PlannedMoneyAmountMinor;
     /**
      * Изменённый индивидуальный список. Если поле отсутствует, копируется активный шаблон типа этапа.
      */
@@ -396,7 +483,7 @@ export type CreateProject = {
      */
     documentFileIds: Array<number>;
     /**
-     * Выбранные этапы объекта. Типы этапов не повторяются, порядок массива не влияет на position.
+     * Все включённые стандартные этапы, включая неоткрытые в форме. Для неоткрытого этапа достаточно type. Пропущенные типы не создаются; additional запрещён. Типы не повторяются, порядок массива не влияет на position.
      */
     stages: Array<CreateProjectStage>;
     /**
@@ -405,7 +492,133 @@ export type CreateProject = {
     notes?: string | null;
 };
 
+/**
+ * ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
+ */
+export type AssigneeId = number | null;
+
+/**
+ * Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта.
+ */
+export type PlannedStartDate = string | null;
+
+/**
+ * Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся.
+ */
+export type PlannedEndDate = string | null;
+
+/**
+ * Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
+ */
+export type WorkSubtypes = Array<string>;
+
+/**
+ * Новые примечания к этапу; null очищает сохранённые примечания.
+ */
+export type Notes = string | null;
+
+/**
+ * Новый состав индивидуального чек-листа до фактического старта.
+ */
+export type ConfigureChecklist = {
+    expectedVersion: ExpectedVersion;
+    /**
+     * Порядок массива определяет position. Равный вес каждого пункта.
+     */
+    items: Array<{
+        /**
+         * Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
+         */
+        title: string;
+        /**
+         * Необязательная фотоподсказка; null удаляет подсказку.
+         */
+        photoHint?: string | null;
+    }>;
+};
+
+/**
+ * Активный мастер или null.
+ */
+export type RecipientId = number | null;
+
+/**
+ * Срок выплаты или null.
+ */
+export type DueDate = string | null;
+
+export type ProjectWorkPlanRowChange = {
+    /**
+     * ID существующей записи.
+     */
+    id?: number;
+    expectedVersion?: ExpectedVersion;
+    amountMinor?: WritableMoneyAmountMinor;
+    recipientId?: RecipientId;
+    dueDate?: DueDate;
+    /**
+     * Удалить строку без выплат.
+     */
+    delete?: true;
+    /**
+     * Заменить нераспределённую строку строками с той же суммой.
+     */
+    distribute?: Array<CreateWorkPlanRow>;
+};
+
+export type UpdateProjectStage = {
+    /**
+     * ID существующей записи.
+     */
+    id: number;
+    expectedVersion: ExpectedVersion;
+    /**
+     * Явное включение или исключение этапа.
+     */
+    isIncluded?: boolean;
+    assigneeId?: AssigneeId;
+    plannedStartDate?: PlannedStartDate;
+    plannedEndDate?: PlannedEndDate;
+    plannedWorkAmountMinor?: PlannedMoneyAmountMinor;
+    plannedMaterialAmountMinor?: PlannedMoneyAmountMinor;
+    workSubtypes?: WorkSubtypes;
+    notes?: Notes;
+    /**
+     * Индивидуальный чек-лист и его версия.
+     */
+    checklist?: ConfigureChecklist;
+    /**
+     * Частичные операции. Пропущенные строки сохраняются. Новая строка требует amountMinor; существующая — id и expectedVersion. delete и distribute нельзя сочетать с правками полей.
+     */
+    workPlanRows?: Array<ProjectWorkPlanRowChange>;
+};
+
+/**
+ * Новый additional на последней позиции. Если запись уже существует, используйте stages с её ID для восстановления.
+ */
+export type CreateAdditionalStage = {
+    assigneeId?: AssigneeId;
+    plannedStartDate?: PlannedStartDate;
+    plannedEndDate?: PlannedEndDate;
+    plannedWorkAmountMinor?: PlannedMoneyAmountMinor;
+    plannedMaterialAmountMinor?: PlannedMoneyAmountMinor;
+    /**
+     * Непустой индивидуальный чек-лист дополнительного этапа.
+     */
+    checklistItems: Array<CreateProjectChecklistItem>;
+};
+
 export type UpdateProject = {
+    expectedVersion: ExpectedVersion;
+    /**
+     * Полный список PDF. Существующие связи сохраняются; новые файлы предварительно загружены руководителем.
+     */
+    documentFileIds?: Array<number>;
+    /**
+     * Частичные изменения существующих этапов.
+     */
+    stages?: Array<UpdateProjectStage>;
+    additionalStage?: CreateAdditionalStage;
     /**
      * Имя клиента или собственника объекта строительства.
      */
@@ -446,45 +659,6 @@ export type UpdateProject = {
      * Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.
      */
     isArchived?: boolean;
-};
-
-export type ChecklistTemplateItem = {
-    /**
-     * Идентификатор пункта активного шаблона.
-     */
-    id: number;
-    /**
-     * Порядок копирования пункта в индивидуальный чек-лист.
-     */
-    position: number;
-    /**
-     * Название, копируемое в новый этап.
-     */
-    title: string;
-    /**
-     * Фотоподсказка, копируемая в новый этап; null — подсказки нет.
-     */
-    photoHint: string | null;
-};
-
-export type ActiveStageType = {
-    code: StageType;
-    /**
-     * Отображаемое название активного типа.
-     */
-    title: string;
-    /**
-     * Порядок типа в объекте.
-     */
-    position: number;
-    /**
-     * Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
-     */
-    checklistTemplateId: number;
-    /**
-     * Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
-     */
-    checklistItems: Array<ChecklistTemplateItem>;
 };
 
 /**
@@ -560,6 +734,9 @@ export type Acceptance = {
     decidedAt: string;
 };
 
+/**
+ * Параметры, финансовые итоги и версия этапа.
+ */
 export type Stage = {
     /**
      * Стабильный ID этапа строительства.
@@ -589,11 +766,15 @@ export type Stage = {
     /**
      * Название однозначно определяется type и не меняется.
      */
-    title: 'Фундамент' | 'Стены' | 'Крыша' | 'Окна, двери' | 'Фасад' | 'Электрика' | 'Штукатурка' | 'Отопление';
+    title: 'Фундамент' | 'Стены' | 'Крыша' | 'Окна, двери' | 'Фасад' | 'Электрика' | 'Штукатурка' | 'Отопление' | 'Дополнительный этап';
     /**
      * Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
      */
     position: number;
+    /**
+     * Включён ли этап в списки, расчёты и завершение объекта.
+     */
+    isIncluded: boolean;
     /**
      * Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.
      */
@@ -606,11 +787,11 @@ export type Stage = {
     /**
      * Плановая дата начала этапа в формате YYYY-MM-DD.
      */
-    plannedStartDate: string;
+    plannedStartDate: string | null;
     /**
      * Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.
      */
-    plannedEndDate: string;
+    plannedEndDate: string | null;
     plannedWorkAmountMinor: PlannedMoneyAmountMinor;
     /**
      * Сумма всех платежей за работы этапа.
@@ -663,96 +844,6 @@ export type Stage = {
     updatedAt: string;
 };
 
-export type StagePage = {
-    /**
-     * Этапы текущей страницы с учётом фильтров и прав доступа.
-     */
-    items: Array<Stage>;
-    /**
-     * Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.
-     */
-    total: number;
-    /**
-     * Применённый размер страницы; количество items может быть меньше.
-     */
-    limit: number;
-    /**
-     * Количество пропущенных записей после фильтрации и проверки доступа.
-     */
-    offset: number;
-};
-
-export type ProjectStages = {
-    /**
-     * Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации.
-     */
-    items: Array<Stage>;
-};
-
-export type UpdateStage = {
-    expectedVersion: ExpectedVersion;
-    /**
-     * ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
-     */
-    assigneeId?: number | null;
-    /**
-     * Новый план оплаты работ; null очищает план. Доступно только руководителю.
-     */
-    plannedWorkAmountMinor?: PlannedMoneyAmountMinor;
-    /**
-     * Новый план материалов; null очищает план. Доступно только руководителю.
-     */
-    plannedMaterialAmountMinor?: PlannedMoneyAmountMinor;
-    /**
-     * Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
-     */
-    workSubtypes?: Array<string>;
-    /**
-     * Новая плановая дата начала этапа в формате YYYY-MM-DD. Дата обязательна и должна остаться внутри срока проекта.
-     */
-    plannedStartDate?: string;
-    /**
-     * Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся.
-     */
-    plannedEndDate?: string;
-    /**
-     * Новые примечания к этапу; null очищает сохранённые примечания.
-     */
-    notes?: string | null;
-};
-
-export type ChangeStageStatus = {
-    expectedVersion: ExpectedVersion;
-    /**
-     * Явный переход в supplied после комплектации или в paid после полной выплаты работ. Повтор текущего статуса допустим; остальные переходы запрещены.
-     */
-    status: 'supplied' | 'paid';
-};
-
-export type AcceptStage = {
-    expectedVersion: ExpectedVersion;
-    /**
-     * Необязательный комментарий к приёмке этапа; null — без комментария.
-     */
-    comment?: string | null;
-};
-
-export type RejectStage = {
-    expectedVersion: ExpectedVersion;
-    /**
-     * Обязательное замечание с причиной возврата этапа на доработку.
-     */
-    comment: string;
-    /**
-     * Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.
-     */
-    correctionDueDate?: string;
-    /**
-     * Пункты текущего чек-листа, требующие повторного выполнения.
-     */
-    itemIds: Array<number>;
-};
-
 export type ChecklistItem = {
     /**
      * ID пункта чек-листа. При замене состава чек-листа создаются новые идентификаторы пунктов.
@@ -800,6 +891,9 @@ export type ChecklistItem = {
     completedBy: UserBrief | null;
 };
 
+/**
+ * Индивидуальный чек-лист этапа с версией и состоянием пунктов.
+ */
 export type Checklist = {
     /**
      * Стабильный ID чек-листа этапа.
@@ -835,21 +929,159 @@ export type Checklist = {
     updatedAt: string;
 };
 
-export type ConfigureChecklist = {
+export type ProjectEditStage = {
+    /**
+     * Параметры и версия этапа.
+     */
+    stage: Stage;
+    /**
+     * Индивидуальный чек-лист и его версия.
+     */
+    checklist: Checklist;
+    /**
+     * Строки плана выплат с ID и версиями.
+     */
+    workPlanRows: Array<WorkPlanRow>;
+};
+
+export type ProjectEdit = {
+    /**
+     * Реквизиты, документы, версия и вычисленные итоги объекта.
+     */
+    project: Project;
+    /**
+     * Все этапы, включая исключённые, по position ASC; только для руководителя.
+     */
+    stages: Array<ProjectEditStage>;
+};
+
+export type ChecklistTemplateItem = {
+    /**
+     * Идентификатор пункта активного шаблона.
+     */
+    id: number;
+    /**
+     * Порядок копирования пункта в индивидуальный чек-лист.
+     */
+    position: number;
+    /**
+     * Название, копируемое в новый этап.
+     */
+    title: string;
+    /**
+     * Фотоподсказка, копируемая в новый этап; null — подсказки нет.
+     */
+    photoHint: string | null;
+};
+
+export type ActiveStageType = {
+    code: StageType;
+    /**
+     * Отображаемое название активного типа.
+     */
+    title: string;
+    /**
+     * Порядок типа в объекте.
+     */
+    position: number;
+    /**
+     * Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
+     */
+    checklistTemplateId: number | null;
+    /**
+     * Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
+     */
+    checklistItems: Array<ChecklistTemplateItem>;
+};
+
+export type StagePage = {
+    /**
+     * Этапы текущей страницы с учётом фильтров и прав доступа.
+     */
+    items: Array<Stage>;
+    /**
+     * Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.
+     */
+    total: number;
+    /**
+     * Применённый размер страницы; количество items может быть меньше.
+     */
+    limit: number;
+    /**
+     * Количество пропущенных записей после фильтрации и проверки доступа.
+     */
+    offset: number;
+};
+
+export type ProjectStages = {
+    /**
+     * Доступные пользователю включённые этапы одного проекта, максимум девять, в порядке position ASC. Без пагинации.
+     */
+    items: Array<Stage>;
+};
+
+export type UpdateStage = {
     expectedVersion: ExpectedVersion;
     /**
-     * Порядок массива определяет position. Равный вес каждого пункта.
+     * ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.
      */
-    items: Array<{
-        /**
-         * Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.
-         */
-        title: string;
-        /**
-         * Необязательная фотоподсказка; null удаляет подсказку.
-         */
-        photoHint?: string | null;
-    }>;
+    assigneeId?: number | null;
+    /**
+     * Новый план оплаты работ; null очищает план. Доступно только руководителю.
+     */
+    plannedWorkAmountMinor?: PlannedMoneyAmountMinor;
+    /**
+     * Новый план материалов; null очищает план. Доступно только руководителю.
+     */
+    plannedMaterialAmountMinor?: PlannedMoneyAmountMinor;
+    /**
+     * Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.
+     */
+    workSubtypes?: Array<string>;
+    /**
+     * Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта.
+     */
+    plannedStartDate?: string | null;
+    /**
+     * Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся.
+     */
+    plannedEndDate?: string | null;
+    /**
+     * Новые примечания к этапу; null очищает сохранённые примечания.
+     */
+    notes?: string | null;
+};
+
+export type ChangeStageStatus = {
+    expectedVersion: ExpectedVersion;
+    /**
+     * Явный переход в supplied после комплектации или в paid после полной выплаты работ. Повтор текущего статуса допустим; остальные переходы запрещены.
+     */
+    status: 'supplied' | 'paid';
+};
+
+export type AcceptStage = {
+    expectedVersion: ExpectedVersion;
+    /**
+     * Необязательный комментарий к приёмке этапа; null — без комментария.
+     */
+    comment?: string | null;
+};
+
+export type RejectStage = {
+    expectedVersion: ExpectedVersion;
+    /**
+     * Обязательное замечание с причиной возврата этапа на доработку.
+     */
+    comment: string;
+    /**
+     * Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.
+     */
+    correctionDueDate?: string;
+    /**
+     * Пункты текущего чек-листа, требующие повторного выполнения.
+     */
+    itemIds: Array<number>;
 };
 
 /**
@@ -866,6 +1098,10 @@ export type WorkPayment = {
      * Идентификатор оплачиваемого этапа.
      */
     stageId: number;
+    /**
+     * Строка планирования выплаты своего этапа.
+     */
+    workPlanRowId: number;
     /**
      * Дата фактической оплаты в формате YYYY-MM-DD.
      */
@@ -896,9 +1132,9 @@ export type WorkPayment = {
 
 export type CreateWorkPayment = {
     /**
-     * ID активного мастера из списка пользователей; может отличаться от текущего назначенного мастера.
+     * ID строки своего этапа. Получатель копируется из строки и должен быть активным мастером.
      */
-    recipientId: number;
+    workPlanRowId: number;
     /**
      * Дата фактической оплаты в формате YYYY-MM-DD.
      */
@@ -988,9 +1224,17 @@ export type StageMaterialInvoice = {
      */
     supplierName: string | null;
     /**
-     * Полная сумма счёта в копейках. Частичная оплата одного счёта не поддерживается.
+     * Сумма выставленного счёта в копейках; хранится независимо от суммы оплаты.
      */
     amountMinor: PositiveMoneyAmountMinor;
+    /**
+     * Фактическая положительная сумма оплаты или null для неоплаченного счёта.
+     */
+    paidAmountMinor: PlannedMoneyAmountMinor;
+    /**
+     * Введённая календарная дата оплаты или null.
+     */
+    paidDate: string | null;
     /**
      * Серверное время отметки полной оплаты или null.
      */
@@ -1043,9 +1287,17 @@ export type CreateMaterialInvoice = {
 export type UpdateMaterialInvoice = {
     expectedVersion: ExpectedVersion;
     /**
-     * Требуемая отметка оплаты.
+     * Требуемая отметка оплаты. При true обязательны paidAmountMinor и paidDate, при false они очищаются.
      */
     isPaid?: boolean;
+    /**
+     * Фактическая сумма оплаты; обязательна вместе с isPaid true.
+     */
+    paidAmountMinor?: PositiveMoneyAmountMinor;
+    /**
+     * Календарная дата оплаты; обязательна вместе с isPaid true.
+     */
+    paidDate?: string;
     /**
      * Требуемая отметка доставки.
      */
@@ -1241,11 +1493,11 @@ export type ChecklistItemPhoto = {
  */
 export type DashboardMoneyMetric = {
     /**
-     * Сумма заданных планов; null, если план соответствующей категории неполон хотя бы у одного включённого этапа.
+     * Сумма планов обязательств в расчёте; null при неполноте категории. Для работ — строки выплат, для материалов — ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.
      */
     readonly plannedAmountMinor: PlannedMoneyAmountMinor;
     /**
-     * Фактическая сумма соответствующей категории в том же периметре этапов.
+     * Фактическая сумма оплат с датой не позже through по тем же строкам работ или этапам материалов, которые вошли в расчёт плана.
      */
     readonly actualAmountMinor: MoneyAmountMinor;
     /**
@@ -1253,7 +1505,7 @@ export type DashboardMoneyMetric = {
      */
     readonly balanceAmountMinor: SignedMoneyAmountMinor;
     /**
-     * true, если план категории задан у каждого включённого этапа. Нулевой план считается заданным.
+     * true, если план категории полон в выбранном периметре. Для работ неполнота означает отсутствие строк у этапа с окончанием не позже through; для материалов — незаданный план выбранного этапа. Нулевой план считается заданным.
      */
     readonly isPlanComplete: boolean;
 };
@@ -1335,13 +1587,13 @@ export type DashboardSelectedStage = {
      */
     title: string;
     /**
-     * Плановое начало выбранного этапа.
+     * Плановое начало выбранного этапа или null.
      */
-    plannedStartDate: string;
+    plannedStartDate: string | null;
     /**
-     * Плановое окончание выбранного этапа.
+     * Плановое окончание выбранного этапа или null.
      */
-    plannedEndDate: string;
+    plannedEndDate: string | null;
     /**
      * Назначенный мастер выбранного этапа или null.
      */
@@ -1488,7 +1740,11 @@ export type SessionWritable = {
     user: UserWritable;
 };
 
+/**
+ * Реквизиты, версия и вычисленные итоги объекта.
+ */
 export type ProjectWritable = {
+    version: ExpectedVersion;
     status: ProjectStatus;
     /**
      * Загруженные PDF проекта в порядке position ASC.
@@ -1567,6 +1823,9 @@ export type ProjectPageWritable = {
     offset: number;
 };
 
+/**
+ * Параметры, финансовые итоги и версия этапа.
+ */
 export type StageWritable = {
     /**
      * Стабильный ID этапа строительства.
@@ -1596,11 +1855,15 @@ export type StageWritable = {
     /**
      * Название однозначно определяется type и не меняется.
      */
-    title: 'Фундамент' | 'Стены' | 'Крыша' | 'Окна, двери' | 'Фасад' | 'Электрика' | 'Штукатурка' | 'Отопление';
+    title: 'Фундамент' | 'Стены' | 'Крыша' | 'Окна, двери' | 'Фасад' | 'Электрика' | 'Штукатурка' | 'Отопление' | 'Дополнительный этап';
     /**
      * Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
      */
     position: number;
+    /**
+     * Включён ли этап в списки, расчёты и завершение объекта.
+     */
+    isIncluded: boolean;
     /**
      * Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.
      */
@@ -1613,11 +1876,11 @@ export type StageWritable = {
     /**
      * Плановая дата начала этапа в формате YYYY-MM-DD.
      */
-    plannedStartDate: string;
+    plannedStartDate: string | null;
     /**
      * Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.
      */
-    plannedEndDate: string;
+    plannedEndDate: string | null;
     plannedWorkAmountMinor: PlannedMoneyAmountMinor;
     plannedMaterialAmountMinor: PlannedMoneyAmountMinor;
     actualMaterialAmountMinor: MoneyAmountMinor;
@@ -1662,6 +1925,32 @@ export type StageWritable = {
     updatedAt: string;
 };
 
+export type ProjectEditStageWritable = {
+    /**
+     * Параметры и версия этапа.
+     */
+    stage: StageWritable;
+    /**
+     * Индивидуальный чек-лист и его версия.
+     */
+    checklist: Checklist;
+    /**
+     * Строки плана выплат с ID и версиями.
+     */
+    workPlanRows: Array<WorkPlanRow>;
+};
+
+export type ProjectEditWritable = {
+    /**
+     * Реквизиты, документы, версия и вычисленные итоги объекта.
+     */
+    project: ProjectWritable;
+    /**
+     * Все этапы, включая исключённые, по position ASC; только для руководителя.
+     */
+    stages: Array<ProjectEditStageWritable>;
+};
+
 export type StagePageWritable = {
     /**
      * Этапы текущей страницы с учётом фильтров и прав доступа.
@@ -1683,7 +1972,7 @@ export type StagePageWritable = {
 
 export type ProjectStagesWritable = {
     /**
-     * Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации.
+     * Доступные пользователю включённые этапы одного проекта, максимум девять, в порядке position ASC. Без пагинации.
      */
     items: Array<StageWritable>;
 };
@@ -1713,13 +2002,13 @@ export type DashboardSelectedStageWritable = {
      */
     title: string;
     /**
-     * Плановое начало выбранного этапа.
+     * Плановое начало выбранного этапа или null.
      */
-    plannedStartDate: string;
+    plannedStartDate: string | null;
     /**
-     * Плановое окончание выбранного этапа.
+     * Плановое окончание выбранного этапа или null.
      */
-    plannedEndDate: string;
+    plannedEndDate: string | null;
     /**
      * Назначенный мастер выбранного этапа или null.
      */
@@ -1797,6 +2086,282 @@ export type FileId = EntityId;
 export type ItemId = EntityId;
 
 export type PhotoId = EntityId;
+
+export type ListWorkPlanRowsData = {
+    body?: never;
+    path: {
+        /**
+         * Идентификатор ресурса.
+         */
+        stageId: number;
+    };
+    query?: never;
+    url: '/stages/{stageId}/work-plan-rows';
+};
+
+export type ListWorkPlanRowsErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type ListWorkPlanRowsError = ListWorkPlanRowsErrors[keyof ListWorkPlanRowsErrors];
+
+export type ListWorkPlanRowsResponses = {
+    /**
+     * Успешный ответ
+     */
+    200: Array<WorkPlanRow>;
+};
+
+export type ListWorkPlanRowsResponse = ListWorkPlanRowsResponses[keyof ListWorkPlanRowsResponses];
+
+export type CreateWorkPlanRowData = {
+    body: CreateWorkPlanRow;
+    path: {
+        /**
+         * Идентификатор ресурса.
+         */
+        stageId: number;
+    };
+    query?: never;
+    url: '/stages/{stageId}/work-plan-rows';
+};
+
+export type CreateWorkPlanRowErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type CreateWorkPlanRowError = CreateWorkPlanRowErrors[keyof CreateWorkPlanRowErrors];
+
+export type CreateWorkPlanRowResponses = {
+    /**
+     * Успешный ответ
+     */
+    201: WorkPlanRow;
+};
+
+export type CreateWorkPlanRowResponse = CreateWorkPlanRowResponses[keyof CreateWorkPlanRowResponses];
+
+export type DeleteWorkPlanRowData = {
+    body: DeleteWorkPlanRow;
+    path: {
+        /**
+         * Идентификатор ресурса.
+         */
+        rowId: number;
+    };
+    query?: never;
+    url: '/work-plan-rows/{rowId}';
+};
+
+export type DeleteWorkPlanRowErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type DeleteWorkPlanRowError = DeleteWorkPlanRowErrors[keyof DeleteWorkPlanRowErrors];
+
+export type DeleteWorkPlanRowResponses = {
+    /**
+     * Строка удалена
+     */
+    204: void;
+};
+
+export type DeleteWorkPlanRowResponse = DeleteWorkPlanRowResponses[keyof DeleteWorkPlanRowResponses];
+
+export type GetWorkPlanRowData = {
+    body?: never;
+    path: {
+        /**
+         * Идентификатор ресурса.
+         */
+        rowId: number;
+    };
+    query?: never;
+    url: '/work-plan-rows/{rowId}';
+};
+
+export type GetWorkPlanRowErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type GetWorkPlanRowError = GetWorkPlanRowErrors[keyof GetWorkPlanRowErrors];
+
+export type GetWorkPlanRowResponses = {
+    /**
+     * Успешный ответ
+     */
+    200: WorkPlanRow;
+};
+
+export type GetWorkPlanRowResponse = GetWorkPlanRowResponses[keyof GetWorkPlanRowResponses];
+
+export type UpdateWorkPlanRowData = {
+    body: UpdateWorkPlanRow;
+    path: {
+        /**
+         * Идентификатор ресурса.
+         */
+        rowId: number;
+    };
+    query?: never;
+    url: '/work-plan-rows/{rowId}';
+};
+
+export type UpdateWorkPlanRowErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type UpdateWorkPlanRowError = UpdateWorkPlanRowErrors[keyof UpdateWorkPlanRowErrors];
+
+export type UpdateWorkPlanRowResponses = {
+    /**
+     * Успешный ответ
+     */
+    200: WorkPlanRow;
+};
+
+export type UpdateWorkPlanRowResponse = UpdateWorkPlanRowResponses[keyof UpdateWorkPlanRowResponses];
+
+export type DistributeWorkPlanRowData = {
+    body: DistributeWorkPlanRow;
+    path: {
+        /**
+         * Идентификатор ресурса.
+         */
+        rowId: number;
+    };
+    query?: never;
+    url: '/work-plan-rows/{rowId}/distribute';
+};
+
+export type DistributeWorkPlanRowErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type DistributeWorkPlanRowError = DistributeWorkPlanRowErrors[keyof DistributeWorkPlanRowErrors];
+
+export type DistributeWorkPlanRowResponses = {
+    /**
+     * Успешный ответ
+     */
+    200: Array<WorkPlanRow>;
+};
+
+export type DistributeWorkPlanRowResponse = DistributeWorkPlanRowResponses[keyof DistributeWorkPlanRowResponses];
 
 export type ListUsersData = {
     body?: never;
@@ -2301,6 +2866,10 @@ export type UpdateProjectErrors = {
      * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
      */
     404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
 };
 
 export type UpdateProjectError = UpdateProjectErrors[keyof UpdateProjectErrors];
@@ -2313,6 +2882,48 @@ export type UpdateProjectResponses = {
 };
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
+
+export type GetProjectEditData = {
+    body?: never;
+    path: {
+        /**
+         * ID объекта.
+         */
+        projectId: number;
+    };
+    query?: never;
+    url: '/projects/{projectId}/edit';
+};
+
+export type GetProjectEditErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+};
+
+export type GetProjectEditError = GetProjectEditErrors[keyof GetProjectEditErrors];
+
+export type GetProjectEditResponses = {
+    /**
+     * Данные формы.
+     */
+    200: ProjectEdit;
+};
+
+export type GetProjectEditResponse = GetProjectEditResponses[keyof GetProjectEditResponses];
 
 export type ListActiveStageTypesData = {
     body?: never;

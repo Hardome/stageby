@@ -21,14 +21,15 @@ export const stageSchema = z.object({
   projectAddress: z.string().min(1).max(1000).describe('Адрес объекта строительства для выезда на этап.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10'] }),
   projectCoordinates: coordinatesSchema.describe('Координаты объекта строительства для выезда на этап.'),
   projectIsArchived: z.boolean().describe('Признак архивного проекта. Если true, изменения этапа запрещены.').meta({ examples: [false] }),
-  type: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление.').meta({ examples: ['foundation'] }),
-  title: z.enum(['Фундамент', 'Стены', 'Крыша', 'Окна, двери', 'Фасад', 'Электрика', 'Штукатурка', 'Отопление']).describe('Название однозначно определяется type и не меняется.').meta({ examples: ['Фундамент'] }),
-  position: z.int().min(1).max(8).describe('Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.').meta({ examples: [1] }),
+  type: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.').meta({ examples: ['foundation'] }),
+  title: z.enum(['Фундамент', 'Стены', 'Крыша', 'Окна, двери', 'Фасад', 'Электрика', 'Штукатурка', 'Отопление', 'Дополнительный этап']).describe('Название однозначно определяется type и не меняется.').meta({ examples: ['Фундамент'] }),
+  position: z.int().min(1).max(9).describe('Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.').meta({ examples: [1] }),
+  isIncluded: z.boolean().describe('Включён ли этап в списки, расчёты и завершение объекта.').meta({ examples: [true] }),
   workSubtypes: z.array(z.string().min(1).max(255)).max(30).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).describe('Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.'),
   assignee: z.union([userBriefSchema, z.null()]).describe('Назначенный ответственный мастер; null — мастер не назначен.'),
   status: stageStatusSchema.describe('Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.').meta({ examples: ['in_progress'] }),
-  plannedStartDate: z.iso.date().describe('Плановая дата начала этапа в формате YYYY-MM-DD.').meta({ examples: ['2026-09-21'] }),
-  plannedEndDate: z.iso.date().describe('Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.').meta({ examples: ['2026-09-28'] }),
+  plannedStartDate: z.iso.date().nullable().describe('Плановая дата начала этапа в формате YYYY-MM-DD.').meta({ examples: ['2026-09-21'] }),
+  plannedEndDate: z.iso.date().nullable().describe('Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.').meta({ examples: ['2026-09-28'] }),
   plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
   actualWorkAmountMinor: moneyAmountMinorSchema.describe('Сумма всех платежей за работы этапа.').meta({ examples: [12500000] }),
   workBalanceAmountMinor: signedMoneyAmountMinorSchema.nullable().describe('План работ минус фактические платежи; отрицательное значение означает переплату, null — план не задан.').meta({ examples: [250000, -100000, ] }),
@@ -46,6 +47,6 @@ export const stageSchema = z.object({
   version: z.int().min(1).describe('Версия записи. Увеличивается при каждом изменении.').meta({ examples: [1] }),
   createdAt: z.iso.datetime().describe('Дата и время создания записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-20T08:00:00Z'] }),
   updatedAt: z.iso.datetime().describe('Дата и время последнего изменения записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-24T10:00:00Z'] }),
-}).strict()
+}).strict().describe('Параметры, финансовые итоги и версия этапа.')
 
 export type StageSchemaType = z.infer<typeof stageSchema>

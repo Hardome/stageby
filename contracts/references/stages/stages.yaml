@@ -13,7 +13,7 @@ paths:
             application/json:
               schema:
                 type: array
-                maxItems: 8
+                maxItems: 9
                 items:
                   $ref: "#/components/schemas/ActiveStageType"
         "401":
@@ -87,7 +87,7 @@ paths:
       tags:
         - Stages
       summary: Этапы одного проекта
-      description: "Без пагинации: максимум восемь записей, position ASC. Руководитель видит все восемь;
+      description: "Без пагинации: максимум девять записей, position ASC. Руководитель видит включённые этапы;
         мастер — только назначенные ему. Для существующего проекта вне области доступа возвращается
         404."
       responses:
@@ -143,9 +143,12 @@ paths:
       summary: Настроить этап
       description: Только руководитель. Можно передать любое непустое сочетание полей; все проверки
         выполняются по результирующей записи, изменения атомарны и увеличивают version один раз.
-        Назначать можно только активного foreman. created/assigned допускают снятие назначения;
-        supplied/in_progress/acceptance/rework допускают только замену мастера. completed и paid неизменяемы.
-        Даты находятся внутри срока проекта, окончание не раньше начала; соседние этапы не переносятся.
+        Назначать можно только активного foreman; null снимает назначение. Даты, мастер и ручные планы
+        редактируются после старта, включая completed и paid; фактические даты сохраняются.
+        Для paid план работ должен оставаться заданным, а остаток работ — не больше нуля,
+        иначе возвращается 409 invalid_transition без изменения статуса.
+        Даты независимо nullable; каждая заданная дата находится внутри обеих границ проекта,
+        окончание не раньше начала при наличии обеих дат; соседние этапы не переносятся.
         Устаревшая expectedVersion — 409 version_conflict, архив — 409 project_archived.
       requestBody:
         required: true
@@ -354,18 +357,18 @@ components:
         position:
           type: integer
           minimum: 1
-          maximum: 8
+          maximum: 9
           example: 1
           description: Порядок типа в объекте.
         checklistTemplateId:
-          type: integer
+          type: [integer, "null"]
           minimum: 1
           maximum: 2147483647
           example: 81
           description: Идентификатор активной редакции шаблона, полезный для диагностики изменения справочника.
         checklistItems:
           type: array
-          minItems: 1
+          minItems: 0
           items:
             $ref: "#/components/schemas/ChecklistTemplateItem"
           description: Пункты активного шаблона в порядке position ASC; эти значения сервер копирует при отсутствии checklistItems в запросе создания.
@@ -419,6 +422,7 @@ components:
           type: string
           format: date-time
     Stage:
+      description: Параметры, финансовые итоги и версия этапа.
       type: object
       additionalProperties: false
       required:
@@ -431,6 +435,7 @@ components:
         - type
         - title
         - position
+        - isIncluded
         - workSubtypes
         - assignee
         - status
@@ -505,14 +510,19 @@ components:
             - Электрика
             - Штукатурка
             - Отопление
+            - Дополнительный этап
           description: Название однозначно определяется type и не меняется.
         position:
           examples:
             - 1
           type: integer
           minimum: 1
-          maximum: 8
+          maximum: 9
           description: Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.
+        isIncluded:
+          type: boolean
+          description: Включён ли этап в списки, расчёты и завершение объекта.
+          example: true
         workSubtypes:
           description: "Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов."
           type: array
@@ -533,13 +543,13 @@ components:
           examples:
             - "2026-09-21"
           description: "Плановая дата начала этапа в формате YYYY-MM-DD."
-          type: string
+          type: [string, "null"]
           format: date
         plannedEndDate:
           examples:
             - "2026-09-28"
           description: "Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала."
-          type: string
+          type: [string, "null"]
           format: date
         plannedWorkAmountMinor:
           $ref: ../common/common.yaml#/components/schemas/PlannedMoneyAmountMinor
@@ -671,11 +681,11 @@ components:
         - items
       properties:
         items:
-          description: "Доступные пользователю этапы одного проекта, максимум восемь, в порядке position ASC. Без пагинации."
+          description: "Доступные пользователю включённые этапы одного проекта, максимум девять, в порядке position ASC. Без пагинации."
           type: array
           items:
             $ref: "#/components/schemas/Stage"
-          maxItems: 8
+          maxItems: 9
     UpdateStage:
       type: object
       additionalProperties: false
@@ -714,14 +724,14 @@ components:
         plannedStartDate:
           examples:
             - "2026-09-21"
-          description: "Новая плановая дата начала этапа в формате YYYY-MM-DD. Дата обязательна и должна остаться внутри срока проекта."
-          type: string
+          description: "Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта."
+          type: [string, "null"]
           format: date
         plannedEndDate:
           examples:
             - "2026-09-28"
-          description: "Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся."
-          type: string
+          description: "Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся."
+          type: [string, "null"]
           format: date
         notes:
           examples:

@@ -15,8 +15,8 @@ export const updateStageSchema = z.object({
   plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Новый план оплаты работ; null очищает план. Доступно только руководителю.').meta({ examples: [12500000, 0, ] }),
   plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Новый план материалов; null очищает план. Доступно только руководителю.').meta({ examples: [12500000, 0, ] }),
   workSubtypes: z.array(z.string().min(1).max(255)).max(30).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).optional().describe('Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.'),
-  plannedStartDate: z.iso.date().optional().describe('Новая плановая дата начала этапа в формате YYYY-MM-DD. Дата обязательна и должна остаться внутри срока проекта.').meta({ examples: ['2026-09-21'] }),
-  plannedEndDate: z.iso.date().optional().describe('Новая плановая дата окончания этапа в формате YYYY-MM-DD. Дата обязательна, не раньше начала этапа и должна остаться внутри срока проекта. Соседние этапы автоматически не переносятся.').meta({ examples: ['2026-09-28'] }),
+  plannedStartDate: z.iso.date().nullish().describe('Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта.').meta({ examples: ['2026-09-21'] }),
+  plannedEndDate: z.iso.date().nullish().describe('Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся.').meta({ examples: ['2026-09-28'] }),
   notes: z.string().min(1).max(5000).nullish().describe('Новые примечания к этапу; null очищает сохранённые примечания.').meta({ examples: ['Согласовать время доставки бетона.', ] }),
 }).strict()
 
@@ -26,7 +26,7 @@ export const updateStagePathStageIdSchema = z.int().min(1).max(2147483647).descr
 
 export type UpdateStagePathStageIdSchemaType = z.infer<typeof updateStagePathStageIdSchema>
 
-export const updateStageStatus200Schema = stageSchema
+export const updateStageStatus200Schema = stageSchema.describe('Параметры, финансовые итоги и версия этапа.')
 
 export type UpdateStageStatus200SchemaType = z.infer<typeof updateStageStatus200Schema>
 
