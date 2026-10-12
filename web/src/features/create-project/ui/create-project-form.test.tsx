@@ -88,23 +88,32 @@ describe('project creation workflow', () => {
     if (!button) throw new Error(`Missing button ${label}`);
     await flush(() => button.click());
   }
-  async function objectStep() {
+  async function clickStep(step: number) {
+    const button = container.querySelectorAll<HTMLButtonElement>(':scope ol[aria-label="Шаги создания"] button')[
+      step - 1
+    ];
+    if (!button) throw new Error('Missing step button');
+    await flush(() => button.click());
+  }
+  async function objectStep(shouldOpenStage = true) {
     await fill('ownerName', 'Иван Иванов');
     await fill('address', 'Екатеринбург');
     await fill('coordinates', '56.8, 60.6');
     await fill('plannedStartDate', '2026-10-05');
     await fill('plannedEndDate', '2026-12-31');
     await submit();
+    if (shouldOpenStage) await click('Заполнить этапы');
   }
   async function stageDates() {
     await fill('stages.0.plannedStartDate', '2026-10-05');
     await fill('stages.0.plannedEndDate', '2026-10-31');
   }
-  async function renderForm(stageTypes = types) {
+  async function renderForm(stageTypes = types, formKey = 'default') {
     await flush(() =>
       root.render(
         <QueryClientProvider client={queryClient}>
           <CreateProjectForm
+            key={formKey}
             types={stageTypes}
             onDirtyChange={mocks.dirty}
             onCancel={() => {}}
@@ -173,6 +182,7 @@ describe('project creation workflow', () => {
     await submit();
     expect(mocks.create).not.toHaveBeenCalled();
     await click('Назад');
+    await click('Назад');
     expect(container.textContent).toContain('drawing.pdf');
     await flush(() => {
       pending.reject(new Error('Ошибка сети'));
@@ -191,6 +201,8 @@ describe('project creation workflow', () => {
     expect(request.body.documentFileIds).toEqual([41]);
   });
   it('validates the first step before allowing stage configuration', async () => {
+    expect(container.querySelector('button[type="submit"]')).toBeNull();
+    expect(container.textContent).not.toContain('Создать объект');
     await submit();
     expect(input('ownerName').getAttribute('aria-invalid')).toBe('true');
     expect(input('ownerName')).toHaveFocus();
@@ -199,11 +211,32 @@ describe('project creation workflow', () => {
   });
   it('allows the next step with empty stage dates without showing their errors', async () => {
     await objectStep();
-    expect(container.textContent).toContain('Включено этапов:');
+    expect(container.textContent).toContain('Этап 1 из 1.');
     expect(input('stages.0.plannedStartDate')).toHaveValue('');
     expect(input('stages.0.plannedStartDate')).toHaveAttribute('aria-invalid', 'false');
     expect(container.textContent).not.toContain('Укажите дату этапа.');
     expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it('creates from stage selection without opening stage editors', async () => {
+    await objectStep(false);
+    expect(container.querySelector('[id="project-stages.0.plannedStartDate"]')).toBeNull();
+    mocks.create.mockResolvedValueOnce({ id: 77 });
+    await submit();
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(mocks.create.mock.calls[0]?.[0]).toMatchObject({
+      body: { stages: [{ plannedStartDate: null, plannedEndDate: null }] },
+    });
+    expect(mocks.success).toHaveBeenCalledTimes(1);
+  });
+  it('opens and focuses the first invalid stage when creating from selection', async () => {
+    await objectStep();
+    await fill('stages.0.plannedEndDate', '2027-01-01');
+    await click('Назад');
+    await submit();
+    expect(input('stages.0.plannedEndDate')).toHaveAttribute('aria-invalid', 'true');
+    expect(input('stages.0.plannedEndDate')).toHaveFocus();
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(container.textContent).toContain('Дата должна находиться внутри сроков проекта.');
   });
   it('validates project date order and focuses the end date on the first step', async () => {
     await fill('ownerName', 'Иван Иванов');
@@ -226,9 +259,11 @@ describe('project creation workflow', () => {
     await fill('stages.0.checklistItems.0.title', 'Индивидуальный пункт');
     await stageDates();
     await click('Назад');
+    await click('Назад');
     expect(input('ownerName').value).toBe('Иван Иванов');
     await renderForm([{ ...(types[0] as ActiveStageType), checklistItems: [] }]);
     await submit();
+    await click('Заполнить этапы');
     expect(input('stages.0.checklistItems.0.title').value).toBe('Индивидуальный пункт');
     expect(input('stages.0.plannedStartDate').value).toBe('2026-10-05');
     expect(mocks.dirty).toHaveBeenLastCalledWith(true);
@@ -237,17 +272,17 @@ describe('project creation workflow', () => {
     await objectStep();
     await stageDates();
     await fill('stages.0.checklistItems.0.title', 'Индивидуальный пункт');
+    await click('Назад');
     const checkbox = container.querySelector<HTMLElement>('#include-foundation');
     if (!checkbox) throw new Error('Missing stage checkbox');
     await flush(() => checkbox.click());
     expect(container.textContent).toContain('Включено этапов: 0 из 1.');
-    expect(container.textContent).toContain('Этап исключён и не будет создан.');
     await submit();
     expect(container.textContent).toContain('Включите хотя бы один этап.');
     expect(mocks.create).not.toHaveBeenCalled();
     await flush(() => checkbox.click());
     expect(container.textContent).toContain('Включено этапов: 1 из 1.');
-    await click('1. Фундамент');
+    await click('Заполнить этапы');
     expect(input('stages.0.checklistItems.0.title')).toHaveValue('Индивидуальный пункт');
     expect(input('stages.0.plannedStartDate')).toHaveValue('2026-10-05');
   });
@@ -271,6 +306,8 @@ describe('project creation workflow', () => {
     await submit();
     expect(container.textContent).toContain('Повторить');
     expect(input('stages.0.plannedStartDate').disabled).toBe(true);
+    for (const button of container.querySelectorAll(':scope ol[aria-label="Шаги создания"] button'))
+      expect(button).toBeDisabled();
     const firstRequest: unknown = mocks.create.mock.calls[0]?.[0];
     expect(firstRequest).toMatchObject({ body: { ownerName: 'Иван Иванов', documentFileIds: [] } });
     const project = { id: 77 };
@@ -339,6 +376,159 @@ describe('project creation workflow', () => {
     await submit();
     expect(input('stages.0.plannedStartDate')).toHaveValue('31.02.2026');
     expect(input('stages.0.plannedStartDate')).toHaveAttribute('aria-invalid', 'true');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  async function multipleStages() {
+    const foundation = types[0] as ActiveStageType;
+    await renderForm(
+      [
+        { ...foundation, code: 'roof', title: 'Крыша', position: 3 },
+        foundation,
+        { ...foundation, code: 'walls', title: 'Стены', position: 2 },
+      ],
+      'multiple',
+    );
+  }
+
+  async function toggleStage(code: string) {
+    const checkbox = container.querySelector<HTMLElement>(`#include-${code}`);
+    if (!checkbox) throw new Error('Missing stage checkbox');
+    await flush(() => checkbox.click());
+  }
+
+  it('requires at least one stage before opening the first editor', async () => {
+    await objectStep(false);
+    await toggleStage('foundation');
+    await click('Заполнить этапы');
+    expect(container.textContent).toContain('Включите хотя бы один этап.');
+    expect(container.querySelector('[role="checkbox"]')).toHaveFocus();
+    expect(container.querySelector('[id="project-stages.0.plannedStartDate"]')).toBeNull();
+    await toggleStage('foundation');
+    expect(container.textContent).not.toContain('Включите хотя бы один этап.');
+    await click('Заполнить этапы');
+    expect(container.textContent).toContain('Этап 1 из 1.');
+  });
+
+  it('visits only selected stages in catalogue order and preserves fields on next and back', async () => {
+    await multipleStages();
+    await objectStep(false);
+    await toggleStage('walls');
+    await click('Заполнить этапы');
+    expect(container.querySelector('h2')).toHaveTextContent('Фундамент');
+    expect(container.textContent).toContain('Этап 1 из 2.');
+    expect(container.querySelector('[id="project-stages.2.plannedStartDate"]')).toBeNull();
+    await fill('stages.0.plannedWorkAmount', '123');
+    await fill('stages.0.checklistItems.0.title', 'Своя проверка');
+    expect(container.textContent).not.toContain('Пропустить этап');
+    await click('Следующий этап');
+    expect(container.querySelector('h2')).toHaveTextContent('Крыша');
+    expect(container.textContent).toContain('Этап 2 из 2.');
+    expect(container.textContent).not.toContain('Следующий этап');
+    expect(container.textContent).not.toContain('Пропустить этап');
+    await click('Назад');
+    expect(input('stages.0.plannedWorkAmount')).toHaveValue('123');
+    expect(input('stages.0.checklistItems.0.title')).toHaveValue('Своя проверка');
+    await click('Следующий этап');
+    mocks.create.mockResolvedValueOnce({ id: 77 });
+    await click('Создать объект');
+    expect(mocks.create.mock.calls[0]?.[0]).toMatchObject({
+      body: {
+        stages: [
+          { type: 'foundation', plannedWorkAmountMinor: 12300n, checklistItems: [{ title: 'Своя проверка' }] },
+          { type: 'roof', plannedStartDate: null, plannedEndDate: null, plannedWorkAmountMinor: null },
+        ],
+      },
+    });
+  });
+
+  it('validates next and returns to an invalid stage when creating from selection', async () => {
+    await multipleStages();
+    await objectStep();
+    await fill('stages.0.plannedEndDate', '2027-01-01');
+    await click('Следующий этап');
+    expect(container.querySelector('h2')).toHaveTextContent('Фундамент');
+    await click('Назад');
+    await submit();
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(container.querySelector('h2')).toHaveTextContent('Фундамент');
+    expect(input('stages.0.plannedEndDate')).toHaveFocus();
+    await click('Назад');
+    await toggleStage('foundation');
+    mocks.create.mockResolvedValueOnce({ id: 77 });
+    await submit();
+    expect(mocks.create.mock.calls[0]?.[0]).toMatchObject({ body: { stages: [{ type: 'walls' }, { type: 'roof' }] } });
+  });
+
+  it('opens the correct server-rejected stage across excluded stages', async () => {
+    await multipleStages();
+    await objectStep(false);
+    await toggleStage('walls');
+    mocks.create.mockRejectedValueOnce({
+      status: 400,
+      data: { details: [{ path: 'body.stages.1.plannedEndDate', message: 'Срок изменился' }] },
+    });
+    await submit();
+    expect(container.querySelector('h2')).toHaveTextContent('Крыша');
+    expect(input('stages.2.plannedEndDate')).toHaveFocus();
+    expect(input('stages.2.plannedEndDate')).not.toBeDisabled();
+    expect(container.textContent).toContain('Срок изменился');
+  });
+
+  it('focuses the checklist error when creating from selection with no items', async () => {
+    await multipleStages();
+    await objectStep();
+    const remove = container.querySelector<HTMLButtonElement>('button[aria-label="Удалить пункт 1"]');
+    if (!remove) throw new Error('Missing checklist remove button');
+    await flush(() => remove.click());
+    await click('Назад');
+    await submit();
+    expect(container.querySelector('h2')).toHaveTextContent('Фундамент');
+    expect(container.textContent).toContain('Добавьте хотя бы один пункт.');
+    expect(container.querySelector('fieldset[aria-invalid="true"]')).toHaveFocus();
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('validates required object fields before opening selection or configuration by click', async () => {
+    await clickStep(2);
+    expect(container.querySelector('h2')).toHaveTextContent('Объект');
+    expect(input('ownerName')).toHaveFocus();
+    await clickStep(3);
+    expect(container.querySelector('h2')).toHaveTextContent('Объект');
+    expect(input('ownerName')).toHaveAttribute('aria-invalid', 'true');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('switches between all three steps by click without losing object or stage fields', async () => {
+    await multipleStages();
+    await objectStep();
+    await fill('stages.0.plannedWorkAmount', '123');
+    await fill('stages.0.checklistItems.0.title', 'Своя проверка');
+    await clickStep(1);
+    expect(input('ownerName')).toHaveValue('Иван Иванов');
+    await clickStep(2);
+    expect(container.querySelector('h2')).toHaveTextContent('Выбор этапов');
+    await toggleStage('walls');
+    await clickStep(3);
+    expect(container.querySelector('h2')).toHaveTextContent('Фундамент');
+    expect(input('stages.0.plannedWorkAmount')).toHaveValue('123');
+    expect(input('stages.0.checklistItems.0.title')).toHaveValue('Своя проверка');
+    expect(container.querySelector('button[aria-label="3. Заполнение"]')).toHaveAttribute('aria-current', 'step');
+    await click('Следующий этап');
+    expect(container.querySelector('h2')).toHaveTextContent('Крыша');
+    await clickStep(3);
+    expect(container.querySelector('h2')).toHaveTextContent('Крыша');
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('opens selection with an error when configuration is clicked with no selected stages', async () => {
+    await objectStep(false);
+    await toggleStage('foundation');
+    await clickStep(1);
+    await clickStep(3);
+    expect(container.querySelector('h2')).toHaveTextContent('Выбор этапов');
+    expect(container.textContent).toContain('Включите хотя бы один этап.');
+    expect(container.querySelector('[role="checkbox"]')).toHaveFocus();
     expect(mocks.create).not.toHaveBeenCalled();
   });
 });

@@ -1,10 +1,8 @@
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@shared/ui/accordion';
 import { Alert, AlertDescription } from '@shared/ui/alert';
-import { Badge } from '@shared/ui/badge';
 import { Checkbox } from '@shared/ui/checkbox';
-import { FieldDescription, FieldError, FieldGroup } from '@shared/ui/field';
+import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from '@shared/ui/field';
 
 import type { useDocuments } from '../lib/use-documents';
 import type { ProjectFormValues } from '../model/types';
@@ -43,74 +41,77 @@ export function ObjectStep({ isLocked, uploads }: ObjectStepProperties) {
 
 interface StagesStepProperties {
   stages: Pick<ProjectFormValues['stages'][number], 'type' | 'title' | 'enabled'>[];
-  opened: string[];
-  onOpenedChange: (values: string[]) => void;
   isLocked: boolean;
-  hasUnfinishedUploads: boolean;
 }
 
-export function StagesStep({ stages, opened, onOpenedChange, isLocked, hasUnfinishedUploads }: StagesStepProperties) {
+export function StagesStep({ stages, isLocked }: StagesStepProperties) {
   const {
     control,
+    clearErrors,
     formState: { errors },
   } = useFormContext<ProjectFormValues>();
   const stagesError = errors.stages?.root ?? errors.stages;
   return (
-    <FieldGroup>
-      <FieldDescription>Даты этапов могут пересекаться. Мастера и плановые суммы можно указать позже.</FieldDescription>
+    <FieldSet>
       {stagesError?.message && <FieldError id="project-stages-error">{stagesError.message}</FieldError>}
-      <Accordion
-        multiple
-        value={opened}
-        onValueChange={(values) => onOpenedChange(values as string[])}
-        aria-describedby={stagesError?.message ? 'project-stages-error' : undefined}
-      >
+      <FieldGroup>
         {stages.map((stage, index) => (
-          <AccordionItem key={stage.type} value={stage.type}>
-            <div className="flex min-w-0 items-center gap-3 py-2">
-              <Controller
-                control={control}
-                name={`stages.${index}.enabled`}
-                render={({ field }) => (
-                  <Checkbox
-                    id={`include-${stage.type}`}
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    disabled={isLocked}
-                    aria-label={`Включить этап «${stage.title}»`}
-                  />
-                )}
-              />
-              <div className="min-w-0 flex-1">
-                <AccordionTrigger
-                  className="min-h-12 w-full gap-3"
-                  aria-describedby={errors.stages?.[index]?.message ? `stage-${index}-error` : undefined}
-                >
-                  <span className="wrap-anywhere text-base">
-                    {index + 1}. {stage.title}
-                  </span>
-                </AccordionTrigger>
-              </div>
-              {errors.stages?.[index] && <Badge variant="destructive">Ошибка</Badge>}
-            </div>
-            <AccordionContent>
-              {errors.stages?.[index]?.message && (
-                <FieldError id={`stage-${index}-error`}>{errors.stages[index].message}</FieldError>
+          <Field
+            key={stage.type}
+            orientation="horizontal"
+            data-invalid={Boolean(stagesError?.message)}
+            data-disabled={isLocked}
+          >
+            <Controller
+              control={control}
+              name={`stages.${index}.enabled`}
+              render={({ field }) => (
+                <Checkbox
+                  ref={field.ref}
+                  id={`include-${stage.type}`}
+                  checked={field.value}
+                  onCheckedChange={(checked) => {
+                    field.onChange(checked);
+                    clearErrors('stages');
+                  }}
+                  onBlur={field.onBlur}
+                  disabled={isLocked}
+                  aria-invalid={Boolean(stagesError?.message)}
+                  aria-describedby={stagesError?.message ? 'project-stages-error' : undefined}
+                  aria-label={`Включить этап «${stage.title}»`}
+                />
               )}
-              {stage.enabled ? (
-                <StageEditor index={index} disabled={isLocked} />
-              ) : (
-                <FieldDescription>Этап исключён и не будет создан.</FieldDescription>
-              )}
-            </AccordionContent>
-          </AccordionItem>
+            />
+            <FieldLabel htmlFor={`include-${stage.type}`}>{stage.title}</FieldLabel>
+          </Field>
         ))}
-      </Accordion>
-      {hasUnfinishedUploads && (
-        <Alert>
-          <AlertDescription>Завершите загрузку PDF или уберите файлы на шаге «Объект».</AlertDescription>
-        </Alert>
-      )}
-    </FieldGroup>
+      </FieldGroup>
+    </FieldSet>
+  );
+}
+
+export function UnfinishedUploadsWarning() {
+  return (
+    <Alert>
+      <AlertDescription>Завершите загрузку PDF или уберите файлы на шаге «Объект».</AlertDescription>
+    </Alert>
+  );
+}
+
+interface ProjectStepProperties extends ObjectStepProperties, StagesStepProperties {
+  screen: 'object' | 'selection' | number;
+}
+
+export function ProjectStep({ screen, stages, isLocked, uploads }: ProjectStepProperties) {
+  const {
+    formState: { errors },
+  } = useFormContext<ProjectFormValues>();
+  if (screen === 'object') return <ObjectStep isLocked={isLocked} uploads={uploads} />;
+  if (screen === 'selection') return <StagesStep stages={stages} isLocked={isLocked} />;
+  return (
+    <>
+      {errors.stages?.[screen]?.message && <FieldError>{errors.stages[screen].message}</FieldError>}
+      <StageEditor key={stages[screen]?.type} index={screen} disabled={isLocked} />
+    </>
   );
 }

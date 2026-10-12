@@ -80,12 +80,45 @@ describe('project creation validation', () => {
   it('accepts overlapping stages and dates equal to project boundaries', () => {
     expect(projectFormSchema.safeParse(validForm()).success).toBe(true);
   });
-  it('requires manually entered stage dates, but ignores excluded stage fields', () => {
+  it.each([
+    ['', ''],
+    ['2026-10-05', ''],
+    ['', '2026-12-31'],
+    ['2026-10-05', '2026-12-31'],
+  ])('accepts independent stage dates (%s, %s) and maps empty dates to null', (start, end) => {
+    const values = validForm();
+    const stage = values.stages[0];
+    if (!stage) throw new Error('Missing test stage');
+    stage.plannedStartDate = start;
+    stage.plannedEndDate = end;
+    expect(projectFormSchema.safeParse(values).success).toBe(true);
+    expect(projectRequest(values, []).stages[0]).toMatchObject({
+      plannedStartDate: start || null,
+      plannedEndDate: end || null,
+    });
+  });
+  it.each(['plannedStartDate', 'plannedEndDate'] as const)(
+    'rejects an invalid or out-of-project %s when the other date is empty',
+    (field) => {
+      const values = validForm();
+      const stage = values.stages[0];
+      if (!stage) throw new Error('Missing test stage');
+      stage.plannedStartDate = '';
+      stage.plannedEndDate = '';
+      for (const value of ['2026-10-04', '2027-01-01', '2026-02-31', 'invalid']) {
+        stage[field] = value;
+        const result = projectFormSchema.safeParse(values);
+        expect(result.success).toBe(false);
+        if (result.success) throw new Error('Expected validation errors');
+        expect(result.error.issues.map((issue) => issue.path)).toContainEqual(['stages', 0, field]);
+      }
+    },
+  );
+  it('ignores excluded stage fields', () => {
     const values = validForm();
     const stage = values.stages[0];
     if (!stage) throw new Error('Missing test stage');
     stage.plannedStartDate = '';
-    expect(projectFormSchema.safeParse(values).success).toBe(false);
     stage.enabled = false;
     stage.plannedWorkAmount = 'invalid';
     stage.checklistItems = [];

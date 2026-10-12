@@ -1,0 +1,111 @@
+import { useState } from 'react';
+
+import { type UseFormReturn, useWatch } from 'react-hook-form';
+
+import { projectObjectFields } from '../model/data';
+import type { ProjectFormValues } from '../model/types';
+
+type ProjectScreen = 'object' | 'selection' | number;
+type StageSummary = Pick<ProjectFormValues['stages'][number], 'type' | 'title' | 'enabled'>;
+
+function screenDetails(screen: ProjectScreen, stages: StageSummary[], selectedIndexes: number[], position: number) {
+  if (screen === 'object')
+    return {
+      step: 1,
+      title: 'Объект',
+      description: 'Заполните сведения о доме. Поля со звёздочкой обязательны.',
+      nextLabel: 'Далее',
+    };
+  if (screen === 'selection')
+    return {
+      step: 2,
+      title: 'Выбор этапов',
+      description: `Включено этапов: ${selectedIndexes.length} из ${stages.length}. Выберите этапы для этого объекта.`,
+      nextLabel: 'Заполнить этапы',
+    };
+  return {
+    step: 3,
+    title: stages[screen]?.title,
+    description:
+      `Этап ${position + 1} из ${selectedIndexes.length}. ` +
+      'Даты, мастер и планы необязательны. Этап можно заполнить позже.',
+    nextLabel: position < selectedIndexes.length - 1 ? 'Следующий этап' : undefined,
+  };
+}
+
+export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
+  const [screen, setScreen] = useState<ProjectScreen>('object');
+  const [focusRequest, setFocusRequest] = useState(0);
+  const stages = useWatch({
+    control: form.control,
+    name: 'stages',
+    compute: (values) => values.map(({ type, title, enabled }) => ({ type, title, enabled })),
+  });
+  const selectedIndexes = stages.flatMap((stage, index) => (stage.enabled ? [index] : []));
+  const position = typeof screen === 'number' ? stages.slice(0, screen).filter((stage) => stage.enabled).length : -1;
+  const nextIndex = selectedIndexes[position + 1];
+  const previousIndex = selectedIndexes[position - 1];
+
+  function focusError() {
+    setFocusRequest((request) => request + 1);
+  }
+
+  function moveTo(target: ProjectScreen) {
+    setScreen(target);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function revealErrors() {
+    const hasObjectError = projectObjectFields.some((field) => form.getFieldState(field).invalid);
+    if (hasObjectError) moveTo('object');
+    else {
+      const firstStageError = form
+        .getValues('stages')
+        .findIndex((stage, index) => stage.enabled && form.getFieldState(`stages.${index}`).invalid);
+      moveTo(firstStageError === -1 ? 'selection' : firstStageError);
+    }
+    focusError();
+  }
+
+  async function selectStep(target: number) {
+    if (target === 1) {
+      moveTo('object');
+      return;
+    }
+    if (!(await form.trigger([...projectObjectFields], { shouldFocus: true }))) {
+      moveTo('object');
+      focusError();
+      return;
+    }
+    if (target === 2) {
+      moveTo('selection');
+      return;
+    }
+    const firstIndex = selectedIndexes[0];
+    if (firstIndex === undefined) {
+      moveTo('selection');
+      form.setError('stages', { type: 'manual', message: 'Включите хотя бы один этап.' });
+      focusError();
+    } else if (typeof screen !== 'number') moveTo(firstIndex);
+  }
+
+  async function next() {
+    if (screen === 'object') return selectStep(2);
+    if (screen === 'selection') return selectStep(3);
+    if (nextIndex === undefined) return;
+    if (await form.trigger(`stages.${screen}`, { shouldFocus: true })) moveTo(nextIndex);
+    else focusError();
+  }
+
+  return {
+    screen,
+    stages,
+    focusRequest,
+    ...screenDetails(screen, stages, selectedIndexes, position),
+    next,
+    selectStep,
+    revealErrors,
+    showObject: () => moveTo('object'),
+    back: () => moveTo(screen === 'selection' ? 'object' : (previousIndex ?? 'selection')),
+  };
+}

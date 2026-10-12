@@ -4,7 +4,9 @@ import { Button } from '@shared/ui/button';
 import { Spinner } from '@shared/ui/spinner';
 
 interface ProjectActionsProperties {
-  step: number;
+  canCreate: boolean;
+  hasBack: boolean;
+  nextLabel?: string;
   isPending: boolean;
   isLocked: boolean;
   hasSnapshot: boolean;
@@ -12,10 +14,13 @@ interface ProjectActionsProperties {
   hasUnfinishedUploads: boolean;
   onCancel: () => void;
   onBack: () => void;
+  onNext: () => void;
 }
 
 export function ProjectActions({
-  step,
+  canCreate,
+  hasBack,
+  nextLabel,
   isPending,
   isLocked,
   hasSnapshot,
@@ -23,28 +28,32 @@ export function ProjectActions({
   hasUnfinishedUploads,
   onCancel,
   onBack,
+  onNext,
 }: ProjectActionsProperties) {
-  let label = step === 1 ? 'Далее' : 'Создать';
-  if (hasSnapshot) label = 'Повторить';
-  if (isPending) label = 'Создание…';
+  const idleLabel = hasSnapshot ? 'Повторить' : 'Создать объект';
+  const label = isPending ? 'Создание…' : idleLabel;
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
       <Button type="button" variant="outline" disabled={isPending} onClick={onCancel}>
         Отмена
       </Button>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        {step === 2 && (
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        {hasBack && (
           <Button type="button" variant="outline" onClick={onBack} disabled={isLocked}>
             <ArrowLeftIcon data-icon="inline-start" />
             Назад
           </Button>
         )}
-        {!hasConflict && (
-          <Button type="submit" disabled={isPending || (step === 2 && hasUnfinishedUploads)}>
-            {isPending && <Spinner data-icon="inline-start" />}
-            {!isPending && step === 2 && <HousePlusIcon data-icon="inline-start" />}
+        {nextLabel && (
+          <Button type="button" variant={canCreate ? 'outline' : 'default'} onClick={onNext} disabled={isLocked}>
+            {nextLabel}
+            <ArrowRightIcon data-icon="inline-end" />
+          </Button>
+        )}
+        {canCreate && !hasConflict && (
+          <Button type="submit" disabled={isPending || hasUnfinishedUploads}>
+            {isPending ? <Spinner data-icon="inline-start" /> : <HousePlusIcon data-icon="inline-start" />}
             {label}
-            {step === 1 && <ArrowRightIcon data-icon="inline-end" />}
           </Button>
         )}
       </div>

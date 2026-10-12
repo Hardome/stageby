@@ -8,6 +8,7 @@ import { createProjectStageSchema as stageSchema } from '@api/zod/createProjectS
 import type { ProjectFormValues } from '../model/types';
 
 const date = z.iso.date({ error: 'Укажите корректную дату.' });
+const optionalDate = z.union([z.literal(''), date]);
 
 export function parseCoordinates(value: string) {
   const parts = value.trim().split(',');
@@ -87,16 +88,19 @@ const stageDraftSchema = stageSchema.pick({ type: true, assigneeId: true }).exte
 const enabledStageSchema = stageDraftSchema
   .extend({
     enabled: z.literal(true),
-    plannedStartDate: z.iso.date({ error: 'Укажите дату этапа.' }),
-    plannedEndDate: z.iso.date({ error: 'Укажите дату этапа.' }),
+    plannedStartDate: optionalDate,
+    plannedEndDate: optionalDate,
     plannedWorkAmount: amount,
     plannedMaterialAmount: amount,
     checklistItems: z.array(checklistFormSchema).min(1, 'Добавьте хотя бы один пункт.'),
   })
-  .refine((stage) => stage.plannedEndDate >= stage.plannedStartDate, {
-    path: ['plannedEndDate'],
-    message: 'Окончание этапа не может быть раньше начала.',
-  });
+  .refine(
+    (stage) => !stage.plannedStartDate || !stage.plannedEndDate || stage.plannedEndDate >= stage.plannedStartDate,
+    {
+      path: ['plannedEndDate'],
+      message: 'Окончание этапа не может быть раньше начала.',
+    },
+  );
 const stageFormSchema = z.discriminatedUnion('enabled', [stageDraftSchema, enabledStageSchema]);
 
 export const projectFormSchema = objectFormSchema
@@ -107,7 +111,8 @@ export const projectFormSchema = objectFormSchema
     for (const [index, stage] of values.stages.entries()) {
       if (!stage.enabled) continue;
       for (const field of ['plannedStartDate', 'plannedEndDate'] as const) {
-        if (stage[field] < values.plannedStartDate || stage[field] > values.plannedEndDate)
+        const stageDate = stage[field];
+        if (stageDate !== '' && (stageDate < values.plannedStartDate || stageDate > values.plannedEndDate))
           context.addIssue({
             code: 'custom',
             path: ['stages', index, field],
@@ -131,8 +136,8 @@ export function projectRequest(values: ProjectFormValues, documentFileIds: numbe
       .filter((stage) => stage.enabled)
       .map((stage) => ({
         type: stage.type,
-        plannedStartDate: stage.plannedStartDate,
-        plannedEndDate: stage.plannedEndDate,
+        plannedStartDate: stage.plannedStartDate || null,
+        plannedEndDate: stage.plannedEndDate || null,
         assigneeId: stage.assigneeId,
         plannedWorkAmountMinor: parseAmount(stage.plannedWorkAmount),
         plannedMaterialAmountMinor: parseAmount(stage.plannedMaterialAmount),

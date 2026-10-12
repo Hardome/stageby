@@ -29,14 +29,14 @@ export function StageEditor({ index, disabled }: StageEditorProperties) {
       <FieldGroup className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
         <ProjectDateField
           name={`stages.${index}.plannedStartDate`}
-          label="Начало этапа *"
+          label="Начало этапа"
           min={start}
           max={end}
           disabled={disabled}
         />
         <ProjectDateField
           name={`stages.${index}.plannedEndDate`}
-          label="Окончание этапа *"
+          label="Окончание этапа"
           min={start}
           max={end}
           disabled={disabled}
@@ -76,7 +76,11 @@ export function StageEditor({ index, disabled }: StageEditorProperties) {
           disabled={disabled}
         />
       </FieldGroup>
-      <FieldSet aria-describedby={checklistError?.message ? `checklist-${index}-error` : undefined}>
+      <FieldSet
+        tabIndex={-1}
+        aria-invalid={Boolean(checklistError?.message)}
+        aria-describedby={checklistError?.message ? `checklist-${index}-error` : undefined}
+      >
         <FieldLegend>Чек-лист</FieldLegend>
         <FieldDescription>
           Изменения действуют только для этого объекта. В этапе должен остаться хотя бы один пункт.
