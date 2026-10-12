@@ -6,11 +6,12 @@ import type { FastifyPluginAsync } from 'fastify';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { parseEnvironment } from '#app/config/env';
-import { checklistItems, checklists } from '#app/db/schema/checklists';
+import { checklistItems, checklists, checklistTemplateItems } from '#app/db/schema/checklists';
 import { files, projectDocuments } from '#app/db/schema/files';
 import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
+import { workPlanRows } from '#app/db/schema/work-plan-rows';
 import type { CreateProject, Project, StageType } from '#app/generated/types.gen';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 import { SessionRepository } from '#app/modules/auth/session-repository';
@@ -132,6 +133,136 @@ async function createProject(cookie: string, body: CreateProject, key = randomUU
 }
 
 describe('Composite project creation', () => {
+  it('быстро создаёт восемь этапов только по типам, без назначения, дат и планов', async () => {
+    const manager = await createIdentity();
+    const response = await createProject(manager.cookie, payload({ stages: stageTypes.map((type) => ({ type })) }));
+    expect(response.statusCode, response.body).toBe(201);
+    const project = response.json<Project>();
+    expect(project).toMatchObject({
+      status: 'created',
+      finances: {
+        plannedWorkAmountMinor: null,
+        plannedMaterialAmountMinor: null,
+        actualWorkAmountMinor: 0,
+        actualMaterialAmountMinor: 0,
+        isPlanComplete: false,
+      },
+    });
+    const storedStages = await getApp().db.select().from(stages).where(eq(stages.projectId, project.id));
+    expect(storedStages).toHaveLength(8);
+    for (const stored of storedStages)
+      expect(stored).toMatchObject({
+        status: 'created',
+        isIncluded: true,
+        assigneeId: null,
+        plannedStartDate: null,
+        plannedEndDate: null,
+        plannedWorkAmountMinor: null,
+        plannedMaterialAmountMinor: null,
+      });
+    const items = await getApp()
+      .db.select()
+      .from(checklistItems)
+      .innerJoin(checklists, eq(checklists.id, checklistItems.checklistId))
+      .where(
+        inArray(
+          checklists.stageId,
+          storedStages.map(({ id }) => id),
+        ),
+      );
+    expect(items).toHaveLength(34);
+    const rows = await getApp()
+      .db.select()
+      .from(workPlanRows)
+      .where(
+        inArray(
+          workPlanRows.stageId,
+          storedStages.map(({ id }) => id),
+        ),
+      );
+    expect(rows).toHaveLength(0);
+  });
+
+  it('сохраняет заполненный и неоткрытые этапы, различает нулевой и незаданный план', async () => {
+    const manager = await createIdentity();
+    const foreman = await createIdentity('foreman');
+    const response = await createProject(
+      manager.cookie,
+      payload({
+        stages: [
+          { type: 'roof' },
+          {
+            type: 'foundation',
+            assigneeId: foreman.user.id,
+            plannedWorkAmountMinor: 0,
+            plannedMaterialAmountMinor: 0,
+            checklistItems: [{ title: 'Свой пункт' }],
+          },
+          { type: 'walls', plannedWorkAmountMinor: 10_000 },
+        ],
+      }),
+    );
+    expect(response.statusCode, response.body).toBe(201);
+    const storedStages = await getApp().db.select().from(stages).where(eq(stages.projectId, response.json().id));
+    expect(storedStages).toHaveLength(3);
+    const rows = await getApp()
+      .db.select()
+      .from(workPlanRows)
+      .where(
+        inArray(
+          workPlanRows.stageId,
+          storedStages.map(({ id }) => id),
+        ),
+      );
+    expect(rows).toHaveLength(2);
+    expect(
+      rows.find(
+        ({ stageId }) => stageId === storedStages.find(({ stageTypeCode }) => stageTypeCode === 'foundation')!.id,
+      ),
+    ).toMatchObject({ amountMinor: 0, recipientId: null, dueDate: null });
+    expect(rows.find(({ amountMinor }) => amountMinor === 10_000)).toMatchObject({ recipientId: null, dueDate: null });
+    expect(
+      (await auditRecords(getApp().db, manager.user.id, 'createProject')).changes.filter(
+        ({ entityType }) => entityType === 'work_plan_rows',
+      ),
+    ).toHaveLength(2);
+  });
+
+  it.each([
+    ['plannedStartDate', '2026-10-04'],
+    ['plannedStartDate', '2027-05-29'],
+    ['plannedEndDate', '2026-10-04'],
+    ['plannedEndDate', '2027-05-29'],
+  ] as const)('возвращает путь ошибочной даты %s = %s', async (field, date) => {
+    const manager = await createIdentity();
+    const response = await createProject(
+      manager.cookie,
+      payload({ stages: [{ type: 'foundation' }, { type: 'walls', [field]: date }] }),
+    );
+    expect(response.statusCode).toBe(400);
+    expect(response.json().details).toContainEqual(expect.objectContaining({ path: `body.stages.1.${field}` }));
+    expect((await auditRecords(getApp().db, manager.user.id, 'createProject')).events).toHaveLength(0);
+  });
+
+  it('проверяет порядок дат этапа и обязательные реквизиты с путями полей', async () => {
+    const manager = await createIdentity();
+    const invalidBodies = [
+      [
+        payload({ stages: [{ type: 'foundation', plannedStartDate: '2026-11-01', plannedEndDate: '2026-10-31' }] }),
+        'body.stages.0.plannedEndDate',
+      ],
+      [payload({ ownerName: 'А'.repeat(151) }), 'body.ownerName'],
+      [payload({ ownerName: '   ' }), 'body.ownerName'],
+      [payload({ address: '' }), 'body.address'],
+      [payload({ plannedEndDate: '2026-10-04' }), 'body.plannedEndDate'],
+      [payload({ coordinates: { latitude: 91, longitude: 60 } }), 'body.coordinates.latitude'],
+    ] as const;
+    for (const [body, path] of invalidBodies) {
+      const response = await createProject(manager.cookie, body);
+      expect(response.statusCode, response.body).toBe(400);
+      expect(response.json().details).toContainEqual(expect.objectContaining({ path }));
+    }
+  });
   it.each([
     [null, null],
     ['2026-10-05', null],
@@ -427,7 +558,8 @@ describe('Composite project creation', () => {
         }),
       ],
     });
-    const response = await createProject(manager.cookie, body);
+    const key = randomUUID();
+    const response = await createProject(manager.cookie, body, key);
     expect(response.statusCode, response.body).toBe(201);
     const project = response.json<Project>();
     const storedDocuments = await getApp()
@@ -443,10 +575,24 @@ describe('Composite project creation', () => {
       plannedWorkAmountMinor: 50_000_000,
       plannedMaterialAmountMinor: 70_000_000,
     });
+    const rows = await getApp().db.select().from(workPlanRows).where(eq(workPlanRows.stageId, storedStage!.id));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ amountMinor: 50_000_000, recipientId: null, dueDate: null });
+    const repeated = await createProject(manager.cookie, body, key);
+    expect(repeated.statusCode, repeated.body).toBe(201);
+    expect(repeated.json()).toEqual(project);
+    expect(await getApp().db.select().from(workPlanRows).where(eq(workPlanRows.stageId, storedStage!.id))).toEqual(
+      rows,
+    );
+    const audit = await auditRecords(getApp().db, manager.user.id, 'createProject');
+    expect(audit.events).toHaveLength(1);
+    expect(audit.changes.filter(({ entityType }) => entityType === 'work_plan_rows')).toHaveLength(1);
+    expect(audit.changes.filter(({ entityType }) => entityType === 'project_documents')).toHaveLength(2);
   });
 
   it('сохраняет индивидуальный список пунктов вместо шаблона', async () => {
     const manager = await createIdentity();
+    const templatesBefore = await getApp().db.select().from(checklistTemplateItems);
     const customItems = [
       { title: 'Переименованный пункт', photoHint: null },
       { title: 'Добавленный пункт', photoHint: 'Показать узел крупным планом' },
@@ -466,6 +612,45 @@ describe('Composite project creation', () => {
       .from(checklistItems)
       .where(eq(checklistItems.checklistId, storedChecklist!.id));
     expect(storedItems.map(({ title, photoHint }) => ({ title, photoHint }))).toEqual(customItems);
+    expect(await getApp().db.select().from(checklistTemplateItems)).toEqual(templatesBefore);
+  });
+
+  it.each([
+    { status: 'pending' as const },
+    { mimeType: 'image/png' },
+    { sizeBytes: 50 * 1024 * 1024 + 1 },
+    { purpose: 'material_invoice' as const },
+  ])('не сохраняет объект и вложенные записи с неверным PDF: %j', async (invalidFile) => {
+    const manager = await createIdentity();
+    const [file] = await getApp()
+      .db.insert(files)
+      .values({
+        status: 'uploaded' as const,
+        purpose: 'project_document' as const,
+        storageKey: `tests/projects/${randomUUID()}`,
+        originalName: 'document.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: 1024,
+        checksumSha256: 'a'.repeat(64),
+        uploadedByUserId: manager.user.id,
+        uploadExpiresAt: new Date(),
+        uploadedAt: 'status' in invalidFile ? null : new Date(),
+        ...invalidFile,
+      })
+      .returning();
+    createdFileIds.push(file!.id);
+    const body = payload({
+      documentFileIds: [file!.id],
+      stages: [{ type: 'foundation', plannedWorkAmountMinor: 10_000 }],
+    });
+    const response = await createProject(manager.cookie, body);
+    expect(response.statusCode, response.body).toBe(400);
+    expect(response.json().details).toContainEqual(expect.objectContaining({ path: 'body.documentFileIds.0' }));
+    expect(await getApp().db.select().from(projects).where(eq(projects.ownerName, body.ownerName))).toHaveLength(0);
+    expect(await getApp().db.select().from(projectDocuments).where(eq(projectDocuments.fileId, file!.id))).toHaveLength(
+      0,
+    );
+    expect((await auditRecords(getApp().db, manager.user.id, 'createProject')).events).toHaveLength(0);
   });
 
   it('отклоняет отсутствие этапов, пустой чек-лист и повтор типа', async () => {

@@ -64,14 +64,14 @@ async function loadStageTypes(transaction: Transaction, input: CreateProject) {
 
 async function validateAssignees(transaction: Transaction, input: CreateProject): Promise<ValidationDetail[]> {
   const assigneeIds = [
-    ...new Set(input.stages.flatMap((stage) => (stage.assigneeId === null ? [] : [stage.assigneeId]))),
+    ...new Set(input.stages.flatMap((stage) => (stage.assigneeId == null ? [] : [stage.assigneeId]))),
   ];
   const assignees =
     assigneeIds.length === 0 ? [] : await transaction.select().from(users).where(inArray(users.id, assigneeIds));
   const assigneeById = new Map(assignees.map((user) => [user.id, user]));
   return input.stages.flatMap((stage, index): ValidationDetail[] => {
-    const assignee = stage.assigneeId === null ? undefined : assigneeById.get(stage.assigneeId);
-    return stage.assigneeId === null || (assignee?.role === 'foreman' && assignee.isActive)
+    const assignee = stage.assigneeId == null ? undefined : assigneeById.get(stage.assigneeId);
+    return stage.assigneeId == null || (assignee?.role === 'foreman' && assignee.isActive)
       ? []
       : [
           {
@@ -207,12 +207,12 @@ async function insertStage(
         projectId,
         stageTypeCode: stageInput.type,
         position,
-        assigneeId: stageInput.assigneeId,
-        status: stageInput.assigneeId === null ? 'created' : 'assigned',
+        assigneeId: stageInput.assigneeId ?? null,
+        status: stageInput.assigneeId == null ? 'created' : 'assigned',
         plannedStartDate: stageInput.plannedStartDate ?? null,
         plannedEndDate: stageInput.plannedEndDate ?? null,
-        plannedWorkAmountMinor: stageInput.plannedWorkAmountMinor,
-        plannedMaterialAmountMinor: stageInput.plannedMaterialAmountMinor,
+        plannedWorkAmountMinor: stageInput.plannedWorkAmountMinor ?? null,
+        plannedMaterialAmountMinor: stageInput.plannedMaterialAmountMinor ?? null,
       })
       .returning(),
   );

@@ -2309,11 +2309,9 @@ components:
       additionalProperties: false
       required:
         - type
-        - assigneeId
-        - plannedWorkAmountMinor
-        - plannedMaterialAmountMinor
       properties:
         type:
+          description: Стандартный тип этапа; дополнительный этап доступен только при редактировании.
           $ref: '#/components/schemas/StageType'
         plannedStartDate:
           examples:
@@ -2322,7 +2320,7 @@ components:
             - string
             - 'null'
           format: date
-          description: Плановое начало этапа внутри срока проекта.
+          description: Необязательное независимое начало внутри срока проекта. Отсутствие или null означает незаданную дату.
         plannedEndDate:
           examples:
             - '2026-10-30'
@@ -2330,20 +2328,22 @@ components:
             - string
             - 'null'
           format: date
-          description: Плановое окончание этапа внутри срока проекта, не раньше начала этапа.
+          description: Необязательное независимое окончание внутри срока проекта; при заданном начале не раньше него. Отсутствие или null означает незаданную дату.
         assigneeId:
           examples:
             - 17
             - null
-          description: Активный мастер этапа; null — мастер пока не назначен.
+          description: Активный мастер этапа; отсутствие или null — мастер пока не назначен. Не становится получателем строки плана автоматически.
           type:
             - integer
             - 'null'
           minimum: 1
           maximum: 2147483647
         plannedWorkAmountMinor:
+          description: Ручной план работ. Отсутствие или null — план не задан, строка не создаётся. При заданном плане, включая 0, создаётся одна строка без получателя и срока.
           $ref: '#/components/schemas/PlannedMoneyAmountMinor'
         plannedMaterialAmountMinor:
+          description: Ручной план материалов. Отсутствие или null — план не задан. Счета добавляются после создания объекта.
           $ref: '#/components/schemas/PlannedMoneyAmountMinor'
         checklistItems:
           description: Изменённый индивидуальный список. Если поле отсутствует, копируется активный шаблон типа этапа.
@@ -2369,7 +2369,7 @@ components:
           description: Имя клиента или собственника объекта строительства.
           type: string
           minLength: 1
-          maxLength: 255
+          maxLength: 150
         address:
           examples:
             - Екатеринбург, ул. Лесная, д. 10
@@ -2431,7 +2431,7 @@ components:
             minimum: 1
             maximum: 2147483647
         stages:
-          description: Выбранные этапы объекта. Типы этапов не повторяются, порядок массива не влияет на position.
+          description: Все включённые стандартные этапы, включая неоткрытые в форме. Для неоткрытого этапа достаточно type. Пропущенные типы не создаются; additional запрещён. Типы не повторяются, порядок массива не влияет на position.
           type: array
           minItems: 1
           maxItems: 8
