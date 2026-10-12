@@ -10,7 +10,7 @@ import { createProjectStageSchema } from './createProjectStageSchema'
 import { projectSchema } from './projectSchema'
 
 export const createProjectSchema = z.object({
-  ownerName: z.string().min(1).max(255).describe('Имя клиента или собственника объекта строительства.').meta({ examples: ['Анна Смирнова'] }),
+  ownerName: z.string().min(1).max(150).describe('Имя клиента или собственника объекта строительства.').meta({ examples: ['Анна Смирнова'] }),
   address: z.string().min(1).max(1000).describe('Обязательный адрес объекта строительства.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10'] }),
   coordinates: coordinatesSchema.describe('Обязательные географические координаты объекта.'),
   cadastralNumber: z.string().min(1).max(100).nullish().describe('Кадастровый номер объекта в текстовом виде; null — не указан.').meta({ examples: ['66:41:0000000:123', ] }),
@@ -19,7 +19,7 @@ export const createProjectSchema = z.object({
   plannedStartDate: z.iso.date().describe('Плановая дата начала проекта в формате YYYY-MM-DD.').meta({ examples: ['2026-10-05'] }),
   plannedEndDate: z.iso.date().describe('Плановая дата окончания проекта в формате YYYY-MM-DD, не раньше даты начала.').meta({ examples: ['2027-05-28'] }),
   documentFileIds: z.array(z.int().min(1).max(2147483647)).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).describe('Идентификаторы предварительно успешно загруженных PDF проекта. Пустой список разрешён.'),
-  stages: z.array(createProjectStageSchema).min(1).max(8).describe('Выбранные этапы объекта. Типы этапов не повторяются, порядок массива не влияет на position.'),
+  stages: z.array(createProjectStageSchema).min(1).max(8).describe('Все включённые стандартные этапы, включая неоткрытые в форме. Для неоткрытого этапа достаточно type. Пропущенные типы не создаются; additional запрещён. Типы не повторяются, порядок массива не влияет на position.'),
   notes: z.string().min(1).max(5000).nullish().describe('Примечания к проекту; null — отсутствуют.').meta({ examples: ['Въезд на участок со стороны Лесной улицы.', ] }),
 }).strict()
 

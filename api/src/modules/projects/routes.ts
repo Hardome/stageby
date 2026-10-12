@@ -17,7 +17,6 @@ import {
 } from '#app/generated/zod.gen';
 import { requestAuditContext } from '#app/modules/audit/context';
 import type { ProjectService } from '#app/modules/projects/service';
-import { stageDatesValid } from '#app/modules/stages/dates';
 import { coerceRequestValues, definedValues } from '#app/plugins/request-values';
 
 const projectResponse = zProject.extend({
@@ -104,14 +103,18 @@ function validateStage(
   seenTypes.add(stage.type);
   if (stage.type === 'additional')
     addIssue(['stages', index, 'type'], 'Дополнительный этап доступен только при редактировании объекта.');
-  if (
-    !stageDatesValid(stage.plannedStartDate, stage.plannedEndDate, project.plannedStartDate, project.plannedEndDate)
-  ) {
-    addIssue(['stages', index], 'Срок этапа должен находиться внутри срока проекта.');
+  for (const field of ['plannedStartDate', 'plannedEndDate'] as const) {
+    const date = stage[field];
+    if (date != null && (date < project.plannedStartDate || date > project.plannedEndDate)) {
+      addIssue(['stages', index, field], 'Дата этапа должна находиться внутри срока проекта.');
+    }
+  }
+  if (stage.plannedStartDate != null && stage.plannedEndDate != null && stage.plannedEndDate < stage.plannedStartDate) {
+    addIssue(['stages', index, 'plannedEndDate'], 'Дата окончания этапа не может быть раньше даты начала.');
   }
   for (const field of ['plannedWorkAmountMinor', 'plannedMaterialAmountMinor'] as const) {
     const amount = stage[field];
-    if (amount !== null && (amount > BigInt(Number.MAX_SAFE_INTEGER) || amount % 100n !== 0n)) {
+    if (amount != null && (amount > BigInt(Number.MAX_SAFE_INTEGER) || amount % 100n !== 0n)) {
       addIssue(
         ['stages', index, field],
         'Сумма должна быть безопасным целым числом JavaScript и быть кратна 100 копейкам.',
@@ -152,11 +155,12 @@ const createProjectBodySchema = validatedCreateProjectBodySchema.transform((body
     ...(notes === undefined ? {} : { notes }),
     stages: required.stages.map(({ checklistItems, ...stage }) => ({
       ...stage,
+      assigneeId: stage.assigneeId ?? null,
       plannedStartDate: stage.plannedStartDate ?? null,
       plannedEndDate: stage.plannedEndDate ?? null,
-      plannedWorkAmountMinor: stage.plannedWorkAmountMinor === null ? null : Number(stage.plannedWorkAmountMinor),
+      plannedWorkAmountMinor: stage.plannedWorkAmountMinor == null ? null : Number(stage.plannedWorkAmountMinor),
       plannedMaterialAmountMinor:
-        stage.plannedMaterialAmountMinor === null ? null : Number(stage.plannedMaterialAmountMinor),
+        stage.plannedMaterialAmountMinor == null ? null : Number(stage.plannedMaterialAmountMinor),
       ...(checklistItems === undefined
         ? {}
         : {

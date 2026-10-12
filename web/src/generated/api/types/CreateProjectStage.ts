@@ -9,13 +9,13 @@ import type { StageTypeKey } from './StageType'
 
 export type CreateProjectStage = {
     /**
-     * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.
+     * @description Стандартный тип этапа; дополнительный этап доступен только при редактировании.
      * @example foundation
      * @type string
     */
     type: StageTypeKey;
     /**
-     * @description Плановое начало этапа внутри срока проекта.
+     * @description Необязательное независимое начало внутри срока проекта. Отсутствие или null означает незаданную дату.
      *
      * Format: `date`
      * @example 2026-10-05
@@ -23,7 +23,7 @@ export type CreateProjectStage = {
     */
     plannedStartDate?: string | null;
     /**
-     * @description Плановое окончание этапа внутри срока проекта, не раньше начала этапа.
+     * @description Необязательное независимое окончание внутри срока проекта; при заданном начале не раньше него. Отсутствие или null означает незаданную дату.
      *
      * Format: `date`
      * @example 2026-10-30
@@ -31,36 +31,36 @@ export type CreateProjectStage = {
     */
     plannedEndDate?: string | null;
     /**
-     * @description Активный мастер этапа; null — мастер пока не назначен.
+     * @description Активный мастер этапа; отсутствие или null — мастер пока не назначен. Не становится получателем строки плана автоматически.
      * @minLength 1
      * @maxLength 2147483647
      * @example 17
      * @example null
-     * @type integer
+     * @type integer | undefined
     */
-    assigneeId: number | null;
+    assigneeId?: number | null;
     /**
-     * @description Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
+     * @description Ручной план работ. Отсутствие или null — план не задан, строка не создаётся. При заданном плане, включая 0, создаётся одна строка без получателя и срока.
      *
      * Format: `int64`
      * @minLength 0
      * @example 12500000
      * @example 0
      * @example null
-     * @type integer
+     * @type integer | undefined
     */
-    plannedWorkAmountMinor: PlannedMoneyAmountMinor | null;
+    plannedWorkAmountMinor?: PlannedMoneyAmountMinor | null;
     /**
-     * @description Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.
+     * @description Ручной план материалов. Отсутствие или null — план не задан. Счета добавляются после создания объекта.
      *
      * Format: `int64`
      * @minLength 0
      * @example 12500000
      * @example 0
      * @example null
-     * @type integer
+     * @type integer | undefined
     */
-    plannedMaterialAmountMinor: PlannedMoneyAmountMinor | null;
+    plannedMaterialAmountMinor?: PlannedMoneyAmountMinor | null;
     /**
      * @description Изменённый индивидуальный список. Если поле отсутствует, копируется активный шаблон типа этапа.
      * @type array | undefined
