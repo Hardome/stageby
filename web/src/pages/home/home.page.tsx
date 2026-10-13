@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { PlusIcon } from 'lucide-react';
 
-import { type ProjectsSearch, TemporaryProjectList } from '@features/temporary-project-list';
+import { type ProjectsSearch, TemporaryProjectList } from '@features/projects/list';
 import { useAuth } from '@shared/context';
 import { Button } from '@shared/ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';

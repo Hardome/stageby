@@ -14,6 +14,7 @@ const buttonVariants = tv({
   ],
   variants: {
     variant: {
+      selected: 'bg-control-selected text-control-selected-foreground hover:bg-control-selected/90',
       success: 'bg-success text-success-foreground hover:bg-success-hover',
       inverse: [
         'text-surface-inverse-foreground hover:bg-surface-inverse-accent',
