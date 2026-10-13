@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowLeftIcon, ArrowRightIcon, SaveIcon } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import {
   ObjectStep,
+  ProjectFormPanel,
   type ProjectFormValues,
   ProjectProgress,
   StageEditor,
@@ -24,7 +26,6 @@ import {
   AlertDialogTitle,
 } from '@shared/ui/alert-dialog';
 import { Button } from '@shared/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 import { FieldError } from '@shared/ui/field';
 import { Spinner } from '@shared/ui/spinner';
 
@@ -107,7 +108,7 @@ export function EditProjectForm({ snapshot, onDirtyChange, onCancel, onSuccess, 
     <FormProvider {...form}>
       <form
         noValidate
-        className="flex min-w-0 flex-col gap-6"
+        className="grid min-w-0 gap-6 lg:grid-cols-[224px_minmax(0,1fr)] lg:gap-8"
         onSubmit={(event) => {
           event.preventDefault();
           if (!isLocked) void form.handleSubmit(save, revealErrors)(event);
@@ -121,39 +122,47 @@ export function EditProjectForm({ snapshot, onDirtyChange, onCancel, onSuccess, 
             if (!isLocked) void navigation.selectStep(target);
           }}
         />
-        {(update.message || reloadError) && (
-          <Alert variant="destructive">
-            <AlertDescription>{reloadError || update.message}</AlertDescription>
-          </Alert>
-        )}
-        {update.needsReload && (
-          <Alert>
-            <AlertDescription>
-              Данные изменились на сервере. Ваши правки сохранены в форме. Загрузка актуального снимка сбросит их после
-              подтверждения.
-              <Button type="button" variant="outline" disabled={isLocked} onClick={() => setConfirmReload(true)}>
-                Загрузить актуальные данные
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2>{title}</h2>
-            </CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className="flex min-w-0 flex-col gap-5">
+          {(update.message || reloadError) && (
+            <Alert variant="destructive">
+              <AlertDescription>{reloadError || update.message}</AlertDescription>
+            </Alert>
+          )}
+          {update.needsReload && (
+            <Alert>
+              <AlertDescription>
+                Данные изменились на сервере. Ваши правки сохранены в форме. Загрузка актуального снимка сбросит их
+                после подтверждения.
+                <Button type="button" variant="outline" disabled={isLocked} onClick={() => setConfirmReload(true)}>
+                  Загрузить актуальные данные
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          <ProjectFormPanel
+            step={step}
+            title={title}
+            description={description}
+            actions={
+              <EditActions
+                screen={screen}
+                isLocked={isLocked}
+                hasUnfinishedUploads={hasUnfinishedUploads}
+                update={update}
+                reloading={reloading}
+                onCancel={onCancel}
+                navigation={navigation}
+              />
+            }
+          >
             {screen === 'object' && (
-              <div className="flex flex-col gap-6">
-                <ObjectStep isLocked={isLocked} uploads={uploads} />
+              <ObjectStep isLocked={isLocked} uploads={uploads}>
                 <SavedDocuments
                   fileIds={fileIds}
                   disabled={isLocked}
                   onRemove={(id) => setFileIds((previous) => previous.filter((fileId) => fileId !== id))}
                 />
-              </div>
+              </ObjectStep>
             )}
             {screen === 'selection' && (
               <>
@@ -185,17 +194,8 @@ export function EditProjectForm({ snapshot, onDirtyChange, onCancel, onSuccess, 
               </>
             )}
             {hasUnfinishedUploads && <UnfinishedUploadsWarning />}
-          </CardContent>
-        </Card>
-        <EditActions
-          screen={screen}
-          isLocked={isLocked}
-          hasUnfinishedUploads={hasUnfinishedUploads}
-          update={update}
-          reloading={reloading}
-          onCancel={onCancel}
-          navigation={navigation}
-        />
+          </ProjectFormPanel>
+        </div>
       </form>
       <AlertDialog
         open={confirmReload}
@@ -245,23 +245,47 @@ function EditActions({
 }: EditActionsProperties) {
   const { nextLabel } = navigation;
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-between">
-      <Button type="button" variant="outline" disabled={update.isPending || reloading} onClick={onCancel}>
+    <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Button
+        type="button"
+        variant="ghost"
+        className="order-2 w-full sm:order-none sm:w-auto"
+        disabled={update.isPending || reloading}
+        onClick={onCancel}
+      >
         Отмена
       </Button>
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <div className="flex flex-wrap gap-2 sm:justify-end">
         {screen !== 'object' && (
-          <Button type="button" variant="outline" disabled={isLocked} onClick={navigation.back}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex-1 sm:flex-none"
+            disabled={isLocked}
+            onClick={navigation.back}
+          >
+            <ArrowLeftIcon data-icon="inline-start" />
             Назад
           </Button>
         )}
         {nextLabel && (
-          <Button type="button" variant="outline" disabled={isLocked} onClick={() => void navigation.next()}>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 sm:flex-none"
+            disabled={isLocked}
+            onClick={() => void navigation.next()}
+          >
             {nextLabel}
+            <ArrowRightIcon data-icon="inline-end" />
           </Button>
         )}
-        <Button type="submit" disabled={isLocked || hasUnfinishedUploads || update.needsReload}>
-          {update.isPending && <Spinner data-icon="inline-start" />}
+        <Button
+          type="submit"
+          className="flex-1 sm:flex-none"
+          disabled={isLocked || hasUnfinishedUploads || update.needsReload}
+        >
+          {update.isPending ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
           {update.isPending ? 'Сохранение…' : 'Сохранить'}
         </Button>
       </div>

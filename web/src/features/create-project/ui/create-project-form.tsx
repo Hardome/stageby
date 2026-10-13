@@ -5,6 +5,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import type { ProjectFormValues } from '@entities/project';
 import {
+  ProjectFormPanel,
   ProjectProgress,
   ProjectStep,
   projectFormSchema,
@@ -14,7 +15,6 @@ import {
 } from '@entities/project';
 import { useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 import { FieldDescription } from '@shared/ui/field';
 
 import type { ActiveStageType } from '@api/types';
@@ -75,7 +75,7 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
     <FormProvider {...form}>
       <form
         noValidate
-        className="flex min-w-0 flex-col gap-6"
+        className="grid min-w-0 gap-6 lg:grid-cols-[224px_minmax(0,1fr)] lg:gap-8"
         onSubmit={(event) => {
           event.preventDefault();
           if (screen === 'object') next();
@@ -90,24 +90,37 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
             if (!isLocked) void navigation.selectStep(target);
           }}
         />
-        {submission.message && (
-          <Alert variant="destructive">
-            <AlertDescription>{submission.message}</AlertDescription>
-          </Alert>
-        )}
-        {submission.hasSnapshot && !submission.isPending && !submission.hasConflict && (
-          <FieldDescription>
-            Сохраняется исходный запрос. Повтор безопасен: второй объект не будет создан.
-          </FieldDescription>
-        )}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2>{title}</h2>
-            </CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className="flex min-w-0 flex-col gap-5">
+          {submission.message && (
+            <Alert variant="destructive">
+              <AlertDescription>{submission.message}</AlertDescription>
+            </Alert>
+          )}
+          {submission.hasSnapshot && !submission.isPending && !submission.hasConflict && (
+            <FieldDescription>
+              Сохраняется исходный запрос. Повтор безопасен: второй объект не будет создан.
+            </FieldDescription>
+          )}
+          <ProjectFormPanel
+            step={step}
+            title={title}
+            description={description}
+            actions={
+              <ProjectActions
+                canCreate={screen !== 'object'}
+                hasBack={screen !== 'object'}
+                nextLabel={nextLabel}
+                onNext={next}
+                isPending={submission.isPending}
+                isLocked={isLocked}
+                hasSnapshot={submission.hasSnapshot}
+                hasConflict={submission.hasConflict}
+                hasUnfinishedUploads={hasUnfinishedUploads}
+                onCancel={onCancel}
+                onBack={back}
+              />
+            }
+          >
             <ProjectStep
               screen={screen}
               stages={stages}
@@ -116,21 +129,8 @@ export function CreateProjectForm({ types, onDirtyChange, onCancel, onSuccess }:
               registerErrorGroup={registerErrorGroup}
             />
             {screen !== 'object' && hasUnfinishedUploads && <UnfinishedUploadsWarning />}
-          </CardContent>
-        </Card>
-        <ProjectActions
-          canCreate={screen !== 'object'}
-          hasBack={screen !== 'object'}
-          nextLabel={nextLabel}
-          onNext={next}
-          isPending={submission.isPending}
-          isLocked={isLocked}
-          hasSnapshot={submission.hasSnapshot}
-          hasConflict={submission.hasConflict}
-          hasUnfinishedUploads={hasUnfinishedUploads}
-          onCancel={onCancel}
-          onBack={back}
-        />
+          </ProjectFormPanel>
+        </div>
       </form>
     </FormProvider>
   );

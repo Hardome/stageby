@@ -183,7 +183,17 @@ describe('project editing workflow', () => {
     await render();
     await click('Далее');
     expect(container.querySelector('#include-foundation')).toBeDisabled();
+    const wallsCard = container.querySelector<HTMLLabelElement>('label[for="include-walls"]');
+    if (!wallsCard) throw new Error('Missing stage card');
+    await flush(() => wallsCard.click());
+    expect(container.querySelector('#include-walls')).toBeChecked();
+    await flush(() => wallsCard.click());
+    expect(container.querySelector('#include-walls')).not.toBeChecked();
+    const foundationCard = container.querySelector<HTMLLabelElement>('label[for="include-foundation"]');
+    await flush(() => foundationCard?.click());
+    expect(container.querySelector('#include-foundation')).toBeChecked();
     await click('Включить этап «Стены»');
+    expect(container.querySelector('#include-walls')).toBeChecked();
     expect(container.querySelector('#include-foundation')).not.toBeDisabled();
     await click('Заполнить этапы');
     await fill('stages.0.plannedWorkAmount', '0');

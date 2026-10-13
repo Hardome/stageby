@@ -19,6 +19,7 @@ interface UploaderProperties<T extends UploadItem> {
   listLabel?: string;
   error?: string;
   disabled?: boolean;
+  compact?: boolean;
   accept?: Accept;
   multiple?: boolean;
   maxSize?: number;
@@ -61,6 +62,7 @@ export function Uploader<T extends UploadItem>({
   listLabel = 'Загружаемые файлы',
   error,
   disabled = false,
+  compact = false,
   accept,
   multiple = true,
   maxSize,
@@ -105,8 +107,9 @@ export function Uploader<T extends UploadItem>({
           'aria-invalid': Boolean(error),
           'aria-disabled': disabled,
           className: cn(
-            'flex min-h-32 flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-5',
-            'text-center text-sm outline-none',
+            'flex items-center gap-3 rounded-(--radius-control) border border-dashed p-5',
+            compact ? 'min-h-24 flex-row text-left' : 'min-h-32 flex-col justify-center text-center',
+            'text-sm outline-none',
             'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
             !disabled && 'cursor-pointer hover:bg-muted',
             isDragActive && 'border-ring bg-muted',
@@ -124,7 +127,14 @@ export function Uploader<T extends UploadItem>({
             'aria-invalid': Boolean(error),
           })}
         />
-        <UploadIcon aria-hidden="true" className="size-6 text-muted-foreground" />
+        <span
+          className={cn(
+            'flex shrink-0 items-center justify-center',
+            compact && 'size-10 rounded-(--radius-control) bg-muted text-muted-foreground',
+          )}
+        >
+          <UploadIcon aria-hidden="true" className="size-5 text-muted-foreground" />
+        </span>
         <p>{isDragActive ? 'Отпустите файлы здесь' : 'Перетащите файлы сюда или нажмите для выбора'}</p>
       </div>
       {error && (
@@ -132,9 +142,9 @@ export function Uploader<T extends UploadItem>({
           <AlertDescription id={errorId}>{error}</AlertDescription>
         </Alert>
       )}
-      <ul className="flex flex-col gap-3" aria-label={listLabel} aria-live="polite">
+      <ul className="flex flex-col gap-2 empty:hidden" aria-label={listLabel} aria-live="polite">
         {items.map((item) => (
-          <li key={item.id} className="flex min-w-0 flex-wrap items-center gap-3 rounded-lg border p-3">
+          <li key={item.id} className="flex min-w-0 flex-wrap items-center gap-3 rounded-(--radius-control) border p-3">
             {item.status === 'uploading' && <Spinner />}
             {item.status === 'uploaded' && (
               <FileCheckIcon aria-hidden="true" className="size-5 shrink-0 text-success" />
@@ -149,16 +159,17 @@ export function Uploader<T extends UploadItem>({
               {item.error && <p className="wrap-anywhere text-destructive text-sm">{item.error}</p>}
             </div>
             {item.status === 'failed' && (
-              <Button type="button" variant="outline" disabled={disabled} onClick={() => onRetry(item)}>
+              <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => onRetry(item)}>
                 Повторить
               </Button>
             )}
             <Button
               type="button"
               variant="ghost"
-              size="icon"
+              size="icon-sm"
               disabled={disabled || item.status === 'uploading'}
               aria-label={`Убрать файл ${item.file.name}`}
+              title={`Убрать файл ${item.file.name}`}
               onClick={() => onRemove(item.id)}
             >
               <Trash2Icon />

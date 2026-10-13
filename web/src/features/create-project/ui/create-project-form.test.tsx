@@ -89,7 +89,7 @@ describe('project creation workflow', () => {
     await flush(() => button.click());
   }
   async function clickStep(step: number) {
-    const button = container.querySelectorAll<HTMLButtonElement>(':scope ol[aria-label="Шаги создания"] button')[
+    const button = container.querySelectorAll<HTMLButtonElement>(':scope nav[aria-label="Шаги создания"] button')[
       step - 1
     ];
     if (!button) throw new Error('Missing step button');

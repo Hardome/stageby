@@ -8,6 +8,7 @@ export { useProjectNavigation } from './lib/use-project-navigation';
 export { materialBadgeVariants, projectStatuses, stageStatuses } from './model/data';
 export type { DocumentUpload, ProjectFormValues } from './model/types';
 export { ProjectDocument } from './ui/project-document';
+export { ProjectFormPanel } from './ui/project-form-panel';
 export { ProjectProgress } from './ui/project-progress';
 export { ObjectStep, ProjectStep, StagesStep, UnfinishedUploadsWarning } from './ui/project-steps';
 export { StageEditor } from './ui/stage-editor';

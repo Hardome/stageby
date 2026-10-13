@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useRef, useState } from 'react';
 
 import { useBlocker, useNavigate } from '@tanstack/react-router';
+import { PencilRulerIcon } from 'lucide-react';
 
 import { ProjectEditor } from '@features/edit-project';
 import { parseProjectId } from '@entities/project';
@@ -60,8 +61,16 @@ export function EditProjectPage({ projectId }: { projectId: string }) {
     );
   return (
     <main className="min-w-0 flex-1 bg-background px-3 py-6 sm:px-5 sm:py-10">
-      <div className="mx-auto flex max-w-4xl flex-col gap-6">
-        <h1 className="font-bold text-2xl sm:text-3xl">Редактирование объекта</h1>
+      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+        <header className="flex items-start gap-4">
+          <span className="hidden size-13 shrink-0 place-items-center rounded-(--radius-card) border bg-card sm:grid">
+            <PencilRulerIcon aria-hidden="true" className="size-6 text-primary-text" />
+          </span>
+          <div className="flex flex-col gap-2">
+            <h1 className="font-bold text-2xl sm:text-3xl">Редактирование объекта</h1>
+            <p className="text-muted-foreground text-sm">Реквизиты, документы и план работ в одном месте.</p>
+          </div>
+        </header>
         {content}
       </div>
       <AlertDialog

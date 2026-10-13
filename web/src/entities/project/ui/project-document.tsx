@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 
+import { cn } from 'cn';
 import { ArrowUpRightIcon, FileTextIcon } from 'lucide-react';
 
 import { useAccessError } from '@shared/lib/hooks';
@@ -12,9 +13,10 @@ import { getFileContent } from '@api/clients/getFileContent';
 interface ProjectDocumentProperties {
   fileId: number;
   number: number;
+  action?: ReactNode;
 }
 
-export function ProjectDocument({ fileId, number }: ProjectDocumentProperties) {
+export function ProjectDocument({ fileId, number, action }: ProjectDocumentProperties) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const busy = useRef(false);
@@ -45,24 +47,27 @@ export function ProjectDocument({ fileId, number }: ProjectDocumentProperties) {
   }
   return (
     <div className="flex flex-col gap-2">
-      <Button
-        variant="outline"
-        className="h-auto min-h-16 w-full justify-start gap-3 px-3 py-3 text-left"
-        aria-label={`Открыть PDF ${number}`}
-        disabled={pending}
-        onClick={() => void open()}
-      >
-        {pending ? (
-          <Spinner data-icon="inline-start" />
-        ) : (
-          <FileTextIcon data-icon="inline-start" className="text-primary-text" />
-        )}
-        <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="font-semibold">Документ {number}</span>
-          <span className="font-normal text-muted-foreground text-xs">PDF · Открыть файл</span>
-        </span>
-        <ArrowUpRightIcon data-icon="inline-end" />
-      </Button>
+      <div className={cn('flex min-w-0 items-center gap-1', action && 'rounded-(--radius-control) border p-1')}>
+        <Button
+          variant={action ? 'ghost' : 'outline'}
+          className="h-auto min-h-16 min-w-0 flex-1 justify-start gap-3 px-3 py-3 text-left"
+          aria-label={`Открыть PDF ${number}`}
+          disabled={pending}
+          onClick={() => void open()}
+        >
+          {pending ? (
+            <Spinner data-icon="inline-start" />
+          ) : (
+            <FileTextIcon data-icon="inline-start" className="text-primary-text" />
+          )}
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="font-semibold">Документ {number}</span>
+            <span className="font-normal text-muted-foreground text-xs">PDF · Открыть файл</span>
+          </span>
+          <ArrowUpRightIcon data-icon="inline-end" />
+        </Button>
+        {action}
+      </div>
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>

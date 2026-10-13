@@ -33,25 +33,37 @@ export function ProjectActions({
   const idleLabel = hasSnapshot ? 'Повторить' : 'Создать объект';
   const label = isPending ? 'Создание…' : idleLabel;
   return (
-    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-      <Button type="button" variant="outline" disabled={isPending} onClick={onCancel}>
+    <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Button
+        type="button"
+        variant="ghost"
+        className="order-2 w-full sm:order-none sm:w-auto"
+        disabled={isPending}
+        onClick={onCancel}
+      >
         Отмена
       </Button>
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <div className="flex flex-wrap gap-2 sm:justify-end">
         {hasBack && (
-          <Button type="button" variant="outline" onClick={onBack} disabled={isLocked}>
+          <Button type="button" variant="ghost" className="flex-1 sm:flex-none" onClick={onBack} disabled={isLocked}>
             <ArrowLeftIcon data-icon="inline-start" />
             Назад
           </Button>
         )}
         {nextLabel && (
-          <Button type="button" variant={canCreate ? 'outline' : 'default'} onClick={onNext} disabled={isLocked}>
+          <Button
+            type="button"
+            variant={canCreate ? 'outline' : 'default'}
+            className="flex-1 sm:flex-none"
+            onClick={onNext}
+            disabled={isLocked}
+          >
             {nextLabel}
             <ArrowRightIcon data-icon="inline-end" />
           </Button>
         )}
         {canCreate && !hasConflict && (
-          <Button type="submit" disabled={isPending || hasUnfinishedUploads}>
+          <Button type="submit" className="flex-1 sm:flex-none" disabled={isPending || hasUnfinishedUploads}>
             {isPending ? <Spinner data-icon="inline-start" /> : <HousePlusIcon data-icon="inline-start" />}
             {label}
           </Button>

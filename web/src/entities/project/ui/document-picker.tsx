@@ -18,6 +18,7 @@ export function DocumentPicker({ documents, ...properties }: DocumentPickerPrope
     <Uploader
       {...properties}
       id="project-documents"
+      compact
       items={documents}
       label="Проект (PDF)"
       description="Один или несколько PDF до 50 МБ каждый"

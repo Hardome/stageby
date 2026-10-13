@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { Navigate, useBlocker, useNavigate } from '@tanstack/react-router';
+import { HousePlusIcon } from 'lucide-react';
 
 import { ProjectCreator } from '@features/create-project';
 import { useAuth } from '@shared/context';
@@ -36,8 +37,16 @@ export function CreateProjectPage() {
 
   return (
     <main className="min-w-0 flex-1 bg-background px-3 py-6 sm:px-5 sm:py-10">
-      <div className="mx-auto flex max-w-4xl flex-col gap-6">
-        <h1 className="font-bold text-2xl sm:text-3xl">Создание объекта</h1>
+      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+        <header className="flex items-start gap-4">
+          <span className="hidden size-13 shrink-0 place-items-center rounded-(--radius-card) border bg-card sm:grid">
+            <HousePlusIcon aria-hidden="true" className="size-6 text-primary-text" />
+          </span>
+          <div className="flex flex-col gap-2">
+            <h1 className="font-bold text-2xl sm:text-3xl">Создание объекта</h1>
+            <p className="text-muted-foreground text-sm">От адреса и документов до плана строительных работ.</p>
+          </div>
+        </header>
         <ProjectCreator
           key={user.id}
           onDirtyChange={onDirtyChange}
