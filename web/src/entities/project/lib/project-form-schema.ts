@@ -26,6 +26,7 @@ export function parseAmount(value: string): bigint | null {
     result = BigInt(normalized) * 100n;
     if (result > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('Сумма слишком большая.');
   }
+
   return result;
 }
 

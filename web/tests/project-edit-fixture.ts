@@ -46,6 +46,7 @@ export function editStage(overrides: Partial<Stage> = {}): ProjectEditStage {
     updatedAt: timestamp,
     ...overrides,
   };
+
   return {
     stage,
     workPlanRows: [],

@@ -1,3 +1,4 @@
+import { cn } from 'cn';
 import { CheckIcon, ClipboardListIcon, HouseIcon, LayersIcon } from 'lucide-react';
 
 import { Button } from '@shared/ui/button';
@@ -48,5 +49,3 @@ export function ProjectProgress({ step, disabled, onStepChange, label = 'Шаг�
     </nav>
   );
 }
-
-import { cn } from 'cn';

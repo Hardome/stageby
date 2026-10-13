@@ -24,12 +24,17 @@ describe('project PDF upload', () => {
   it('rejects wrong MIME, empty files and sizes exceeding the limit', () => {
     expect(documentError(new File(['image'], 'image.jpg', { type: 'image/jpeg' }))).toBeDefined();
     expect(documentError(new File([], 'drawing.pdf', { type: 'application/pdf' }))).toBeDefined();
+
     const file = new File(['%PDF-1.7'], 'drawing.pdf', { type: 'application/pdf' });
     Object.defineProperty(file, 'size', { value: maxDocumentSize, configurable: true });
+
     expect(documentError(file)).toBeUndefined();
+
     Object.defineProperty(file, 'size', { value: maxDocumentSize + 1 });
+
     expect(documentError(file)).toBeDefined();
   });
+
   it.each([false, true])('reuses the session after a lost completion response (expired: %s)', async (expired) => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', fetchMock);
@@ -46,9 +51,13 @@ describe('project PDF upload', () => {
       expiresAt: '2099-01-01T00:00:00Z',
     });
     mocks.complete.mockRejectedValueOnce(new Error('Connection lost')).mockResolvedValueOnce({ id: 41 });
+
     await expect(uploadDocument(document, update)).rejects.toThrow('Connection lost');
+
     if (expired && document.session) document.session.expiresAt = '2000-01-01T00:00:00Z';
+
     await uploadDocument(document, update);
+
     expect(mocks.create).toHaveBeenCalledTimes(1);
     expect(mocks.complete.mock.calls[0]?.[0]).toEqual(mocks.complete.mock.calls[1]?.[0]);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -58,16 +67,20 @@ describe('project PDF upload', () => {
     expect(document).toMatchObject({ status: 'uploaded', fileId: 41 });
     expect(fetchMock).toHaveBeenCalledTimes(expired ? 1 : 2);
   });
+
   it('rejects a PDF with invalid contents before creating an upload session', async () => {
     const file = new File(['invalid'], 'drawing.pdf', { type: 'application/pdf' });
     Object.defineProperty(file, 'arrayBuffer', {
       value: () => Promise.resolve(new TextEncoder().encode('invalid').buffer),
     });
+
     await expect(
       uploadDocument({ id: 'file', key: 'completion-key', file, status: 'uploading' }, vi.fn()),
     ).rejects.toThrow('Содержимое файла не является PDF.');
+
     expect(mocks.create).not.toHaveBeenCalled();
   });
+
   it.each([
     new Error('Connection lost'),
     { status: 401, data: { code: 'unauthorized' } },
@@ -97,11 +110,14 @@ describe('project PDF upload', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     mocks.complete.mockRejectedValueOnce(error);
+
     await expect(uploadDocument(document, (values) => Object.assign(document, values))).rejects.toBe(error);
+
     expect(document).toEqual(original);
     expect(mocks.create).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
   it('replaces a confirmed expired session with a new completion key and the same checksum', async () => {
     const file = new File(['%PDF-1.7'], 'drawing.pdf', { type: 'application/pdf' });
     Object.defineProperty(file, 'arrayBuffer', {
@@ -134,10 +150,15 @@ describe('project PDF upload', () => {
       .mockResolvedValueOnce({ id: 41 });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
     const update = (values: Partial<DocumentUpload>) => Object.assign(document, values);
+
     await expect(uploadDocument(document, update)).rejects.toThrow('Connection lost');
+
     expect(document.key).not.toBe('completion-key');
+
     await uploadDocument(document, update);
+
     const request = mocks.create.mock.calls[0]?.[0] as { body: { checksumSha256: string } };
+
     expect(request.body.checksumSha256).toBe(document.checksum);
     expect(mocks.complete).toHaveBeenCalledWith(
       expect.objectContaining({

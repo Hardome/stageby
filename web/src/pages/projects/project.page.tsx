@@ -1,4 +1,6 @@
-import { ProjectView } from '@features/view-project';
+import { useNavigate } from '@tanstack/react-router';
+
+import { ProjectView } from '@features/projects/view';
 import { parseProjectId } from '@entities/project';
 import { useAuth } from '@shared/context';
 import { Alert, AlertDescription } from '@shared/ui/alert';
@@ -36,11 +38,10 @@ export function ProjectPage({ projectId }: ProjectPageProperties) {
         />
       );
   }
+
   return (
     <main className="min-w-0 flex-1 bg-background px-3 py-6 sm:px-5 sm:py-10">
       <div className="mx-auto w-full max-w-6xl">{content}</div>
     </main>
   );
 }
-
-import { useNavigate } from '@tanstack/react-router';

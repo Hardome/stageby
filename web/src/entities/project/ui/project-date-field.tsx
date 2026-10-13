@@ -17,6 +17,7 @@ interface ProjectDateFieldProperties {
 export function ProjectDateField({ name, label, required, ...properties }: ProjectDateFieldProperties) {
   const { control } = useFormContext<ProjectFormValues>();
   const id = `project-${name}`;
+
   return (
     <Controller
       name={name}

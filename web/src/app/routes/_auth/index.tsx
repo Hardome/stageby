@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { HomePage } from '@pages/home/home.page';
-import { projectSearchSchema } from '@features/temporary-project-list';
+import { projectSearchSchema } from '@features/projects/list';
 
 export const Route = createFileRoute('/_auth/')({
   component: IndexRoute,

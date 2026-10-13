@@ -14,6 +14,7 @@ interface ProjectMoneyFieldProperties {
 export function ProjectMoneyField({ name, label, disabled }: ProjectMoneyFieldProperties) {
   const { control } = useFormContext<ProjectFormValues>();
   const id = `project-${name}`;
+
   return (
     <Controller
       name={name}

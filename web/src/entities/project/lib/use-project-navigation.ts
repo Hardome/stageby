@@ -24,6 +24,7 @@ function screenDetails(screen: ProjectScreen, stages: StageSummary[], selectedIn
       description: `Включено этапов: ${selectedIndexes.length} из ${stages.length}. Выберите этапы для этого объекта.`,
       nextLabel: 'Заполнить этапы',
     };
+
   return {
     step: 3,
     title: stages[screen]?.title,
@@ -89,15 +90,18 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
   async function selectStep(target: number) {
     if (target === 1) {
       moveTo('object');
+
       return;
     }
     if (!(await form.trigger([...projectObjectFields]))) {
       moveTo('object');
       focusError();
+
       return;
     }
     if (target === 2) {
       moveTo('selection');
+
       return;
     }
     const firstIndex = selectedIndexes[0];

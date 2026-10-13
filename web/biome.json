@@ -33,6 +33,7 @@
         "useExhaustiveDependencies": "warn"
       },
       "nursery": {
+        "useImportsFirst": "error",
         "noComponentHookFactories": "error",
         "noConditionalExpect": "error",
         "useConsistentTestIt": "error",
@@ -94,6 +95,7 @@
                 ":PACKAGE:",
                 ":PACKAGE_WITH_PROTOCOL:",
                 "!@assets/**",
+                "!@tests/**",
                 "!@pages/**",
                 "!@features/**",
                 "!@widgets/**",
@@ -110,6 +112,7 @@
               ["@entities/**", "@entities"],
               ["@shared/**", "@shared"],
               ["@assets/**", "@assets"],
+              ["@tests/**", "@tests"],
               ":BLANK_LINE:",
               ["@api/**", "@api"],
               ":BLANK_LINE:",

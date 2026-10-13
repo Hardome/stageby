@@ -9,5 +9,6 @@ export const Route = createFileRoute('/_auth/projects/$projectId/edit')({
 
 function EditProjectRoute() {
   const { projectId } = Route.useParams();
+
   return <EditProjectPage projectId={projectId} />;
 }

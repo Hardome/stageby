@@ -27,6 +27,7 @@ export function ProjectDocument({ fileId, number, action }: ProjectDocumentPrope
     const tab = window.open('about:blank', '_blank');
     if (!tab) {
       setError('Разрешите открытие новой вкладки и повторите попытку.');
+
       return;
     }
     tab.opener = null;
@@ -45,6 +46,7 @@ export function ProjectDocument({ fileId, number, action }: ProjectDocumentPrope
       setPending(false);
     }
   }
+
   return (
     <div className="flex flex-col gap-2">
       <div className={cn('flex min-w-0 items-center gap-1', action && 'rounded-(--radius-control) border p-1')}>

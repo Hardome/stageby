@@ -3,7 +3,7 @@ import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { useBlocker, useNavigate } from '@tanstack/react-router';
 import { PencilRulerIcon } from 'lucide-react';
 
-import { ProjectEditor } from '@features/edit-project';
+import { ProjectEditor } from '@features/projects/edit';
 import { parseProjectId } from '@entities/project';
 import { useAuth } from '@shared/context';
 import { Alert, AlertDescription } from '@shared/ui/alert';
@@ -59,6 +59,7 @@ export function EditProjectPage({ projectId }: { projectId: string }) {
         onSuccess={finish}
       />
     );
+
   return (
     <main className="min-w-0 flex-1 bg-background px-3 py-6 sm:px-5 sm:py-10">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">

@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Navigate, useBlocker, useNavigate } from '@tanstack/react-router';
 import { HousePlusIcon } from 'lucide-react';
 
-import { ProjectCreator } from '@features/create-project';
+import { ProjectCreator } from '@features/projects/create';
 import { useAuth } from '@shared/context';
 import {
   AlertDialog,

@@ -18,8 +18,10 @@ export function useDocuments({ onAccessError }: UseDocumentsProperties) {
       const status = errorStatus(error);
       if (status === 401) return 'Сессия завершена. Войдите снова.';
       if (status === 403) return 'Недостаточно прав для загрузки PDF.';
+
       return error instanceof Error ? error.message : 'Не удалось загрузить PDF. Повторите попытку.';
     },
   });
+
   return { ...uploads, documents: items };
 }

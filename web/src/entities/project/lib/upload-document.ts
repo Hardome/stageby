@@ -36,6 +36,7 @@ export async function uploadDocument(document: DocumentUpload, update: (values: 
         headers: { 'Idempotency-Key': key },
       }).unwrap();
       update({ fileId: file.id, status: 'uploaded', error: undefined });
+
       return;
     } catch (error) {
       const failure = error as { status?: number; data?: ApiError } | null;

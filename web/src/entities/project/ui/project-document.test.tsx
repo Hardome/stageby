@@ -36,34 +36,43 @@ describe('project PDF access', () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
+
   it('opens the signed URL only after the authorized request', async () => {
     mocks.get.mockResolvedValue({ downloadUrl: 'https://storage.example/project.pdf' });
+
     await act(async () => {
       container.querySelector('button')?.click();
       await Promise.resolve();
     });
+
     expect(openTab).toHaveBeenCalledWith('about:blank', '_blank');
     expect(tab.location.href).toBe('https://storage.example/project.pdf');
     expect(tab.opener).toBeNull();
   });
+
   it('closes the blank tab and allows retry after session failure', async () => {
     const error = { status: 401 };
     mocks.get.mockRejectedValue(error);
+
     await act(async () => {
       container.querySelector('button')?.click();
       await Promise.resolve();
     });
+
     expect(tab.close).toHaveBeenCalledOnce();
     expect(mocks.access).toHaveBeenCalledWith(error);
     expect(container).toHaveTextContent('Не удалось открыть PDF');
     expect(container.querySelector('button')).not.toBeDisabled();
   });
+
   it('explains a blocked popup without issuing a request', async () => {
     openTab.mockReturnValue(null);
+
     await act(async () => {
       container.querySelector('button')?.click();
       await Promise.resolve();
     });
+
     expect(mocks.get).not.toHaveBeenCalled();
     expect(container).toHaveTextContent('Разрешите открытие новой вкладки');
   });
