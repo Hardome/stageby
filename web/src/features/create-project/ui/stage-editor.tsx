@@ -8,6 +8,7 @@ import { FieldDescription, FieldError, FieldGroup, FieldLegend, FieldSet } from 
 import type { ProjectFormValues } from '../model/types';
 import { ProjectDateField } from './project-date-field';
 import { ProjectField } from './project-field';
+import { ProjectMoneyField } from './project-money-field';
 
 interface StageEditorProperties {
   index: number;
@@ -62,18 +63,10 @@ export function StageEditor({ index, disabled, registerErrorGroup }: StageEditor
         />
       </FieldGroup>
       <FieldGroup className="grid min-w-0 gap-4 md:grid-cols-2">
-        <ProjectField
-          name={`stages.${index}.plannedWorkAmount`}
-          label="План работ, ₽"
-          inputMode="numeric"
-          placeholder="Не задан"
-          disabled={disabled}
-        />
-        <ProjectField
+        <ProjectMoneyField name={`stages.${index}.plannedWorkAmount`} label="План работ, ₽" disabled={disabled} />
+        <ProjectMoneyField
           name={`stages.${index}.plannedMaterialAmount`}
           label="План материалов, ₽"
-          inputMode="numeric"
-          placeholder="Не задан"
           disabled={disabled}
         />
       </FieldGroup>

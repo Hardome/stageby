@@ -164,6 +164,31 @@ describe('project creation workflow', () => {
     expect(container.textContent).not.toContain('Дата должна находиться внутри сроков проекта.');
     expect(mocks.create).not.toHaveBeenCalled();
   });
+  it('formats both stage plans, retains them across steps and submits exact minor amounts', async () => {
+    await objectStep();
+    await stageDates();
+    await fill('stages.0.plannedWorkAmount', '1000000');
+    await fill('stages.0.plannedMaterialAmount', '2\u{A0}500\u{A0}000');
+    expect(input('stages.0.plannedWorkAmount')).toHaveValue('1 000 000');
+    expect(input('stages.0.plannedMaterialAmount')).toHaveValue('2 500 000');
+    await click('Назад');
+    await click('Заполнить этапы');
+    expect(input('stages.0.plannedWorkAmount')).toHaveValue('1 000 000');
+    expect(input('stages.0.plannedMaterialAmount')).toHaveValue('2 500 000');
+    await fill('stages.0.plannedWorkAmount', '-1');
+    expect(input('stages.0.plannedWorkAmount')).toHaveAttribute('aria-invalid', 'true');
+    await fill('stages.0.plannedWorkAmount', '1000000');
+    expect(input('stages.0.plannedWorkAmount')).toHaveAttribute('aria-invalid', 'false');
+    mocks.create.mockResolvedValueOnce({ id: 77 });
+    await submit();
+    const request = mocks.create.mock.calls[0]?.[0] as {
+      body: { stages: { plannedWorkAmountMinor: bigint; plannedMaterialAmountMinor: bigint }[] };
+    };
+    expect(request.body.stages[0]).toMatchObject({
+      plannedWorkAmountMinor: 100000000n,
+      plannedMaterialAmountMinor: 250000000n,
+    });
+  });
   it('retains uploads across steps, blocks unfinished files and submits completed file IDs', async () => {
     const pending = Promise.withResolvers<void>();
     mocks.upload.mockReturnValueOnce(pending.promise);

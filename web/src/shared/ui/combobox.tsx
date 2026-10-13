@@ -149,7 +149,7 @@ function ComboboxItem({ className, children, ...properties }: ComboboxPrimitive.
       data-slot="combobox-item"
       className={cn(
         [
-          'relative flex w-full cursor-default select-none items-center gap-2 rounded-md py-1 pr-8',
+          'relative flex w-full cursor-pointer select-none items-center gap-2 rounded-md py-1 pr-8',
           'pl-1.5 text-sm outline-hidden data-disabled:pointer-events-none',
           'data-highlighted:bg-accent data-highlighted:text-accent-foreground',
           'data-disabled:opacity-50',
