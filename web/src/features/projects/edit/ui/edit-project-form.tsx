@@ -26,6 +26,11 @@ export function EditProjectForm(properties: EditProjectFormProperties) {
       >
         <ProjectProgress
           step={step}
+          stages={navigation.navigationStages}
+          currentStage={navigation.currentStage}
+          onStageChange={(index) => {
+            if (!isLocked) navigation.selectStage(index);
+          }}
           disabled={isLocked}
           label="Шаги редактирования"
           onStepChange={(target) => {
@@ -40,6 +45,7 @@ export function EditProjectForm(properties: EditProjectFormProperties) {
             onReload={() => editor.setConfirmReload(true)}
           />
           <ProjectFormPanel
+            titleRef={navigation.panelTitleReference}
             step={step}
             title={title}
             description={description}
