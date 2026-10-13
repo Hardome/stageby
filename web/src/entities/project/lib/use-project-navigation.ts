@@ -129,6 +129,7 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
     selectStep,
     revealErrors,
     showObject: () => moveTo('object'),
+    showStage: (index: number) => moveTo(index),
     back: () => moveTo(screen === 'selection' ? 'object' : (previousIndex ?? 'selection')),
   };
 }

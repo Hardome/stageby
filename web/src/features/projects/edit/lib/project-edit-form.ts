@@ -4,6 +4,8 @@ import { type ProjectFormValues, parseAmount, parseCoordinates, projectFormSchem
 
 import type { ProjectEdit, ProjectEditStage, UpdateProject, UpdateProjectStage } from '@api/types';
 
+import { additionalStageRequest } from './additional-stage';
+
 function amountInput(value: bigint | null): string {
   return value === null ? '' : (value / 100n).toString();
 }
@@ -56,6 +58,10 @@ function validateStage(
 
 export function projectEditSchema(snapshot: ProjectEdit) {
   return projectFormSchema.superRefine((values, context) => {
+    const additionalStages = values.stages.filter((stage) => stage.type === 'additional');
+    if (additionalStages.length > 1)
+      context.addIssue({ code: 'custom', path: ['stages'], message: 'Дополнительный этап уже добавлен.' });
+
     for (const [index, entry] of snapshot.stages.entries()) {
       const value = values.stages[index];
       if (value) validateStage(entry, value, index, context);
@@ -117,6 +123,9 @@ export function projectEditRequest(snapshot: ProjectEdit, values: ProjectFormVal
     return Object.keys(change).length > 2 ? [change] : [];
   });
   if (changes.length > 0) body.stages = changes;
+  const additional = values.stages[snapshot.stages.length];
+  if (additional?.type === 'additional' && additional.enabled)
+    body.additionalStage = additionalStageRequest(additional);
 
   return body;
 }
@@ -130,6 +139,8 @@ export function editErrorPath(path: string, body: UpdateProject, snapshot: Proje
     if (index === -1) return;
     result = `stages.${index}${match[2] ?? ''}`;
   }
+  if (body.additionalStage)
+    result = result.replace(/^additionalStage(?=\.|$)/, () => `stages.${snapshot.stages.length}`);
   result = result
     .replace('.checklist.items', '.checklistItems')
     .replace(/\.checklist(?:\.expectedVersion)?$/, '.checklistItems')

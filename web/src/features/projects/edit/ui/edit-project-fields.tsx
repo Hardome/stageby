@@ -4,6 +4,7 @@ import { FieldError } from '@shared/ui/field';
 import type { ProjectEdit } from '@api/types';
 
 import type { useProjectEditForm } from '../lib/use-project-edit-form';
+import { AdditionalStageAction } from './additional-stage-action';
 import { SavedDocuments } from './saved-documents';
 
 interface EditProjectFieldsProperties {
@@ -43,12 +44,19 @@ export function EditProjectFields({ snapshot, editor }: EditProjectFieldsPropert
         <FieldError>{form.formState.errors.stages[screen].message}</FieldError>
       )}
       <StageEditor
-        key={snapshot.stages[screen]?.stage.id}
+        key={snapshot.stages[screen]?.stage.id ?? stages[screen]?.type}
         index={screen}
         disabled={isLocked}
-        checklistReadOnly={snapshot.stages[screen]?.stage.actualStartDate !== null}
+        checklistReadOnly={Boolean(snapshot.stages[screen]?.stage.actualStartDate)}
         registerErrorGroup={registerErrorGroup}
       />
+      {editor.additionalStage.canAdd && (
+        <AdditionalStageAction
+          disabled={isLocked}
+          isRestoring={editor.additionalStage.isRestoring}
+          onAdd={editor.additionalStage.add}
+        />
+      )}
     </>
   );
 }
