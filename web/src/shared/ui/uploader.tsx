@@ -1,15 +1,14 @@
 import { useId } from 'react';
 
 import { cn } from 'cn';
-import { FileCheckIcon, FileTextIcon, Trash2Icon, UploadIcon } from 'lucide-react';
-import { type Accept, type FileRejection, useDropzone } from 'react-dropzone';
+import { UploadIcon } from 'lucide-react';
+import { type Accept, useDropzone } from 'react-dropzone';
 
-import type { UploadItem } from '@shared/lib/file-upload';
+import { fileRejectionMessage, type UploadItem } from '@shared/lib/file-upload';
 
 import { Alert, AlertDescription } from './alert';
-import { Button } from './button';
 import { Field, FieldDescription, FieldLabel } from './field';
-import { Spinner } from './spinner';
+import { UploadItem as UploadItemRow } from './upload-item';
 
 interface UploaderProperties<T extends UploadItem> {
   id?: string;
@@ -19,6 +18,7 @@ interface UploaderProperties<T extends UploadItem> {
   listLabel?: string;
   error?: string;
   disabled?: boolean;
+  compact?: boolean;
   accept?: Accept;
   multiple?: boolean;
   maxSize?: number;
@@ -29,30 +29,6 @@ interface UploaderProperties<T extends UploadItem> {
   onRemove: (id: string) => void;
 }
 
-function rejectionMessage(
-  { file, errors }: FileRejection,
-  validateFile?: UploaderProperties<UploadItem>['validateFile'],
-) {
-  const validation = validateFile?.(file);
-  const messages = errors.map((error) => {
-    switch (error.code) {
-      case 'file-invalid-type': {
-        return 'Недопустимый тип файла.';
-      }
-      case 'file-too-large': {
-        return 'Файл превышает допустимый размер.';
-      }
-      case 'too-many-files': {
-        return 'Выберите один файл.';
-      }
-      default: {
-        return error.message;
-      }
-    }
-  });
-  return `${file.name}: ${validation ?? messages.join(' ')}`;
-}
-
 export function Uploader<T extends UploadItem>({
   id,
   items,
@@ -61,6 +37,7 @@ export function Uploader<T extends UploadItem>({
   listLabel = 'Загружаемые файлы',
   error,
   disabled = false,
+  compact = false,
   accept,
   multiple = true,
   maxSize,
@@ -82,12 +59,13 @@ export function Uploader<T extends UploadItem>({
     disabled,
     validator: (file) => {
       const message = validateFile?.(file);
+
       return message ? { code: 'file-validation', message } : null;
     },
     onDrop: (acceptedFiles, rejections) => {
       if (disabled) return;
       onSelect(acceptedFiles);
-      if (rejections.length > 0) onReject(rejections.map((item) => rejectionMessage(item, validateFile)).join(' '));
+      if (rejections.length > 0) onReject(rejections.map((item) => fileRejectionMessage(item, validateFile)).join(' '));
     },
   });
 
@@ -105,8 +83,9 @@ export function Uploader<T extends UploadItem>({
           'aria-invalid': Boolean(error),
           'aria-disabled': disabled,
           className: cn(
-            'flex min-h-32 flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-5',
-            'text-center text-sm outline-none',
+            'flex items-center gap-3 rounded-(--radius-control) border border-dashed p-5',
+            compact ? 'min-h-24 flex-row text-left' : 'min-h-32 flex-col justify-center text-center',
+            'text-sm outline-none',
             'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
             !disabled && 'cursor-pointer hover:bg-muted',
             isDragActive && 'border-ring bg-muted',
@@ -124,7 +103,14 @@ export function Uploader<T extends UploadItem>({
             'aria-invalid': Boolean(error),
           })}
         />
-        <UploadIcon aria-hidden="true" className="size-6 text-muted-foreground" />
+        <span
+          className={cn(
+            'flex shrink-0 items-center justify-center',
+            compact && 'size-10 rounded-(--radius-control) bg-muted text-muted-foreground',
+          )}
+        >
+          <UploadIcon aria-hidden="true" className="size-5 text-muted-foreground" />
+        </span>
         <p>{isDragActive ? 'Отпустите файлы здесь' : 'Перетащите файлы сюда или нажмите для выбора'}</p>
       </div>
       {error && (
@@ -132,38 +118,9 @@ export function Uploader<T extends UploadItem>({
           <AlertDescription id={errorId}>{error}</AlertDescription>
         </Alert>
       )}
-      <ul className="flex flex-col gap-3" aria-label={listLabel} aria-live="polite">
+      <ul className="flex flex-col gap-2 empty:hidden" aria-label={listLabel} aria-live="polite">
         {items.map((item) => (
-          <li key={item.id} className="flex min-w-0 flex-wrap items-center gap-3 rounded-lg border p-3">
-            {item.status === 'uploading' && <Spinner />}
-            {item.status === 'uploaded' && (
-              <FileCheckIcon aria-hidden="true" className="size-5 shrink-0 text-success" />
-            )}
-            {item.status === 'failed' && <FileTextIcon aria-hidden="true" className="size-5 shrink-0" />}
-            <div className="min-w-0 flex-1">
-              <p className="wrap-anywhere font-medium">{item.file.name}</p>
-              <p className="text-muted-foreground text-sm">
-                {(item.file.size / 1024 / 1024).toFixed(1)} МБ ·{' '}
-                {{ uploading: 'Загрузка…', uploaded: 'Загружен', failed: 'Ошибка загрузки' }[item.status]}
-              </p>
-              {item.error && <p className="wrap-anywhere text-destructive text-sm">{item.error}</p>}
-            </div>
-            {item.status === 'failed' && (
-              <Button type="button" variant="outline" disabled={disabled} onClick={() => onRetry(item)}>
-                Повторить
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={disabled || item.status === 'uploading'}
-              aria-label={`Убрать файл ${item.file.name}`}
-              onClick={() => onRemove(item.id)}
-            >
-              <Trash2Icon />
-            </Button>
-          </li>
+          <UploadItemRow key={item.id} item={item} disabled={disabled} onRetry={onRetry} onRemove={onRemove} />
         ))}
       </ul>
     </Field>

@@ -1,7 +1,7 @@
 pre-commit:
   commands:
     lint-staged:
-      run: pnpm exec lint-staged
+      run: pnpm exec lint-staged --max-arg-length 6000
     fsd-lint:
       glob: "web/src/**/*.{ts,tsx}"
       run: pnpm --dir web run lint:fsd

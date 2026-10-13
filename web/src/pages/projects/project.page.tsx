@@ -1,4 +1,6 @@
-import { ProjectView } from '@features/view-project';
+import { useNavigate } from '@tanstack/react-router';
+
+import { ProjectView } from '@features/projects/view';
 import { parseProjectId } from '@entities/project';
 import { useAuth } from '@shared/context';
 import { Alert, AlertDescription } from '@shared/ui/alert';
@@ -9,6 +11,7 @@ interface ProjectPageProperties {
 
 export function ProjectPage({ projectId }: ProjectPageProperties) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const id = parseProjectId(projectId);
 
   let content = (
@@ -24,9 +27,18 @@ export function ProjectPage({ projectId }: ProjectPageProperties) {
           <AlertDescription>Некорректная ссылка на объект.</AlertDescription>
         </Alert>
       ) : (
-        <ProjectView projectId={id} />
+        <ProjectView
+          projectId={id}
+          onEdit={() =>
+            void navigate({
+              to: '/projects/$projectId/edit',
+              params: { projectId },
+            })
+          }
+        />
       );
   }
+
   return (
     <main className="min-w-0 flex-1 bg-background px-3 py-6 sm:px-5 sm:py-10">
       <div className="mx-auto w-full max-w-6xl">{content}</div>
