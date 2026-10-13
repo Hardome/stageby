@@ -27,6 +27,8 @@ Use Node.js 24.7+ and pnpm 11+. Run commands from the root.
 
 Write TypeScript with two space indentation, LF endings, single quotes, and semicolons. Biome formats and checks both apps; web also uses ESLint, Stylelint, Steiger, and cspell. Prefer descriptive kebab case filenames such as `user-form.test.ts`; follow existing feature and module boundaries. Do not edit `api/src/generated/`, `web/src/generated/`, or bundled `contracts/openapi.yaml` by hand. Change their sources and run code generation.
 
+Write comments in Russian. Add them only where they truly help to understand non‑obvious logic, the reason for a decision, or an important limitation. Do not comment on every action and do not retell obvious code. If the meaning can be conveyed by a clear name for a variable, file, or function, improve the name instead of adding a comment.
+
 ## Testing Guidelines
 
 Use Vitest. Name tests `*.test.ts` or `*.test.tsx` beside implementation; API integration tests may live in `api/test/`. Cover changed behavior and error paths. API integration tests need PostgreSQL running (`pnpm run db:up`) with migrations applied (`pnpm --dir api run db:migrate`). Web tests use jsdom and Testing Library. No repository wide coverage threshold is configured; run `pnpm --dir web run test:coverage` when coverage detail is useful.
