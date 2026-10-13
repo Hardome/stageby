@@ -9,6 +9,7 @@ import { useAccessError } from '@shared/lib/hooks';
 import type { EditProjectFormProperties } from '../model/types';
 import { projectEditSchema, projectEditValues } from './project-edit-form';
 import { projectExclusionReasons } from './project-exclusion-reasons';
+import { useAdditionalStage } from './use-additional-stage';
 import { useProjectUpdate } from './use-project-update';
 
 export function useProjectEditForm({ snapshot, onDirtyChange, onSuccess, onReload }: EditProjectFormProperties) {
@@ -20,6 +21,7 @@ export function useProjectEditForm({ snapshot, onDirtyChange, onSuccess, onReloa
   });
 
   const navigation = useProjectNavigation(form);
+  const additionalStage = useAdditionalStage(form, navigation);
   const uploads = useDocuments({ onAccessError: useAccessError() });
 
   const [fileIds, setFileIds] = useState(snapshot.project.documentFileIds);
@@ -78,6 +80,7 @@ export function useProjectEditForm({ snapshot, onDirtyChange, onSuccess, onReloa
   return {
     form,
     navigation,
+    additionalStage,
     uploads,
     update,
     fileIds,
