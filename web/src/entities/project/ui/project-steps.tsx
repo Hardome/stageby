@@ -43,9 +43,10 @@ interface StagesStepProperties {
   stages: Pick<ProjectFormValues['stages'][number], 'type' | 'title' | 'enabled'>[];
   isLocked: boolean;
   registerErrorGroup: (element: HTMLElement | null) => void;
+  exclusionReasons?: (string | undefined)[];
 }
 
-export function StagesStep({ stages, isLocked, registerErrorGroup }: StagesStepProperties) {
+export function StagesStep({ stages, isLocked, registerErrorGroup, exclusionReasons }: StagesStepProperties) {
   const {
     control,
     clearErrors,
@@ -79,14 +80,19 @@ export function StagesStep({ stages, isLocked, registerErrorGroup }: StagesStepP
                     clearErrors('stages');
                   }}
                   onBlur={field.onBlur}
-                  disabled={isLocked}
+                  disabled={isLocked || (stage.enabled && typeof exclusionReasons?.[index] === 'string')}
                   aria-invalid={Boolean(stagesError?.message)}
                   aria-describedby={stagesError?.message ? 'project-stages-error' : undefined}
                   aria-label={`Включить этап «${stage.title}»`}
                 />
               )}
             />
-            <FieldLabel htmlFor={`include-${stage.type}`}>{stage.title}</FieldLabel>
+            <div className="flex flex-col gap-1">
+              <FieldLabel htmlFor={`include-${stage.type}`}>{stage.title}</FieldLabel>
+              {stage.enabled && exclusionReasons?.[index] && (
+                <p className="text-muted-foreground text-sm">{exclusionReasons[index]}</p>
+              )}
+            </div>
           </Field>
         ))}
       </FieldGroup>

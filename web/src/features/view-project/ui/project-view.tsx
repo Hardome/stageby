@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { FileTextIcon } from 'lucide-react';
 
+import { ProjectDocument } from '@entities/project';
 import { useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
@@ -11,7 +12,6 @@ import { Skeleton } from '@shared/ui/skeleton';
 import { useGetProject } from '@api/queries/useGetProject';
 import { useListProjectStages } from '@api/queries/useListProjectStages';
 
-import { ProjectDocument } from './project-document';
 import { ProjectFinances } from './project-finances';
 import { ProjectHeader } from './project-header';
 import { ProjectStages } from './project-stages';
@@ -34,7 +34,12 @@ function ProjectUnavailable({ query }: { query: ReturnType<typeof useGetProject>
   );
 }
 
-export function ProjectView({ projectId }: { projectId: number }) {
+interface ProjectViewProperties {
+  projectId: number;
+  onEdit?: () => void;
+}
+
+export function ProjectView({ projectId, onEdit }: ProjectViewProperties) {
   const project = useGetProject({ path: { projectId } }, { query: { retry: false } });
   const stages = useListProjectStages({ path: { projectId } }, { query: { retry: false } });
   const accessError = useAccessError();
@@ -50,7 +55,7 @@ export function ProjectView({ projectId }: { projectId: number }) {
   const value = project.data;
   return (
     <div className="flex min-w-0 flex-col gap-8" aria-busy={project.isFetching || stages.isFetching}>
-      <ProjectHeader project={value} />
+      <ProjectHeader project={value} onEdit={onEdit} />
       {project.isError && (
         <Alert variant="destructive">
           <AlertDescription>Не удалось обновить объект. Показаны ранее загруженные данные.</AlertDescription>

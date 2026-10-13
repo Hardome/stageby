@@ -1,7 +1,9 @@
+import { objectFormSchema, parseAmount, parseCoordinates, projectFormSchema } from '@entities/project';
+
 import type { ActiveStageType } from '@api/types';
 
 import { initialProjectForm } from '../model/data';
-import { objectFormSchema, parseAmount, parseCoordinates, projectFormSchema, projectRequest } from './project-form';
+import { projectRequest } from './project-form';
 import { projectErrorPath } from './use-project-submission';
 
 const testStageTypes: ActiveStageType[] = [

@@ -4,7 +4,7 @@ import { ProjectPage } from '@pages/projects/project.page';
 
 export const Route = createFileRoute('/_auth/projects/$projectId/')({
   component: ProjectRoute,
-  head: () => ({ meta: [{ title: 'Объект — Stageby' }] }),
+  head: () => ({ meta: [{ title: 'Объект' }] }),
 });
 
 function ProjectRoute() {

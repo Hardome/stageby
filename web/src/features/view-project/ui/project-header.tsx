@@ -8,9 +8,10 @@ import type { Project } from '@api/types';
 
 interface ProjectHeaderProperties {
   project: Project;
+  onEdit?: () => void;
 }
 
-export function ProjectHeader({ project }: ProjectHeaderProperties) {
+export function ProjectHeader({ project, onEdit }: ProjectHeaderProperties) {
   const { coordinates } = project;
   const mapUrl = `https://yandex.ru/maps/?pt=${coordinates.longitude},${coordinates.latitude}&z=16&l=map`;
   return (
@@ -30,15 +31,21 @@ export function ProjectHeader({ project }: ProjectHeaderProperties) {
           <MapPinIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <p className="wrap-anywhere text-sm sm:text-base">{project.address}</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="self-start"
-          nativeButton={false}
-          render={<a href={mapUrl} target="_blank" rel="noopener noreferrer" />}
-        >
-          Открыть на карте <ArrowUpRightIcon data-icon="inline-end" />
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<a href={mapUrl} target="_blank" rel="noopener noreferrer" />}
+          >
+            Открыть на карте <ArrowUpRightIcon data-icon="inline-end" />
+          </Button>
+          {!project.isArchived && onEdit && (
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              Редактировать
+            </Button>
+          )}
+        </div>
         <p className="text-muted-foreground text-xs">
           Координаты: {coordinates.latitude}, {coordinates.longitude}
         </p>

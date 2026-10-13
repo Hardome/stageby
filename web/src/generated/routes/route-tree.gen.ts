@@ -17,6 +17,7 @@ import { Route as AuthUsersIndexRouteImport } from './../../app/routes/_auth/use
 import { Route as AuthUsersNewRouteImport } from './../../app/routes/_auth/users/new';
 import { Route as PublicLoginIndexRouteImport } from './../../app/routes/_public/login/index';
 import { Route as AuthProjectsProjectIdIndexRouteImport } from './../../app/routes/_auth/projects/$projectId/index';
+import { Route as AuthProjectsProjectIdEditRouteImport } from './../../app/routes/_auth/projects/$projectId/edit';
 import { Route as AuthUsersUserIdEditRouteImport } from './../../app/routes/_auth/users/$userId/edit';
 import { Route as AuthUsersUserIdPasswordRouteImport } from './../../app/routes/_auth/users/$userId/password';
 
@@ -60,6 +61,12 @@ const AuthProjectsProjectIdIndexRoute =
     path: '/projects/$projectId/',
     getParentRoute: () => AuthRoute,
   } as any);
+const AuthProjectsProjectIdEditRoute =
+  AuthProjectsProjectIdEditRouteImport.update({
+    id: '/projects/$projectId/edit',
+    path: '/projects/$projectId/edit',
+    getParentRoute: () => AuthRoute,
+  } as any);
 const AuthUsersUserIdEditRoute = AuthUsersUserIdEditRouteImport.update({
   id: '/$userId/edit',
   path: '/$userId/edit',
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/users/new': typeof AuthUsersNewRoute;
   '/users/': typeof AuthUsersIndexRoute;
   '/login/': typeof PublicLoginIndexRoute;
+  '/projects/$projectId/edit': typeof AuthProjectsProjectIdEditRoute;
   '/users/$userId/edit': typeof AuthUsersUserIdEditRoute;
   '/users/$userId/password': typeof AuthUsersUserIdPasswordRoute;
   '/projects/$projectId/': typeof AuthProjectsProjectIdIndexRoute;
@@ -88,6 +96,7 @@ export interface FileRoutesByTo {
   '/users/new': typeof AuthUsersNewRoute;
   '/users': typeof AuthUsersIndexRoute;
   '/login': typeof PublicLoginIndexRoute;
+  '/projects/$projectId/edit': typeof AuthProjectsProjectIdEditRoute;
   '/users/$userId/edit': typeof AuthUsersUserIdEditRoute;
   '/users/$userId/password': typeof AuthUsersUserIdPasswordRoute;
   '/projects/$projectId': typeof AuthProjectsProjectIdIndexRoute;
@@ -101,6 +110,7 @@ export interface FileRoutesById {
   '/_auth/users/new': typeof AuthUsersNewRoute;
   '/_auth/users/': typeof AuthUsersIndexRoute;
   '/_public/login/': typeof PublicLoginIndexRoute;
+  '/_auth/projects/$projectId/edit': typeof AuthProjectsProjectIdEditRoute;
   '/_auth/users/$userId/edit': typeof AuthUsersUserIdEditRoute;
   '/_auth/users/$userId/password': typeof AuthUsersUserIdPasswordRoute;
   '/_auth/projects/$projectId/': typeof AuthProjectsProjectIdIndexRoute;
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
     | '/users/new'
     | '/users/'
     | '/login/'
+    | '/projects/$projectId/edit'
     | '/users/$userId/edit'
     | '/users/$userId/password'
     | '/projects/$projectId/';
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/users/new'
     | '/users'
     | '/login'
+    | '/projects/$projectId/edit'
     | '/users/$userId/edit'
     | '/users/$userId/password'
     | '/projects/$projectId';
@@ -136,6 +148,7 @@ export interface FileRouteTypes {
     | '/_auth/users/new'
     | '/_auth/users/'
     | '/_public/login/'
+    | '/_auth/projects/$projectId/edit'
     | '/_auth/users/$userId/edit'
     | '/_auth/users/$userId/password'
     | '/_auth/projects/$projectId/';
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProjectsProjectIdIndexRouteImport;
       parentRoute: typeof AuthRoute;
     };
+    '/_auth/projects/$projectId/edit': {
+      id: '/_auth/projects/$projectId/edit';
+      path: '/projects/$projectId/edit';
+      fullPath: '/projects/$projectId/edit';
+      preLoaderRoute: typeof AuthProjectsProjectIdEditRouteImport;
+      parentRoute: typeof AuthRoute;
+    };
     '/_auth/users/$userId/edit': {
       id: '/_auth/users/$userId/edit';
       path: '/$userId/edit';
@@ -243,6 +263,7 @@ interface AuthRouteChildren {
   AuthUsersRoute: typeof AuthUsersRouteWithChildren;
   AuthIndexRoute: typeof AuthIndexRoute;
   AuthProjectsNewRoute: typeof AuthProjectsNewRoute;
+  AuthProjectsProjectIdEditRoute: typeof AuthProjectsProjectIdEditRoute;
   AuthProjectsProjectIdIndexRoute: typeof AuthProjectsProjectIdIndexRoute;
 }
 
@@ -250,6 +271,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthUsersRoute: AuthUsersRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
   AuthProjectsNewRoute: AuthProjectsNewRoute,
+  AuthProjectsProjectIdEditRoute: AuthProjectsProjectIdEditRoute,
   AuthProjectsProjectIdIndexRoute: AuthProjectsProjectIdIndexRoute,
 };
 

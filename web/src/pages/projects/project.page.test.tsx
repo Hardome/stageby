@@ -5,10 +5,11 @@ import { createRoot, type Root } from 'react-dom/client';
 
 import { ProjectPage } from './project.page';
 
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), view: vi.fn() }));
+const mocks = vi.hoisted(() => ({ auth: vi.fn(), view: vi.fn(), navigate: vi.fn() }));
 vi.mock('@shared/context', () => ({ useAuth: mocks.auth }));
 vi.mock('@features/view-project', () => ({ ProjectView: mocks.view }));
 vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => mocks.navigate,
   Link: ({ children }: { children: React.ReactNode }) => <a href="/">{children}</a>,
 }));
 
@@ -53,7 +54,7 @@ describe('project route access', () => {
       root.render(<ProjectPage projectId="17" />);
       await Promise.resolve();
     });
-    expect(mocks.view).toHaveBeenCalledWith({ projectId: 17 }, undefined);
+    expect(mocks.view).toHaveBeenCalledWith(expect.objectContaining({ projectId: 17 }), undefined);
     expect(container.querySelector('a')).toBeNull();
   });
 });

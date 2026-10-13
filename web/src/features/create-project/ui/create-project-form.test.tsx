@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   accessError: vi.fn(),
   upload: vi.fn(),
 }));
-vi.mock('../lib/upload-document', async (importOriginal) => ({
+vi.mock('../../../entities/project/lib/upload-document', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   uploadDocument: (...arguments_: unknown[]) => mocks.upload(...arguments_) as Promise<void>,
 }));

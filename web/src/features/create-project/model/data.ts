@@ -1,14 +1,6 @@
+import type { ProjectFormValues } from '@entities/project';
+
 import type { ActiveStageType } from '@api/types';
-
-import type { ProjectFormValues } from './types';
-
-export const projectObjectFields = [
-  'ownerName',
-  'address',
-  'coordinates',
-  'plannedStartDate',
-  'plannedEndDate',
-] as const;
 
 export function initialProjectForm(types: ActiveStageType[]): ProjectFormValues {
   return {

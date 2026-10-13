@@ -1,5 +1,13 @@
 export { formatMoney } from './lib/format-money';
 export { materialDescription } from './lib/material-description';
+export { objectFormSchema, parseAmount, parseCoordinates, projectFormSchema } from './lib/project-form-schema';
 export { parseProjectId } from './lib/project-id';
 export { formatDate, formatStageDates, isStageOverdue, todayInYekaterinburg } from './lib/stage-dates';
+export { useDocuments } from './lib/use-documents';
+export { useProjectNavigation } from './lib/use-project-navigation';
 export { materialBadgeVariants, projectStatuses, stageStatuses } from './model/data';
+export type { DocumentUpload, ProjectFormValues } from './model/types';
+export { ProjectDocument } from './ui/project-document';
+export { ProjectProgress } from './ui/project-progress';
+export { ObjectStep, ProjectStep, StagesStep, UnfinishedUploadsWarning } from './ui/project-steps';
+export { StageEditor } from './ui/stage-editor';

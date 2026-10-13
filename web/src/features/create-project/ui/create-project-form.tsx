@@ -3,6 +3,15 @@ import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormProvider, useForm } from 'react-hook-form';
 
+import type { ProjectFormValues } from '@entities/project';
+import {
+  ProjectProgress,
+  ProjectStep,
+  projectFormSchema,
+  UnfinishedUploadsWarning,
+  useDocuments,
+  useProjectNavigation,
+} from '@entities/project';
 import { useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
@@ -10,15 +19,9 @@ import { FieldDescription } from '@shared/ui/field';
 
 import type { ActiveStageType } from '@api/types';
 
-import { projectFormSchema } from '../lib/project-form';
-import { useDocuments } from '../lib/use-documents';
-import { useProjectNavigation } from '../lib/use-project-navigation';
 import { useProjectSubmission } from '../lib/use-project-submission';
 import { initialProjectForm } from '../model/data';
-import type { ProjectFormValues } from '../model/types';
 import { ProjectActions } from './project-actions';
-import { ProjectProgress } from './project-progress';
-import { ProjectStep, UnfinishedUploadsWarning } from './project-steps';
 
 interface CreateProjectFormProperties {
   types: ActiveStageType[];

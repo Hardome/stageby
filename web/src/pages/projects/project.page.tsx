@@ -9,6 +9,7 @@ interface ProjectPageProperties {
 
 export function ProjectPage({ projectId }: ProjectPageProperties) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const id = parseProjectId(projectId);
 
   let content = (
@@ -24,7 +25,15 @@ export function ProjectPage({ projectId }: ProjectPageProperties) {
           <AlertDescription>Некорректная ссылка на объект.</AlertDescription>
         </Alert>
       ) : (
-        <ProjectView projectId={id} />
+        <ProjectView
+          projectId={id}
+          onEdit={() =>
+            void navigate({
+              to: '/projects/$projectId/edit',
+              params: { projectId },
+            })
+          }
+        />
       );
   }
   return (
@@ -33,3 +42,5 @@ export function ProjectPage({ projectId }: ProjectPageProperties) {
     </main>
   );
 }
+
+import { useNavigate } from '@tanstack/react-router';

@@ -6,12 +6,13 @@ import { Button } from '@shared/ui/button';
 interface ProjectProgressProperties {
   step: number;
   disabled: boolean;
+  label?: string;
   onStepChange: (step: number) => void;
 }
 
-export function ProjectProgress({ step, disabled, onStepChange }: ProjectProgressProperties) {
+export function ProjectProgress({ step, disabled, onStepChange, label = 'Шаги создания' }: ProjectProgressProperties) {
   return (
-    <ol className="flex flex-col gap-3 sm:flex-row" aria-label="Шаги создания">
+    <ol className="flex flex-col gap-3 sm:flex-row" aria-label={label}>
       {['Объект', 'Выбор этапов', 'Заполнение'].map((label, index) => (
         <li key={label} className="min-w-0 flex-1">
           <Button

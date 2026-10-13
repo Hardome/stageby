@@ -2,7 +2,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import { type FieldPath, type UseFormReturn, useWatch } from 'react-hook-form';
 
-import { projectObjectFields } from '../model/data';
+import { projectObjectFields } from '../model/form-data';
 import type { ProjectFormValues } from '../model/types';
 import { firstErrorPath } from './first-error-path';
 
@@ -56,7 +56,7 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
   useLayoutEffect(() => {
     if (focusRequest === handledFocusRequest.current) return;
     handledFocusRequest.current = focusRequest;
-    // Focus only after the requested screen and its field refs have been committed.
+    // Переводим фокус после отображения нужного экрана и регистрации его полей.
     const field =
       typeof screen === 'number'
         ? firstErrorPath(errors.stages?.[screen], `stages.${screen}`)

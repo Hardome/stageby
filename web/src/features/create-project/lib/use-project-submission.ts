@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { FieldPath, UseFormReturn } from 'react-hook-form';
 
+import type { ProjectFormValues } from '@entities/project';
 import { errorStatus, useAccessError } from '@shared/lib/hooks';
 
 import { useCreateProject } from '@api/mutations/useCreateProject';
@@ -12,7 +13,6 @@ import { listDashboardProjectsQueryKey } from '@api/queries/useListDashboardProj
 import { listProjectsQueryKey } from '@api/queries/useListProjects';
 import type { ApiError, CreateProjectOptions } from '@api/types';
 
-import type { ProjectFormValues } from '../model/types';
 import { projectRequest } from './project-form';
 
 export function projectErrorMessage(error: unknown): string {
