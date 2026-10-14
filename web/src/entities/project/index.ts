@@ -1,5 +1,6 @@
 export { formatMoney } from './lib/format-money';
 export { materialDescription } from './lib/material-description';
+export { projectDraftSchema } from './lib/project-draft-schema';
 export { objectFormSchema, parseAmount, parseCoordinates, projectFormSchema } from './lib/project-form-schema';
 export { parseProjectId } from './lib/project-id';
 export { formatDate, formatStageDates, isStageOverdue, todayInYekaterinburg } from './lib/stage-dates';

@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { ProjectView } from '@features/projects/view';
 import { parseProjectId } from '@entities/project';
 import { useAuth } from '@shared/context';
-import { Alert, AlertDescription } from '@shared/ui/alert';
+import { NotFound } from '@shared/ui/not-found';
 
 interface ProjectPageProperties {
   projectId: string;
@@ -14,18 +14,12 @@ export function ProjectPage({ projectId }: ProjectPageProperties) {
   const navigate = useNavigate();
   const id = parseProjectId(projectId);
 
-  let content = (
-    <Alert variant="destructive">
-      <AlertDescription>Нет доступа к этому объекту.</AlertDescription>
-    </Alert>
-  );
+  let content = <NotFound />;
 
   if (user?.role === 'manager') {
     content =
       id === undefined ? (
-        <Alert variant="destructive">
-          <AlertDescription>Некорректная ссылка на объект.</AlertDescription>
-        </Alert>
+        <NotFound />
       ) : (
         <ProjectView
           projectId={id}

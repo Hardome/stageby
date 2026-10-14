@@ -53,10 +53,13 @@ describe('project creation query states', () => {
   it('shows access errors and prevents repeated retry while fetching', async () => {
     const error = { status: 403 };
     await render({ isError: true, error, isFetching: true });
-    expect(container).toHaveTextContent('Недостаточно прав');
+    expect(container).toHaveTextContent('404 — Страница не найдена');
     expect(mocks.accessError).toHaveBeenCalledWith(error);
+    expect(container.querySelector('button')).toBeNull();
+
+    await render({ isError: true, error: { status: 500 }, isFetching: true });
     expect(container.querySelector('button')).toBeDisabled();
-    await render({ isError: true, error });
+    await render({ isError: true, error: { status: 500 } });
     await act(async () => {
       container.querySelector('button')?.click();
       await Promise.resolve();

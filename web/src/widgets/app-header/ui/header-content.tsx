@@ -3,7 +3,7 @@ import { cn } from 'cn';
 import { LogOutIcon, MenuIcon, MonitorIcon, MoonIcon, SunIcon, UsersIcon } from 'lucide-react';
 
 import { isTheme, useAuth, useTheme } from '@shared/context';
-import { formatDisplayName } from '@shared/lib';
+import { formatDisplayName, roleHome } from '@shared/lib';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Avatar, AvatarFallback } from '@shared/ui/avatar';
 import { Button } from '@shared/ui/button';
@@ -53,7 +53,7 @@ export function HeaderContent({ user }: HeaderContentProperties) {
           'sm:grid-cols-[1fr_auto_1fr] sm:gap-4 sm:px-5',
         ])}
       >
-        <Link to="/" aria-label="Stageby — главная" className="flex-1 font-semibold">
+        <Link to={roleHome(user.role)} aria-label="Stageby — главная" className="flex-1 font-semibold">
           Stageby
         </Link>
         <nav aria-label="Основная навигация" className="hidden flex-1 justify-center sm:flex">

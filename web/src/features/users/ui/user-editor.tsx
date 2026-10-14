@@ -1,3 +1,5 @@
+import { NotFound } from '@shared/ui/not-found';
+
 import { useGetUser } from '@api/queries/useGetUser';
 import { getUserPathSchema as userPathSchema } from '@api/zod/getUserSchema';
 
@@ -23,7 +25,7 @@ export function UserEditor({ userId, search, mode }: UserEditorProperties) {
 
   useUserAccessError(query.error);
 
-  if (!isValid) return <UserError message="Пользователь не найден." />;
+  if (!isValid || query.error?.status === 403 || query.error?.status === 404) return <NotFound />;
 
   if (query.isPending) return <UserLoading />;
 

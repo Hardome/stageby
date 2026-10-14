@@ -1,41 +1,10 @@
-import { type PropsWithChildren, useCallback } from 'react';
+import type { PropsWithChildren } from 'react';
 
-import { useQueryClient } from '@tanstack/react-query';
-
-import { clearSessionDrafts } from '@shared/lib';
-
-import { getCurrentUserQueryKey, useGetCurrentUser } from '@api/queries/useGetCurrentUser';
-
+import { useAuthSession } from '../lib/use-auth-session';
 import { AuthContext } from '../model/context';
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const queryClient = useQueryClient();
-  const query = useGetCurrentUser({ query: { retry: false, staleTime: 30_000 } });
-  const isUnauthorized = query.error?.status === 401;
+  const session = useAuthSession();
 
-  const clearSession = useCallback(async () => {
-    clearSessionDrafts();
-    await queryClient.cancelQueries();
-
-    queryClient.setQueryData(getCurrentUserQueryKey(), null);
-
-    const authQuery = queryClient.getQueryCache().find({ queryKey: getCurrentUserQueryKey() });
-
-    queryClient.removeQueries({ predicate: (cachedQuery) => cachedQuery !== authQuery });
-    queryClient.getMutationCache().clear();
-  }, [queryClient]);
-
-  return (
-    <AuthContext
-      value={{
-        user: isUnauthorized ? null : (query.data ?? null),
-        isPending: query.isPending,
-        error: isUnauthorized ? null : query.error,
-        refetch: query.refetch,
-        clearSession,
-      }}
-    >
-      {children}
-    </AuthContext>
-  );
+  return <AuthContext value={session}>{children}</AuthContext>;
 }

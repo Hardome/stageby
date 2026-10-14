@@ -85,6 +85,7 @@ export function setupProjectCreation() {
     );
   }
   beforeEach(async () => {
+    sessionStorage.clear();
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     vi.stubGlobal('scrollTo', vi.fn());
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {

@@ -65,6 +65,7 @@ export function setupProjectEditing() {
     });
   }
   beforeEach(() => {
+    sessionStorage.clear();
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     vi.stubGlobal('scrollTo', vi.fn());
     vi.clearAllMocks();

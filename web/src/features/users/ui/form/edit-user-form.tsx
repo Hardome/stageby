@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 
+import { useSessionFormDraft } from '@shared/lib/hooks';
 import { Checkbox } from '@shared/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@shared/ui/field';
 
 import { useUpdateUser } from '@api/mutations/useUpdateUser';
 import type { User } from '@api/types';
 
+import { editUserDraftSchema } from '../../lib/edit-draft';
 import { editFormSchema } from '../../lib/schemas';
 import { notifyUserError, useUserAccessError, useUserActions } from '../../lib/use-user-actions';
 import { getUserChanges, shouldRevokeOwnSession } from '../../lib/user-form';
@@ -27,11 +29,16 @@ export function EditUserForm({ user, search }: EditUserFormProperties) {
     defaultValues: { fullName: user.fullName, phone: user.phone ?? '', role: user.role, isActive: user.isActive },
   });
 
+  const clearDraft = useSessionFormDraft(form, `edit-user:v1:${user.id}`, editUserDraftSchema);
+
   const { finish, currentUser } = useUserActions(search);
 
   const mutation = useUpdateUser({
     mutation: {
-      onSuccess: (updated, { body }) => finish('updated', updated, shouldRevokeOwnSession(currentUser?.id, user, body)),
+      onSuccess: (updated, { body }) => {
+        clearDraft();
+        return finish('updated', updated, shouldRevokeOwnSession(currentUser?.id, user, body));
+      },
       onError: notifyUserError,
     },
   });

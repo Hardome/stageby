@@ -49,7 +49,7 @@ export function useUserAccessError(error: UserError | null) {
   const { clearSession, refetch } = useAuth();
 
   useEffect(() => {
-    if (error?.status === 401) void clearSession();
+    if (error?.status === 401) void clearSession('expired');
     if (error?.status === 403) void refetch();
   }, [error, refetch, clearSession]);
 }

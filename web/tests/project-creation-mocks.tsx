@@ -6,6 +6,8 @@ import { getProjectCreationMocks } from './project-creation-mock-state';
 
 const mocks = getProjectCreationMocks();
 
+vi.mock('@shared/context', () => ({ useAuth: () => ({ user: { id: 1 } }) }));
+
 vi.mock('@entities/project/lib/upload-document', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   uploadDocument: (...arguments_: unknown[]) => mocks.upload(...arguments_) as Promise<void>,
