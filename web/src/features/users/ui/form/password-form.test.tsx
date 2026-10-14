@@ -68,7 +68,6 @@ describe('password change request status', () => {
 
     expect(harness.queryClient.getQueryData(userKey)).toEqual(updated);
     expect(harness.queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
-    await vi.waitFor(() => expect(harness.container.textContent).not.toContain('Запрошен сброс пароля'));
     expect(harness.container.textContent).not.toContain('Запрошен сброс пароля');
     expect(mocks.navigate).toHaveBeenCalledWith({ to: '/users', search: {} });
     expect(mocks.clearSession).not.toHaveBeenCalled();
