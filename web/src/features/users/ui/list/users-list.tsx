@@ -6,6 +6,7 @@ import { PlusIcon, UsersIcon } from 'lucide-react';
 import { Button } from '@shared/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@shared/ui/empty';
 import { Field, FieldGroup, FieldLabel } from '@shared/ui/field';
+import { NotFound } from '@shared/ui/not-found';
 
 import { useListUsers } from '@api/queries/useListUsers';
 import { userRoleSchema } from '@api/zod/userRoleSchema';
@@ -47,6 +48,8 @@ export function UsersList({ search, onFilterChange, onPageChange }: UsersListPro
     const lastOffset = Math.max(0, Math.ceil(query.data.total / 20) - 1) * 20;
     onPageChange(lastOffset, true);
   }, [query.data, offset, onPageChange]);
+
+  if (query.error?.status === 403 || query.error?.status === 404) return <NotFound />;
 
   return (
     <div className="flex flex-col gap-6">

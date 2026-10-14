@@ -4,6 +4,8 @@ import { getProjectEditingMocks } from './project-editing-mock-state';
 
 const mocks = getProjectEditingMocks();
 
+vi.mock('@shared/context', () => ({ useAuth: () => ({ user: { id: 1 } }) }));
+
 vi.mock('@api/clients/getProjectEdit', () => ({
   getProjectEdit: () => ({ unwrap: () => mocks.load() as Promise<ProjectEdit> }),
 }));

@@ -46,14 +46,14 @@ describe('project editor route access', () => {
 
     await render('1');
 
-    expect(container).toHaveTextContent('Нет доступа');
+    expect(container).toHaveTextContent('404 — Страница не найдена');
     expect(mocks.editor).not.toHaveBeenCalled();
   });
 
   it('rejects invalid IDs before mounting the data query', async () => {
     await render('1oops');
 
-    expect(container).toHaveTextContent('Некорректная ссылка');
+    expect(container).toHaveTextContent('404 — Страница не найдена');
     expect(mocks.editor).not.toHaveBeenCalled();
   });
 

@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@shared/ui/empty';
+import { NotFound } from '@shared/ui/not-found';
 import { Skeleton } from '@shared/ui/skeleton';
 
 import { useListProjects } from '@api/queries/useListProjects';
@@ -35,6 +36,8 @@ export function TemporaryProjectList({ search, onPageChange }: TemporaryProjectL
       onPageChange(Math.max(0, Math.ceil(query.data.total / projectPageSize) - 1) * projectPageSize, true);
     }
   }, [query.data, offset, onPageChange]);
+
+  if (query.error?.status === 403 || query.error?.status === 404) return <NotFound />;
 
   return (
     <section aria-label="Объекты" aria-busy={query.isFetching} className="flex min-w-0 flex-col gap-4">

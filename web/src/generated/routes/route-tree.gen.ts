@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './../../app/routes/__root';
 import { Route as AuthRouteImport } from './../../app/routes/_auth';
 import { Route as AuthIndexRouteImport } from './../../app/routes/_auth/index';
+import { Route as AuthMyStagesRouteImport } from './../../app/routes/_auth/my-stages';
 import { Route as AuthUsersRouteImport } from './../../app/routes/_auth/users';
 import { Route as AuthProjectsNewRouteImport } from './../../app/routes/_auth/projects/new';
+import { Route as AuthStagesStageIdRouteImport } from './../../app/routes/_auth/stages/$stageId';
 import { Route as AuthUsersIndexRouteImport } from './../../app/routes/_auth/users/index';
 import { Route as AuthUsersNewRouteImport } from './../../app/routes/_auth/users/new';
 import { Route as PublicLoginIndexRouteImport } from './../../app/routes/_public/login/index';
@@ -30,6 +32,11 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthRoute,
 } as any);
+const AuthMyStagesRoute = AuthMyStagesRouteImport.update({
+  id: '/my-stages',
+  path: '/my-stages',
+  getParentRoute: () => AuthRoute,
+} as any);
 const AuthUsersRoute = AuthUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -38,6 +45,11 @@ const AuthUsersRoute = AuthUsersRouteImport.update({
 const AuthProjectsNewRoute = AuthProjectsNewRouteImport.update({
   id: '/projects/new',
   path: '/projects/new',
+  getParentRoute: () => AuthRoute,
+} as any);
+const AuthStagesStageIdRoute = AuthStagesStageIdRouteImport.update({
+  id: '/stages/$stageId',
+  path: '/stages/$stageId',
   getParentRoute: () => AuthRoute,
 } as any);
 const AuthUsersIndexRoute = AuthUsersIndexRouteImport.update({
@@ -80,8 +92,10 @@ const AuthUsersUserIdPasswordRoute = AuthUsersUserIdPasswordRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute;
+  '/my-stages': typeof AuthMyStagesRoute;
   '/users': typeof AuthUsersRouteWithChildren;
   '/projects/new': typeof AuthProjectsNewRoute;
+  '/stages/$stageId': typeof AuthStagesStageIdRoute;
   '/users/new': typeof AuthUsersNewRoute;
   '/users/': typeof AuthUsersIndexRoute;
   '/login/': typeof PublicLoginIndexRoute;
@@ -91,8 +105,10 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId/': typeof AuthProjectsProjectIdIndexRoute;
 }
 export interface FileRoutesByTo {
+  '/my-stages': typeof AuthMyStagesRoute;
   '/': typeof AuthIndexRoute;
   '/projects/new': typeof AuthProjectsNewRoute;
+  '/stages/$stageId': typeof AuthStagesStageIdRoute;
   '/users/new': typeof AuthUsersNewRoute;
   '/users': typeof AuthUsersIndexRoute;
   '/login': typeof PublicLoginIndexRoute;
@@ -104,9 +120,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   '/_auth': typeof AuthRouteWithChildren;
+  '/_auth/my-stages': typeof AuthMyStagesRoute;
   '/_auth/users': typeof AuthUsersRouteWithChildren;
   '/_auth/': typeof AuthIndexRoute;
   '/_auth/projects/new': typeof AuthProjectsNewRoute;
+  '/_auth/stages/$stageId': typeof AuthStagesStageIdRoute;
   '/_auth/users/new': typeof AuthUsersNewRoute;
   '/_auth/users/': typeof AuthUsersIndexRoute;
   '/_public/login/': typeof PublicLoginIndexRoute;
@@ -119,8 +137,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | '/'
+    | '/my-stages'
     | '/users'
     | '/projects/new'
+    | '/stages/$stageId'
     | '/users/new'
     | '/users/'
     | '/login/'
@@ -130,8 +150,10 @@ export interface FileRouteTypes {
     | '/projects/$projectId/';
   fileRoutesByTo: FileRoutesByTo;
   to:
+    | '/my-stages'
     | '/'
     | '/projects/new'
+    | '/stages/$stageId'
     | '/users/new'
     | '/users'
     | '/login'
@@ -142,9 +164,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_auth'
+    | '/_auth/my-stages'
     | '/_auth/users'
     | '/_auth/'
     | '/_auth/projects/new'
+    | '/_auth/stages/$stageId'
     | '/_auth/users/new'
     | '/_auth/users/'
     | '/_public/login/'
@@ -175,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIndexRouteImport;
       parentRoute: typeof AuthRoute;
     };
+    '/_auth/my-stages': {
+      id: '/_auth/my-stages';
+      path: '/my-stages';
+      fullPath: '/my-stages';
+      preLoaderRoute: typeof AuthMyStagesRouteImport;
+      parentRoute: typeof AuthRoute;
+    };
     '/_auth/users': {
       id: '/_auth/users';
       path: '/users';
@@ -187,6 +218,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/new';
       fullPath: '/projects/new';
       preLoaderRoute: typeof AuthProjectsNewRouteImport;
+      parentRoute: typeof AuthRoute;
+    };
+    '/_auth/stages/$stageId': {
+      id: '/_auth/stages/$stageId';
+      path: '/stages/$stageId';
+      fullPath: '/stages/$stageId';
+      preLoaderRoute: typeof AuthStagesStageIdRouteImport;
       parentRoute: typeof AuthRoute;
     };
     '/_auth/users/': {
@@ -260,17 +298,21 @@ const AuthUsersRouteWithChildren = AuthUsersRoute._addFileChildren(
 );
 
 interface AuthRouteChildren {
+  AuthMyStagesRoute: typeof AuthMyStagesRoute;
   AuthUsersRoute: typeof AuthUsersRouteWithChildren;
   AuthIndexRoute: typeof AuthIndexRoute;
   AuthProjectsNewRoute: typeof AuthProjectsNewRoute;
+  AuthStagesStageIdRoute: typeof AuthStagesStageIdRoute;
   AuthProjectsProjectIdEditRoute: typeof AuthProjectsProjectIdEditRoute;
   AuthProjectsProjectIdIndexRoute: typeof AuthProjectsProjectIdIndexRoute;
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthMyStagesRoute: AuthMyStagesRoute,
   AuthUsersRoute: AuthUsersRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
   AuthProjectsNewRoute: AuthProjectsNewRoute,
+  AuthStagesStageIdRoute: AuthStagesStageIdRoute,
   AuthProjectsProjectIdEditRoute: AuthProjectsProjectIdEditRoute,
   AuthProjectsProjectIdIndexRoute: AuthProjectsProjectIdIndexRoute,
 };

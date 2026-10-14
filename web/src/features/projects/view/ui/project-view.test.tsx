@@ -77,7 +77,7 @@ describe('project view', () => {
     await render({ isPending: true });
     expect(container.querySelector('[role="status"]')).toHaveAttribute('aria-label', 'Загрузка объекта');
     await render({ error: { status: 404 } });
-    expect(container).toHaveTextContent('Объект не найден');
+    expect(container).toHaveTextContent('404 — Страница не найдена');
     expect(container.querySelector('button')).toBeNull();
   });
   it('keeps project content when stages fail, supports retry and partial plans', async () => {

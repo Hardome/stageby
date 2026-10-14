@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
+import { NotFound } from '@shared/ui/not-found';
 import { Skeleton } from '@shared/ui/skeleton';
 
 import { useGetProjectEdit } from '@api/queries/useGetProjectEdit';
@@ -35,6 +36,8 @@ export function ProjectEditor({ projectId, ...properties }: ProjectEditorPropert
     properties.onDirtyChange(false);
   }
 
+  if (query.error?.status === 403 || query.error?.status === 404) return <NotFound />;
+
   if (snapshot?.project.isArchived)
     return (
       <Alert>
@@ -61,8 +64,6 @@ export function ProjectEditor({ projectId, ...properties }: ProjectEditorPropert
     return <Skeleton className="h-96" role="status" aria-label="Загрузка редактора объекта" />;
   const messages: Record<number, string> = {
     401: 'Сессия завершена. Войдите снова.',
-    403: 'Нет доступа к редактированию объекта.',
-    404: 'Объект не найден.',
   };
 
   return (
