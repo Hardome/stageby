@@ -35,7 +35,7 @@ Use Vitest. Name tests `*.test.ts` or `*.test.tsx` beside implementation; API in
 
 ## Commit & Pull Request Guidelines
 
-Recent commits use short subjects, often in Russian, sometimes with an issue or PR number; no strict format is evident. Keep commits focused. For pull requests, explain changed behavior, link the relevant issue, list checks run, and include screenshots for UI changes. Commit regenerated files with their sources. Lefthook runs lint checks before commit and contract, type, and test checks before push.
+Never commit directly to `main`. Make changes on a task branch and merge them into `main` only through a pull request after review. Before committing, verify that the current branch is not `main`; if work is already on `main`, create a task branch first and preserve its staged and unstaged changes. Recent commits use short subjects, often in Russian, sometimes with an issue or PR number; no strict format is evident. Keep commits focused. For pull requests, explain changed behavior, link the relevant issue, list checks run, and include screenshots for UI changes. Commit regenerated files with their sources. Lefthook runs lint checks before commit and contract, type, and test checks before push.
 
 ## Configuration & Secrets
 
