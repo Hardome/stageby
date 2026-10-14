@@ -7,6 +7,7 @@ import { userErrorMessage, useUserAccessError } from '../lib/use-user-actions';
 import type { UsersSearch } from '../model/types';
 import { EditUserForm } from './form/edit-user-form';
 import { PasswordForm } from './form/password-form';
+import { PasswordResetStatus } from './password-reset-status';
 import { UserError } from './user-error';
 import { UserLoading } from './user-loading';
 
@@ -37,9 +38,14 @@ export function UserEditor({ userId, search, mode }: UserEditorProperties) {
       />
     );
 
-  return mode === 'edit' ? (
-    <EditUserForm key={id} user={query.data} search={search} />
-  ) : (
-    <PasswordForm key={id} user={query.data} search={search} />
+  return (
+    <div className="flex flex-col gap-6">
+      <PasswordResetStatus requestedAt={query.data.passwordResetRequestedAt} />
+      {mode === 'edit' ? (
+        <EditUserForm key={id} user={query.data} search={search} />
+      ) : (
+        <PasswordForm key={id} user={query.data} search={search} />
+      )}
+    </div>
   );
 }

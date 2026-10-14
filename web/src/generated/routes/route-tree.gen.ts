@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './../../app/routes/_auth';
 import { Route as AuthIndexRouteImport } from './../../app/routes/_auth/index';
 import { Route as AuthMyStagesRouteImport } from './../../app/routes/_auth/my-stages';
 import { Route as AuthUsersRouteImport } from './../../app/routes/_auth/users';
+import { Route as PublicPasswordResetRouteImport } from './../../app/routes/_public/password-reset';
 import { Route as AuthProjectsNewRouteImport } from './../../app/routes/_auth/projects/new';
 import { Route as AuthStagesStageIdRouteImport } from './../../app/routes/_auth/stages/$stageId';
 import { Route as AuthUsersIndexRouteImport } from './../../app/routes/_auth/users/index';
@@ -41,6 +42,11 @@ const AuthUsersRoute = AuthUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AuthRoute,
+} as any);
+const PublicPasswordResetRoute = PublicPasswordResetRouteImport.update({
+  id: '/_public/password-reset',
+  path: '/password-reset',
+  getParentRoute: () => rootRouteImport,
 } as any);
 const AuthProjectsNewRoute = AuthProjectsNewRouteImport.update({
   id: '/projects/new',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute;
   '/my-stages': typeof AuthMyStagesRoute;
   '/users': typeof AuthUsersRouteWithChildren;
+  '/password-reset': typeof PublicPasswordResetRoute;
   '/projects/new': typeof AuthProjectsNewRoute;
   '/stages/$stageId': typeof AuthStagesStageIdRoute;
   '/users/new': typeof AuthUsersNewRoute;
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/my-stages': typeof AuthMyStagesRoute;
+  '/password-reset': typeof PublicPasswordResetRoute;
   '/': typeof AuthIndexRoute;
   '/projects/new': typeof AuthProjectsNewRoute;
   '/stages/$stageId': typeof AuthStagesStageIdRoute;
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren;
   '/_auth/my-stages': typeof AuthMyStagesRoute;
   '/_auth/users': typeof AuthUsersRouteWithChildren;
+  '/_public/password-reset': typeof PublicPasswordResetRoute;
   '/_auth/': typeof AuthIndexRoute;
   '/_auth/projects/new': typeof AuthProjectsNewRoute;
   '/_auth/stages/$stageId': typeof AuthStagesStageIdRoute;
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/'
     | '/my-stages'
     | '/users'
+    | '/password-reset'
     | '/projects/new'
     | '/stages/$stageId'
     | '/users/new'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | '/my-stages'
+    | '/password-reset'
     | '/'
     | '/projects/new'
     | '/stages/$stageId'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_auth/my-stages'
     | '/_auth/users'
+    | '/_public/password-reset'
     | '/_auth/'
     | '/_auth/projects/new'
     | '/_auth/stages/$stageId'
@@ -180,6 +192,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren;
+  PublicPasswordResetRoute: typeof PublicPasswordResetRoute;
   PublicLoginIndexRoute: typeof PublicLoginIndexRoute;
 }
 
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/users';
       preLoaderRoute: typeof AuthUsersRouteImport;
       parentRoute: typeof AuthRoute;
+    };
+    '/_public/password-reset': {
+      id: '/_public/password-reset';
+      path: '/password-reset';
+      fullPath: '/password-reset';
+      preLoaderRoute: typeof PublicPasswordResetRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     '/_auth/projects/new': {
       id: '/_auth/projects/new';
@@ -321,6 +341,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
 
 const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
+  PublicPasswordResetRoute: PublicPasswordResetRoute,
   PublicLoginIndexRoute: PublicLoginIndexRoute,
 };
 export const routeTree = rootRouteImport

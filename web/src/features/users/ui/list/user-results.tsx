@@ -6,6 +6,7 @@ import type { User } from '@api/types';
 
 import { roleLabels } from '../../model/data';
 import type { UsersSearch } from '../../model/types';
+import { PasswordResetStatus } from '../password-reset-status';
 import { UserActions } from './user-actions';
 import { UserStatus } from './user-status';
 
@@ -38,7 +39,10 @@ export function UserResults({ users, search }: UserResultsProperties) {
                 <TableCell>{roleLabels[user.role]}</TableCell>
                 <TableCell>{user.phone ?? '—'}</TableCell>
                 <TableCell>
-                  <UserStatus user={user} />
+                  <div className="flex flex-col items-start gap-2">
+                    <UserStatus user={user} />
+                    <PasswordResetStatus requestedAt={user.passwordResetRequestedAt} />
+                  </div>
                 </TableCell>
                 <TableCell>
                   <UserActions user={user} search={search} />
@@ -62,6 +66,7 @@ export function UserResults({ users, search }: UserResultsProperties) {
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline">{roleLabels[user.role]}</Badge>
                   <UserStatus user={user} />
+                  <PasswordResetStatus requestedAt={user.passwordResetRequestedAt} />
                 </div>
                 <p className="wrap-anywhere text-sm">Телефон: {user.phone ?? 'не указан'}</p>
               </CardContent>
