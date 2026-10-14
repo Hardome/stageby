@@ -47,6 +47,10 @@ describe('temporary project list', () => {
     const error = { status: 403 };
     await render({ isError: true, error });
     expect(mocks.access).toHaveBeenCalledWith(error);
+    expect(container).toHaveTextContent('404 — Страница не найдена');
+    expect(container.querySelector('button')).toBeNull();
+
+    await render({ isError: true, error: { status: 500 } });
     await act(async () => {
       container.querySelector('button')?.click();
       await Promise.resolve();

@@ -41,7 +41,7 @@ describe('project route access', () => {
       await Promise.resolve();
     });
 
-    expect(container).toHaveTextContent('Нет доступа');
+    expect(container).toHaveTextContent('404 — Страница не найдена');
     expect(mocks.view).not.toHaveBeenCalled();
 
     mocks.auth.mockReturnValue({ user: { role: 'manager' } });
@@ -51,7 +51,7 @@ describe('project route access', () => {
       await Promise.resolve();
     });
 
-    expect(container).toHaveTextContent('Некорректная ссылка');
+    expect(container).toHaveTextContent('404 — Страница не найдена');
     expect(mocks.view).not.toHaveBeenCalled();
   });
 

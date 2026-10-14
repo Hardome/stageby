@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { useBlocker, useNavigate } from '@tanstack/react-router';
 import { PencilRulerIcon } from 'lucide-react';
@@ -6,7 +6,6 @@ import { PencilRulerIcon } from 'lucide-react';
 import { ProjectEditor } from '@features/projects/edit';
 import { parseProjectId } from '@entities/project';
 import { useAuth } from '@shared/context';
-import { Alert, AlertDescription } from '@shared/ui/alert';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -16,6 +15,7 @@ import {
   AlertDialogTitle,
 } from '@shared/ui/alert-dialog';
 import { Button } from '@shared/ui/button';
+import { NotFound } from '@shared/ui/not-found';
 import { toast } from '@shared/ui/toast';
 
 export function EditProjectPage({ projectId }: { projectId: string }) {
@@ -24,8 +24,8 @@ export function EditProjectPage({ projectId }: { projectId: string }) {
   const [dirty, setDirty] = useState(false);
   const finished = useRef(false);
   const blocker = useBlocker({
-    shouldBlockFn: () => dirty && !finished.current,
-    enableBeforeUnload: () => dirty && !finished.current,
+    shouldBlockFn: () => Boolean(user) && dirty && !finished.current,
+    enableBeforeUnload: () => Boolean(user) && dirty && !finished.current,
     withResolver: true,
   });
   const onDirtyChange = useCallback((isDirty: boolean) => setDirty(isDirty), []);
@@ -36,29 +36,8 @@ export function EditProjectPage({ projectId }: { projectId: string }) {
     await navigate({ to: '/projects/$projectId', params: { projectId } });
     if (hasChanges) toast.add({ type: 'success', title: 'Изменения сохранены' });
   }
-  let content: ReactNode;
-  if (user?.role !== 'manager')
-    content = (
-      <Alert variant="destructive">
-        <AlertDescription>Нет доступа к редактированию объекта.</AlertDescription>
-      </Alert>
-    );
-  else if (id === undefined)
-    content = (
-      <Alert variant="destructive">
-        <AlertDescription>Некорректная ссылка на объект.</AlertDescription>
-      </Alert>
-    );
-  else
-    content = (
-      <ProjectEditor
-        key={`${user.id}-${id}`}
-        projectId={id}
-        onDirtyChange={onDirtyChange}
-        onCancel={cancel}
-        onSuccess={finish}
-      />
-    );
+
+  if (id === undefined || user?.role !== 'manager') return <NotFound />;
 
   return (
     <main className="min-w-0 flex-1 bg-background px-3 py-6 sm:px-5 sm:py-10">
@@ -72,7 +51,13 @@ export function EditProjectPage({ projectId }: { projectId: string }) {
             <p className="text-muted-foreground text-sm">Реквизиты, документы и план работ в одном месте.</p>
           </div>
         </header>
-        {content}
+        <ProjectEditor
+          key={`${user.id}-${id}`}
+          projectId={id}
+          onDirtyChange={onDirtyChange}
+          onCancel={cancel}
+          onSuccess={finish}
+        />
       </div>
       <AlertDialog
         open={blocker.status === 'blocked'}

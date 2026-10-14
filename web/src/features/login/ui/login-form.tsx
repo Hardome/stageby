@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
@@ -27,7 +26,6 @@ function getLoginErrorMessage(status?: number): string {
 
 export function LoginForm() {
   const { clearSession } = useAuth();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const {
@@ -43,11 +41,9 @@ export function LoginForm() {
   const mutation = useLogin({
     mutation: {
       onSuccess: async (session) => {
-        await clearSession();
+        await clearSession('sign-in', session.user.id);
 
         queryClient.setQueryData(getCurrentUserQueryKey(), session.user);
-
-        await navigate({ to: '/' });
       },
     },
   });

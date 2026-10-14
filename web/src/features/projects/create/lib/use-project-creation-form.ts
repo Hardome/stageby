@@ -3,8 +3,14 @@ import { type SubmitEvent, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
-import { type ProjectFormValues, projectFormSchema, useDocuments, useProjectNavigation } from '@entities/project';
-import { useAccessError } from '@shared/lib/hooks';
+import {
+  type ProjectFormValues,
+  projectDraftSchema,
+  projectFormSchema,
+  useDocuments,
+  useProjectNavigation,
+} from '@entities/project';
+import { useAccessError, useSessionFormDraft } from '@shared/lib/hooks';
 
 import { initialProjectForm } from '../model/data';
 import type { CreateProjectFormProperties } from '../model/types';
@@ -18,6 +24,8 @@ export function useProjectCreationForm({ types, onDirtyChange, onSuccess }: Crea
     shouldFocusError: false,
   });
 
+  const clearDraft = useSessionFormDraft(form, 'create-project:v1', projectDraftSchema);
+
   const navigation = useProjectNavigation(form);
 
   const accessError = useAccessError();
@@ -30,7 +38,10 @@ export function useProjectCreationForm({ types, onDirtyChange, onSuccess }: Crea
 
   const submission = useProjectSubmission({
     form,
-    onSuccess,
+    onSuccess: async () => {
+      clearDraft();
+      await onSuccess();
+    },
     onInvalid: (isFileError) => {
       if (isFileError) navigation.showObject();
       else navigation.revealErrors();

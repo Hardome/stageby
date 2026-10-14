@@ -4,6 +4,7 @@ import { errorStatus, useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@shared/ui/empty';
+import { NotFound } from '@shared/ui/not-found';
 import { Skeleton } from '@shared/ui/skeleton';
 
 import { useListActiveStageTypes } from '@api/queries/useListActiveStageTypes';
@@ -22,6 +23,7 @@ export function ProjectCreator(properties: ProjectCreatorProperties) {
   useEffect(() => {
     if (query.error) accessError(query.error);
   }, [query.error, accessError]);
+  if (errorStatus(query.error) === 403 || errorStatus(query.error) === 404) return <NotFound />;
   if (query.data && query.data.length > 0) return <CreateProjectForm types={query.data} {...properties} />;
   if (query.isPending)
     return (
@@ -39,14 +41,10 @@ export function ProjectCreator(properties: ProjectCreatorProperties) {
         </EmptyHeader>
       </Empty>
     );
-  const message =
-    errorStatus(query.error) === 403
-      ? 'Недостаточно прав для создания объекта.'
-      : 'Не удалось загрузить шаблоны этапов.';
   return (
     <Alert variant="destructive">
       <AlertDescription>
-        {message}
+        Не удалось загрузить шаблоны этапов.
         <Button
           type="button"
           variant="outline"

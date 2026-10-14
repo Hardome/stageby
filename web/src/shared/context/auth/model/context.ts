@@ -7,7 +7,7 @@ export interface AuthContextValue {
   isPending: boolean;
   error: Error | null;
   refetch: () => Promise<unknown>;
-  clearSession: () => Promise<void>;
+  clearSession: (reason?: 'expired' | 'logout' | 'sign-in', nextUserId?: number) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
