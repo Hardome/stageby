@@ -40,6 +40,10 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
   const [focusRequest, setFocusRequest] = useState(0);
   const errorGroupReference = useRef<HTMLElement>(null);
   const handledFocusRequest = useRef(0);
+
+  const panelTitleReference = useRef<HTMLHeadingElement>(null);
+  const [titleFocusRequest, setTitleFocusRequest] = useState(0);
+
   const { errors } = form.formState;
   const stages = useWatch({
     control: form.control,
@@ -53,6 +57,12 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
   const registerErrorGroup = useCallback((element: HTMLElement | null) => {
     errorGroupReference.current = element;
   }, []);
+
+  useLayoutEffect(() => {
+    if (titleFocusRequest === 0) return;
+
+    panelTitleReference.current?.focus({ preventScroll: true });
+  }, [titleFocusRequest]);
 
   useLayoutEffect(() => {
     if (focusRequest === handledFocusRequest.current) return;
@@ -72,7 +82,8 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
 
   function moveTo(target: ProjectScreen) {
     setScreen(target);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const shouldReduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: shouldReduceMotion ? 'auto' : 'smooth' });
   }
 
   function revealErrors() {
@@ -120,13 +131,28 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
     else focusError();
   }
 
+  function selectStage(index: number) {
+    if (!form.getValues(`stages.${index}`)?.enabled) return;
+
+    moveTo(index);
+    setTitleFocusRequest((request) => request + 1);
+  }
+
   return {
     screen,
     stages,
     registerErrorGroup,
+    panelTitleReference,
+    navigationStages: selectedIndexes.map((index) => ({
+      index,
+      title: stages[index]?.title ?? '',
+      hasError: firstErrorPath(errors.stages?.[index]) !== undefined,
+    })),
+    currentStage: typeof screen === 'number' ? screen : undefined,
     ...screenDetails(screen, stages, selectedIndexes, position),
     next,
     selectStep,
+    selectStage,
     revealErrors,
     showObject: () => moveTo('object'),
     showStage: (index: number) => moveTo(index),
