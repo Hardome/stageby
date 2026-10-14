@@ -756,7 +756,7 @@ paths:
       tags:
         - Stages
       summary: Карточка этапа
-      description: Доступ как у /stages. Карточка содержит клиента, адрес и координаты для выезда. latestAcceptance хранит последнее решение, не журнал всех проверок.
+      description: Доступ как у /stages. Карточка содержит клиента, адрес, координаты, границы дат и ID PDF проекта, телефон мастера и номер среди всех включённых этапов. Контекст доступен назначенному мастеру без getProject; PDF открывается через getFileContent. latestAcceptance хранит последнее решение, не журнал всех проверок.
       responses:
         '200':
           description: Успешный ответ
@@ -2774,28 +2774,38 @@ components:
           description: Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.
           type: boolean
       minProperties: 2
-    UserBrief:
-      description: Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
+    StageAssignee:
+      description: Назначенный мастер этапа и его контактный телефон.
       type: object
       additionalProperties: false
       required:
         - id
         - fullName
+        - phone
       properties:
         id:
-          examples:
-            - 1
-          description: Стабильный ID пользователя.
+          description: ID назначенного мастера.
+          example: 1
           type: integer
           minimum: 1
           maximum: 2147483647
         fullName:
-          examples:
-            - Иван Петров
-          description: Полное имя сотрудника или исполнителя для отображения.
+          description: Полное имя назначенного мастера.
+          example: Иван Петров
           type: string
           minLength: 1
           maxLength: 255
+        phone:
+          examples:
+            - +7 900 000-00-00
+            - null
+          readOnly: true
+          description: Контактный телефон мастера; null — не указан.
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 32
     SignedMoneyAmountMinor:
       type:
         - integer
@@ -2858,6 +2868,28 @@ components:
           type: boolean
           example: true
           description: true, только если доставлено больше нуля, но меньше общего количества счетов.
+    UserBrief:
+      description: Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - fullName
+      properties:
+        id:
+          examples:
+            - 1
+          description: Стабильный ID пользователя.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        fullName:
+          examples:
+            - Иван Петров
+          description: Полное имя сотрудника или исполнителя для отображения.
+          type: string
+          minLength: 1
+          maxLength: 255
     Acceptance:
       type: object
       additionalProperties: false
@@ -2914,6 +2946,11 @@ components:
         - projectAddress
         - projectCoordinates
         - projectIsArchived
+        - projectDocumentFileIds
+        - projectPlannedStartDate
+        - projectPlannedEndDate
+        - includedStageNumber
+        - includedStageCount
         - type
         - title
         - position
@@ -2977,6 +3014,44 @@ components:
             - false
           description: Признак архивного проекта. Если true, изменения этапа запрещены.
           type: boolean
+        projectDocumentFileIds:
+          readOnly: true
+          description: ID прикреплённых загруженных PDF проекта по позиции документа, затем ID связи. Пустой массив — документов нет. Ссылку выдаёт getFileContent.
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+        projectPlannedStartDate:
+          example: '2026-10-01'
+          readOnly: true
+          description: Нижняя граница плановых дат этапа из текущего проекта.
+          type: string
+          format: date
+        projectPlannedEndDate:
+          example: '2026-12-31'
+          readOnly: true
+          description: Верхняя граница плановых дат этапа из текущего проекта.
+          type: string
+          format: date
+        includedStageNumber:
+          examples:
+            - 2
+            - null
+          readOnly: true
+          description: Номер с 1 среди всех включённых этапов проекта по position ASC, затем ID; не зависит от назначенного мастера. Для исключённого этапа — null.
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 9
+        includedStageCount:
+          example: 3
+          readOnly: true
+          description: Количество всех включённых этапов проекта, включая дополнительный и этапы других мастеров.
+          type: integer
+          minimum: 1
+          maximum: 9
         type:
           $ref: '#/components/schemas/StageType'
         title:
@@ -3017,7 +3092,7 @@ components:
         assignee:
           description: Назначенный ответственный мастер; null — мастер не назначен.
           anyOf:
-            - $ref: '#/components/schemas/UserBrief'
+            - $ref: '#/components/schemas/StageAssignee'
             - type: 'null'
         status:
           $ref: '#/components/schemas/StageStatus'

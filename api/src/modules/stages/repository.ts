@@ -9,7 +9,7 @@ import {
   checklistTemplateItems,
   checklistTemplates,
 } from '#app/db/schema/checklists';
-import { checklistItemPhotos, files } from '#app/db/schema/files';
+import { checklistItemPhotos, files, projectDocuments } from '#app/db/schema/files';
 import { projects } from '#app/db/schema/projects';
 import { stageTypes } from '#app/db/schema/stage-types';
 import { stagePredecessors, stages } from '#app/db/schema/stages';
@@ -140,6 +140,7 @@ export async function loadStages(database: Database | Transaction, ids: number[]
       stageType: stageTypes,
       assigneeId: users.id,
       assigneeName: users.fullName,
+      assigneePhone: users.phone,
       progressPercent:
         sql<number>`(select coalesce(round(100.0 * count(*) filter (where i."isCompleted") / nullif(count(*), 0)), 0)
         from checklist_items i join checklists c on c.id = i."checklistId" where c."stageId" = "stages".id and i."deletedAt" is null)`.mapWith(
@@ -151,6 +152,33 @@ export async function loadStages(database: Database | Transaction, ids: number[]
     .innerJoin(stageTypes, eq(stages.stageTypeCode, stageTypes.code))
     .leftJoin(users, eq(stages.assigneeId, users.id))
     .where(inArray(stages.id, ids));
+  const projectIds = [...new Set(rows.map(({ stage }) => stage.projectId))];
+  const [documents, includedStages] = await Promise.all([
+    database
+      .select({ projectId: projectDocuments.projectId, fileId: projectDocuments.fileId })
+      .from(projectDocuments)
+      .innerJoin(files, eq(projectDocuments.fileId, files.id))
+      .where(
+        and(
+          inArray(projectDocuments.projectId, projectIds),
+          eq(files.status, 'uploaded'),
+          eq(files.purpose, 'project_document'),
+        ),
+      )
+      .orderBy(asc(projectDocuments.position), asc(projectDocuments.id)),
+    database
+      .select({ id: stages.id, projectId: stages.projectId })
+      .from(stages)
+      .where(and(inArray(stages.projectId, projectIds), eq(stages.isIncluded, true)))
+      .orderBy(asc(stages.position), asc(stages.id)),
+  ]);
+  const documentsByProject = Map.groupBy(documents, (document) => document.projectId);
+  const includedStagesByProject = Map.groupBy(includedStages, (stage) => stage.projectId);
+  const includedStageNumbers = new Map(
+    [...includedStagesByProject.values()].flatMap((projectStages) =>
+      projectStages.map((stage, index) => [stage.id, index + 1] as const),
+    ),
+  );
   const finances = await loadStageSummaries(database, ids);
   const predecessors = await database
     .select()
@@ -179,12 +207,20 @@ export async function loadStages(database: Database | Transaction, ids: number[]
         projectAddress: row.project.address,
         projectCoordinates: { latitude: row.project.latitude, longitude: row.project.longitude },
         projectIsArchived: row.project.isArchived,
+        projectDocumentFileIds: (documentsByProject.get(row.stage.projectId) ?? []).map(({ fileId }) => fileId),
+        projectPlannedStartDate: row.project.plannedStartDate,
+        projectPlannedEndDate: row.project.plannedEndDate,
+        includedStageNumber: includedStageNumbers.get(row.stage.id) ?? null,
+        includedStageCount: includedStagesByProject.get(row.stage.projectId)?.length ?? 0,
         type: row.stage.stageTypeCode as Stage['type'],
         title: row.stageType.title as Stage['title'],
         position: row.stage.position,
         isIncluded: row.stage.isIncluded,
         workSubtypes: row.stage.workSubtypes,
-        assignee: row.assigneeId === null ? null : { id: row.assigneeId, fullName: row.assigneeName! },
+        assignee:
+          row.assigneeId === null
+            ? null
+            : { id: row.assigneeId, fullName: row.assigneeName!, phone: row.assigneePhone },
         status: row.stage.status,
         plannedStartDate: row.stage.plannedStartDate,
         plannedEndDate: row.stage.plannedEndDate,

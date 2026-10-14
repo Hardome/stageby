@@ -375,11 +375,12 @@ export const zUpdateProject = z.object({
 });
 
 /**
- * Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
+ * Назначенный мастер этапа и его контактный телефон.
  */
-export const zUserBrief = z.object({
+export const zStageAssignee = z.object({
     id: z.int().gte(1).lte(2147483647),
-    fullName: z.string().min(1).max(255)
+    fullName: z.string().min(1).max(255),
+    phone: z.string().min(1).max(32).readonly().nullable()
 });
 
 /**
@@ -404,6 +405,14 @@ export const zMaterialIndicator = z.object({
     isPartiallyDelivered: z.boolean()
 });
 
+/**
+ * Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
+ */
+export const zUserBrief = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    fullName: z.string().min(1).max(255)
+});
+
 export const zAcceptance = z.object({
     decision: z.enum(['accepted', 'rejected']),
     comment: z.string().min(1).max(5000).nullable(),
@@ -422,6 +431,11 @@ export const zStage = z.object({
     projectAddress: z.string().min(1).max(1000),
     projectCoordinates: zCoordinates,
     projectIsArchived: z.boolean(),
+    projectDocumentFileIds: z.array(z.int().gte(1).lte(2147483647)).readonly(),
+    projectPlannedStartDate: z.iso.date().readonly(),
+    projectPlannedEndDate: z.iso.date().readonly(),
+    includedStageNumber: z.int().gte(1).lte(9).readonly().nullable(),
+    includedStageCount: z.int().gte(1).lte(9).readonly(),
     type: zStageType,
     title: z.enum([
         'Фундамент',
@@ -437,7 +451,7 @@ export const zStage = z.object({
     position: z.int().gte(1).lte(9),
     isIncluded: z.boolean(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30),
-    assignee: zUserBrief.nullable(),
+    assignee: zStageAssignee.nullable(),
     status: zStageStatus,
     plannedStartDate: z.iso.date().nullable(),
     plannedEndDate: z.iso.date().nullable(),
@@ -859,6 +873,14 @@ export const zProjectPageWritable = z.object({
 });
 
 /**
+ * Назначенный мастер этапа и его контактный телефон.
+ */
+export const zStageAssigneeWritable = z.object({
+    id: z.int().gte(1).lte(2147483647),
+    fullName: z.string().min(1).max(255)
+});
+
+/**
  * Параметры, финансовые итоги и версия этапа.
  */
 export const zStageWritable = z.object({
@@ -883,7 +905,7 @@ export const zStageWritable = z.object({
     position: z.int().gte(1).lte(9),
     isIncluded: z.boolean(),
     workSubtypes: z.array(z.string().min(1).max(255)).max(30),
-    assignee: zUserBrief.nullable(),
+    assignee: zStageAssigneeWritable.nullable(),
     status: zStageStatus,
     plannedStartDate: z.iso.date().nullable(),
     plannedEndDate: z.iso.date().nullable(),
