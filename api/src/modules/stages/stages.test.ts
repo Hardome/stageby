@@ -180,6 +180,104 @@ async function updateItem(
 }
 
 describe('Stage statuses and checklists', () => {
+  it('возвращает актуальные границы проекта и телефон только для доступного этапа', async () => {
+    const fixture = await createFixture();
+    const stranger = await createIdentity('foreman');
+    const read = (cookie: string) => getApp().inject({ url: `/stages/${fixture.stage.id}`, headers: { cookie } });
+    const initial = await read(fixture.foreman.cookie);
+    expect(initial.statusCode, initial.body).toBe(200);
+    expect(initial.json()).toMatchObject({
+      projectDocumentFileIds: [],
+      projectPlannedStartDate: '2026-10-01',
+      projectPlannedEndDate: '2026-12-31',
+      includedStageNumber: 1,
+      includedStageCount: 1,
+      assignee: { id: fixture.foreman.user.id, fullName: fixture.foreman.user.fullName, phone: null },
+    });
+    await getApp().db.update(users).set({ phone: '+7 900 000-00-00' }).where(eq(users.id, fixture.foreman.user.id));
+    await getApp().db.update(projects).set({ plannedEndDate: '2026-11-30' }).where(eq(projects.id, fixture.project.id));
+    const own = await read(fixture.foreman.cookie);
+    expect(own.json()).toMatchObject({ projectPlannedEndDate: '2026-11-30', version: initial.json().version });
+    expect(own.json().assignee).toEqual({
+      id: fixture.foreman.user.id,
+      fullName: fixture.foreman.user.fullName,
+      phone: '+7 900 000-00-00',
+    });
+    expect((await read(fixture.manager.cookie)).json()).toEqual(own.json());
+    expect((await read(stranger.cookie)).statusCode).toBe(404);
+    expect(
+      (await getApp().inject({ url: `/projects/${fixture.project.id}`, headers: { cookie: fixture.foreman.cookie } }))
+        .statusCode,
+    ).toBe(403);
+    const invalidDate = await getApp().inject({
+      method: 'PATCH',
+      url: `/stages/${fixture.stage.id}`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { expectedVersion: fixture.stage.version, plannedEndDate: '2026-12-01' },
+    });
+    expect(invalidDate.statusCode).toBe(400);
+    const unassigned = await getApp().inject({
+      method: 'PATCH',
+      url: `/stages/${fixture.stage.id}`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: {
+        expectedVersion: fixture.stage.version,
+        assigneeId: null,
+        plannedStartDate: null,
+        plannedEndDate: null,
+      },
+    });
+    expect(unassigned.statusCode, unassigned.body).toBe(200);
+    expect(unassigned.json()).toMatchObject({
+      assignee: null,
+      plannedStartDate: null,
+      plannedEndDate: null,
+      projectPlannedEndDate: '2026-11-30',
+      includedStageCount: 1,
+    });
+    expect((await read(fixture.foreman.cookie)).statusCode).toBe(404);
+    await getApp().db.update(projects).set({ isArchived: true }).where(eq(projects.id, fixture.project.id));
+    expect((await read(fixture.manager.cookie)).json()).toMatchObject({ projectIsArchived: true });
+  });
+
+  it('нумерует все включённые этапы независимо от назначения и позиции типа', async () => {
+    const fixture = await createFixture();
+    const [roof, additional] = await getApp()
+      .db.insert(stages)
+      .values([
+        { projectId: fixture.project.id, stageTypeCode: 'roof', position: 3 },
+        {
+          projectId: fixture.project.id,
+          stageTypeCode: 'additional',
+          position: 9,
+          assigneeId: fixture.foreman.user.id,
+        },
+      ])
+      .returning();
+    const read = (id: number, cookie = fixture.foreman.cookie) =>
+      getApp().inject({ url: `/stages/${id}`, headers: { cookie } });
+    expect((await read(additional!.id)).json()).toMatchObject({
+      position: 9,
+      includedStageNumber: 3,
+      includedStageCount: 3,
+    });
+    expect((await read(roof!.id)).statusCode).toBe(404);
+    for (const url of [`/stages?projectId=${fixture.project.id}`, `/projects/${fixture.project.id}/stages`]) {
+      const response = await getApp().inject({ url, headers: { cookie: fixture.foreman.cookie } });
+      expect(response.statusCode, response.body).toBe(200);
+      expect(response.json().items.map(({ includedStageNumber }: Stage) => includedStageNumber)).toEqual([1, 3]);
+      expect(response.json().items.every(({ includedStageCount }: Stage) => includedStageCount === 3)).toBe(true);
+    }
+    await getApp().db.update(stages).set({ isIncluded: false }).where(eq(stages.id, roof!.id));
+    expect((await read(additional!.id)).json()).toMatchObject({ includedStageNumber: 2, includedStageCount: 2 });
+    expect((await read(roof!.id, fixture.manager.cookie)).json()).toMatchObject({
+      includedStageNumber: null,
+      includedStageCount: 2,
+    });
+    await getApp().db.update(stages).set({ isIncluded: true }).where(eq(stages.id, roof!.id));
+    expect((await read(additional!.id)).json()).toMatchObject({ includedStageNumber: 3, includedStageCount: 3 });
+  });
+
   it('очищает даты независимо и проверяет каждую по обеим границам проекта', async () => {
     const fixture = await createFixture();
     const patch = (expectedVersion: number, fields: object) =>

@@ -9,9 +9,9 @@ import type { MaterialIndicator } from './MaterialIndicator'
 import type { MoneyAmountMinor } from './MoneyAmountMinor'
 import type { PlannedMoneyAmountMinor } from './PlannedMoneyAmountMinor'
 import type { SignedMoneyAmountMinor } from './SignedMoneyAmountMinor'
+import type { StageAssignee } from './StageAssignee'
 import type { StageStatusKey } from './StageStatus'
 import type { StageTypeKey } from './StageType'
-import type { UserBrief } from './UserBrief'
 
 export const stageTitleEnum = {
     Фундамент: "\u0424\u0443\u043D\u0434\u0430\u043C\u0435\u043D\u0442",
@@ -76,6 +76,44 @@ export type Stage = {
     */
     projectIsArchived: boolean;
     /**
+     * @description ID прикреплённых загруженных PDF проекта по позиции документа, затем ID связи. Пустой массив — документов нет. Ссылку выдаёт getFileContent.
+     * @type array
+    */
+    readonly projectDocumentFileIds: number[];
+    /**
+     * @description Нижняя граница плановых дат этапа из текущего проекта.
+     *
+     * Format: `date`
+     * @example 2026-10-01
+     * @type string
+    */
+    readonly projectPlannedStartDate: string;
+    /**
+     * @description Верхняя граница плановых дат этапа из текущего проекта.
+     *
+     * Format: `date`
+     * @example 2026-12-31
+     * @type string
+    */
+    readonly projectPlannedEndDate: string;
+    /**
+     * @description Номер с 1 среди всех включённых этапов проекта по position ASC, затем ID; не зависит от назначенного мастера. Для исключённого этапа — null.
+     * @minLength 1
+     * @maxLength 9
+     * @example 2
+     * @example null
+     * @type integer
+    */
+    readonly includedStageNumber: number | null;
+    /**
+     * @description Количество всех включённых этапов проекта, включая дополнительный и этапы других мастеров.
+     * @minLength 1
+     * @maxLength 9
+     * @example 3
+     * @type integer
+    */
+    readonly includedStageCount: number;
+    /**
      * @description foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.
      * @example foundation
      * @type string
@@ -109,7 +147,7 @@ export type Stage = {
     /**
      * @description Назначенный ответственный мастер; null — мастер не назначен.
     */
-    assignee: (UserBrief | null);
+    assignee: (StageAssignee | null);
     /**
      * @description Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
      * @example in_progress

@@ -10,9 +10,9 @@ import { materialIndicatorSchema } from './materialIndicatorSchema'
 import { moneyAmountMinorSchema } from './moneyAmountMinorSchema'
 import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { signedMoneyAmountMinorSchema } from './signedMoneyAmountMinorSchema'
+import { stageAssigneeSchema } from './stageAssigneeSchema'
 import { stageStatusSchema } from './stageStatusSchema'
 import { stageTypeSchema } from './stageTypeSchema'
-import { userBriefSchema } from './userBriefSchema'
 
 export const stageSchema = z.object({
   id: z.int().min(1).max(2147483647).describe('Стабильный ID этапа строительства.').meta({ examples: [1001] }),
@@ -21,12 +21,17 @@ export const stageSchema = z.object({
   projectAddress: z.string().min(1).max(1000).describe('Адрес объекта строительства для выезда на этап.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10'] }),
   projectCoordinates: coordinatesSchema.describe('Координаты объекта строительства для выезда на этап.'),
   projectIsArchived: z.boolean().describe('Признак архивного проекта. Если true, изменения этапа запрещены.').meta({ examples: [false] }),
+  projectDocumentFileIds: z.array(z.int().min(1).max(2147483647)).describe('ID прикреплённых загруженных PDF проекта по позиции документа, затем ID связи. Пустой массив — документов нет. Ссылку выдаёт getFileContent.'),
+  projectPlannedStartDate: z.iso.date().describe('Нижняя граница плановых дат этапа из текущего проекта.').meta({ examples: ['2026-10-01'] }),
+  projectPlannedEndDate: z.iso.date().describe('Верхняя граница плановых дат этапа из текущего проекта.').meta({ examples: ['2026-12-31'] }),
+  includedStageNumber: z.int().min(1).max(9).nullable().describe('Номер с 1 среди всех включённых этапов проекта по position ASC, затем ID; не зависит от назначенного мастера. Для исключённого этапа — null.').meta({ examples: [2, ] }),
+  includedStageCount: z.int().min(1).max(9).describe('Количество всех включённых этапов проекта, включая дополнительный и этапы других мастеров.').meta({ examples: [3] }),
   type: stageTypeSchema.describe('foundation — Фундамент; walls — Стены; roof — Крыша; windows — Окна, двери; facade — Фасад; electrical — Электрика; finishing — Штукатурка; heating — Отопление; additional — Дополнительный этап.').meta({ examples: ['foundation'] }),
   title: z.enum(['Фундамент', 'Стены', 'Крыша', 'Окна, двери', 'Фасад', 'Электрика', 'Штукатурка', 'Отопление', 'Дополнительный этап']).describe('Название однозначно определяется type и не меняется.').meta({ examples: ['Фундамент'] }),
   position: z.int().min(1).max(9).describe('Фиксированный порядок отображения типов, от фундамента до отопления. Не определяет зависимости.').meta({ examples: [1] }),
   isIncluded: z.boolean().describe('Включён ли этап в списки, расчёты и завершение объекта.').meta({ examples: [true] }),
   workSubtypes: z.array(z.string().min(1).max(255)).max(30).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).describe('Названия подтипов работ этого этапа. Пустой список означает отсутствие подтипов.'),
-  assignee: z.union([userBriefSchema, z.null()]).describe('Назначенный ответственный мастер; null — мастер не назначен.'),
+  assignee: z.union([stageAssigneeSchema, z.null()]).describe('Назначенный ответственный мастер; null — мастер не назначен.'),
   status: stageStatusSchema.describe('Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.').meta({ examples: ['in_progress'] }),
   plannedStartDate: z.iso.date().nullable().describe('Плановая дата начала этапа в формате YYYY-MM-DD.').meta({ examples: ['2026-09-21'] }),
   plannedEndDate: z.iso.date().nullable().describe('Плановая дата окончания этапа в формате YYYY-MM-DD, не раньше планового начала.').meta({ examples: ['2026-09-28'] }),
