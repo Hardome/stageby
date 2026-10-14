@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { NotFound } from '@shared/ui/not-found';
@@ -6,7 +8,12 @@ import { Spinner } from '@shared/ui/spinner';
 import { useStageAccess } from '../lib/use-stage-access';
 import { StageSummary } from './stage-summary';
 
-export function StageOverview({ stageId }: { stageId: string }) {
+interface StageOverviewProperties {
+  stageId: string;
+  backLink?: ReactNode;
+}
+
+export function StageOverview({ stageId, backLink }: StageOverviewProperties) {
   const { query, invalidId } = useStageAccess(stageId);
 
   if (invalidId || query.error?.status === 403 || query.error?.status === 404) {
@@ -29,6 +36,9 @@ export function StageOverview({ stageId }: { stageId: string }) {
   return query.isPending ? (
     <Spinner aria-label="Загрузка этапа" />
   ) : (
-    <StageSummary stage={query.data} refreshing={query.isFetching} />
+    <>
+      {backLink}
+      <StageSummary stage={query.data} refreshing={query.isFetching} />
+    </>
   );
 }
