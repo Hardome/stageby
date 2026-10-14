@@ -1,4 +1,7 @@
+import { Link } from '@tanstack/react-router';
+
 import { LoginForm } from '@features/login';
+import { Button } from '@shared/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
 
 export function LoginPage() {
@@ -14,7 +17,11 @@ export function LoginPage() {
         <CardContent>
           <LoginForm />
         </CardContent>
-        <CardFooter className="text-muted-foreground text-xs">Stageby</CardFooter>
+        <CardFooter>
+          <Button variant="link" nativeButton={false} render={<Link to="/password-reset" />}>
+            Забыли пароль
+          </Button>
+        </CardFooter>
       </Card>
     </main>
   );
