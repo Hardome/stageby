@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => ({ project: vi.fn(), stages: vi.fn(), access: vi.
 vi.mock('@api/queries/useGetProject', () => ({ useGetProject: mocks.project }));
 vi.mock('@api/queries/useListProjectStages', () => ({ useListProjectStages: mocks.stages }));
 vi.mock('@shared/lib/hooks', () => ({ useAccessError: () => mocks.access }));
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, params }: { children: React.ReactNode; params: { stageId: string } }) => (
+    <a href={`/stages/${params.stageId}`}>{children}</a>
+  ),
+}));
 
 const finances = {
   plannedWorkAmountMinor: null,

@@ -7,6 +7,7 @@ description: Prepare Git commits, push branches, and create or update PRs. Use f
 
 ## General rules
 
+- Never commit changes directly to `main`. Make every change on a task branch and merge it into `main` only through a pull request after review. Before committing, verify that the current branch is not `main`; if work is already on `main`, create a task branch first and keep the existing working tree and index intact.
 - Commit and PR titles must be no longer than 72 characters.
 - Describe completed changes in commit and PR titles: `Добавлен`, `Исправлена`, `Удалены`, `Обновлены`. Match gender and number to the subject.
 - Use Russian by default unless the repository requires another language or format.
@@ -18,7 +19,7 @@ description: Prepare Git commits, push branches, and create or update PRs. Use f
 ## Commit
 
 1. Read the applicable `AGENTS.md` files.
-2. Check the branch, `git status --short`, and staged and unstaged diffs.
+2. Check the branch, `git status --short`, and staged and unstaged diffs. If the current branch is `main`, create and switch to a task branch before committing; do not commit on `main`.
 3. Stage only files or hunks related to the task. Do not use unconditional `git add .`.
 4. Run the required checks and hooks.
 5. Before committing, check:

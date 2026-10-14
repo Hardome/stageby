@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { PackageIcon, UserRoundIcon } from 'lucide-react';
 
@@ -36,7 +37,18 @@ export function ProjectStageCard({ stage, number, today }: ProjectStageCardPrope
               {String(number).padStart(2, '0')}
             </span>
             <CardTitle>
-              <h3 className="wrap-anywhere">{stage.title}</h3>
+              <h3 className="wrap-anywhere">
+                <Link
+                  to="/stages/$stageId"
+                  params={{ stageId: String(stage.id) }}
+                  className={cn(
+                    'rounded-sm underline-offset-4 hover:underline',
+                    'focus-visible:outline-2 focus-visible:outline-ring',
+                  )}
+                >
+                  {stage.title}
+                </Link>
+              </h3>
             </CardTitle>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
