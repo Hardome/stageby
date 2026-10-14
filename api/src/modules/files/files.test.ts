@@ -243,6 +243,61 @@ async function insertUploadedPhotos(userId: number, count: number) {
 }
 
 describe('File uploads and checklist photos', () => {
+  it('выдаёт через этап только загруженные PDF в порядке документов без дублирования итогов', async () => {
+    const fixture = await createFixture();
+    const read = () =>
+      getApp().inject({ url: `/stages/${fixture.stage.id}`, headers: { cookie: fixture.foreman.cookie } });
+    const initial = await read();
+    expect(initial.statusCode, initial.body).toBe(200);
+    expect(initial.json<Stage>().projectDocumentFileIds).toEqual([]);
+    const documentIds: number[] = [];
+    for (const position of [2, 1, 3]) {
+      const document = await uploadPhoto(fixture.manager.cookie, {
+        purpose: 'project_document',
+        originalName: `project-${position}.pdf`,
+        mimeType: 'application/pdf',
+      });
+      expect(document.completeResponse?.statusCode, document.completeResponse?.body).toBe(200);
+      documentIds.push(document.upload!.fileId);
+      await getApp()
+        .db.insert(projectDocuments)
+        .values({ projectId: fixture.stage.projectId, fileId: document.upload!.fileId, position });
+      expect((await read()).json<Stage>().projectDocumentFileIds).toHaveLength(documentIds.length);
+    }
+    await getApp().db.update(files).set({ status: 'pending', uploadedAt: null }).where(eq(files.id, documentIds[2]!));
+    const wrongPurpose = await uploadPhoto(fixture.manager.cookie);
+    expect(wrongPurpose.completeResponse?.statusCode).toBe(200);
+    await getApp()
+      .db.insert(projectDocuments)
+      .values({ projectId: fixture.stage.projectId, fileId: wrongPurpose.upload!.fileId, position: 4 });
+    const expectedIds = [documentIds[1]!, documentIds[0]!];
+    const response = await read();
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json<Stage>().projectDocumentFileIds).toEqual(expectedIds);
+    expect(response.json<Stage>().actualWorkAmountMinor).toBe(initial.json<Stage>().actualWorkAmountMinor);
+    expect(response.json<Stage>().totalActualAmountMinor).toBe(initial.json<Stage>().totalActualAmountMinor);
+    for (const fileId of expectedIds) {
+      expect(
+        (await getApp().inject({ url: `/files/${fileId}/content`, headers: { cookie: fixture.foreman.cookie } }))
+          .statusCode,
+      ).toBe(200);
+    }
+    for (const url of [`/stages?projectId=${fixture.stage.projectId}`, `/projects/${fixture.stage.projectId}/stages`]) {
+      const listed = await getApp().inject({ url, headers: { cookie: fixture.foreman.cookie } });
+      expect(listed.statusCode, listed.body).toBe(200);
+      expect(listed.json().items).toHaveLength(1);
+      expect(listed.json().items[0].projectDocumentFileIds).toEqual(expectedIds);
+    }
+    const edit = await getApp().inject({
+      url: `/projects/${fixture.stage.projectId}/edit`,
+      headers: { cookie: fixture.manager.cookie },
+    });
+    expect(edit.statusCode, edit.body).toBe(200);
+    expect(edit.json().stages[0].stage.projectDocumentFileIds).toEqual(expectedIds);
+    await getApp().db.delete(projectDocuments).where(eq(projectDocuments.projectId, fixture.stage.projectId));
+    expect((await read()).json<Stage>().projectDocumentFileIds).toEqual([]);
+  });
+
   it('переводит этап на приёмку, если фото ранее выполненного пункта очищены', async () => {
     const fixture = await createFixture();
     const [secondItem] = await getApp()
@@ -569,6 +624,11 @@ describe('File uploads and checklist photos', () => {
     const download = (cookie: string, fileId: number) =>
       getApp().inject({ url: `/files/${fileId}/content`, headers: { cookie } });
     expect((await download(fixture.foreman.cookie, document.upload!.fileId)).statusCode).toBe(200);
+    const context = await getApp().inject({
+      url: `/stages/${fixture.stage.id}`,
+      headers: { cookie: fixture.foreman.cookie },
+    });
+    expect(context.json<Stage>().projectDocumentFileIds).toEqual([document.upload!.fileId]);
     expect((await download(replacement.cookie, document.upload!.fileId)).statusCode).toBe(404);
     await getApp()
       .db.update(stages)
@@ -622,6 +682,17 @@ describe('File uploads and checklist photos', () => {
       headers: { cookie: fixture.manager.cookie },
     });
     expect(payments.json()).toMatchObject([{ id: payment.json().id, amountMinor: 5000 }]);
+    await getApp().db.insert(stages).values({
+      projectId: fixture.stage.projectId,
+      stageTypeCode: 'roof',
+      position: 3,
+      assigneeId: fixture.foreman.user.id,
+    });
+    expect((await download(fixture.foreman.cookie, document.upload!.fileId)).statusCode).toBe(200);
+    expect(
+      (await getApp().inject({ url: `/stages/${fixture.stage.id}`, headers: { cookie: fixture.foreman.cookie } }))
+        .statusCode,
+    ).toBe(404);
   });
 
   it('повторяет создание после сетевой ошибки и идемпотентно завершает upload', async () => {

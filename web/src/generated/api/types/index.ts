@@ -91,6 +91,7 @@ export type { SetUserPassword, SetUserPasswordBody, SetUserPasswordOptions, SetU
 export type { Sha256 } from './Sha256'
 export type { SignedMoneyAmountMinor } from './SignedMoneyAmountMinor'
 export type { Stage, StageTitleEnumKey } from './Stage'
+export type { StageAssignee } from './StageAssignee'
 export type { StageFinancialSummary } from './StageFinancialSummary'
 export type { StageMaterialInvoice } from './StageMaterialInvoice'
 export type { StagePage } from './StagePage'

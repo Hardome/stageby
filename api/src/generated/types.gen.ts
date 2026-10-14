@@ -662,17 +662,21 @@ export type UpdateProject = {
 };
 
 /**
- * Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
+ * Назначенный мастер этапа и его контактный телефон.
  */
-export type UserBrief = {
+export type StageAssignee = {
     /**
-     * Стабильный ID пользователя.
+     * ID назначенного мастера.
      */
     id: number;
     /**
-     * Полное имя сотрудника или исполнителя для отображения.
+     * Полное имя назначенного мастера.
      */
     fullName: string;
+    /**
+     * Контактный телефон мастера; null — не указан.
+     */
+    readonly phone: string | null;
 };
 
 /**
@@ -712,6 +716,20 @@ export type MaterialIndicator = {
      * true, только если доставлено больше нуля, но меньше общего количества счетов.
      */
     isPartiallyDelivered: boolean;
+};
+
+/**
+ * Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.
+ */
+export type UserBrief = {
+    /**
+     * Стабильный ID пользователя.
+     */
+    id: number;
+    /**
+     * Полное имя сотрудника или исполнителя для отображения.
+     */
+    fullName: string;
 };
 
 export type Acceptance = {
@@ -762,6 +780,26 @@ export type Stage = {
      * Признак архивного проекта. Если true, изменения этапа запрещены.
      */
     projectIsArchived: boolean;
+    /**
+     * ID прикреплённых загруженных PDF проекта по позиции документа, затем ID связи. Пустой массив — документов нет. Ссылку выдаёт getFileContent.
+     */
+    readonly projectDocumentFileIds: Array<number>;
+    /**
+     * Нижняя граница плановых дат этапа из текущего проекта.
+     */
+    readonly projectPlannedStartDate: string;
+    /**
+     * Верхняя граница плановых дат этапа из текущего проекта.
+     */
+    readonly projectPlannedEndDate: string;
+    /**
+     * Номер с 1 среди всех включённых этапов проекта по position ASC, затем ID; не зависит от назначенного мастера. Для исключённого этапа — null.
+     */
+    readonly includedStageNumber: number | null;
+    /**
+     * Количество всех включённых этапов проекта, включая дополнительный и этапы других мастеров.
+     */
+    readonly includedStageCount: number;
     type: StageType;
     /**
      * Название однозначно определяется type и не меняется.
@@ -782,7 +820,7 @@ export type Stage = {
     /**
      * Назначенный ответственный мастер; null — мастер не назначен.
      */
-    assignee: UserBrief | null;
+    assignee: StageAssignee | null;
     status: StageStatus;
     /**
      * Плановая дата начала этапа в формате YYYY-MM-DD.
@@ -1824,6 +1862,20 @@ export type ProjectPageWritable = {
 };
 
 /**
+ * Назначенный мастер этапа и его контактный телефон.
+ */
+export type StageAssigneeWritable = {
+    /**
+     * ID назначенного мастера.
+     */
+    id: number;
+    /**
+     * Полное имя назначенного мастера.
+     */
+    fullName: string;
+};
+
+/**
  * Параметры, финансовые итоги и версия этапа.
  */
 export type StageWritable = {
@@ -1871,7 +1923,7 @@ export type StageWritable = {
     /**
      * Назначенный ответственный мастер; null — мастер не назначен.
      */
-    assignee: UserBrief | null;
+    assignee: StageAssigneeWritable | null;
     status: StageStatus;
     /**
      * Плановая дата начала этапа в формате YYYY-MM-DD.
