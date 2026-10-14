@@ -18,6 +18,11 @@ export function CreateProjectForm(properties: CreateProjectFormProperties) {
       <form noValidate className="grid min-w-0 gap-6 lg:grid-cols-[224px_minmax(0,1fr)] lg:gap-8" onSubmit={submit}>
         <ProjectProgress
           step={step}
+          stages={navigation.navigationStages}
+          currentStage={navigation.currentStage}
+          onStageChange={(index) => {
+            if (!isLocked) navigation.selectStage(index);
+          }}
           disabled={isLocked}
           onStepChange={(target) => {
             if (!isLocked) void navigation.selectStep(target);
@@ -35,6 +40,7 @@ export function CreateProjectForm(properties: CreateProjectFormProperties) {
             </FieldDescription>
           )}
           <ProjectFormPanel
+            titleRef={navigation.panelTitleReference}
             step={step}
             title={title}
             description={description}

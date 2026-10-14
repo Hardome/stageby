@@ -60,12 +60,12 @@ export function CreateProjectPage() {
           if (!open) blocker.reset?.();
         }}
       >
-        <AlertDialogContent className="data-[size=default]:sm:max-w-lg">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Отменить создание?</AlertDialogTitle>
             <AlertDialogDescription>Введённые данные будут потеряны.</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="sm:grid sm:grid-cols-2">
+          <AlertDialogFooter>
             <Button variant="outline" onClick={() => blocker.reset?.()}>
               Продолжить создание
             </Button>

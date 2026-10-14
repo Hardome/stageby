@@ -3,7 +3,11 @@ import { CheckIcon, ClipboardListIcon, HouseIcon, LayersIcon } from 'lucide-reac
 
 import { Button } from '@shared/ui/button';
 
-interface ProjectProgressProperties {
+import type { ProjectStageNavigationProperties } from '../model/navigation';
+import { ProjectStageDrawer } from './project-stage-drawer';
+import { ProjectStageNavigation } from './project-stage-navigation';
+
+interface ProjectProgressProperties extends ProjectStageNavigationProperties {
   step: number;
   disabled: boolean;
   label?: string;
@@ -16,7 +20,14 @@ const steps = [
   { title: 'Заполнение', description: 'Планы, мастера и чек-листы', icon: ClipboardListIcon },
 ];
 
-export function ProjectProgress({ step, disabled, onStepChange, label = 'Шаги создания' }: ProjectProgressProperties) {
+export function ProjectProgress({
+  step,
+  onStepChange,
+  label = 'Шаги создания',
+  ...stageNavigation
+}: ProjectProgressProperties) {
+  const { disabled, stages } = stageNavigation;
+
   return (
     <nav aria-label={label} className="min-w-0 self-start lg:sticky lg:top-6">
       <p className="mb-4 hidden font-semibold text-muted-foreground text-xs uppercase tracking-wider lg:block">
@@ -43,9 +54,20 @@ export function ProjectProgress({ step, disabled, onStepChange, label = 'Шаг�
                 <span className="hidden whitespace-normal font-normal text-xs opacity-70 lg:block">{description}</span>
               </span>
             </Button>
+            {index === 2 && stages.length > 0 && (
+              <div
+                className={cn(
+                  'mt-3 ml-5 hidden min-h-12 overflow-y-auto border-l pl-2 lg:block',
+                  'max-h-[calc(100dvh-22rem)]',
+                )}
+              >
+                <ProjectStageNavigation {...stageNavigation} />
+              </div>
+            )}
           </li>
         ))}
       </ol>
+      <ProjectStageDrawer {...stageNavigation} />
     </nav>
   );
 }
