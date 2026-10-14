@@ -23,13 +23,13 @@ export function PasswordForm({ user, search }: PasswordFormProperties) {
     defaultValues: { password: '', confirmPassword: '' },
     mode: 'onChange',
   });
-  const { finish, currentUser } = useUserActions(search);
+  const { finishPassword } = useUserActions(search);
   const mutation = useSetUserPassword({
     mutation: {
       onError: notifyUserError,
       onSuccess: async () => {
         form.reset();
-        await finish('password', undefined, user.id === currentUser?.id);
+        await finishPassword(user);
       },
     },
   });
@@ -41,9 +41,9 @@ export function PasswordForm({ user, search }: PasswordFormProperties) {
         className="flex flex-col gap-6"
         noValidate
         onSubmit={(event) =>
-          void form.handleSubmit(({ password }) => mutation.mutate({ path: { userId: user.id }, body: { password } }))(
-            event,
-          )
+          void form.handleSubmit(({ password }) => {
+            if (!mutation.isPending) mutation.mutate({ path: { userId: user.id }, body: { password } });
+          })(event)
         }
       >
         <p className="wrap-anywhere">
@@ -53,7 +53,8 @@ export function PasswordForm({ user, search }: PasswordFormProperties) {
           <PasswordFields disabled={mutation.isPending} />
         </FieldGroup>
         <FieldDescription>
-          Все сессии пользователя будут завершены. После смены своего пароля вам потребуется войти снова.
+          Все сессии пользователя будут завершены. После смены своего пароля вам потребуется войти снова. Передайте
+          новый пароль пользователю вне приложения.
         </FieldDescription>
         <FormActions pending={mutation.isPending} search={search} label="Сменить пароль" />
       </form>

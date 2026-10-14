@@ -84,7 +84,7 @@ export function useUserActions(search: UsersSearch) {
       if (user.id === currentUser?.id) queryClient.setQueryData(getCurrentUserQueryKey(), user);
     }
 
-    void queryClient.invalidateQueries({ queryKey: listUsersQueryKey() });
+    await queryClient.invalidateQueries({ queryKey: listUsersQueryKey() });
     await navigate({ to: '/users', search });
     toast.add({
       type: 'success',
@@ -93,5 +93,18 @@ export function useUserActions(search: UsersSearch) {
     });
   }
 
-  return { finish, currentUser };
+  async function finishPassword(user: User) {
+    const shouldRevokeSession = user.id === currentUser?.id;
+
+    if (!shouldRevokeSession) {
+      await queryClient.invalidateQueries({
+        queryKey: getUserQueryKey({ path: { userId: user.id } }),
+        refetchType: 'all',
+      });
+    }
+
+    await finish('password', undefined, shouldRevokeSession);
+  }
+
+  return { finish, finishPassword, currentUser };
 }
