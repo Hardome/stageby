@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 
+import { ProjectFormSkeleton } from '@entities/project';
 import { errorStatus, useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
+import { DataRegion } from '@shared/ui/data-region';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@shared/ui/empty';
 import { NotFound } from '@shared/ui/not-found';
-import { Skeleton } from '@shared/ui/skeleton';
 
 import { useListActiveStageTypes } from '@api/queries/useListActiveStageTypes';
 
@@ -24,14 +25,13 @@ export function ProjectCreator(properties: ProjectCreatorProperties) {
     if (query.error) accessError(query.error);
   }, [query.error, accessError]);
   if (errorStatus(query.error) === 403 || errorStatus(query.error) === 404) return <NotFound />;
-  if (query.data && query.data.length > 0) return <CreateProjectForm types={query.data} {...properties} />;
-  if (query.isPending)
+  if (query.data && query.data.length > 0)
     return (
-      <div role="status" aria-label="Загрузка формы" className="flex flex-col gap-4">
-        <Skeleton className="h-16" />
-        <Skeleton className="h-96" />
-      </div>
+      <DataRegion isFetching={query.isFetching} label="Обновляем шаблоны…">
+        <CreateProjectForm types={query.data} {...properties} />
+      </DataRegion>
     );
+  if (query.isPending) return <DataRegion initialLabel="Загрузка формы" isLoading skeleton={<ProjectFormSkeleton />} />;
   if (!query.isError)
     return (
       <Empty>

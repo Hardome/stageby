@@ -2,14 +2,15 @@ import type { ReactNode } from 'react';
 
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
+import { DataRegion } from '@shared/ui/data-region';
 import { NotFound } from '@shared/ui/not-found';
-import { Spinner } from '@shared/ui/spinner';
 
 import type { Stage } from '@api/types';
 
 import { useStageAccess } from '../lib/use-stage-access';
 import { StageChecklist } from './stage-checklist';
 import { StageFinances } from './stage-finances';
+import { StageOverviewSkeleton } from './stage-overview-skeleton';
 import { StageProject } from './stage-project';
 import { StageSummary } from './stage-summary';
 
@@ -39,25 +40,27 @@ export function StageOverview({ stageId, backLink, actions }: StageOverviewPrope
     );
   }
 
-  return query.isPending ? (
-    <Spinner aria-label="Загрузка этапа" />
-  ) : (
-    <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {backLink?.(query.data)}
-        {actions?.(query.data)}
-      </div>
-      <StageSummary stage={query.data} refreshing={query.isFetching} />
-      <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="min-w-0">
-          <StageChecklist stageId={query.data.id} />
+  if (!query.data) return <DataRegion initialLabel="Загрузка этапа" isLoading skeleton={<StageOverviewSkeleton />} />;
+
+  return (
+    <DataRegion isFetching={query.isFetching} label="Обновляем этап…">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {backLink?.(query.data)}
+          {actions?.(query.data)}
         </div>
-        <div className="flex min-w-0 flex-col gap-6">
-          <StageProject stage={query.data} />
-          <StageFinances stage={query.data} category="materials" />
-          <StageFinances stage={query.data} category="work" />
+        <StageSummary stage={query.data} refreshing={query.isFetching} />
+        <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <div className="min-w-0">
+            <StageChecklist stageId={query.data.id} />
+          </div>
+          <div className="flex min-w-0 flex-col gap-6">
+            <StageProject stage={query.data} />
+            <StageFinances stage={query.data} category="materials" />
+            <StageFinances stage={query.data} category="work" />
+          </div>
         </div>
       </div>
-    </>
+    </DataRegion>
   );
 }

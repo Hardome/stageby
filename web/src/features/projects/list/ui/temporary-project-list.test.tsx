@@ -40,7 +40,7 @@ describe('temporary project list', () => {
     vi.unstubAllGlobals();
   });
   it('shows loading, empty result and retry after access error', async () => {
-    await render({ isPending: true });
+    await render({ isPending: true, isLoading: true });
     expect(container.querySelector('[role="status"]')).toHaveAttribute('aria-label', 'Загрузка объектов');
     await render({ data: { items: [], total: 0 } });
     expect(container).toHaveTextContent('Объектов пока нет');

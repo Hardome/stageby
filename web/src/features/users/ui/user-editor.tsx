@@ -1,3 +1,4 @@
+import { DataRegion } from '@shared/ui/data-region';
 import { NotFound } from '@shared/ui/not-found';
 
 import { useGetUser } from '@api/queries/useGetUser';
@@ -8,8 +9,8 @@ import type { UsersSearch } from '../model/types';
 import { EditUserForm } from './form/edit-user-form';
 import { PasswordForm } from './form/password-form';
 import { PasswordResetStatus } from './password-reset-status';
+import { UserEditorSkeleton } from './user-editor-skeleton';
 import { UserError } from './user-error';
-import { UserLoading } from './user-loading';
 
 interface UserEditorProperties {
   userId: string;
@@ -28,7 +29,8 @@ export function UserEditor({ userId, search, mode }: UserEditorProperties) {
 
   if (!isValid || query.error?.status === 403 || query.error?.status === 404) return <NotFound />;
 
-  if (query.isPending) return <UserLoading />;
+  if (query.isPending)
+    return <DataRegion initialLabel="Загрузка пользователя" isLoading skeleton={<UserEditorSkeleton mode={mode} />} />;
 
   if (query.isError)
     return (
@@ -39,13 +41,15 @@ export function UserEditor({ userId, search, mode }: UserEditorProperties) {
     );
 
   return (
-    <div className="flex flex-col gap-6">
-      <PasswordResetStatus requestedAt={query.data.passwordResetRequestedAt} />
-      {mode === 'edit' ? (
-        <EditUserForm key={id} user={query.data} search={search} />
-      ) : (
-        <PasswordForm key={id} user={query.data} search={search} />
-      )}
-    </div>
+    <DataRegion isFetching={query.isFetching} label="Обновляем пользователя…">
+      <div className="flex flex-col gap-6">
+        <PasswordResetStatus requestedAt={query.data.passwordResetRequestedAt} />
+        {mode === 'edit' ? (
+          <EditUserForm key={id} user={query.data} search={search} />
+        ) : (
+          <PasswordForm key={id} user={query.data} search={search} />
+        )}
+      </div>
+    </DataRegion>
   );
 }

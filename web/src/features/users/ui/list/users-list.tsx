@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 
+import { keepPreviousData } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { PlusIcon, UsersIcon } from 'lucide-react';
 
 import { Button } from '@shared/ui/button';
+import { DataRegion } from '@shared/ui/data-region';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@shared/ui/empty';
 import { Field, FieldGroup, FieldLabel } from '@shared/ui/field';
 import { NotFound } from '@shared/ui/not-found';
@@ -17,9 +19,9 @@ import { roleItems } from '../../model/data';
 import type { UsersSearch } from '../../model/types';
 import { RoleSelect } from '../form/role-select';
 import { UserError } from '../user-error';
-import { UserLoading } from '../user-loading';
 import { SearchInput } from './search-input';
 import { UserResults } from './user-results';
+import { UsersListSkeleton } from './users-list-skeleton';
 
 const activityItems = [
   { value: 'all', label: 'Все пользователи' },
@@ -35,19 +37,31 @@ interface UsersListProperties {
 }
 
 export function UsersList({ search, onFilterChange, onPageChange }: UsersListProperties) {
-  const query = useListUsers({ query: getUsersQuery(search) }, { query: { retry: false } });
+  const query = useListUsers(
+    { query: getUsersQuery(search) },
+    { query: { retry: false, placeholderData: keepPreviousData } },
+  );
   useUserAccessError(query.error);
   const offset = search.offset ?? 0;
   const activity = search.isActive ? 'active' : 'inactive';
 
   useEffect(() => {
-    if (!(query.data && offset > 0 && offset >= query.data.total)) {
+    if (
+      !(
+        !query.error &&
+        !query.isFetching &&
+        !query.isPlaceholderData &&
+        query.data &&
+        offset > 0 &&
+        offset >= query.data.total
+      )
+    ) {
       return;
     }
 
     const lastOffset = Math.max(0, Math.ceil(query.data.total / 20) - 1) * 20;
     onPageChange(lastOffset, true);
-  }, [query.data, offset, onPageChange]);
+  }, [query.data, query.error, query.isFetching, query.isPlaceholderData, offset, onPageChange]);
 
   if (query.error?.status === 403 || query.error?.status === 404) return <NotFound />;
 
@@ -91,54 +105,57 @@ export function UsersList({ search, onFilterChange, onPageChange }: UsersListPro
         </Field>
       </FieldGroup>
       <section aria-label="Список пользователей" aria-busy={query.isFetching} className="flex flex-col gap-4">
-        {query.isFetching && !query.isPending && (
-          <p className="text-muted-foreground text-sm" role="status">
-            Обновляем список…
-          </p>
-        )}
-        {query.isPending && <UserLoading />}
         {query.isError && <UserError message={userErrorMessage(query.error)} retry={() => void query.refetch()} />}
-        {query.isSuccess && (
-          <>
-            <p className="text-muted-foreground text-sm" aria-live="polite">
-              Найдено: {query.data.total}
-            </p>
-            {query.data.items.length > 0 ? (
-              <UserResults users={query.data.items} search={search} />
-            ) : (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <UsersIcon />
-                  </EmptyMedia>
-                  <EmptyTitle>Пользователи не найдены</EmptyTitle>
-                  <EmptyDescription>Измените фильтры или создайте пользователя.</EmptyDescription>
-                </EmptyHeader>
-              </Empty>
-            )}
-            <nav aria-label="Страницы пользователей" className="flex flex-wrap items-center justify-between gap-3">
-              <Button
-                className="min-h-11"
-                variant="outline"
-                disabled={offset === 0 || query.isFetching}
-                onClick={() => onPageChange(Math.max(0, offset - 20))}
-              >
-                Назад
-              </Button>
-              <span className="text-sm">
-                Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(query.data.total / 20))}
-              </span>
-              <Button
-                className="min-h-11"
-                variant="outline"
-                disabled={offset + 20 >= query.data.total || query.isFetching}
-                onClick={() => onPageChange(offset + 20)}
-              >
-                Далее
-              </Button>
-            </nav>
-          </>
-        )}
+        <DataRegion
+          initialLabel="Загрузка пользователей"
+          isLoading={query.isLoading}
+          isFetching={query.isFetching}
+          isRefreshing={query.isPlaceholderData && query.isFetching}
+          skeleton={<UsersListSkeleton />}
+          label="Обновляем список…"
+        >
+          {query.data && (
+            <>
+              <p className="text-muted-foreground text-sm" aria-live="polite">
+                Найдено: {query.data.total}
+              </p>
+              {query.data.items.length > 0 ? (
+                <UserResults users={query.data.items} search={search} />
+              ) : (
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <UsersIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Пользователи не найдены</EmptyTitle>
+                    <EmptyDescription>Измените фильтры или создайте пользователя.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
+              <nav aria-label="Страницы пользователей" className="flex flex-wrap items-center justify-between gap-3">
+                <Button
+                  className="min-h-11"
+                  variant="outline"
+                  disabled={offset === 0 || query.isFetching}
+                  onClick={() => onPageChange(Math.max(0, offset - 20))}
+                >
+                  Назад
+                </Button>
+                <span className="text-sm">
+                  Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(query.data.total / 20))}
+                </span>
+                <Button
+                  className="min-h-11"
+                  variant="outline"
+                  disabled={offset + 20 >= query.data.total || query.isFetching}
+                  onClick={() => onPageChange(offset + 20)}
+                >
+                  Далее
+                </Button>
+              </nav>
+            </>
+          )}
+        </DataRegion>
       </section>
     </div>
   );

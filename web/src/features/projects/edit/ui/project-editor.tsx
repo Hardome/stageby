@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 
+import { ProjectFormSkeleton } from '@entities/project';
 import { useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
+import { DataRegion } from '@shared/ui/data-region';
 import { NotFound } from '@shared/ui/not-found';
-import { Skeleton } from '@shared/ui/skeleton';
 
 import { useGetProjectEdit } from '@api/queries/useGetProjectEdit';
 import type { ProjectEdit } from '@api/types';
@@ -51,17 +52,17 @@ export function ProjectEditor({ projectId, ...properties }: ProjectEditorPropert
     );
   if (snapshot)
     return (
-      <>
+      <DataRegion isFetching={query.isFetching} label="Обновляем объект…">
         {query.isError && (
           <Alert variant="destructive">
             <AlertDescription>Не удалось обновить данные объекта. Ваши правки сохранены в форме.</AlertDescription>
           </Alert>
         )}
         <EditProjectForm key={revision} snapshot={snapshot} onReload={reload} {...properties} />
-      </>
+      </DataRegion>
     );
   if (query.isPending || query.isFetching)
-    return <Skeleton className="h-96" role="status" aria-label="Загрузка редактора объекта" />;
+    return <DataRegion initialLabel="Загрузка редактора объекта" isLoading skeleton={<ProjectFormSkeleton />} />;
   const messages: Record<number, string> = {
     401: 'Сессия завершена. Войдите снова.',
   };

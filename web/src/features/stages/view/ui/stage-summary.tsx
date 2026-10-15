@@ -76,15 +76,10 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
         </div>
       </div>
       <StageDetails stage={stage} />
-      {(stage.projectIsArchived || refreshing) && (
+      {stage.projectIsArchived && (
         <div className="border-t px-5 py-3 sm:px-8">
           {stage.projectIsArchived && (
             <p className="text-muted-foreground text-sm">Объект в архиве. Доступен просмотр.</p>
-          )}
-          {refreshing && (
-            <p role="status" className="text-muted-foreground text-sm">
-              Обновление этапа…
-            </p>
           )}
         </div>
       )}
