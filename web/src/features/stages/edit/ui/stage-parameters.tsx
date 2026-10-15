@@ -33,7 +33,7 @@ export function StageParameters({ stage, onClose, onPendingChange }: StageParame
 
   return (
     <>
-      <div className="flex shrink-0 items-start justify-between gap-4 border-b p-5 sm:p-6">
+      <div className="flex shrink-0 items-start justify-between gap-4 border-b p-4 sm:p-4">
         <div className="flex min-w-0 flex-col gap-2">
           <DialogTitle className="flex items-center gap-2 font-bold text-xl">
             <SlidersHorizontalIcon className="size-5 shrink-0 text-primary-text" aria-hidden="true" />
@@ -50,8 +50,8 @@ export function StageParameters({ stage, onClose, onPendingChange }: StageParame
       </div>
       <FormProvider {...editor.form}>
         <form onSubmit={editor.save} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain p-5 sm:p-6">
-            <FieldGroup className="grid gap-5 sm:grid-cols-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-4 sm:p-4">
+            <FieldGroup className="grid gap-4 sm:grid-cols-2">
               <StageParameterField
                 name="plannedStartDate"
                 label="Плановое начало"
@@ -94,8 +94,8 @@ export function StageParameters({ stage, onClose, onPendingChange }: StageParame
           </div>
           <div
             className={cn(
-              'flex shrink-0 items-center justify-end gap-3 border-t bg-card p-5',
-              'pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6',
+              'flex shrink-0 items-center justify-end gap-3 border-t bg-card p-4',
+              'pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-4',
             )}
           >
             <Button type="button" variant="outline" disabled={editor.pending} onClick={onClose}>

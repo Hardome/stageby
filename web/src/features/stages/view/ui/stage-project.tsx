@@ -24,7 +24,7 @@ export function StageProject({ stage }: StageProjectProperties) {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {stage.projectDocumentFileIds.length === 0 ? (
-          <Empty className="rounded-xl border border-dashed p-5">
+          <Empty className="rounded-xl border border-dashed p-4">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <FileTextIcon />

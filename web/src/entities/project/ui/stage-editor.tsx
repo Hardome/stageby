@@ -26,7 +26,7 @@ export function StageEditor({ index, disabled, checklistReadOnly = false, regist
   });
 
   return (
-    <FieldGroup className="gap-6 pb-3">
+    <FieldGroup className="gap-4 pb-3">
       <FieldSet>
         <FieldLegend className="flex items-center gap-2">
           <CalendarDaysIcon aria-hidden="true" className="size-4 text-primary-text" />

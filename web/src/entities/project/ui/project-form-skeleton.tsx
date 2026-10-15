@@ -8,7 +8,7 @@ import { ProjectProgress } from './project-progress';
 
 export function ProjectFormSkeleton() {
   return (
-    <div aria-hidden="true" className="grid min-w-0 gap-6 lg:grid-cols-[224px_minmax(0,1fr)] lg:gap-8">
+    <div aria-hidden="true" className="grid min-w-0 gap-4 lg:grid-cols-[224px_minmax(0,1fr)] lg:gap-5">
       <ProjectProgress
         step={1}
         stages={[]}
@@ -30,7 +30,7 @@ export function ProjectFormSkeleton() {
           </div>
         }
       >
-        <FieldGroup className="gap-6">
+        <FieldGroup className="gap-4">
           <FieldSet>
             <FieldLegend>Клиент и адрес</FieldLegend>
             <Field>

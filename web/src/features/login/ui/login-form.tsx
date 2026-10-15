@@ -53,7 +53,7 @@ export function LoginForm() {
   };
 
   return (
-    <form className="flex flex-col gap-6" noValidate onSubmit={(event) => void handleSubmit(onSubmit)(event)}>
+    <form className="flex flex-col gap-4" noValidate onSubmit={(event) => void handleSubmit(onSubmit)(event)}>
       <FieldGroup>
         <Field data-invalid={Boolean(errors.login)} data-disabled={mutation.isPending}>
           <FieldLabel htmlFor="login">Логин</FieldLabel>

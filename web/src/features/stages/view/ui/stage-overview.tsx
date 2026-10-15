@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { StageChecklist, useStageAccess } from '@entities/stage';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { DataRegion } from '@shared/ui/data-region';
@@ -7,8 +8,6 @@ import { NotFound } from '@shared/ui/not-found';
 
 import type { Stage } from '@api/types';
 
-import { useStageAccess } from '../lib/use-stage-access';
-import { StageChecklist } from './stage-checklist';
 import { StageFinances } from './stage-finances';
 import { StageOverviewSkeleton } from './stage-overview-skeleton';
 import { StageProject } from './stage-project';
@@ -19,9 +18,10 @@ interface StageOverviewProperties {
   backLink?: (stage: Stage) => ReactNode;
   actions?: (stage: Stage) => ReactNode;
   payments?: (stage: Stage) => ReactNode;
+  checklistLink?: (stage: Stage) => ReactNode;
 }
 
-export function StageOverview({ stageId, backLink, actions, payments }: StageOverviewProperties) {
+export function StageOverview({ stageId, backLink, actions, payments, checklistLink }: StageOverviewProperties) {
   const { query, invalidId } = useStageAccess(stageId);
 
   if (invalidId || query.error?.status === 403 || query.error?.status === 404) {
@@ -52,7 +52,7 @@ export function StageOverview({ stageId, backLink, actions, payments }: StageOve
 
   return (
     <DataRegion isFetching={query.isFetching} label="Обновляем этап…">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         {query.error && (
           <Alert variant="destructive">
             <AlertDescription>
@@ -68,11 +68,12 @@ export function StageOverview({ stageId, backLink, actions, payments }: StageOve
           {actions?.(query.data)}
         </div>
         <StageSummary stage={query.data} refreshing={query.isFetching} />
-        <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-          <div className="min-w-0">
+        <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <div className="flex min-w-0 flex-col gap-3">
+            {checklistLink?.(query.data)}
             <StageChecklist stageId={query.data.id} />
           </div>
-          <div className="flex min-w-0 flex-col gap-6">
+          <div className="flex min-w-0 flex-col gap-4">
             <StageProject stage={query.data} />
             <StageFinances stage={query.data} category="materials" />
             {!payments && <StageFinances stage={query.data} category="work" />}

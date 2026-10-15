@@ -76,7 +76,7 @@ export function CreateUserForm({ managerId, search }: CreateUserFormProperties) 
   return (
     <FormProvider {...form}>
       <form
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-4"
         noValidate
         onSubmit={(event) =>
           void handleSubmit(({ confirmPassword: _confirmation, ...body }) => mutation.mutate({ body }))(event)

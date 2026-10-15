@@ -7,8 +7,8 @@ export function StageSummarySkeleton() {
     <header className="overflow-hidden rounded-2xl border bg-card text-card-foreground">
       <div
         className={cn(
-          'grid gap-8 bg-surface-inverse p-5 text-surface-inverse-foreground',
-          'sm:p-8 lg:grid-cols-[1fr_280px]',
+          'grid gap-5 bg-surface-inverse p-4 text-surface-inverse-foreground',
+          'sm:p-5 lg:grid-cols-[1fr_280px]',
         )}
       >
         <div className="flex min-w-0 flex-col items-start gap-4">
@@ -22,7 +22,7 @@ export function StageSummarySkeleton() {
         </div>
         <div
           className={cn(
-            'flex flex-col justify-between gap-4 rounded-xl border p-5',
+            'flex flex-col justify-between gap-4 rounded-xl border p-4',
             'border-surface-inverse-border bg-surface-inverse-accent',
           )}
         >
@@ -34,9 +34,15 @@ export function StageSummarySkeleton() {
           <p className="text-surface-inverse-muted text-xs">По выполненным пунктам чек-листа</p>
         </div>
       </div>
-      <dl className="grid gap-5 p-5 sm:p-8 md:grid-cols-[1fr_1.3fr_1fr]">
+      <dl className="grid grid-cols-2 gap-3 p-4 md:grid-cols-[1fr_1.3fr_1fr]">
         {['Объект · клиент', 'Плановые даты', 'Ответственный мастер'].map((label) => (
-          <div key={label} className="flex min-w-0 flex-col gap-2 md:not-first:border-l md:not-first:pl-5">
+          <div
+            key={label}
+            className={cn(
+              'flex min-w-0 flex-col gap-1 last:col-span-2',
+              'md:not-first:border-l md:not-first:pl-5 md:last:col-span-1',
+            )}
+          >
             <dt className="text-muted-foreground text-xs">{label}</dt>
             <dd>
               <Skeleton className="h-5 w-3/4" />

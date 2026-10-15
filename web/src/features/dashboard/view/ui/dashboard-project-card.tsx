@@ -33,7 +33,7 @@ export function DashboardProjectCard({ project, today }: DashboardProjectCardPro
         </CardTitle>
         <CardDescription className="wrap-anywhere leading-relaxed">{project.address}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5">
+      <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 rounded-xl border bg-background p-4">
           <div className="flex items-center gap-2 text-muted-foreground text-xs">
             <LayersIcon className="size-4" aria-hidden="true" />

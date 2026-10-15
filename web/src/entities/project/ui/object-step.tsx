@@ -18,7 +18,7 @@ interface ObjectStepProperties {
 
 export function ObjectStep({ isLocked, uploads, children }: ObjectStepProperties) {
   return (
-    <FieldGroup className="gap-6">
+    <FieldGroup className="gap-4">
       <FieldSet>
         <FieldLegend className="flex items-center gap-2">
           <MapPinIcon aria-hidden="true" className="size-4 text-primary-text" />

@@ -18,7 +18,7 @@ export function EditProjectForm(properties: EditProjectFormProperties) {
     <FormProvider {...form}>
       <form
         noValidate
-        className="grid min-w-0 gap-6 lg:grid-cols-[224px_minmax(0,1fr)] lg:gap-8"
+        className="grid min-w-0 gap-4 lg:grid-cols-[224px_minmax(0,1fr)] lg:gap-5"
         onSubmit={(event) => {
           event.preventDefault();
           if (!isLocked) void form.handleSubmit(editor.save, navigation.revealErrors)(event);
@@ -37,7 +37,7 @@ export function EditProjectForm(properties: EditProjectFormProperties) {
             if (!isLocked) void navigation.selectStep(target);
           }}
         />
-        <div className="flex min-w-0 flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-4">
           <EditProjectFeedback
             message={editor.reloadError || update.message}
             needsReload={update.needsReload}

@@ -7,8 +7,8 @@ export function DashboardActivity({ count, isLoading = false }: { count: number;
   return (
     <aside
       className={cn(
-        'flex flex-col justify-between gap-6 rounded-2xl border border-surface-inverse-border',
-        'bg-surface-inverse p-5 text-surface-inverse-foreground sm:p-6',
+        'flex flex-col justify-between gap-4 rounded-2xl border border-surface-inverse-border',
+        'bg-surface-inverse p-4 text-surface-inverse-foreground sm:p-4',
       )}
     >
       <div className="flex items-center justify-between gap-4">
@@ -16,7 +16,7 @@ export function DashboardActivity({ count, isLoading = false }: { count: number;
         <Building2Icon className="size-5 text-primary" aria-hidden="true" />
       </div>
       <div className="flex items-end justify-between gap-4 lg:flex-col lg:items-start">
-        <div className="font-semibold text-6xl tabular-nums tracking-tighter lg:text-8xl">
+        <div className="font-semibold text-5xl tabular-nums tracking-tighter lg:text-6xl">
           {isLoading ? <Skeleton className="h-15 w-20 lg:h-24" /> : <p>{count}</p>}
         </div>
         <p className="max-w-44 text-sm text-surface-inverse-muted leading-relaxed">
