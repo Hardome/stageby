@@ -18,16 +18,17 @@ interface StageOverviewProperties {
   stageId: string;
   backLink?: (stage: Stage) => ReactNode;
   actions?: (stage: Stage) => ReactNode;
+  payments?: (stage: Stage) => ReactNode;
 }
 
-export function StageOverview({ stageId, backLink, actions }: StageOverviewProperties) {
+export function StageOverview({ stageId, backLink, actions, payments }: StageOverviewProperties) {
   const { query, invalidId } = useStageAccess(stageId);
 
   if (invalidId || query.error?.status === 403 || query.error?.status === 404) {
     return <NotFound />;
   }
 
-  if (query.error) {
+  if (query.error && !query.data) {
     return (
       <Alert variant="destructive">
         <AlertDescription className="flex flex-col items-start gap-3">
@@ -40,11 +41,28 @@ export function StageOverview({ stageId, backLink, actions }: StageOverviewPrope
     );
   }
 
-  if (!query.data) return <DataRegion initialLabel="Загрузка этапа" isLoading skeleton={<StageOverviewSkeleton />} />;
+  if (!query.data)
+    return (
+      <DataRegion
+        initialLabel="Загрузка этапа"
+        isLoading
+        skeleton={<StageOverviewSkeleton withWorkSummary={!payments} />}
+      />
+    );
 
   return (
     <DataRegion isFetching={query.isFetching} label="Обновляем этап…">
       <div className="flex flex-col gap-6">
+        {query.error && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Не удалось обновить этап.
+              <Button variant="outline" onClick={() => void query.refetch()}>
+                Повторить
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {backLink?.(query.data)}
           {actions?.(query.data)}
@@ -57,9 +75,10 @@ export function StageOverview({ stageId, backLink, actions }: StageOverviewPrope
           <div className="flex min-w-0 flex-col gap-6">
             <StageProject stage={query.data} />
             <StageFinances stage={query.data} category="materials" />
-            <StageFinances stage={query.data} category="work" />
+            {!payments && <StageFinances stage={query.data} category="work" />}
           </div>
         </div>
+        {payments?.(query.data)}
       </div>
     </DataRegion>
   );

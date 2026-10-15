@@ -8,7 +8,7 @@ import { StageFinancesSkeleton } from './stage-finances-skeleton';
 import { StageProjectSkeleton } from './stage-project-skeleton';
 import { StageSummarySkeleton } from './stage-summary-skeleton';
 
-export function StageOverviewSkeleton() {
+export function StageOverviewSkeleton({ withWorkSummary = true }: { withWorkSummary?: boolean }) {
   return (
     <div aria-hidden="true" className="flex min-w-0 flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -34,7 +34,7 @@ export function StageOverviewSkeleton() {
         <div className="flex min-w-0 flex-col gap-6">
           <StageProjectSkeleton />
           <StageFinancesSkeleton category="materials" />
-          <StageFinancesSkeleton category="work" />
+          {withWorkSummary && <StageFinancesSkeleton category="work" />}
         </div>
       </div>
     </div>

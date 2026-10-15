@@ -8,6 +8,7 @@ import { getStageChecklistQueryKey } from '@api/queries/useGetStageChecklist';
 import { listDashboardProjectsQueryKey } from '@api/queries/useListDashboardProjects';
 import { listProjectStagesQueryKey } from '@api/queries/useListProjectStages';
 import { listProjectsQueryKey } from '@api/queries/useListProjects';
+import { listStageMaterialInvoicesQueryKey } from '@api/queries/useListStageMaterialInvoices';
 import { listStagesQueryKey } from '@api/queries/useListStages';
 import type { Stage } from '@api/types';
 
@@ -16,6 +17,7 @@ export async function invalidateStage(client: QueryClient, stage: Stage) {
   const keys = [
     getStageQueryKey({ path: { stageId: stage.id } }),
     getStageChecklistQueryKey({ path: { stageId: stage.id } }),
+    listStageMaterialInvoicesQueryKey({ path: { stageId: stage.id } }),
     getProjectQueryKey({ path }),
     getProjectEditQueryKey({ path }),
     listProjectStagesQueryKey({ path }),
