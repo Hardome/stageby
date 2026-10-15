@@ -8,7 +8,7 @@ export function UserEditorSkeleton({ mode }: { mode: 'edit' | 'password' }) {
     ? ['Новый пароль', 'Повторите пароль']
     : ['Логин', 'Полное имя', 'Роль', 'Телефон (необязательно)'];
   return (
-    <div aria-hidden="true" className="flex flex-col gap-6">
+    <div aria-hidden="true" className="flex flex-col gap-4">
       {isPassword && <Skeleton className="h-6 w-56 max-w-full" />}
       <FieldGroup>
         {labels.map((label) => (

@@ -52,7 +52,7 @@ export function EditUserForm({ user, search }: EditUserFormProperties) {
 
   return (
     <FormProvider {...form}>
-      <form className="flex flex-col gap-6" noValidate onSubmit={(event) => void form.handleSubmit(submit)(event)}>
+      <form className="flex flex-col gap-4" noValidate onSubmit={(event) => void form.handleSubmit(submit)(event)}>
         <FieldGroup>
           <TextField id="user-login" label="Логин" value={user.login} readOnly />
           <ProfileFields disabled={mutation.isPending} />

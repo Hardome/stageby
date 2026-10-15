@@ -89,7 +89,7 @@ export function TemporaryProjectList({ search, onPageChange }: TemporaryProjectL
                       to="/projects/$projectId"
                       params={{ projectId: String(project.id) }}
                       className={cn([
-                        'flex min-w-0 flex-col gap-2 rounded-xl border bg-card p-5',
+                        'flex min-w-0 flex-col gap-2 rounded-xl border bg-card p-4',
                         'text-card-foreground hover:bg-muted focus-visible:outline-ring',
                       ])}
                     >

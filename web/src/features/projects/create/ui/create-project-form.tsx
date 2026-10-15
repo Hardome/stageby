@@ -15,7 +15,7 @@ export function CreateProjectForm(properties: CreateProjectFormProperties) {
 
   return (
     <FormProvider {...form}>
-      <form noValidate className="grid min-w-0 gap-6 lg:grid-cols-[224px_minmax(0,1fr)] lg:gap-8" onSubmit={submit}>
+      <form noValidate className="grid min-w-0 gap-4 lg:grid-cols-[224px_minmax(0,1fr)] lg:gap-5" onSubmit={submit}>
         <ProjectProgress
           step={step}
           stages={navigation.navigationStages}
@@ -28,7 +28,7 @@ export function CreateProjectForm(properties: CreateProjectFormProperties) {
             if (!isLocked) void navigation.selectStep(target);
           }}
         />
-        <div className="flex min-w-0 flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-4">
           {submission.message && (
             <Alert variant="destructive">
               <AlertDescription>{submission.message}</AlertDescription>

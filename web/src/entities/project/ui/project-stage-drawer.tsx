@@ -40,7 +40,7 @@ export function ProjectStageDrawer(properties: ProjectStageNavigationProperties)
           <ChevronDownIcon data-icon="inline-end" />
         </DrawerTrigger>
         <DrawerContent finalFocus={finalFocus}>
-          <div className="flex shrink-0 items-start justify-between gap-3 border-b px-5 pt-1 pb-4">
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b px-4 pt-1 pb-4">
             <div className="flex min-w-0 flex-col gap-1">
               <DrawerTitle className="font-semibold text-lg">Этапы проекта</DrawerTitle>
               <DrawerDescription className="text-muted-foreground text-sm">

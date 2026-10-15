@@ -29,19 +29,19 @@ export function HomePage() {
   );
 
   return (
-    <main className="min-w-0 flex-1 bg-background px-4 py-6 sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-        <header className="flex flex-wrap items-start justify-between gap-5">
+    <main className="min-w-0 flex-1 bg-background px-4 py-4 sm:px-5 sm:py-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+        <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-col gap-3">
             <p className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">Обзор строительства</p>
-            <h1 className="font-bold text-3xl tracking-tight sm:text-4xl">Дашборд руководителя</h1>
+            <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">Дашборд руководителя</h1>
           </div>
           <Button render={<Link to="/projects/new" />} nativeButton={false}>
             <PlusIcon data-icon="inline-start" />
             Создать объект
           </Button>
         </header>
-        <div className="flex flex-wrap items-end justify-between gap-5 border-b pb-6">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-4">
           <div className="flex items-center gap-3 pb-1 text-sm">
             <CalendarDaysIcon className="size-5 text-muted-foreground" aria-hidden="true" />
             <div className="flex flex-col gap-1">

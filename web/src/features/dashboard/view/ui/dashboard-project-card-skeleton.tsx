@@ -12,7 +12,7 @@ export function DashboardProjectCardSkeleton() {
           <Skeleton className="h-5 w-4/5" />
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5">
+      <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 rounded-xl border bg-background p-4">
           <div className="flex items-center gap-2 text-muted-foreground text-xs">
             Текущий этап · <Skeleton className="h-4 w-12" />

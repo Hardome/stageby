@@ -42,7 +42,7 @@ export function UserEditor({ userId, search, mode }: UserEditorProperties) {
 
   return (
     <DataRegion isFetching={query.isFetching} label="Обновляем пользователя…">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <PasswordResetStatus requestedAt={query.data.passwordResetRequestedAt} />
         {mode === 'edit' ? (
           <EditUserForm key={id} user={query.data} search={search} />

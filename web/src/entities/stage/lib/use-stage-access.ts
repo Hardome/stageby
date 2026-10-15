@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 
-import { parseProjectId } from '@entities/project';
+import { parseEntityId } from '@shared/lib';
 import { useAccessError } from '@shared/lib/hooks';
 
 import { useGetStage } from '@api/queries/useGetStage';
 
 export function useStageAccess(stageId: string) {
-  const id = parseProjectId(stageId);
+  const id = parseEntityId(stageId);
   const query = useGetStage({ path: { stageId: id ?? 0 } }, { query: { enabled: id !== undefined, retry: false } });
   const handleAccessError = useAccessError();
 

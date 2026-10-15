@@ -49,7 +49,7 @@ export function HeaderContent({ user }: HeaderContentProperties) {
     <header className="border-surface-inverse-border border-b bg-surface-inverse text-surface-inverse-foreground">
       <div
         className={cn([
-          'mx-auto flex min-h-16 max-w-7xl items-center gap-2 px-3 sm:grid',
+          'mx-auto flex min-h-14 max-w-7xl items-center gap-2 px-3 sm:grid',
           'sm:grid-cols-[1fr_auto_1fr] sm:gap-4 sm:px-5',
         ])}
       >

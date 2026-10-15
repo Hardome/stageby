@@ -21,7 +21,7 @@ export function WorkFinancialOverview({ stage }: { stage: Stage }) {
       )}
       aria-label="Итоги оплаты этапа"
     >
-      <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1.1fr_1fr] lg:gap-10">
+      <div className="grid gap-4 p-4 sm:p-4 lg:grid-cols-[1.1fr_1fr] lg:gap-6">
         <div className="flex min-w-0 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <span className="flex items-center gap-2 text-sm text-surface-inverse-muted">
@@ -45,8 +45,8 @@ export function WorkFinancialOverview({ stage }: { stage: Stage }) {
         </div>
         <div
           className={cn(
-            'flex min-w-0 flex-col justify-center gap-5 border-surface-inverse-border border-t pt-5',
-            'lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8',
+            'flex min-w-0 flex-col justify-center gap-4 border-surface-inverse-border border-t pt-4',
+            'lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5',
           )}
         >
           <dl className="grid grid-cols-2 gap-4">

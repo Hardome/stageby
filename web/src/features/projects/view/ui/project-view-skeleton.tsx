@@ -9,9 +9,9 @@ import { ProjectStagesSkeleton } from './project-stages-skeleton';
 
 export function ProjectViewSkeleton() {
   return (
-    <div aria-hidden="true" className="flex min-w-0 flex-col gap-8">
+    <div aria-hidden="true" className="flex min-w-0 flex-col gap-5">
       <ProjectHeaderSkeleton />
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <ProjectFinancesSkeleton />
         <Card className="min-w-0">
           <CardHeader>

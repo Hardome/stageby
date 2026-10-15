@@ -4,7 +4,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@s
 
 export function WorkEmpty({ manager }: { manager: boolean }) {
   return (
-    <Empty className="rounded-xl border border-dashed bg-background py-10">
+    <Empty className="rounded-xl border border-dashed bg-background py-6">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <WalletCardsIcon />
