@@ -12,6 +12,8 @@ vi.mock('@api/queries/useGetStage', () => ({ useGetStage: mocks.stage }));
 vi.mock('@api/queries/useGetStageChecklist', () => ({ useGetStageChecklist: mocks.checklist }));
 vi.mock('@shared/lib/hooks', () => ({ useAccessError: () => mocks.access }));
 
+const paymentDraft = () => <input aria-label="Черновик платежа" defaultValue="95" />;
+
 describe('stage overview', () => {
   let root: Root;
   let container: HTMLDivElement;
@@ -41,6 +43,27 @@ describe('stage overview', () => {
       await Promise.resolve();
     });
   }
+
+  it('preserves payment fields after a background refresh failure', async () => {
+    const data = editStage().stage;
+    mocks.stage.mockReturnValue({ data, refetch: mocks.retry });
+
+    await act(async () => {
+      root.render(<StageOverview stageId="11" payments={paymentDraft} />);
+      await Promise.resolve();
+    });
+    const input = container.querySelector('input');
+
+    mocks.stage.mockReturnValue({ data, error: { status: 500 }, refetch: mocks.retry });
+    await act(async () => {
+      root.render(<StageOverview stageId="11" payments={paymentDraft} />);
+      await Promise.resolve();
+    });
+
+    expect(container).toHaveTextContent('Не удалось обновить этап.');
+    expect(container.querySelector('input')).toBe(input);
+    expect(input).toHaveValue('95');
+  });
 
   it('rejects malformed identifiers and hides unavailable stages', async () => {
     await render({ isPending: true }, 'invalid');

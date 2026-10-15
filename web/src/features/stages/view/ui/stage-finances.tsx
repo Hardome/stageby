@@ -19,7 +19,7 @@ export function StageFinances({ stage, category }: StageFinancesProperties) {
   const balance = isMaterials ? materialBalance : stage.workBalanceAmountMinor;
 
   return (
-    <Card id={isMaterials ? 'materials' : 'work'} className="scroll-mt-6">
+    <Card id={isMaterials ? 'materials' : 'work-summary'} className="scroll-mt-6">
       <CardHeader>
         <CardTitle>
           <h2 className="flex items-center gap-2">

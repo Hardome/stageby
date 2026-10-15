@@ -29,6 +29,7 @@ interface AssigneePickerProperties {
   onBlur?: () => void;
   ref?: Ref<HTMLInputElement>;
   error?: string;
+  label?: string;
 }
 
 interface AssigneeOption {
@@ -36,7 +37,16 @@ interface AssigneeOption {
   label: string;
 }
 
-export function AssigneePicker({ id, disabled, value, onChange, onBlur, ref, error }: AssigneePickerProperties) {
+export function AssigneePicker({
+  id,
+  disabled,
+  value,
+  onChange,
+  onBlur,
+  ref,
+  error,
+  label = 'Мастер',
+}: AssigneePickerProperties) {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search?.trim().slice(0, 100) ?? '', 250);
 
@@ -69,7 +79,7 @@ export function AssigneePicker({ id, disabled, value, onChange, onBlur, ref, err
 
   return (
     <Field data-invalid={Boolean(error)}>
-      <FieldLabel htmlFor={id}>Мастер</FieldLabel>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Combobox
         items={items}
         filter={null}

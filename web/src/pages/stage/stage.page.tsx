@@ -1,6 +1,7 @@
 import { Link, useLocation, useSearch } from '@tanstack/react-router';
 
 import { StageEditor } from '@features/stages/edit';
+import { WorkPayments } from '@features/stages/payments';
 import { StageOverview } from '@features/stages/view';
 import { useAuth } from '@shared/context';
 import { Button } from '@shared/ui/button';
@@ -16,6 +17,7 @@ export function StagePage({ stageId }: { stageId: string }) {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <StageOverview
           stageId={stageId}
+          payments={(stage) => <WorkPayments key={stage.id} stage={stage} />}
           actions={
             isManager
               ? (stage) => <StageEditor key={stage.id} stage={stage} defaultOpen={hash === 'parameters'} />
