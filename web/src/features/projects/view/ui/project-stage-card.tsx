@@ -2,14 +2,8 @@ import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { PackageIcon, UserRoundIcon } from 'lucide-react';
 
-import {
-  formatMoney,
-  formatStageDates,
-  isStageOverdue,
-  materialBadgeVariants,
-  materialDescription,
-  stageStatuses,
-} from '@entities/project';
+import { formatMoney, formatStageDates, isStageOverdue, stageStatuses } from '@entities/project';
+import { MaterialStatus } from '@entities/stage';
 import { Badge } from '@shared/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
 
@@ -97,9 +91,7 @@ export function ProjectStageCard({ stage, number, today }: ProjectStageCardPrope
         </div>
         <div className="flex items-start gap-2">
           <PackageIcon className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <Badge variant={materialBadgeVariants[stage.materialSummary.color]} className="max-w-full whitespace-normal">
-            {materialDescription(stage.materialSummary)}
-          </Badge>
+          <MaterialStatus summary={stage.materialSummary} />
         </div>
       </CardContent>
       <CardFooter className="mt-auto bg-background text-foreground">

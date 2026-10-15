@@ -1,6 +1,6 @@
 import { type Ref, useEffect, useState } from 'react';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 
 import { errorStatus, useAccessError, useDebouncedValue } from '@shared/lib/hooks';
 import { Button } from '@shared/ui/button';
@@ -12,10 +12,14 @@ import {
   ComboboxItem,
   ComboboxList,
 } from '@shared/ui/combobox';
-import { Field, FieldDescription, FieldError, FieldLabel } from '@shared/ui/field';
+import { DataRegion } from '@shared/ui/data-region';
+import { Field, FieldError, FieldLabel } from '@shared/ui/field';
+import { Spinner } from '@shared/ui/spinner';
 
 import { listUsers } from '@api/clients/listUsers';
 import { listUsersQueryKey } from '@api/queries/useListUsers';
+
+import { AssigneePickerSkeleton } from './assignee-picker-skeleton';
 
 interface AssigneePickerProperties {
   id: string;
@@ -42,6 +46,7 @@ export function AssigneePicker({ id, disabled, value, onChange, onBlur, ref, err
   const users = useInfiniteQuery({
     queryKey: [...listUsersQueryKey({ query }), 'assignee-picker'],
     initialPageParam: 0,
+    placeholderData: keepPreviousData,
     queryFn: ({ pageParam, signal }) => listUsers({ query: { ...query, offset: pageParam }, signal }).unwrap(),
     getNextPageParam: (page) =>
       page.offset + page.items.length < page.total ? page.offset + page.items.length : undefined,
@@ -92,19 +97,22 @@ export function AssigneePicker({ id, disabled, value, onChange, onBlur, ref, err
           className="h-12"
         />
         <ComboboxContent aria-busy={users.isFetching}>
-          <ComboboxEmpty>{accessMessage}</ComboboxEmpty>
-          <ComboboxList>
-            {(item: AssigneeOption) => (
-              <ComboboxItem key={item.id} value={item} className="wrap-anywhere min-h-12">
-                {item.label}
-              </ComboboxItem>
-            )}
-          </ComboboxList>
-          {users.isFetching && items.length > 0 && (
-            <FieldDescription role="status" className="px-2 py-1.5">
-              Обновление списка мастеров…
-            </FieldDescription>
-          )}
+          <DataRegion
+            isLoading={users.isLoading}
+            isFetching={users.isFetching && !users.isFetchingNextPage}
+            isRefreshing={users.isPlaceholderData && users.isFetching}
+            skeleton={<AssigneePickerSkeleton />}
+            label="Обновляем список мастеров…"
+          >
+            <ComboboxEmpty>{accessMessage}</ComboboxEmpty>
+            <ComboboxList>
+              {(item: AssigneeOption) => (
+                <ComboboxItem key={item.id} value={item} disabled={users.isFetching} className="wrap-anywhere min-h-12">
+                  {item.label}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </DataRegion>
           {users.isError && (
             <Button type="button" variant="ghost" disabled={users.isFetching} onClick={() => void users.refetch()}>
               Повторить загрузку
@@ -117,6 +125,7 @@ export function AssigneePicker({ id, disabled, value, onChange, onBlur, ref, err
               disabled={users.isFetching}
               onClick={() => void users.fetchNextPage()}
             >
+              {users.isFetchingNextPage && <Spinner aria-label="Загрузка мастеров" data-icon="inline-start" />}
               {users.isFetchingNextPage ? 'Загрузка…' : 'Показать ещё'}
             </Button>
           )}

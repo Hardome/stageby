@@ -1,4 +1,4 @@
-import { Link, useSearch } from '@tanstack/react-router';
+import { Link, useLocation, useSearch } from '@tanstack/react-router';
 
 import { StageEditor } from '@features/stages/edit';
 import { StageOverview } from '@features/stages/view';
@@ -7,6 +7,7 @@ import { Button } from '@shared/ui/button';
 
 export function StagePage({ stageId }: { stageId: string }) {
   const search = useSearch({ from: '/_auth/stages/$stageId' });
+  const hash = useLocation({ select: (location) => location.hash });
   const { user } = useAuth();
   const isManager = user?.role === 'manager';
 
@@ -15,7 +16,11 @@ export function StagePage({ stageId }: { stageId: string }) {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <StageOverview
           stageId={stageId}
-          actions={isManager ? (stage) => <StageEditor key={stage.id} stage={stage} /> : undefined}
+          actions={
+            isManager
+              ? (stage) => <StageEditor key={stage.id} stage={stage} defaultOpen={hash === 'parameters'} />
+              : undefined
+          }
           backLink={(stage) => (
             <Button
               className="self-start"

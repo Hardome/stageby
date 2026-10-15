@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+import { keepPreviousData } from '@tanstack/react-query';
+
 import { useAccessError } from '@shared/lib/hooks';
 
 import { useListStages } from '@api/queries/useListStages';
@@ -9,7 +11,10 @@ import type { MyStagesSearch } from '../model/types';
 import { getStagesQuery } from './stage-search';
 
 export function useStagesList(search: MyStagesSearch, onPageChange: (offset: number, shouldReplace?: boolean) => void) {
-  const query = useListStages({ query: getStagesQuery(search) }, { query: { retry: false } });
+  const query = useListStages(
+    { query: getStagesQuery(search) },
+    { query: { retry: false, placeholderData: keepPreviousData } },
+  );
   const handleAccessError = useAccessError();
   const offset = search.offset ?? 0;
 
@@ -18,11 +23,12 @@ export function useStagesList(search: MyStagesSearch, onPageChange: (offset: num
   }, [query.error, handleAccessError]);
 
   useEffect(() => {
-    if (!(query.isSuccess && !query.isFetching && offset > 0 && offset >= query.data.total)) return;
+    if (!(query.isSuccess && !query.isPlaceholderData && !query.isFetching && offset > 0 && offset >= query.data.total))
+      return;
 
     const lastOffset = Math.max(0, Math.ceil(query.data.total / stagePageSize) - 1) * stagePageSize;
     onPageChange(lastOffset, true);
-  }, [query.isSuccess, query.isFetching, query.data, offset, onPageChange]);
+  }, [query.isSuccess, query.isPlaceholderData, query.isFetching, query.data, offset, onPageChange]);
 
   return query;
 }

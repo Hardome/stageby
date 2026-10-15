@@ -1,6 +1,7 @@
 import { PackageIcon, WalletIcon } from 'lucide-react';
 
-import { formatMoney, materialDescription } from '@entities/project';
+import { formatMoney } from '@entities/project';
+import { MaterialStatus } from '@entities/stage';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
 
 import type { Stage } from '@api/types';
@@ -18,7 +19,7 @@ export function StageFinances({ stage, category }: StageFinancesProperties) {
   const balance = isMaterials ? materialBalance : stage.workBalanceAmountMinor;
 
   return (
-    <Card>
+    <Card id={isMaterials ? 'materials' : 'work'} className="scroll-mt-6">
       <CardHeader>
         <CardTitle>
           <h2 className="flex items-center gap-2">
@@ -36,7 +37,7 @@ export function StageFinances({ stage, category }: StageFinancesProperties) {
           <p className="mb-2 text-muted-foreground text-xs">Фактические затраты</p>
           <p className="wrap-anywhere font-bold text-3xl tabular-nums tracking-tight">{formatMoney(actual)}</p>
         </div>
-        {isMaterials && <p className="text-muted-foreground text-xs">{materialDescription(stage.materialSummary)}</p>}
+        {isMaterials && <MaterialStatus summary={stage.materialSummary} />}
       </CardContent>
       <CardFooter className="bg-background text-foreground">
         <dl className="grid w-full grid-cols-2 gap-4">

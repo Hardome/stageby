@@ -16,5 +16,3 @@ export const stageStatuses: Record<StageStatusKey, string> = {
   completed: 'Выполнен',
   paid: 'Выплачен',
 };
-
-export const materialBadgeVariants = { red: 'destructive', green: 'success', yellow: 'outline' } as const;

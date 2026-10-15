@@ -1,11 +1,12 @@
 import { formatMoney, formatStageDates, todayInYekaterinburg } from '@entities/project';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@shared/ui/table';
+import { Table, TableBody, TableCell, TableRow } from '@shared/ui/table';
 
 import type { Stage } from '@api/types';
 
 import { StageListActions } from './stage-list-actions';
 import { StageListCard } from './stage-list-card';
 import { StageListStatus } from './stage-list-status';
+import { StageListTableHeader } from './stage-list-table-header';
 
 interface StageListResultsProperties {
   stages: Stage[];
@@ -26,15 +27,7 @@ export function StageListResults({ stages, offset }: StageListResultsProperties)
       </ul>
       <div className="hidden md:block">
         <Table aria-label="Назначенные этапы">
-          <TableHeader>
-            <TableRow>
-              <TableHead scope="col">Клиент и адрес</TableHead>
-              <TableHead scope="col">Этап и даты</TableHead>
-              <TableHead scope="col">Работы</TableHead>
-              <TableHead scope="col">Статус</TableHead>
-              <TableHead scope="col">Действия</TableHead>
-            </TableRow>
-          </TableHeader>
+          <StageListTableHeader />
           <TableBody>
             {stages.map((stage) => (
               <TableRow key={stage.id}>
