@@ -34,7 +34,7 @@ export function WorkEditorHeading({ action, stage }: Pick<WorkEditorProperties, 
   const { title, description, icon: Icon } = presentation[action.kind];
 
   return (
-    <div className="flex shrink-0 items-start gap-4 border-b bg-background p-5 sm:p-6">
+    <div className="flex shrink-0 items-start gap-4 border-b bg-background p-4 sm:p-4">
       <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border bg-card text-primary-text">
         <Icon className="size-6" aria-hidden="true" />
       </div>

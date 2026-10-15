@@ -16,7 +16,7 @@ export function DashboardMoneyCard({ title, metric }: DashboardMoneyCardProperti
   const Icon = title === 'Работы' ? BanknoteIcon : PackageIcon;
 
   return (
-    <section className="flex min-w-0 flex-col gap-4 p-5 last:border-t sm:p-6 sm:last:border-t-0 sm:last:border-l">
+    <section className="flex min-w-0 flex-col gap-4 p-4 last:border-t sm:p-4 sm:last:border-t-0 sm:last:border-l">
       <h4 className="flex items-center gap-2 font-semibold text-sm">
         <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
         {title}

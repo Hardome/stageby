@@ -39,7 +39,7 @@ export function WorkPayments({ stage }: { stage: Stage }) {
 
   return (
     <Card id="work" className="scroll-mt-6 overflow-hidden">
-      <CardHeader className="gap-2 border-b sm:px-6">
+      <CardHeader className="gap-2 border-b sm:px-5">
         <CardTitle>
           <h2 className="flex items-center gap-3 text-xl">
             <WalletCardsIcon className="size-5 text-primary-text" aria-hidden="true" />
@@ -53,7 +53,7 @@ export function WorkPayments({ stage }: { stage: Stage }) {
           {isManager && ' Ручной план этапа задаётся отдельно от строк выплат.'}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6 sm:px-6">
+      <CardContent className="flex flex-col gap-4 sm:px-5">
         <WorkFinancialOverview stage={stage} />
         {data.error && (
           <Alert variant="destructive">
@@ -72,7 +72,7 @@ export function WorkPayments({ stage }: { stage: Stage }) {
           label="Обновляем оплату работ…"
         >
           {data.rows.data && data.payments.data && (
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4">
               <WorkPlanToolbar
                 total={total}
                 count={rows.length}

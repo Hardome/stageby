@@ -28,7 +28,7 @@ export function ProjectFinances({ finances }: ProjectFinancesProperties) {
           {!finances.isPlanComplete && <Badge variant="outline">План заполнен не полностью</Badge>}
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5">
+      <CardContent className="flex flex-col gap-4">
         <div className="grid gap-4 sm:grid-cols-2 sm:items-end">
           <div className="min-w-0">
             <p className="mb-2 text-muted-foreground text-xs">Фактические затраты · итого</p>
@@ -43,7 +43,7 @@ export function ProjectFinances({ finances }: ProjectFinancesProperties) {
             </p>
           </div>
         </div>
-        <dl className="grid grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-2">
+        <dl className="grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
           {rows.map((row) => (
             <div key={row.label} className="min-w-0">
               <dt className="mb-2 font-medium text-muted-foreground text-sm">{row.label}</dt>

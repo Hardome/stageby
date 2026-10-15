@@ -17,11 +17,11 @@ export function DashboardFinanceOverview({ summary, through }: DashboardFinanceO
 
   return (
     <div className="min-w-0 overflow-hidden rounded-2xl border bg-card text-card-foreground">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-5 sm:px-6 sm:pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-5 sm:pt-4">
         <h3 className="font-semibold">Общий итог</h3>
         <span className="text-muted-foreground text-xs">К {formatDate(through)}</span>
       </div>
-      <dl className="grid grid-cols-2 gap-5 p-5 sm:grid-cols-[1.4fr_1fr_1fr] sm:p-6">
+      <dl className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-[1.4fr_1fr_1fr] sm:p-4">
         <div className="col-span-2 min-w-0 sm:col-span-1">
           <dt className="mb-2 text-muted-foreground text-xs">{isOverpaid ? 'Переплата' : 'Остаток к оплате'}</dt>
           <dd className="wrap-anywhere font-semibold text-4xl tabular-nums tracking-tight">
@@ -42,7 +42,7 @@ export function DashboardFinanceOverview({ summary, through }: DashboardFinanceO
         </div>
       </dl>
       {!summary.total.isPlanComplete && (
-        <div className="px-5 pb-5 sm:px-6">
+        <div className="px-4 pb-5 sm:px-5">
           <Badge variant="outline">План неполон</Badge>
         </div>
       )}

@@ -7,11 +7,11 @@ export function DashboardSummarySkeleton() {
     <div aria-hidden="true" className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
       <DashboardActivity count={0} isLoading />
       <div className="overflow-hidden rounded-2xl border bg-card text-card-foreground">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-5 sm:px-6 sm:pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-5 sm:pt-4">
           <h3 className="font-semibold">Общий итог</h3>
           <Skeleton className="h-4 w-24" />
         </div>
-        <dl className="grid grid-cols-2 gap-5 p-5 sm:grid-cols-[1.4fr_1fr_1fr] sm:p-6">
+        <dl className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-[1.4fr_1fr_1fr] sm:p-4">
           {['Остаток к оплате', 'План к дате', 'Факт'].map((label, index) => (
             <div key={label} className={index === 0 ? 'col-span-2 sm:col-span-1' : undefined}>
               <dt className="mb-2 text-muted-foreground text-xs">{label}</dt>
@@ -25,7 +25,7 @@ export function DashboardSummarySkeleton() {
           {['Работы', 'Материалы'].map((label) => (
             <div
               key={label}
-              className="flex flex-col gap-4 p-5 last:border-t sm:p-6 sm:last:border-t-0 sm:last:border-l"
+              className="flex flex-col gap-4 p-4 last:border-t sm:p-4 sm:last:border-t-0 sm:last:border-l"
             >
               <h4 className="font-semibold text-sm">{label}</h4>
               <dl className="grid grid-cols-3 gap-3 text-sm">

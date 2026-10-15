@@ -25,7 +25,7 @@ export function MyStagesList({ search, onPageChange }: MyStagesListProperties) {
   const offset = search.offset ?? 0;
 
   return (
-    <section aria-label="Мои этапы" aria-busy={query.isFetching} className="flex min-w-0 flex-col gap-6">
+    <section aria-label="Мои этапы" aria-busy={query.isFetching} className="flex min-w-0 flex-col gap-4">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="font-bold text-2xl">Мои этапы</h1>

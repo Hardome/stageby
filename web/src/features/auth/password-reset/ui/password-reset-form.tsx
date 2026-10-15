@@ -25,7 +25,7 @@ export function PasswordResetForm() {
   const loginError = form.formState.errors.login;
 
   return (
-    <form className="flex flex-col gap-6" noValidate aria-busy={pending} onSubmit={(event) => void submit(event)}>
+    <form className="flex flex-col gap-4" noValidate aria-busy={pending} onSubmit={(event) => void submit(event)}>
       <FieldGroup>
         <Field data-invalid={Boolean(loginError)} data-disabled={pending}>
           <FieldLabel htmlFor="reset-login">Логин</FieldLabel>

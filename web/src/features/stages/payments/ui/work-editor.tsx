@@ -40,7 +40,7 @@ export function WorkEditor(properties: WorkEditorProperties) {
             className="flex min-h-0 flex-1 flex-col"
             onSubmit={(event) => void editor.form.handleSubmit(editor.submit)(event)}
           >
-            <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5 sm:p-6">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-4">
               {action.kind === 'row' && <WorkRowFields disabled={isDisabled} />}
               {action.kind === 'payment' && <WorkPaymentFields disabled={isDisabled} />}
               {editor.snapshot.kind === 'distribute' && (
@@ -63,7 +63,7 @@ export function WorkEditor(properties: WorkEditorProperties) {
                 </Button>
               )}
             </div>
-            <div className="flex shrink-0 justify-end gap-3 border-t bg-background p-5 sm:px-6">
+            <div className="flex shrink-0 justify-end gap-3 border-t bg-background p-4 sm:px-5">
               <Button type="button" variant="outline" disabled={editor.pending} onClick={onClose}>
                 Отмена
               </Button>

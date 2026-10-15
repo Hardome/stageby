@@ -27,7 +27,7 @@ export function UsersPage() {
   );
 
   return (
-    <main className="flex-1 bg-background px-3 py-6 sm:px-5 sm:py-10">
+    <main className="flex-1 bg-background px-3 py-4 sm:px-5 sm:py-6">
       <div className="mx-auto max-w-7xl">
         <UsersList search={search} onFilterChange={changeFilters} onPageChange={changePage} />
       </div>

@@ -3,7 +3,7 @@ import { Skeleton } from '@shared/ui/skeleton';
 
 export function ProjectHeaderSkeleton() {
   return (
-    <header className="flex flex-col gap-6 border-b pb-8 lg:flex-row lg:items-end lg:justify-between">
+    <header className="flex flex-col gap-4 border-b pb-5 lg:flex-row lg:items-end lg:justify-between">
       <div className="flex min-w-0 flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <span className="font-medium text-muted-foreground text-xs uppercase tracking-widest">
@@ -25,7 +25,7 @@ export function ProjectHeaderSkeleton() {
       </div>
       <div className="grid shrink-0 grid-cols-2 rounded-xl border bg-card text-card-foreground">
         {['Начало', 'Завершение'].map((label) => (
-          <div key={label} className="flex flex-col gap-2 p-4 first:border-r sm:px-6">
+          <div key={label} className="flex flex-col gap-2 p-4 first:border-r sm:px-5">
             <span className="text-muted-foreground text-xs">{label}</span>
             <Skeleton className="h-6 w-24" />
           </div>

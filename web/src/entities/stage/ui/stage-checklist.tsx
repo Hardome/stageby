@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 import { ClipboardCheckIcon, TriangleAlertIcon } from 'lucide-react';
 
@@ -8,14 +8,23 @@ import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 import { DataRegion } from '@shared/ui/data-region';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@shared/ui/empty';
 import { NotFound } from '@shared/ui/not-found';
 
 import { useGetStageChecklist } from '@api/queries/useGetStageChecklist';
+import type { ChecklistItem } from '@api/types';
 
+import { ChecklistProgress } from './checklist-progress';
 import { StageChecklistItem } from './stage-checklist-item';
 import { StageChecklistSkeleton } from './stage-checklist-skeleton';
 
-export function StageChecklist({ stageId }: { stageId: number }) {
+interface StageChecklistProperties {
+  stageId: number;
+  itemLink?: (item: ChecklistItem) => ReactNode;
+  editorLink?: ReactNode;
+}
+
+export function StageChecklist({ stageId, itemLink, editorLink }: StageChecklistProperties) {
   const query = useGetStageChecklist({ path: { stageId } }, { query: { retry: false } });
   const accessError = useAccessError();
 
@@ -34,12 +43,13 @@ export function StageChecklist({ stageId }: { stageId: number }) {
             <span>Чек-лист</span>
           </h2>
         </CardTitle>
-        <CardDescription>Контрольные точки и готовность работ</CardDescription>
+        <CardDescription>Контрольные точки и фотографии выполненных работ</CardDescription>
         {query.data && (
           <CardAction>
-            <Badge variant="outline">
-              {query.data.items.filter((item) => item.isCompleted).length} / {query.data.items.length}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">Пунктов: {query.data.items.length}</Badge>
+              {editorLink}
+            </div>
           </CardAction>
         )}
       </CardHeader>
@@ -60,8 +70,9 @@ export function StageChecklist({ stageId }: { stageId: number }) {
           skeleton={<StageChecklistSkeleton />}
           label="Обновляем чек-лист…"
         >
-          {query.data && !query.error && (
+          {query.data && (
             <>
+              <ChecklistProgress checklist={query.data} />
               {query.data.warnings.map((warning) => (
                 <Alert key={warning}>
                   <TriangleAlertIcon className="text-primary-text" aria-hidden="true" />
@@ -73,12 +84,19 @@ export function StageChecklist({ stageId }: { stageId: number }) {
                 </Alert>
               ))}
               {query.data.items.length === 0 ? (
-                <p className="text-muted-foreground">Чек-лист пуст.</p>
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyTitle>Чек-лист пуст</EmptyTitle>
+                    <EmptyDescription>Для передачи на приёмку нужен хотя бы один выполненный пункт.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               ) : (
-                <ol className="flex flex-col">
-                  {query.data.items.map((item) => (
-                    <StageChecklistItem key={item.id} item={item} />
-                  ))}
+                <ol className="flex flex-col gap-3">
+                  {query.data.items
+                    .toSorted((left, right) => left.position - right.position)
+                    .map((item) => (
+                      <StageChecklistItem key={item.id} item={item} action={itemLink?.(item)} />
+                    ))}
                 </ol>
               )}
             </>

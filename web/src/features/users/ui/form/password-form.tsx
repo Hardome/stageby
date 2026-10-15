@@ -38,7 +38,7 @@ export function PasswordForm({ user, search }: PasswordFormProperties) {
   return (
     <FormProvider {...form}>
       <form
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-4"
         noValidate
         onSubmit={(event) =>
           void form.handleSubmit(({ password }) => {

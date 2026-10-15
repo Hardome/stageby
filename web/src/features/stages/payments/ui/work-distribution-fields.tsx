@@ -31,7 +31,7 @@ export function WorkDistributionFields({ row, disabled }: WorkDistributionFields
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <p className="text-sm">
         Исходный план: {formatMoney(row.amountMinor)}. Распределено: {formatMoney(total)}.
       </p>

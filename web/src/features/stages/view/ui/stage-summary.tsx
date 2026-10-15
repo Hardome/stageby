@@ -20,8 +20,8 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
     <header className="overflow-hidden rounded-2xl border bg-card text-card-foreground" aria-busy={refreshing}>
       <div
         className={cn(
-          'grid gap-8 bg-surface-inverse p-5 text-surface-inverse-foreground',
-          'sm:p-8 lg:grid-cols-[1fr_280px]',
+          'grid gap-5 bg-surface-inverse p-4 text-surface-inverse-foreground',
+          'sm:p-5 lg:grid-cols-[1fr_280px]',
         )}
       >
         <div className="flex min-w-0 flex-col items-start gap-4">
@@ -39,7 +39,7 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
             </span>
             <Badge variant={isComplete ? 'success' : 'secondary'}>{stageStatuses[stage.status]}</Badge>
           </div>
-          <h1 className="wrap-anywhere font-bold text-3xl tracking-tight sm:text-4xl">{stage.title}</h1>
+          <h1 className="wrap-anywhere font-bold text-2xl tracking-tight sm:text-3xl">{stage.title}</h1>
           <p className="wrap-anywhere max-w-xl text-sm text-surface-inverse-muted leading-relaxed">
             {stage.projectAddress}
           </p>
@@ -49,7 +49,7 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
         </div>
         <div
           className={cn(
-            'flex flex-col justify-between gap-4 rounded-xl border p-5',
+            'flex flex-col justify-between gap-4 rounded-xl border p-4',
             'border-surface-inverse-border bg-surface-inverse-accent',
           )}
         >
@@ -77,7 +77,7 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
       </div>
       <StageDetails stage={stage} />
       {stage.projectIsArchived && (
-        <div className="border-t px-5 py-3 sm:px-8">
+        <div className="border-t px-4 py-3 sm:px-5">
           {stage.projectIsArchived && (
             <p className="text-muted-foreground text-sm">Объект в архиве. Доступен просмотр.</p>
           )}

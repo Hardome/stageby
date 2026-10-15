@@ -11,13 +11,13 @@ interface StageDetailsProperties {
 
 export function StageDetails({ stage }: StageDetailsProperties) {
   return (
-    <dl className="grid gap-5 p-5 sm:p-8 md:grid-cols-[1fr_1.3fr_1fr]">
+    <dl className="grid grid-cols-2 gap-3 p-4 md:grid-cols-[1fr_1.3fr_1fr]">
       <div className="flex min-w-0 flex-col gap-2">
         <dt className="text-muted-foreground text-xs">Объект · клиент</dt>
         <dd className="wrap-anywhere font-semibold text-sm">{stage.projectOwnerName}</dd>
         <dd className="text-muted-foreground text-xs">Этап строительства</dd>
       </div>
-      <div className="flex min-w-0 flex-col gap-2 md:border-l md:pl-5">
+      <div className="flex min-w-0 flex-col gap-1 md:border-l md:pl-4">
         <dt className="flex items-center gap-2 text-muted-foreground text-xs">
           <CalendarDaysIcon className="size-4" aria-hidden="true" /> Плановые даты
         </dt>
@@ -28,7 +28,7 @@ export function StageDetails({ stage }: StageDetailsProperties) {
           Факт: {formatStageDates(stage.actualStartDate, stage.actualEndDate)}
         </dd>
       </div>
-      <div className="flex min-w-0 flex-col gap-2 md:border-l md:pl-5">
+      <div className="col-span-2 flex min-w-0 flex-col gap-1 md:col-span-1 md:border-l md:pl-4">
         <dt className="flex items-center gap-2 text-muted-foreground text-xs">
           <UserRoundIcon className="size-4" aria-hidden="true" /> Ответственный мастер
         </dt>
