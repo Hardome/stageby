@@ -11,10 +11,11 @@ import { StageParameters } from './stage-parameters';
 
 interface StageEditorProperties {
   stage: Stage;
+  defaultOpen?: boolean;
 }
 
-export function StageEditor({ stage }: StageEditorProperties) {
-  const [isOpen, setIsOpen] = useState(false);
+export function StageEditor({ stage, defaultOpen = false }: StageEditorProperties) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [isPending, setIsPending] = useState(false);
   const isReadOnly = stage.projectIsArchived || !stage.isIncluded;
 

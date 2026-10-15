@@ -2,11 +2,12 @@ import { todayInYekaterinburg } from '@entities/project';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
-import { Skeleton } from '@shared/ui/skeleton';
+import { DataRegion } from '@shared/ui/data-region';
 
 import type { Stage } from '@api/types';
 
 import { ProjectStageCard } from './project-stage-card';
+import { ProjectStagesSkeleton } from './project-stages-skeleton';
 
 interface ProjectStagesProperties {
   stages?: Stage[];
@@ -30,7 +31,6 @@ export function ProjectStages({ stages, isPending, isFetching, hasError, onRetry
         </div>
         {included && <Badge variant="outline">Всего: {included.length}</Badge>}
       </div>
-      {isPending && <Skeleton className="h-48" role="status" aria-label="Загрузка этапов" />}
       {hasError && (
         <Alert variant="destructive">
           <AlertDescription>
@@ -41,12 +41,19 @@ export function ProjectStages({ stages, isPending, isFetching, hasError, onRetry
           </AlertDescription>
         </Alert>
       )}
-      {included?.length === 0 && <p>Включённых этапов нет.</p>}
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-        {included?.map((stage, index) => (
-          <ProjectStageCard key={stage.id} stage={stage} number={index + 1} today={today} />
-        ))}
-      </div>
+      <DataRegion
+        isLoading={isPending}
+        isFetching={isFetching}
+        skeleton={<ProjectStagesSkeleton />}
+        label="Обновляем этапы…"
+      >
+        {included?.length === 0 && <p>Включённых этапов нет.</p>}
+        <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+          {included?.map((stage, index) => (
+            <ProjectStageCard key={stage.id} stage={stage} number={index + 1} today={today} />
+          ))}
+        </div>
+      </DataRegion>
     </section>
   );
 }

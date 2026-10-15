@@ -1,38 +1,71 @@
-import { Link } from '@tanstack/react-router';
-import { PlusIcon } from 'lucide-react';
+﻿import { useCallback, useEffect } from 'react';
 
-import { type ProjectsSearch, TemporaryProjectList } from '@features/projects/list';
-import { useAuth } from '@shared/context';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { CalendarDaysIcon, PlusIcon } from 'lucide-react';
+
+import { addCalendarDays, DashboardProjects, DashboardSummary } from '@features/dashboard/view';
+import { formatDate, todayInYekaterinburg } from '@entities/project';
 import { Button } from '@shared/ui/button';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
+import { DatePicker } from '@shared/ui/date-picker';
+import { Field, FieldLabel } from '@shared/ui/field';
 
-interface HomePageProperties {
-  search: ProjectsSearch;
-  onPageChange: (offset: number, shouldReplace?: boolean) => void;
-}
+export function HomePage() {
+  const search = useSearch({ from: '/_auth/' });
+  const navigate = useNavigate();
+  const today = todayInYekaterinburg();
+  const through = search.through ?? today;
 
-export function HomePage({ search, onPageChange }: HomePageProperties) {
-  const { user } = useAuth();
+  useEffect(() => {
+    if (search.through === undefined) {
+      void navigate({ to: '/', search: (previous) => ({ ...previous, through: today }), replace: true });
+    }
+  }, [search.through, today, navigate]);
+
+  const changePage = useCallback(
+    (offset: number, shouldReplace = false) => {
+      void navigate({ to: '/', search: (previous) => ({ ...previous, offset }), replace: shouldReplace });
+    },
+    [navigate],
+  );
+
   return (
-    <main className="flex-1 bg-background px-3 py-8 sm:px-5 sm:py-16">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h1 className="font-bold text-2xl">Stageby</h1>
-            </CardTitle>
-            <CardDescription>Управление строительством</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            {user?.role === 'manager' && (
-              <Button render={<Link to="/projects/new" />} nativeButton={false}>
-                <PlusIcon data-icon="inline-start" />
-                Создать объект
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-        {user?.role === 'manager' && <TemporaryProjectList search={search} onPageChange={onPageChange} />}
+    <main className="min-w-0 flex-1 bg-background px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+        <header className="flex flex-wrap items-start justify-between gap-5">
+          <div className="flex flex-col gap-3">
+            <p className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">Обзор строительства</p>
+            <h1 className="font-bold text-3xl tracking-tight sm:text-4xl">Дашборд руководителя</h1>
+          </div>
+          <Button render={<Link to="/projects/new" />} nativeButton={false}>
+            <PlusIcon data-icon="inline-start" />
+            Создать объект
+          </Button>
+        </header>
+        <div className="flex flex-wrap items-end justify-between gap-5 border-b pb-6">
+          <div className="flex items-center gap-3 pb-1 text-sm">
+            <CalendarDaysIcon className="size-5 text-muted-foreground" aria-hidden="true" />
+            <div className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs">Сегодня</span>
+              <time dateTime={today} className="font-semibold">
+                {formatDate(today)}
+              </time>
+            </div>
+          </div>
+          <Field className="w-full sm:w-64">
+            <FieldLabel htmlFor="dashboard-through">План по деньгам к дате</FieldLabel>
+            <DatePicker
+              id="dashboard-through"
+              value={through}
+              min={today}
+              max={addCalendarDays(today, 30)}
+              onChange={(value) => {
+                void navigate({ to: '/', search: { through: value, offset: 0 } });
+              }}
+            />
+          </Field>
+        </div>
+        <DashboardSummary through={through} today={today} />
+        <DashboardProjects offset={search.offset ?? 0} today={today} onPageChange={changePage} />
       </div>
     </main>
   );

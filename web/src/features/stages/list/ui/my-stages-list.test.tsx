@@ -72,7 +72,7 @@ describe('my stages list', () => {
   });
 
   it('shows initial loading, empty state and retry', async () => {
-    await render({ isPending: true, isSuccess: false });
+    await render({ isPending: true, isLoading: true, isSuccess: false });
     expect(container.querySelector('[role="status"]')).toHaveAttribute('aria-label', 'Загрузка этапов');
 
     await render({ data: { items: [], total: 0 } });

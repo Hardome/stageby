@@ -1,6 +1,6 @@
 import { Badge } from '@shared/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@shared/ui/table';
+import { Table, TableBody, TableCell, TableRow } from '@shared/ui/table';
 
 import type { User } from '@api/types';
 
@@ -9,6 +9,7 @@ import type { UsersSearch } from '../../model/types';
 import { PasswordResetStatus } from '../password-reset-status';
 import { UserActions } from './user-actions';
 import { UserStatus } from './user-status';
+import { UserTableHeader } from './user-table-header';
 
 interface UserResultsProperties {
   users: User[];
@@ -20,15 +21,7 @@ export function UserResults({ users, search }: UserResultsProperties) {
     <>
       <div className="hidden md:block">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Имя / логин</TableHead>
-              <TableHead>Роль</TableHead>
-              <TableHead>Телефон</TableHead>
-              <TableHead>Статус</TableHead>
-              <TableHead>Действия</TableHead>
-            </TableRow>
-          </TableHeader>
+          <UserTableHeader />
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>

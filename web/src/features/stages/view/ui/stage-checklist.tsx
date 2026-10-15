@@ -7,12 +7,13 @@ import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
+import { DataRegion } from '@shared/ui/data-region';
 import { NotFound } from '@shared/ui/not-found';
-import { Spinner } from '@shared/ui/spinner';
 
 import { useGetStageChecklist } from '@api/queries/useGetStageChecklist';
 
 import { StageChecklistItem } from './stage-checklist-item';
+import { StageChecklistSkeleton } from './stage-checklist-skeleton';
 
 export function StageChecklist({ stageId }: { stageId: number }) {
   const query = useGetStageChecklist({ path: { stageId } }, { query: { retry: false } });
@@ -25,7 +26,7 @@ export function StageChecklist({ stageId }: { stageId: number }) {
   if (query.error?.status === 403 || query.error?.status === 404) return <NotFound />;
 
   return (
-    <Card aria-busy={query.isFetching}>
+    <Card id="checklist" className="scroll-mt-6" aria-busy={query.isFetching}>
       <CardHeader>
         <CardTitle>
           <h2 className="flex items-center gap-2">
@@ -43,8 +44,7 @@ export function StageChecklist({ stageId }: { stageId: number }) {
         )}
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {query.isPending && <Spinner aria-label="Загрузка чек-листа" />}
-        {query.error ? (
+        {query.error && (
           <Alert variant="destructive">
             <AlertDescription>
               Не удалось загрузить чек-лист.
@@ -53,10 +53,15 @@ export function StageChecklist({ stageId }: { stageId: number }) {
               </Button>
             </AlertDescription>
           </Alert>
-        ) : (
-          query.data && (
+        )}
+        <DataRegion
+          isLoading={query.isLoading}
+          isFetching={query.isFetching}
+          skeleton={<StageChecklistSkeleton />}
+          label="Обновляем чек-лист…"
+        >
+          {query.data && !query.error && (
             <>
-              {query.isFetching && <p role="status">Обновление чек-листа…</p>}
               {query.data.warnings.map((warning) => (
                 <Alert key={warning}>
                   <TriangleAlertIcon className="text-primary-text" aria-hidden="true" />
@@ -77,8 +82,8 @@ export function StageChecklist({ stageId }: { stageId: number }) {
                 </ol>
               )}
             </>
-          )
-        )}
+          )}
+        </DataRegion>
       </CardContent>
     </Card>
   );

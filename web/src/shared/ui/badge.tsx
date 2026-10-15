@@ -16,6 +16,8 @@ const badgeVariants = tv({
   variants: {
     variant: {
       success: 'border-success-border bg-success-subtle text-success',
+      caution: 'border-caution-border bg-caution text-caution-foreground',
+      warning: 'border-warning-border bg-warning-subtle text-warning-foreground',
       default: 'bg-primary text-primary-foreground [a]:hover:bg-primary/80',
       secondary: 'bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80',
       destructive: [

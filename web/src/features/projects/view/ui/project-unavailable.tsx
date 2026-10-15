@@ -1,15 +1,18 @@
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
+import { DataRegion } from '@shared/ui/data-region';
 import { NotFound } from '@shared/ui/not-found';
-import { Skeleton } from '@shared/ui/skeleton';
 
 import type { useGetProject } from '@api/queries/useGetProject';
+
+import { ProjectViewSkeleton } from './project-view-skeleton';
 
 interface ProjectUnavailableProperties {
   query: ReturnType<typeof useGetProject>;
 }
 export function ProjectUnavailable({ query }: ProjectUnavailableProperties) {
-  if (query.isPending) return <Skeleton className="h-64" role="status" aria-label="Загрузка объекта" />;
+  if (query.isPending)
+    return <DataRegion initialLabel="Загрузка объекта" isLoading skeleton={<ProjectViewSkeleton />} />;
   const status = query.error?.status;
   if (status === 403 || status === 404) return <NotFound />;
 
