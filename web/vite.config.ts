@@ -45,7 +45,17 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
       },
       ...Object.fromEntries(
-        ['/dashboard', '/projects', '/stages', '/stage-types', '/file-uploads', '/files', '/users'].map((path) => [
+        [
+          '/dashboard',
+          '/projects',
+          '/stages',
+          '/stage-types',
+          '/work-plan-rows',
+          '/work-payments',
+          '/file-uploads',
+          '/files',
+          '/users',
+        ].map((path) => [
           path,
           {
             bypass: (request: { headers: { accept?: string } }) =>
