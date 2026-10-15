@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { clearSessionDrafts, errorStatus, reconcileSessionOwner, setSessionOwner } from '@shared/lib';
+import { pauseUploadSession, resumeUploadSession } from '@shared/lib/storage';
 
 import { getCurrentUserQueryKey, useGetCurrentUser } from '@api/queries/useGetCurrentUser';
 import type { User } from '@api/types';
@@ -18,10 +19,14 @@ export function useAuthSession(): AuthContextValue {
   const clearSession = useCallback<AuthContextValue['clearSession']>(
     async (reason = 'logout', nextUserId) => {
       if (reason === 'logout') {
+        pauseUploadSession(true);
         clearSessionDrafts();
         setSessionOwner();
       } else if (reason === 'sign-in' && nextUserId !== undefined) {
         reconcileSessionOwner(nextUserId);
+        resumeUploadSession(nextUserId);
+      } else if (reason === 'expired') {
+        pauseUploadSession();
       }
 
       await queryClient.cancelQueries();
@@ -46,6 +51,7 @@ export function useAuthSession(): AuthContextValue {
         queryClient.getMutationCache().clear();
       }
       reconcileSessionOwner(query.data.id);
+      resumeUploadSession(query.data.id);
       previousUser.current = query.data;
     }
 
