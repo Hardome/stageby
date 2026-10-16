@@ -1,7 +1,12 @@
 import type { MaterialIndicator } from '@api/types';
 
 export function materialDescriptions(summary: MaterialIndicator): string[] {
-  if (summary.openShortageCount > 0) return ['Есть нехватка'];
+  if (summary.openShortageCount > 0)
+    return [
+      'Есть нехватка',
+      ...(summary.isPartiallyPaid ? ['Оплачено частично'] : []),
+      ...(summary.isPartiallyDelivered ? ['Доставлено частично'] : []),
+    ];
   if (summary.invoiceCount === 0) return ['Требуется загрузить счёт'];
   let payment = summary.paidInvoiceCount === summary.invoiceCount ? 'Счета оплачены' : 'Требуется оплата';
   if (summary.isPartiallyPaid) payment = 'Оплачено частично';
