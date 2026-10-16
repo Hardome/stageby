@@ -1,5 +1,6 @@
 import { Link, useLocation, useSearch } from '@tanstack/react-router';
 
+import { StageAcceptance } from '@features/stages/acceptance';
 import { StageEditor } from '@features/stages/edit';
 import { WorkPayments } from '@features/stages/payments';
 import { StageOverview } from '@features/stages/view';
@@ -17,6 +18,7 @@ export function StagePage({ stageId }: { stageId: string }) {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
         <StageOverview
           stageId={stageId}
+          acceptance={(stage) => <StageAcceptance key={`acceptance:${stage.id}`} stage={stage} />}
           checklistLink={(stage) => (
             <div className="flex flex-wrap gap-2">
               <Link

@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { ArrowUpRightIcon, PencilLineIcon } from 'lucide-react';
 
+import { StageAcceptance } from '@features/stages/acceptance';
 import { ChecklistPhotoEditor } from '@features/stages/photos';
 import { ChecklistPhotos } from '@features/stages/view';
 import {
@@ -67,6 +68,7 @@ export function StageChecklistPage({ stageId, itemId, offset }: StageChecklistPa
           {stage && (
             <>
               <ChecklistHeading stage={stage} photos={itemId !== undefined} />
+              {itemId === undefined && <StageAcceptance key={stage.id} stage={stage} />}
               {itemId === undefined ? (
                 <StageChecklist
                   stageId={stage.id}
