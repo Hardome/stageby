@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { ArrowUpRightIcon, PencilLineIcon } from 'lucide-react';
 
+import { ChecklistPhotoEditor } from '@features/stages/photos';
 import { ChecklistPhotos } from '@features/stages/view';
 import {
   canEditChecklistComposition,
@@ -120,7 +121,14 @@ export function StageChecklistPage({ stageId, itemId, offset }: StageChecklistPa
                       key={item.id}
                       item={item}
                       canEdit={canEditChecklistPhotos(stage, item, user?.role)}
-                    />
+                    >
+                      <ChecklistPhotoEditor
+                        stage={stage}
+                        item={item}
+                        version={checklist.data?.version ?? 0}
+                        canEdit={canEditChecklistPhotos(stage, item, user?.role)}
+                      />
+                    </ChecklistPhotos>
                   )}
                 </DataRegion>
               )}

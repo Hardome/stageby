@@ -49,6 +49,7 @@ export default defineConfig(({ mode }) => ({
           '/dashboard',
           '/projects',
           '/stages',
+          '/checklist',
           '/stage-types',
           '/work-plan-rows',
           '/work-payments',
