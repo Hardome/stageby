@@ -5,6 +5,7 @@ import { PackageIcon, UserRoundIcon } from 'lucide-react';
 import { formatMoney, formatStageDates, isStageOverdue, stageStatuses } from '@entities/project';
 import { MaterialStatus } from '@entities/stage';
 import { Badge } from '@shared/ui/badge';
+import { buttonVariants } from '@shared/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
 
 import type { Stage } from '@api/types';
@@ -93,6 +94,13 @@ export function ProjectStageCard({ stage, number, today }: ProjectStageCardPrope
           <PackageIcon className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <MaterialStatus summary={stage.materialSummary} />
         </div>
+        <Link
+          className={buttonVariants({ variant: 'outline', className: 'self-start' })}
+          to="/stages/$stageId/materials"
+          params={{ stageId: String(stage.id) }}
+        >
+          Материалы и счета
+        </Link>
       </CardContent>
       <CardFooter className="mt-auto bg-background text-foreground">
         <dl className="grid w-full grid-cols-2 gap-4">

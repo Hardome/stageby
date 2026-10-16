@@ -4,7 +4,7 @@ import { StageEditor } from '@features/stages/edit';
 import { WorkPayments } from '@features/stages/payments';
 import { StageOverview } from '@features/stages/view';
 import { useAuth } from '@shared/context';
-import { Button } from '@shared/ui/button';
+import { Button, buttonVariants } from '@shared/ui/button';
 
 export function StagePage({ stageId }: { stageId: string }) {
   const search = useSearch({ from: '/_auth/stages/$stageId' });
@@ -18,19 +18,29 @@ export function StagePage({ stageId }: { stageId: string }) {
         <StageOverview
           stageId={stageId}
           checklistLink={(stage) => (
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={
-                <Link
-                  to="/stages/$stageId/checklist"
-                  params={{ stageId: String(stage.id) }}
-                  search={{ offset: search.offset }}
-                />
-              }
-            >
-              Открыть рабочий чек-лист
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                className={buttonVariants({ variant: 'outline' })}
+                to="/stages/$stageId/materials"
+                params={{ stageId: String(stage.id) }}
+                search={{ offset: search.offset }}
+              >
+                Материалы и счета
+              </Link>
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/stages/$stageId/checklist"
+                    params={{ stageId: String(stage.id) }}
+                    search={{ offset: search.offset }}
+                  />
+                }
+              >
+                Открыть рабочий чек-лист
+              </Button>
+            </div>
           )}
           payments={(stage) => <WorkPayments key={stage.id} stage={stage} />}
           actions={

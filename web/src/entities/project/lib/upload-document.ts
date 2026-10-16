@@ -1,6 +1,5 @@
-import { completeFileUpload } from '@api/clients/completeFileUpload';
-import { createFileUpload } from '@api/clients/createFileUpload';
-import type { ApiError } from '@api/types';
+import { uploadFile } from '@shared/lib/file-upload';
+
 import { createFileUploadSchema as fileUploadSchema } from '@api/zod/createFileUploadSchema';
 
 import type { DocumentUpload } from '../model/types';
@@ -17,62 +16,6 @@ export function documentError(file: File): string | undefined {
 }
 
 export async function uploadDocument(document: DocumentUpload, update: (values: Partial<DocumentUpload>) => void) {
-  const buffer = await document.file.arrayBuffer();
-  if (new TextDecoder().decode(buffer.slice(0, 5)) !== '%PDF-') throw new Error('Содержимое файла не является PDF.');
-  const checksum =
-    document.checksum ??
-    Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', buffer)), (byte) =>
-      Number(byte).toString(16).padStart(2, '0'),
-    ).join('');
-
-  let session = document.session;
-  let key = document.key;
-
-  if (session && Date.parse(session.expiresAt) <= Date.now()) {
-    try {
-      const file = await completeFileUpload({
-        path: { uploadId: session.fileId },
-        body: { checksumSha256: checksum },
-        headers: { 'Idempotency-Key': key },
-      }).unwrap();
-      update({ fileId: file.id, status: 'uploaded', error: undefined });
-
-      return;
-    } catch (error) {
-      const failure = error as { status?: number; data?: ApiError } | null;
-      if (failure?.status !== 409 || failure.data?.code !== 'upload_expired') throw error;
-    }
-    key = crypto.randomUUID();
-  }
-
-  if (!session || Date.parse(session.expiresAt) <= Date.now()) {
-    session = await createFileUpload({
-      body: {
-        purpose: 'project_document',
-        originalName: document.file.name,
-        mimeType: 'application/pdf',
-        sizeBytes: document.file.size,
-        checksumSha256: checksum,
-      },
-    }).unwrap();
-  }
-
-  update({ session, checksum, key });
-
-  const response = await fetch(session.uploadUrl, {
-    method: session.method,
-    headers: session.headers,
-    body: document.file,
-    credentials: 'omit',
-  });
-
-  if (!response.ok) throw new Error('Не удалось передать PDF. Повторите загрузку.');
-
-  const file = await completeFileUpload({
-    path: { uploadId: session.fileId },
-    body: { checksumSha256: checksum },
-    headers: { 'Idempotency-Key': key },
-  }).unwrap();
-
-  update({ fileId: file.id, status: 'uploaded', error: undefined });
+  await uploadFile(document, update, 'project_document', 'application/pdf');
+  update({ status: 'uploaded', error: undefined });
 }
