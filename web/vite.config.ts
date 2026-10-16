@@ -53,6 +53,8 @@ export default defineConfig(({ mode }) => ({
           '/stage-types',
           '/work-plan-rows',
           '/work-payments',
+          '/material-invoices',
+          '/material-shortages',
           '/file-uploads',
           '/files',
           '/users',
