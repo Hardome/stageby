@@ -40,8 +40,9 @@ export function ProjectProgress({
               type="button"
               variant={step === index + 1 ? 'selected' : 'ghost'}
               className={cn(
-                'h-auto min-h-16 w-full flex-col gap-2 px-2 py-3',
-                'sm:flex-row sm:justify-start sm:px-3 lg:gap-3 lg:py-4',
+                'h-full min-h-16 w-full flex-col justify-start gap-2 px-2 py-3',
+                'has-data-[icon=inline-start]:pl-2 sm:has-data-[icon=inline-start]:pl-3',
+                'sm:flex-row sm:justify-start sm:px-3 lg:h-auto lg:gap-3 lg:py-4',
               )}
               disabled={disabled}
               aria-label={`${index + 1}. ${title}`}
@@ -49,8 +50,8 @@ export function ProjectProgress({
               onClick={() => onStepChange(index + 1)}
             >
               {step > index + 1 ? <CheckIcon data-icon="inline-start" /> : <Icon data-icon="inline-start" />}
-              <span className="flex min-w-0 flex-col gap-1 text-left">
-                <span className="whitespace-normal text-xs sm:text-sm">{title}</span>
+              <span className="flex min-w-0 max-w-full flex-col gap-1 text-center sm:text-left">
+                <span className="wrap-anywhere whitespace-normal text-xs sm:text-sm">{title}</span>
                 <span className="hidden whitespace-normal font-normal text-xs opacity-70 lg:block">{description}</span>
               </span>
             </Button>
