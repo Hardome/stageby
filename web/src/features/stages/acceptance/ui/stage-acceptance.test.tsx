@@ -90,14 +90,18 @@ describe('stage acceptance actions', () => {
 
   async function fillRework() {
     await click('Вернуть на доработку');
-    const textarea = container.querySelector('textarea');
     const checkbox = container.querySelector('[role="checkbox"]');
-    if (!textarea || !(checkbox instanceof HTMLElement)) throw new Error('Нет полей доработки');
+    if (!(checkbox instanceof HTMLElement)) throw new Error('Нет полей доработки');
 
+    await act(async () => {
+      checkbox.click();
+      await Promise.resolve();
+    });
+    const textarea = container.querySelector('textarea');
+    if (!textarea) throw new Error('Нет поля замечания');
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set?.call(textarea, 'Исправить угол');
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      checkbox.click();
       await Promise.resolve();
     });
   }
@@ -119,7 +123,7 @@ describe('stage acceptance actions', () => {
     await click('Отправить замечания');
 
     expect(mocks.reject).not.toHaveBeenCalled();
-    expect(container.querySelector('textarea')).toHaveAttribute('aria-invalid', 'true');
+    expect(container.querySelector('textarea')).toBeNull();
     expect(container.querySelector('[role="checkbox"]')).toHaveAttribute('aria-invalid', 'true');
   });
 
@@ -146,8 +150,7 @@ describe('stage acceptance actions', () => {
       path: { stageId: 11 },
       body: {
         expectedVersion: 8,
-        comment: 'Исправить угол',
-        itemIds: [211],
+        items: [{ itemId: 211, comment: 'Исправить угол' }],
         correctionDueDate: defaultCorrectionDate(),
       },
     });
@@ -161,7 +164,7 @@ describe('stage acceptance actions', () => {
       status: 'rework',
       latestAcceptance: {
         decision: 'rejected',
-        comment: 'Исправить угол',
+        comment: null,
         correctionDueDate: '2026-10-18',
         decidedBy: { id: 1, fullName: 'Руководитель' },
         decidedAt: '2026-10-16T20:00:00Z',
@@ -170,7 +173,6 @@ describe('stage acceptance actions', () => {
 
     expect(container).toHaveTextContent('Руководитель');
     expect(container).toHaveTextContent('18.10.2026');
-    expect(container).toHaveTextContent('Исправить угол');
     expect(container.querySelector('button')).toBeNull();
   });
 

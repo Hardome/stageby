@@ -4,6 +4,7 @@
 */
 
 import type { ExpectedVersion } from './ExpectedVersion'
+import type { ReworkItem } from './ReworkItem'
 
 export type RejectStage = {
     /**
@@ -14,14 +15,6 @@ export type RejectStage = {
     */
     expectedVersion: ExpectedVersion;
     /**
-     * @description Обязательное замечание с причиной возврата этапа на доработку.
-     * @minLength 1
-     * @maxLength 5000
-     * @example Устранить замечания по качеству выполнения контрольной точки.
-     * @type string
-    */
-    comment: string;
-    /**
      * @description Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.
      *
      * Format: `date`
@@ -30,8 +23,8 @@ export type RejectStage = {
     */
     correctionDueDate?: string;
     /**
-     * @description Пункты текущего чек-листа, требующие повторного выполнения.
+     * @description Пункты для доработки с индивидуальными замечаниями. itemId не должны повторяться.
      * @type array
     */
-    itemIds: number[];
+    items: ReworkItem[];
 };

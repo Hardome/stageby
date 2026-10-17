@@ -738,7 +738,7 @@ export type Acceptance = {
      */
     decision: 'accepted' | 'rejected';
     /**
-     * Комментарий к решению. Для возврата на доработку содержит обязательное замечание; при приёмке может быть null.
+     * Комментарий при успешной приёмке, может быть null. При возврате на доработку null: индивидуальные замечания доступны в reworkComment пунктов.
      */
     comment: string | null;
     /**
@@ -1106,20 +1106,27 @@ export type AcceptStage = {
     comment?: string | null;
 };
 
-export type RejectStage = {
-    expectedVersion: ExpectedVersion;
+export type ReworkItem = {
     /**
-     * Обязательное замечание с причиной возврата этапа на доработку.
+     * ID пункта текущего чек-листа, требующего повторного выполнения.
+     */
+    itemId: number;
+    /**
+     * Индивидуальное замечание к пункту; пробелы по краям удаляются, пустой текст запрещён.
      */
     comment: string;
+};
+
+export type RejectStage = {
+    expectedVersion: ExpectedVersion;
     /**
      * Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.
      */
     correctionDueDate?: string;
     /**
-     * Пункты текущего чек-листа, требующие повторного выполнения.
+     * Пункты для доработки с индивидуальными замечаниями. itemId не должны повторяться.
      */
-    itemIds: Array<number>;
+    items: Array<ReworkItem>;
 };
 
 /**

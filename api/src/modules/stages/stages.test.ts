@@ -309,18 +309,35 @@ describe('Stage statuses and checklists', () => {
     'проверяет замечание и выбранные пункты, назначает срок доработки %s',
     async (correctionDueDate) => {
       const fixture = await createFixture();
+      const other = await createFixture();
       await getApp().db.update(stages).set({ status: 'acceptance' }).where(eq(stages.id, fixture.stage.id));
       await getApp()
         .db.update(checklistItems)
         .set({ isCompleted: true, completedAt: new Date(), completedByUserId: fixture.foreman.user.id })
         .where(eq(checklistItems.checklistId, fixture.checklist.id));
-      const payload = { expectedVersion: fixture.stage.version, comment: 'Исправить', itemIds: [fixture.items[0]!.id] };
+      const payload = {
+        expectedVersion: fixture.stage.version,
+        items: [{ itemId: fixture.items[0]!.id, comment: 'Исправить' }],
+      };
       for (const extra of [
-        { comment: '' },
-        { comment: '   ' },
-        { itemIds: [] },
-        { itemIds: [fixture.items[0]!.id, fixture.items[0]!.id] },
-        { itemIds: [2_147_483_647] },
+        { items: [{ itemId: fixture.items[0]!.id, comment: '' }] },
+        { items: [{ itemId: fixture.items[0]!.id, comment: '   ' }] },
+        { items: [{ itemId: fixture.items[0]!.id, comment: 'x'.repeat(5001) }] },
+        { comment: 'Старый формат', itemIds: [fixture.items[0]!.id] },
+        { items: [] },
+        {
+          items: [
+            { itemId: fixture.items[0]!.id, comment: 'Первое' },
+            { itemId: fixture.items[0]!.id, comment: 'Второе' },
+          ],
+        },
+        { items: [{ itemId: 2_147_483_647, comment: 'Чужой пункт' }] },
+        {
+          items: [
+            { itemId: fixture.items[0]!.id, comment: 'Исправить' },
+            { itemId: other.items[0]!.id, comment: 'Пункт другого этапа' },
+          ],
+        },
         { correctionDueDate: addCalendarDays(calendarDate(), -1) },
       ]) {
         const response = await getApp().inject({
@@ -331,6 +348,21 @@ describe('Stage statuses and checklists', () => {
         });
         expect(response.statusCode, response.body).toBe(400);
       }
+      await getApp()
+        .db.update(checklistItems)
+        .set({ deletedAt: new Date() })
+        .where(eq(checklistItems.id, fixture.items[0]!.id));
+      const deleted = await getApp().inject({
+        method: 'POST',
+        url: `/stages/${fixture.stage.id}/rework`,
+        headers: { cookie: fixture.manager.cookie },
+        payload,
+      });
+      expect(deleted.statusCode, deleted.body).toBe(400);
+      await getApp()
+        .db.update(checklistItems)
+        .set({ deletedAt: null })
+        .where(eq(checklistItems.id, fixture.items[0]!.id));
       expect((await auditRecords(getApp().db, fixture.manager.user.id, 'returnStageForRework')).events).toHaveLength(0);
       const response = await getApp().inject({
         method: 'POST',
@@ -340,7 +372,7 @@ describe('Stage statuses and checklists', () => {
       });
       expect(response.statusCode, response.body).toBe(200);
       expect(response.json<Stage>().latestAcceptance).toMatchObject({
-        comment: 'Исправить',
+        comment: null,
         correctionDueDate: correctionDueDate ?? addCalendarDays(calendarDate(), 2),
       });
       const current = await getApp()
@@ -714,6 +746,44 @@ describe('Stage statuses and checklists', () => {
     expect(started.json<Checklist>().warnings).toEqual([]);
   });
 
+  it('сохраняет индивидуальные замечания и обновляет только возвращённые повторно пункты', async () => {
+    const fixture = await createFixture();
+    await getApp().db.update(stages).set({ status: 'acceptance' }).where(eq(stages.id, fixture.stage.id));
+    const submit = (expectedVersion: number, items: { itemId: number; comment: string }[]) =>
+      getApp().inject({
+        method: 'POST',
+        url: `/stages/${fixture.stage.id}/rework`,
+        headers: { cookie: fixture.manager.cookie },
+        payload: { expectedVersion, items },
+      });
+    const first = await submit(fixture.stage.version, [
+      { itemId: fixture.items[0]!.id, comment: '  Исправить угол  ' },
+      { itemId: fixture.items[1]!.id, comment: 'Убрать зазор' },
+    ]);
+    expect(first.statusCode, first.body).toBe(200);
+    expect(first.json<Stage>().latestAcceptance?.comment).toBeNull();
+    const read = async () => {
+      const response = await getApp().inject({
+        method: 'GET',
+        url: `/stages/${fixture.stage.id}/checklist`,
+        headers: { cookie: fixture.foreman.cookie },
+      });
+      expect(response.statusCode, response.body).toBe(200);
+      return response.json<Checklist>();
+    };
+    expect((await read()).items.map((item) => item.reworkComment)).toEqual(['Исправить угол', 'Убрать зазор']);
+    const audit = await auditRecords(getApp().db, fixture.manager.user.id, 'returnStageForRework');
+    expect(
+      audit.changes.filter((change) => change.entityType === 'acceptance_items').map((change) => change.after?.comment),
+    ).toEqual(expect.arrayContaining(['Исправить угол', 'Убрать зазор']));
+    await getApp().db.update(stages).set({ status: 'acceptance' }).where(eq(stages.id, fixture.stage.id));
+    const second = await submit(first.json<Stage>().version, [
+      { itemId: fixture.items[0]!.id, comment: 'Повторно исправить угол' },
+    ]);
+    expect(second.statusCode, second.body).toBe(200);
+    expect((await read()).items.map((item) => item.reworkComment)).toEqual(['Повторно исправить угол', 'Убрать зазор']);
+  });
+
   it('возвращает только выбранные пункты на доработку и снова включает acceptance после их выполнения', async () => {
     const fixture = await createFixture();
     for (const item of fixture.items) await attachUploadedPhoto(item.id);
@@ -726,9 +796,8 @@ describe('Stage statuses and checklists', () => {
       headers: { cookie: fixture.manager.cookie },
       payload: {
         expectedVersion: ready!.version,
-        comment: 'Исправить выбранный пункт',
         correctionDueDate: '2099-01-01',
-        itemIds: [fixture.items[0]!.id],
+        items: [{ itemId: fixture.items[0]!.id, comment: 'Исправить выбранный пункт' }],
       },
     });
     expect(rework.statusCode, rework.body).toBe(200);
@@ -884,9 +953,8 @@ describe('Stage statuses and checklists', () => {
       headers: { cookie: fixture.manager.cookie },
       payload: {
         expectedVersion: 1,
-        comment: 'Недопустимый возврат',
         correctionDueDate: '2099-01-01',
-        itemIds: [fixture.items[0]!.id],
+        items: [{ itemId: fixture.items[0]!.id, comment: 'Недопустимый возврат' }],
       },
     });
     expect(accept.statusCode).toBe(409);

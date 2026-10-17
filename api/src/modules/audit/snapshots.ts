@@ -1,7 +1,7 @@
 // Explicit allowlists; review new fields before adding them to audit history.
 const fields: Record<string, readonly string[]> = {
   acceptances: ['id', 'stageId', 'decision', 'comment', 'correctionDueDate', 'decidedByUserId', 'decidedAt'],
-  acceptance_items: ['acceptanceId', 'checklistItemId'],
+  acceptance_items: ['acceptanceId', 'checklistItemId', 'comment'],
   checklists: ['id', 'stageId', 'version', 'createdAt', 'updatedAt'],
   checklist_items: [
     'id',

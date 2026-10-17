@@ -490,7 +490,7 @@ describe('File uploads and checklist photos', () => {
       method: 'POST',
       url: `/stages/${stage!.id}/rework`,
       headers: { cookie: fixture.manager.cookie },
-      payload: { expectedVersion: stage!.version, comment: 'Нужно исправить', itemIds: [fixture.item.id] },
+      payload: { expectedVersion: stage!.version, items: [{ itemId: fixture.item.id, comment: 'Нужно исправить' }] },
     });
     expect(rejected.statusCode, rejected.body).toBe(200);
     const retry = await getApp().inject({

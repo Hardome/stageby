@@ -28,7 +28,7 @@ export const acceptances = pgTable(
     check('acceptances_comment_not_blank_check', sql`${table.comment} is null or btrim(${table.comment}) <> ''`),
     check(
       'acceptances_decision_data_check',
-      sql`(${table.decision} = 'accepted' and ${table.correctionDueDate} is null) or (${table.decision} = 'rejected' and ${table.comment} is not null and ${table.correctionDueDate} is not null)`,
+      sql`(${table.decision} = 'accepted' and ${table.correctionDueDate} is null) or (${table.decision} = 'rejected' and ${table.correctionDueDate} is not null)`,
     ),
   ],
 );
@@ -36,6 +36,7 @@ export const acceptances = pgTable(
 export const acceptanceItems = pgTable(
   'acceptance_items',
   {
+    comment: varchar({ length: 5000 }).notNull(),
     acceptanceId: integer()
       .notNull()
       .references(() => acceptances.id, { onDelete: 'cascade' }),
@@ -44,6 +45,7 @@ export const acceptanceItems = pgTable(
       .references(() => checklistItems.id, { onDelete: 'restrict' }),
   },
   (table) => [
+    check('acceptance_items_comment_not_blank_check', sql`btrim(${table.comment}) <> ''`),
     primaryKey({
       name: 'acceptance_items_pk',
       columns: [table.acceptanceId, table.checklistItemId],
