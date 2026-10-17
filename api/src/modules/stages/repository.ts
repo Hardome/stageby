@@ -67,7 +67,7 @@ export async function loadChecklist(database: Database | Transaction, stageId: n
         where p."checklistItemId" = checklist_items.id and p."deletedByRetention")`,
       reworkComment: sql<
         string | null
-      >`(select a.comment from acceptances a join acceptance_items ai on ai."acceptanceId" = a.id
+      >`(select ai.comment from acceptances a join acceptance_items ai on ai."acceptanceId" = a.id
         where ai."checklistItemId" = checklist_items.id and a.decision = 'rejected' order by a."decidedAt" desc, a.id desc limit 1)`,
     })
     .from(checklistItems)
@@ -686,6 +686,7 @@ export class StageRepository {
     actor: Actor,
     context: AuditContext = { source: 'system' },
   ): Promise<OperationResult<Stage>> {
+    const itemIds = input.items.map((item) => item.itemId);
     const currentDate = today();
     const correctionDueDate = input.correctionDueDate ?? addCalendarDays(currentDate, 2);
     return auditedTransaction(this.#database, context, 'returnStageForRework', async (transaction, audit) => {
@@ -696,18 +697,18 @@ export class StageRepository {
       if (locked.stage.status !== 'acceptance') return { status: 'invalid_transition' };
       if (correctionDueDate < currentDate) return { status: 'invalid_request' };
       const [checklist] = await transaction.select().from(checklists).where(eq(checklists.stageId, stageId));
-      if (!checklist || new Set(input.itemIds).size !== input.itemIds.length) return { status: 'invalid_request' };
+      if (!checklist || new Set(itemIds).size !== itemIds.length) return { status: 'invalid_request' };
       const selected = await transaction
         .select({ id: checklistItems.id })
         .from(checklistItems)
         .where(
           and(
             eq(checklistItems.checklistId, checklist.id),
-            inArray(checklistItems.id, input.itemIds),
+            inArray(checklistItems.id, itemIds),
             isNull(checklistItems.deletedAt),
           ),
         );
-      if (selected.length !== input.itemIds.length) return { status: 'invalid_request' };
+      if (selected.length !== itemIds.length) return { status: 'invalid_request' };
       const [acceptance] = await audit.created(
         acceptances,
         await transaction
@@ -716,7 +717,7 @@ export class StageRepository {
             stageId,
             decision: 'rejected',
             decidedAt: new Date(),
-            comment: input.comment,
+            comment: null,
             correctionDueDate,
             decidedByUserId: actor.id,
           })
@@ -726,14 +727,20 @@ export class StageRepository {
         acceptanceItems,
         await transaction
           .insert(acceptanceItems)
-          .values(input.itemIds.map((checklistItemId) => ({ acceptanceId: acceptance!.id, checklistItemId })))
+          .values(
+            input.items.map(({ itemId, comment }) => ({
+              acceptanceId: acceptance!.id,
+              checklistItemId: itemId,
+              comment,
+            })),
+          )
           .returning(),
       );
-      await audit.mutate(checklistItems, inArray(checklistItems.id, input.itemIds), () =>
+      await audit.mutate(checklistItems, inArray(checklistItems.id, itemIds), () =>
         transaction
           .update(checklistItems)
           .set({ isCompleted: false, requiresRework: true, completedAt: null, completedByUserId: null })
-          .where(inArray(checklistItems.id, input.itemIds)),
+          .where(inArray(checklistItems.id, itemIds)),
       );
       const now = new Date();
       await audit.mutate(checklists, eq(checklists.id, checklist.id), () =>

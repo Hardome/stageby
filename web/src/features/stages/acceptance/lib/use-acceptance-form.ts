@@ -22,7 +22,7 @@ export function useAcceptanceForm(stage: Stage) {
   const schema = reworkFormSchema(checklist.data?.items.map((item) => item.id) ?? []);
   const form = useForm<ReworkFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { comment: '', itemIds: [], correctionDueDate: defaultCorrectionDate() },
+    defaultValues: { items: [], correctionDueDate: defaultCorrectionDate() },
   });
   const isBlocked = action.blocked || checklist.isFetching || Boolean(checklist.error) || !checklist.data;
 

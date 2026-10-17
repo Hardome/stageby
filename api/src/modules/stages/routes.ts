@@ -273,7 +273,15 @@ export function registerStageRoutes(app: FastifyInstance, repository: StageRepos
     preHandler: [app.authenticate, app.requireRoles('manager')],
     schema: {
       params: returnStageForReworkPathSchema,
-      body: zReturnStageForReworkBody.strict().extend({ comment: z.string().trim().min(1).max(5000) }),
+      body: zReturnStageForReworkBody.strict().extend({
+        items: zReturnStageForReworkBody.shape.items.element
+          .strict()
+          .extend({
+            comment: z.string().trim().min(1).max(5000),
+          })
+          .array()
+          .min(1),
+      }),
       response: { 200: stageResponseSchema, ...errorResponses },
     },
     handler: async (request, reply) =>
