@@ -4,6 +4,7 @@ import { ProjectFormPanel, ProjectProgress, UnfinishedUploadsWarning } from '@en
 
 import { useProjectEditForm } from '../lib/use-project-edit-form';
 import type { EditProjectFormProperties } from '../model/types';
+import { AdditionalStageAction } from './additional-stage-action';
 import { EditActions } from './edit-actions';
 import { EditProjectFeedback } from './edit-project-feedback';
 import { EditProjectFields } from './edit-project-fields';
@@ -24,19 +25,24 @@ export function EditProjectForm(properties: EditProjectFormProperties) {
           if (!isLocked) void form.handleSubmit(editor.save, navigation.revealErrors)(event);
         }}
       >
-        <ProjectProgress
-          step={step}
-          stages={navigation.navigationStages}
-          currentStage={navigation.currentStage}
-          onStageChange={(index) => {
-            if (!isLocked) navigation.selectStage(index);
-          }}
-          disabled={isLocked}
-          label="Шаги редактирования"
-          onStepChange={(target) => {
-            if (!isLocked) void navigation.selectStep(target);
-          }}
-        />
+        <div className="flex min-w-0 flex-col gap-3 self-start lg:sticky lg:top-6">
+          <ProjectProgress
+            step={step}
+            stages={navigation.navigationStages}
+            currentStage={navigation.currentStage}
+            onStageChange={(index) => {
+              if (!isLocked) void navigation.selectStage(index);
+            }}
+            disabled={isLocked}
+            label="Шаги редактирования"
+            onStepChange={(target) => {
+              if (!isLocked) void navigation.selectStep(target);
+            }}
+          />
+          {editor.additionalStage.canAdd && (
+            <AdditionalStageAction disabled={isLocked} onAdd={editor.additionalStage.add} />
+          )}
+        </div>
         <div className="flex min-w-0 flex-col gap-4">
           <EditProjectFeedback
             message={editor.reloadError || update.message}
