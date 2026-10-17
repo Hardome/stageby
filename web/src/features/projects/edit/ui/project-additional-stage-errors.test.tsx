@@ -9,7 +9,7 @@ describe('additional stage errors', () => {
     await context.render();
     await click('Далее');
     await click('Заполнить этапы');
-    await click('Добавить дополнительный этап');
+    await click('Доп. этап');
     await click('Добавить пункт');
     await fill('stages.2.checklistItems.0.title', 'Контроль');
   }
@@ -54,7 +54,7 @@ describe('additional stage errors', () => {
 
     expect(mocks.update).toHaveBeenCalledOnce();
     expect(input('stages.2.checklistItems.0.title')).toHaveValue('Контроль');
-    expect(context.container).not.toHaveTextContent('Добавить дополнительный этап');
+    expect(context.container).not.toHaveTextContent('Доп. этап');
   });
 
   it('blocks adding a stage to an archived project with an explanation', async () => {
@@ -64,7 +64,7 @@ describe('additional stage errors', () => {
 
     expect(context.container).toHaveTextContent('Объект в архиве. Редактирование недоступно.');
     expect(context.container.querySelector('form')).toBeNull();
-    expect(context.container).not.toHaveTextContent('Добавить дополнительный этап');
+    expect(context.container).not.toHaveTextContent('Доп. этап');
     expect(mocks.update).not.toHaveBeenCalled();
   });
 });

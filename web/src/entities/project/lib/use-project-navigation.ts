@@ -131,8 +131,15 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
     else focusError();
   }
 
-  function selectStage(index: number) {
+  async function selectStage(index: number) {
     if (!form.getValues(`stages.${index}`)?.enabled) return;
+
+    if (screen === 'object' && !(await form.trigger([...projectObjectFields]))) {
+      moveTo('object');
+      focusError();
+
+      return;
+    }
 
     moveTo(index);
     setTitleFocusRequest((request) => request + 1);

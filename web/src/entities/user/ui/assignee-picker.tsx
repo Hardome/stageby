@@ -56,6 +56,7 @@ export function AssigneePicker({
   const users = useInfiniteQuery({
     queryKey: [...listUsersQueryKey({ query }), 'assignee-picker'],
     initialPageParam: 0,
+    staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
     queryFn: ({ pageParam, signal }) => listUsers({ query: { ...query, offset: pageParam }, signal }).unwrap(),
     getNextPageParam: (page) =>
