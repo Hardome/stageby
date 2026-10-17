@@ -5,6 +5,7 @@ import { useAccessError } from '@shared/lib/hooks';
 import { useListChecklistItemPhotos } from '@api/queries/useListChecklistItemPhotos';
 import type { ChecklistItem, Stage } from '@api/types';
 
+import { hasCompletionPhoto } from './has-completion-photo';
 import { usePhotoActions } from './use-photo-actions';
 import { usePhotoQueue } from './use-photo-queue';
 
@@ -20,7 +21,7 @@ export function usePhotoEditor(stage: Stage, item: ChecklistItem, version: numbe
     canEdit &&
     stage.status !== 'acceptance' &&
     !item.isCompleted &&
-    photos.length > 0 &&
+    hasCompletionPhoto(stage, item, photos) &&
     uploads.pending.length === 0 &&
     !query.isFetching &&
     !query.error &&

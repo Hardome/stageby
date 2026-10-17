@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Stageby</title>
+  <rect width="512" height="512" fill="#20242b" />
+  <path fill="#e8823a" d="M128 288h64v96h-64zm96-80h64v176h-64zm96-80h64v256h-64z" />
+</svg>
