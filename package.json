@@ -12,6 +12,8 @@
     "codegen": "pnpm --dir contracts run generate && pnpm --dir api run codegen && pnpm --dir web run codegen",
     "prepare": "lefthook install",
     "dev": "pnpm --dir web exec concurrently --raw -k \"pnpm --dir ../api run dev\" \"pnpm run dev\"",
+    "tunnel": "cloudflared tunnel --url http://127.0.0.1:3000 --no-autoupdate",
+    "tunnel:minio": "cloudflared tunnel --url http://127.0.0.1:9000 --no-autoupdate",
     "db:up": "docker compose up -d --build --wait postgres minio",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs --follow postgres minio"
