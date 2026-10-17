@@ -12,6 +12,10 @@ const alertVariants = tv({
   ],
   variants: {
     variant: {
+      warning: [
+        'border-warning-border bg-warning-subtle text-warning-foreground',
+        '*:data-[slot=alert-description]:text-warning-foreground *:[svg]:text-current',
+      ],
       success: [
         'border-success-border bg-success-subtle text-success',
         '*:data-[slot=alert-description]:text-success *:[svg]:text-current',

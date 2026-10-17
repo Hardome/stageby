@@ -30,7 +30,7 @@ export function ChecklistPhotos({ item, canEdit, children }: ChecklistPhotosProp
                 'bg-secondary font-bold text-secondary-foreground tabular-nums',
               )}
             >
-              {String(item.position).padStart(2, '0')}
+              {item.position}
             </span>
             <span className="pt-1">{item.title}</span>
           </h2>

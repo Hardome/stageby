@@ -26,6 +26,7 @@ interface DatePickerProperties
   ref?: Ref<HTMLInputElement | HTMLButtonElement>;
   min?: string;
   max?: string;
+  showClearButton?: boolean;
 }
 
 function subscribeToPointer(onChange: () => void) {
@@ -59,7 +60,7 @@ function setControlReference(reference: DatePickerProperties['ref'], element: HT
   if (reference) reference.current = element;
 }
 
-export function DatePicker(properties: DatePickerProperties) {
+export function DatePicker({ showClearButton = true, ...properties }: DatePickerProperties) {
   const isNative = useIsNativeDatePicker();
   if (isNative) {
     const { value, onChange, ref, min, max, onBlur, ...inputProperties } = properties;
@@ -68,6 +69,7 @@ export function DatePicker(properties: DatePickerProperties) {
         {...inputProperties}
         ref={(element) => setControlReference(ref, element)}
         type="date"
+        autoComplete="off"
         className="max-w-full appearance-none"
         value={calendarDate(value) ? value : ''}
         min={min}
@@ -77,10 +79,19 @@ export function DatePicker(properties: DatePickerProperties) {
       />
     );
   }
-  return <DesktopDatePicker {...properties} />;
+  return <DesktopDatePicker {...properties} showClearButton={showClearButton} />;
 }
 
-function DesktopDatePicker({ value, onChange, ref, min, max, onBlur, ...properties }: DatePickerProperties) {
+function DesktopDatePicker({
+  value,
+  onChange,
+  ref,
+  min,
+  max,
+  onBlur,
+  showClearButton,
+  ...properties
+}: DatePickerProperties) {
   const fieldReference = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [shouldFocusCalendar, setShouldFocusCalendar] = useState(true);
@@ -92,6 +103,7 @@ function DesktopDatePicker({ value, onChange, ref, min, max, onBlur, ...properti
           {...properties}
           ref={(element) => setControlReference(ref, element)}
           type="text"
+          autoComplete="off"
           inputMode="numeric"
           placeholder="ДД.ММ.ГГГГ"
           maxLength={10}
@@ -130,17 +142,19 @@ function DesktopDatePicker({ value, onChange, ref, min, max, onBlur, ...properti
             setOpen(false);
           }}
         />
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={!value}
-          onClick={() => {
-            onChange('');
-            setOpen(false);
-          }}
-        >
-          Очистить дату
-        </Button>
+        {showClearButton && (
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={!value}
+            onClick={() => {
+              onChange('');
+              setOpen(false);
+            }}
+          >
+            Очистить дату
+          </Button>
+        )}
       </PopoverContent>
     </Popover>
   );

@@ -59,7 +59,7 @@ export function AcceptanceReview({ stage }: AcceptanceReviewProperties) {
               </Empty>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <Button variant="success" disabled={blocked || reworkOpen} onClick={accept}>
+                <Button variant="success" disabled={blocked || reworkOpen || stage.assignee === null} onClick={accept}>
                   {action.pending && <Spinner data-icon="inline-start" />}
                   Подтвердить приёмку
                 </Button>

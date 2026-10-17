@@ -55,6 +55,7 @@ export function HomePage() {
             <FieldLabel htmlFor="dashboard-through">План по деньгам к дате</FieldLabel>
             <DatePicker
               id="dashboard-through"
+              showClearButton={false}
               value={through}
               min={today}
               max={addCalendarDays(today, 30)}

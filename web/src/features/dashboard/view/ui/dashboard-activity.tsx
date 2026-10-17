@@ -3,7 +3,18 @@ import { ArrowDownRightIcon, Building2Icon } from 'lucide-react';
 
 import { Skeleton } from '@shared/ui/skeleton';
 
-export function DashboardActivity({ count, isLoading = false }: { count: number; isLoading?: boolean }) {
+interface DashboardActivityProperties {
+  count: number;
+  total?: number;
+  isLoading?: boolean;
+}
+
+export function DashboardActivity({ count, total, isLoading = false }: DashboardActivityProperties) {
+  let description = '';
+  if (count > 0) description = 'Есть этапы, которые ещё не выплачены';
+  else if (total) description = 'Все этапы выплачены';
+  const hasDescription = count > 0 || Boolean(total);
+
   return (
     <aside
       className={cn(
@@ -19,14 +30,18 @@ export function DashboardActivity({ count, isLoading = false }: { count: number;
         <div className="font-semibold text-5xl tabular-nums tracking-tighter lg:text-6xl">
           {isLoading ? <Skeleton className="h-15 w-20 lg:h-24" /> : <p>{count}</p>}
         </div>
-        <p className="max-w-44 text-sm text-surface-inverse-muted leading-relaxed">
-          Есть этапы, которые ещё не выплачены
-        </p>
+        {isLoading && <Skeleton className="h-10 w-44" />}
+        {!isLoading && hasDescription && (
+          <p className="max-w-44 text-sm text-surface-inverse-muted leading-relaxed">{description}</p>
+        )}
       </div>
-      <div className="hidden items-center justify-between border-surface-inverse-border border-t pt-4 lg:flex">
-        <span className="text-surface-inverse-muted text-xs">В работе до полной выплаты</span>
-        <ArrowDownRightIcon className="size-4 text-primary" aria-hidden="true" />
-      </div>
+      {(isLoading || count > 0) && (
+        <div className="hidden items-center justify-between border-surface-inverse-border border-t pt-4 lg:flex">
+          {isLoading && <Skeleton className="h-4 w-40" />}
+          {!isLoading && <span className="text-surface-inverse-muted text-xs">В работе до полной выплаты</span>}
+          <ArrowDownRightIcon className="size-4 text-primary" aria-hidden="true" />
+        </div>
+      )}
     </aside>
   );
 }

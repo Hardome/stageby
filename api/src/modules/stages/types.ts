@@ -7,6 +7,7 @@ export type Database = NodePgDatabase<typeof schema>;
 export type Actor = Pick<UserRow, 'id' | 'role'>;
 
 export type StageOperationError =
+  | 'assignee_required'
   | 'forbidden'
   | 'invalid_request'
   | 'invalid_transition'

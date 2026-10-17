@@ -71,7 +71,7 @@ export function ChecklistProgress({ checklist }: ChecklistProgressProperties) {
               <Icon className="hidden size-3.5 sm:block" aria-hidden="true" />
               {label}
             </dt>
-            <dd className="font-bold text-xl tabular-nums">{value.toString().padStart(2, '0')}</dd>
+            <dd className="font-bold text-xl tabular-nums">{value}</dd>
           </div>
         ))}
       </dl>

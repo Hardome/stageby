@@ -10,7 +10,14 @@ import type { ChecklistItemPhoto } from '@api/types';
 
 import { usePhotoActions } from './use-photo-actions';
 
-const mocks = vi.hoisted(() => ({ update: vi.fn(), remove: vi.fn(), invalidate: vi.fn(), access: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  update: vi.fn(),
+  remove: vi.fn(),
+  invalidate: vi.fn(),
+  access: vi.fn(),
+  navigate: vi.fn(),
+}));
+vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('@api/clients/updateChecklistItem', () => ({
   updateChecklistItem: (...arguments_: unknown[]) => ({
     unwrap: () => mocks.update(...arguments_) as Promise<unknown>,
@@ -83,6 +90,10 @@ describe('explicit checklist photo actions', () => {
       body: { expectedVersion: 8, isCompleted: true },
     });
     expect(mocks.invalidate).toHaveBeenCalled();
+    expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith({
+      to: '/stages/$stageId/checklist',
+      params: { stageId: '11' },
+    });
   });
 
   it('requires confirmation before removing completion with the final photo', async () => {
@@ -112,6 +123,7 @@ describe('explicit checklist photo actions', () => {
     });
 
     expect(probe.actions.error).toContain('Обновите');
+    expect(mocks.navigate).not.toHaveBeenCalled();
     expect(mocks.update).toHaveBeenCalledTimes(1);
     expect(mocks.invalidate).toHaveBeenCalled();
   });

@@ -133,7 +133,7 @@ components:
       required: [stageId, position, stageCount, title, plannedStartDate, plannedEndDate, assignee, status, progressPercent, materials, finances]
       properties:
         stageId: { type: integer, minimum: 1, maximum: 2147483647, example: 1001, description: "Единственный этап, к которому относятся все остальные поля этого объекта." }
-        position: { type: integer, minimum: 1, maximum: 8, example: 2, description: Позиция выбранного этапа среди типов справочника. }
+        position: { type: integer, minimum: 1, maximum: 8, example: 2, description: Порядковый номер выбранного этапа среди включённых этапов объекта. }
         stageCount: { type: integer, minimum: 1, maximum: 8, example: 6, description: Количество включённых этапов объекта для подписи «N из K». }
         title: { type: string, minLength: 1, maxLength: 255, example: Стены, description: Отображаемое название выбранного этапа. }
         plannedStartDate: { type: [string, 'null'], format: date, example: '2026-10-10', description: Плановое начало выбранного этапа или null. }
