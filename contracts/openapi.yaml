@@ -1165,8 +1165,8 @@ paths:
       operationId: updateMaterialInvoice
       tags:
         - Materials
-      summary: Отметить оплату или доставку счёта
-      description: Оплату меняет только руководитель. Доставку — руководитель или назначенный мастер. Даты и авторы фиксируются независимо сервером.
+      summary: Изменить счёт, оплату или доставку
+      description: Реквизиты, файл и оплату меняет только руководитель. Доставку — руководитель или назначенный мастер. Замена файла подчиняется правилам создания счёта. Изменение реквизитов сохраняет оплату, доставку и нехватки. Архивный проект и исключённый этап изменять нельзя.
       requestBody:
         required: true
         content:
@@ -1180,6 +1180,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StageMaterialInvoice'
+        '400':
+          $ref: '#/components/responses/ApiBadRequest'
+        '401':
+          $ref: '#/components/responses/ApiUnauthorized'
+        '403':
+          $ref: '#/components/responses/ApiForbidden'
+        '404':
+          $ref: '#/components/responses/ApiNotFound'
+        '409':
+          $ref: '#/components/responses/ApiConflict'
+        '413':
+          $ref: '#/components/responses/ApiPayloadTooLarge'
+    delete:
+      operationId: deleteMaterialInvoice
+      tags:
+        - Materials
+      summary: Удалить счёт материалов
+      description: Только руководитель. Удаляет счёт с оплатой, доставкой и всеми нехватками, пересчитывает итоги и состояние материалов. expectedVersion защищает от конкурентного изменения. Архивный проект и исключённый этап изменять нельзя. Файл физически не удаляется.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteMaterialInvoice'
+      responses:
+        '204':
+          description: Счёт удалён.
         '400':
           $ref: '#/components/responses/ApiBadRequest'
         '401':
@@ -3997,6 +4024,14 @@ components:
         amountMinor:
           $ref: '#/components/schemas/PositiveMoneyAmountMinor'
           description: Положительная сумма в копейках.
+    DeleteMaterialInvoice:
+      type: object
+      additionalProperties: false
+      required:
+        - expectedVersion
+      properties:
+        expectedVersion:
+          $ref: '#/components/schemas/ExpectedVersion'
     UpdateMaterialInvoice:
       type: object
       additionalProperties: false
@@ -4006,6 +4041,23 @@ components:
       properties:
         expectedVersion:
           $ref: '#/components/schemas/ExpectedVersion'
+        amountMinor:
+          $ref: '#/components/schemas/PositiveMoneyAmountMinor'
+          description: Новая сумма выставленного счёта; не изменяет фактическую оплату.
+        supplierName:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 255
+          example: Стройснаб
+          description: Новый поставщик; null очищает значение.
+        fileId:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          example: 201
+          description: Новый загруженный файл счёта.
         isPaid:
           type: boolean
           example: true

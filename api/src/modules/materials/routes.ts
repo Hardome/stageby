@@ -10,6 +10,8 @@ import {
   zCreateStageMaterialInvoiceBody,
   zCreateStageMaterialInvoicePath,
   zCreateStageMaterialInvoiceResponse,
+  zDeleteMaterialInvoiceBody,
+  zDeleteMaterialInvoicePath,
   zListStageMaterialInvoicesPath,
   zResolveMaterialShortageBody,
   zResolveMaterialShortagePath,
@@ -83,6 +85,17 @@ const updateInvoiceBody = zUpdateMaterialInvoiceBody
   .strict()
   .superRefine((body, context) => {
     if (
+      body.amountMinor !== undefined &&
+      (body.amountMinor < 100n || body.amountMinor > BigInt(Number.MAX_SAFE_INTEGER) || body.amountMinor % 100n !== 0n)
+    )
+      context.addIssue({
+        code: 'custom',
+        path: ['amountMinor'],
+        message: 'Сумма должна быть положительной, безопасной и кратной 100 копейкам.',
+      });
+    if (typeof body.supplierName === 'string' && !body.supplierName.trim())
+      context.addIssue({ code: 'custom', path: ['supplierName'], message: 'Укажите поставщика или null.' });
+    if (
       body.paidAmountMinor !== undefined &&
       (body.paidAmountMinor > BigInt(Number.MAX_SAFE_INTEGER) || body.paidAmountMinor % 100n !== 0n)
     )
@@ -101,6 +114,9 @@ const updateInvoiceBody = zUpdateMaterialInvoiceBody
   .transform(
     (body): UpdateMaterialInvoice => ({
       expectedVersion: body.expectedVersion,
+      ...(body.amountMinor === undefined ? {} : { amountMinor: Number(body.amountMinor) }),
+      ...(body.fileId === undefined ? {} : { fileId: body.fileId }),
+      ...(body.supplierName === undefined ? {} : { supplierName: body.supplierName?.trim() ?? null }),
       ...(body.isPaid === undefined ? {} : { isPaid: body.isPaid }),
       ...(body.isDelivered === undefined ? {} : { isDelivered: body.isDelivered }),
       ...(body.paidAmountMinor === undefined ? {} : { paidAmountMinor: Number(body.paidAmountMinor) }),
@@ -165,12 +181,15 @@ export function registerMaterialRoutes(app: FastifyInstance, repository: Materia
     schema: {
       params: pathId('invoiceId', zUpdateMaterialInvoicePath),
       body: updateInvoiceBody,
-      response: { 200: invoiceResponse, ...responses },
+      response: { 200: invoiceResponse, ...responses, 413: zApiError },
     },
     handler: async (request, reply) => {
       const body = request.body as z.infer<typeof updateInvoiceBody>;
       const input = {
         expectedVersion: body.expectedVersion,
+        ...(body.amountMinor === undefined ? {} : { amountMinor: body.amountMinor }),
+        ...(body.fileId === undefined ? {} : { fileId: body.fileId }),
+        ...(body.supplierName === undefined ? {} : { supplierName: body.supplierName }),
         ...(body.isPaid === undefined ? {} : { isPaid: body.isPaid }),
         ...(body.paidAmountMinor === undefined ? {} : { paidAmountMinor: body.paidAmountMinor }),
         ...(body.paidDate === undefined ? {} : { paidDate: body.paidDate }),
@@ -186,6 +205,25 @@ export function registerMaterialRoutes(app: FastifyInstance, repository: Materia
         ),
       );
     },
+  });
+  app.delete('/material-invoices/:invoiceId', {
+    preHandler: [app.authenticate, app.requireRoles('manager')],
+    schema: {
+      params: pathId('invoiceId', zDeleteMaterialInvoicePath),
+      body: zDeleteMaterialInvoiceBody,
+      response: { 204: z.void(), ...responses },
+    },
+    handler: async (request, reply) =>
+      send(
+        reply,
+        await repository.deleteInvoice(
+          (request.params as { invoiceId: number }).invoiceId,
+          (request.body as z.infer<typeof zDeleteMaterialInvoiceBody>).expectedVersion,
+          request.auth!.user,
+          requestAuditContext(request),
+        ),
+        204,
+      ),
   });
   app.post('/material-invoices/:invoiceId/shortages', {
     preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],

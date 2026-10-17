@@ -13,6 +13,7 @@ export { createUserMutationKey, createUserMutationOptions, useCreateUser } from 
 export { createWorkPaymentMutationKey, createWorkPaymentMutationOptions, useCreateWorkPayment } from './useCreateWorkPayment'
 export { createWorkPlanRowMutationKey, createWorkPlanRowMutationOptions, useCreateWorkPlanRow } from './useCreateWorkPlanRow'
 export { deleteChecklistItemPhotoMutationKey, deleteChecklistItemPhotoMutationOptions, useDeleteChecklistItemPhoto } from './useDeleteChecklistItemPhoto'
+export { deleteMaterialInvoiceMutationKey, deleteMaterialInvoiceMutationOptions, useDeleteMaterialInvoice } from './useDeleteMaterialInvoice'
 export { deleteWorkPaymentMutationKey, deleteWorkPaymentMutationOptions, useDeleteWorkPayment } from './useDeleteWorkPayment'
 export { deleteWorkPlanRowMutationKey, deleteWorkPlanRowMutationOptions, useDeleteWorkPlanRow } from './useDeleteWorkPlanRow'
 export { distributeWorkPlanRowMutationKey, distributeWorkPlanRowMutationOptions, useDistributeWorkPlanRow } from './useDistributeWorkPlanRow'
