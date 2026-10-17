@@ -9,8 +9,8 @@ import { client, withUnwrap } from '../.kubb/client'
 import { updateMaterialInvoiceResponseSchema, updateMaterialInvoiceErrorSchema } from '../zod/updateMaterialInvoiceSchema'
 
 /**
- * @description Оплату меняет только руководитель. Доставку — руководитель или назначенный мастер. Даты и авторы фиксируются независимо сервером.
- * @summary Отметить оплату или доставку счёта
+ * @description Реквизиты, файл и оплату меняет только руководитель. Доставку — руководитель или назначенный мастер. Замена файла подчиняется правилам создания счёта. Изменение реквизитов сохраняет оплату, доставку и нехватки. Архивный проект и исключённый этап изменять нельзя.
+ * @summary Изменить счёт, оплату или доставку
  * {@link /material-invoices/:invoiceId}
  */
 export function updateMaterialInvoice<ThrowOnError extends boolean = true>(options: Options<UpdateMaterialInvoiceOptions, ThrowOnError>): Unwrappable<RequestResult<UpdateMaterialInvoiceResponses, ThrowOnError>> {

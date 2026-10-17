@@ -645,8 +645,15 @@ export const zCreateMaterialInvoice = z.object({
     amountMinor: zPositiveMoneyAmountMinor
 });
 
+export const zDeleteMaterialInvoice = z.object({
+    expectedVersion: zExpectedVersion
+});
+
 export const zUpdateMaterialInvoice = z.object({
     expectedVersion: zExpectedVersion,
+    amountMinor: zPositiveMoneyAmountMinor.optional(),
+    supplierName: z.string().min(1).max(255).nullish(),
+    fileId: z.int().gte(1).lte(2147483647).optional(),
     isPaid: z.boolean().optional(),
     paidAmountMinor: zPositiveMoneyAmountMinor.optional(),
     paidDate: z.iso.date().optional(),
@@ -1357,6 +1364,17 @@ export const zCreateStageMaterialInvoicePath = z.object({
  * Счёт создан.
  */
 export const zCreateStageMaterialInvoiceResponse = zStageMaterialInvoice;
+
+export const zDeleteMaterialInvoiceBody = zDeleteMaterialInvoice;
+
+export const zDeleteMaterialInvoicePath = z.object({
+    invoiceId: z.int().gte(1).lte(2147483647)
+});
+
+/**
+ * Счёт удалён.
+ */
+export const zDeleteMaterialInvoiceResponse = z.void();
 
 export const zUpdateMaterialInvoiceBody = zUpdateMaterialInvoice;
 
