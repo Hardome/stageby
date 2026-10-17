@@ -16,10 +16,10 @@ interface DashboardStageSignalProperties {
 }
 
 const destinations = {
-  materials: { hash: 'materials', label: 'Материалы' },
-  assignee: { hash: 'parameters', label: 'Мастер' },
-  status: { hash: 'checklist', label: 'Чек-лист' },
-};
+  materials: { to: '/stages/$stageId/materials', label: 'Материалы' },
+  assignee: { to: '/stages/$stageId', label: 'Мастер' },
+  status: { to: '/stages/$stageId/checklist', label: 'Чек-лист' },
+} as const;
 
 export function DashboardStageSignal({ project, kind, today }: DashboardStageSignalProperties) {
   const stage = project.selectedStage;
@@ -38,9 +38,8 @@ export function DashboardStageSignal({ project, kind, today }: DashboardStageSig
   return (
     <div className="flex min-w-0 flex-col items-start gap-1.5">
       <Link
-        to="/stages/$stageId"
+        to={destination.to}
         params={{ stageId: String(stage.stageId) }}
-        hash={destination.hash}
         target="_blank"
         rel="noopener noreferrer"
         className={cn(

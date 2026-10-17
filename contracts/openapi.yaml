@@ -4463,7 +4463,7 @@ components:
           minimum: 1
           maximum: 8
           example: 2
-          description: Позиция выбранного этапа среди типов справочника.
+          description: Порядковый номер выбранного этапа среди включённых этапов объекта.
         stageCount:
           type: integer
           minimum: 1

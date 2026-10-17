@@ -42,6 +42,10 @@ function today(): string {
   return calendarDate();
 }
 
+function isChecklistCompleted(items: { isCompleted: boolean }[]): boolean {
+  return items.length > 0 && items.every((item) => item.isCompleted);
+}
+
 function canRead(actor: Actor, assigneeId: number | null): boolean {
   return actor.role === 'manager' || (actor.role === 'foreman' && assigneeId === actor.id);
 }
@@ -671,6 +675,7 @@ export class StageRepository {
       const validationError = getChecklistUpdateError(locked, checklist, item, input, actor);
       if (validationError) return { status: validationError };
       if (!locked || !checklist || !item) return { status: 'not_found' };
+      if (input.isCompleted && locked.stage.assigneeId === null) return { status: 'assignee_required' };
       if (item.isCompleted === input.isCompleted) {
         return { status: 'ok', value: (await loadChecklist(transaction, stageId))! };
       }
@@ -764,6 +769,7 @@ export class StageRepository {
       if (locked.isArchived) return { status: 'project_archived' };
       if (locked.stage.version !== input.expectedVersion) return { status: 'version_conflict' };
       if (locked.stage.status !== 'acceptance') return { status: 'invalid_transition' };
+      if (locked.stage.assigneeId === null) return { status: 'assignee_required' };
       const [checklist] = await transaction.select().from(checklists).where(eq(checklists.stageId, stageId));
       const items = checklist
         ? await transaction
@@ -771,7 +777,7 @@ export class StageRepository {
             .from(checklistItems)
             .where(and(eq(checklistItems.checklistId, checklist.id), isNull(checklistItems.deletedAt)))
         : [];
-      if (items.length === 0 || items.some((item) => !item.isCompleted)) return { status: 'invalid_transition' };
+      if (!isChecklistCompleted(items)) return { status: 'invalid_transition' };
       await audit.created(
         acceptances,
         await transaction

@@ -448,8 +448,12 @@ describe('Dashboard API', () => {
     await invoice(first.id, manager.user.id, 1000, true, false);
     await getApp().db.update(stages).set({ isIncluded: false }).where(eq(stages.id, first.id));
     expect((await page(manager.cookie)).items[0]).toMatchObject({
-      selectedStage: { stageId: included[1]!.id, stageCount: 2 },
+      selectedStage: { stageId: included[1]!.id, position: 1, stageCount: 2 },
       finances: { totalPlannedAmountMinor: 60_000, totalActualAmountMinor: 0 },
+    });
+    await getApp().db.update(stages).set({ status: 'paid' }).where(eq(stages.id, included[1]!.id));
+    expect((await page(manager.cookie)).items[0]).toMatchObject({
+      selectedStage: { stageId: included[2]!.id, position: 2, stageCount: 2 },
     });
     expect(await summary(manager.cookie, first.plannedEndDate!)).toMatchObject({
       activeProjectCount: 1,

@@ -31,7 +31,7 @@ export function useAcceptanceForm(stage: Stage) {
   }, [checklist.error, accessError]);
 
   function accept() {
-    if (isBlocked) return;
+    if (isBlocked || stage.assignee === null) return;
 
     void action.run(() =>
       acceptStage({ path: { stageId: stage.id }, body: { expectedVersion: stage.version } }).unwrap(),

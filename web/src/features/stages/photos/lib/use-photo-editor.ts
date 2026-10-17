@@ -19,6 +19,7 @@ export function usePhotoEditor(stage: Stage, item: ChecklistItem, version: numbe
   const isUploading = uploads.pending.some((entry) => entry.status === 'uploading' || entry.status === 'waiting');
   const canComplete =
     canEdit &&
+    stage.assignee !== null &&
     stage.status !== 'acceptance' &&
     !item.isCompleted &&
     hasCompletionPhoto(stage, item, photos) &&

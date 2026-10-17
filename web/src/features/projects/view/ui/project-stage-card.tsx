@@ -29,7 +29,7 @@ export function ProjectStageCard({ stage, number, today }: ProjectStageCardPrope
                 'font-semibold text-foreground tabular-nums',
               ])}
             >
-              {String(number).padStart(2, '0')}
+              {number}
             </span>
             <CardTitle>
               <h3 className="wrap-anywhere">

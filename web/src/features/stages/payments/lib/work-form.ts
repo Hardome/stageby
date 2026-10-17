@@ -60,7 +60,10 @@ export function workFormDefaults(action: WorkAction): WorkFormValues {
   const planRow = action.kind === 'row' ? action.row : undefined;
 
   return {
-    amount: String((payment?.amountMinor ?? planRow?.amountMinor ?? 0n) / 100n),
+    amount:
+      (!payment && action.kind === 'payment') || (!planRow && action.kind === 'row')
+        ? ''
+        : String((payment?.amountMinor ?? planRow?.amountMinor ?? 0n) / 100n),
     recipient: planRow?.recipientId ? { id: planRow.recipientId, label: `Получатель №${planRow.recipientId}` } : null,
     date: payment?.paidAt ?? planRow?.dueDate ?? (action.kind === 'payment' ? todayInYekaterinburg() : ''),
     comment: payment?.comment ?? '',

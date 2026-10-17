@@ -19,9 +19,9 @@ interface StageEditorProperties {
 
 export function StageEditor({ index, disabled, checklistReadOnly = false, registerErrorGroup }: StageEditorProperties) {
   const { control, setValue } = useFormContext<ProjectFormValues>();
-  const [start, end, assigneeName] = useWatch({
+  const [start, end, assigneeName, stageStart] = useWatch({
     control,
-    name: ['plannedStartDate', 'plannedEndDate', `stages.${index}.assigneeName`],
+    name: ['plannedStartDate', 'plannedEndDate', `stages.${index}.assigneeName`, `stages.${index}.plannedStartDate`],
     exact: true,
   });
 
@@ -43,7 +43,8 @@ export function StageEditor({ index, disabled, checklistReadOnly = false, regist
           <ProjectDateField
             name={`stages.${index}.plannedEndDate`}
             label="Окончание этапа"
-            min={start}
+            // eslint-disable-next-line unicorn/prefer-math-min-max -- Для строк ISO-дат Math.max вернёт NaN.
+            min={stageStart > start ? stageStart : start}
             max={end}
             disabled={disabled}
           />

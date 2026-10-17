@@ -58,6 +58,14 @@ export const stageResponseSchema = zStage.extend({
 });
 
 const errorDetails: Record<StageOperationError, { statusCode: 400 | 403 | 404 | 409; error: ApiError }> = {
+  assignee_required: {
+    statusCode: 409,
+    error: {
+      error: 'Conflict',
+      code: 'invalid_transition',
+      message: 'Для завершения чек-листа и приёмки работ назначьте мастера этапа.',
+    },
+  },
   forbidden: {
     statusCode: 403,
     error: { error: 'Forbidden', code: 'forbidden', message: 'Операция недоступна для этого пользователя.' },

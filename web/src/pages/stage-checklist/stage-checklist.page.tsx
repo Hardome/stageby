@@ -68,6 +68,21 @@ export function StageChecklistPage({ stageId, itemId, offset }: StageChecklistPa
           {stage && (
             <>
               <ChecklistHeading stage={stage} photos={itemId !== undefined} />
+              {stage.assignee === null && stage.isIncluded && !stage.projectIsArchived && (
+                <Alert variant="warning">
+                  <AlertDescription className="flex flex-col items-start gap-2">
+                    <p>Чтобы завершить пункты чек-листа и принять работы, назначьте мастера.</p>
+                    <Link
+                      to="/stages/$stageId"
+                      params={{ stageId }}
+                      className="inline-flex items-center gap-1 font-medium underline"
+                    >
+                      Перейти к назначению мастера
+                      <ArrowUpRightIcon className="size-4" aria-hidden="true" />
+                    </Link>
+                  </AlertDescription>
+                </Alert>
+              )}
               {itemId === undefined && <StageAcceptance key={stage.id} stage={stage} />}
               {itemId === undefined ? (
                 <StageChecklist

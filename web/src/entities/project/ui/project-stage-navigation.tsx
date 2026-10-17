@@ -25,7 +25,7 @@ export function ProjectStageNavigation({
             onClick={() => onStageChange(stage.index)}
           >
             <span aria-hidden="true" className="w-5 shrink-0 text-center text-xs tabular-nums opacity-60">
-              {String(position + 1).padStart(2, '0')}
+              {position + 1}
             </span>
             <span className="min-w-0 flex-1 whitespace-normal text-left font-semibold text-sm">{stage.title}</span>
             {stage.hasError && (

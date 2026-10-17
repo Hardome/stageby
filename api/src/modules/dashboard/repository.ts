@@ -141,7 +141,7 @@ export class DashboardRepository {
             selected && summary
               ? {
                   stageId: selected.stage.id,
-                  position: selected.stage.position,
+                  position: included.indexOf(selected) + 1,
                   stageCount: included.length,
                   title: selected.title,
                   plannedStartDate: selected.stage.plannedStartDate,

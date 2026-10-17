@@ -645,6 +645,26 @@ describe('Stage statuses and checklists', () => {
     expect(afterCompletion.json<Checklist>().warnings).toEqual(['materials_incomplete']);
   });
 
+  it('запрещает завершение пункта и приёмку без назначенного мастера', async () => {
+    const fixture = await createFixture();
+    await attachUploadedPhoto(fixture.items[0]!.id);
+    await getApp().db.update(stages).set({ assigneeId: null }).where(eq(stages.id, fixture.stage.id));
+
+    const completed = await updateItem(fixture.manager.cookie, fixture.stage.id, fixture.items[0]!.id, 1);
+    expect(completed.statusCode, completed.body).toBe(409);
+    expect(completed.json()).toMatchObject({ code: 'invalid_transition', message: expect.stringContaining('мастера') });
+
+    await getApp().db.update(stages).set({ status: 'acceptance' }).where(eq(stages.id, fixture.stage.id));
+    const accepted = await getApp().inject({
+      method: 'POST',
+      url: `/stages/${fixture.stage.id}/acceptance`,
+      headers: { cookie: fixture.manager.cookie },
+      payload: { expectedVersion: fixture.stage.version },
+    });
+    expect(accepted.statusCode, accepted.body).toBe(409);
+    expect(accepted.json()).toMatchObject({ code: 'invalid_transition', message: expect.stringContaining('мастера') });
+  });
+
   it('очищает автора и время при снятии отметки', async () => {
     const fixture = await createFixture();
     await attachUploadedPhoto(fixture.items[0]!.id);

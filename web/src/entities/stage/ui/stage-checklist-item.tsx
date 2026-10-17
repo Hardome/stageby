@@ -35,11 +35,7 @@ export function StageChecklistItem({ item, action }: StageChecklistItemPropertie
           item.requiresRework && 'border-warning-border bg-warning-subtle text-warning-foreground',
         )}
       >
-        {item.isCompleted ? (
-          <CheckIcon className="size-5" aria-hidden="true" />
-        ) : (
-          String(item.position).padStart(2, '0')
-        )}
+        {item.isCompleted ? <CheckIcon className="size-5" aria-hidden="true" /> : item.position}
       </span>
       <div className="contents sm:flex sm:min-w-0 sm:flex-1 sm:flex-col sm:gap-2">
         <div className="col-start-2 flex min-w-0 flex-col items-start justify-between gap-2 sm:flex-row">

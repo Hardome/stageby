@@ -11,7 +11,7 @@ import { userBriefSchema } from './userBriefSchema'
 
 export const dashboardSelectedStageSchema = z.object({
   stageId: z.int().min(1).max(2147483647).describe('Единственный этап, к которому относятся все остальные поля этого объекта.').meta({ examples: [1001] }),
-  position: z.int().min(1).max(8).describe('Позиция выбранного этапа среди типов справочника.').meta({ examples: [2] }),
+  position: z.int().min(1).max(8).describe('Порядковый номер выбранного этапа среди включённых этапов объекта.').meta({ examples: [2] }),
   stageCount: z.int().min(1).max(8).describe('Количество включённых этапов объекта для подписи «N из K».').meta({ examples: [6] }),
   title: z.string().min(1).max(255).describe('Отображаемое название выбранного этапа.').meta({ examples: ['Стены'] }),
   plannedStartDate: z.iso.date().nullable().describe('Плановое начало выбранного этапа или null.').meta({ examples: ['2026-10-10'] }),
