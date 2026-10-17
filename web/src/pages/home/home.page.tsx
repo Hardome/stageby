@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { CalendarDaysIcon, PlusIcon } from 'lucide-react';

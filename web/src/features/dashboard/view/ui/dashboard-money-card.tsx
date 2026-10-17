@@ -1,4 +1,4 @@
-﻿import { BanknoteIcon, PackageIcon } from 'lucide-react';
+import { BanknoteIcon, PackageIcon } from 'lucide-react';
 
 import { formatMoney } from '@entities/project';
 
