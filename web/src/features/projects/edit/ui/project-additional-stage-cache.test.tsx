@@ -18,7 +18,7 @@ describe('additional stage cache', () => {
     await context.render();
     await click('Далее');
     await click('Заполнить этапы');
-    await click('Добавить дополнительный этап');
+    await click('Доп. этап');
     await click('Добавить пункт');
     await fill('stages.2.checklistItems.0.title', 'Контроль');
 

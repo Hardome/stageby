@@ -26,10 +26,10 @@ describe('project editing: direct stage switching', () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
-  it('adds and restores the additional stage in navigation without losing fields', async () => {
+  it('adds an additional stage and resets it when added again', async () => {
     await context.render();
     await click('Этап 1. Фундамент');
-    await click('Добавить дополнительный этап');
+    await click('Доп. этап');
     await fill('stages.2.plannedWorkAmount', '250');
     await click('Этап 1. Фундамент');
     await click('Этап 2. Дополнительный этап');
@@ -42,8 +42,8 @@ describe('project editing: direct stage switching', () => {
     expect(context.container.querySelector('button[aria-label="Этап 2. Дополнительный этап"]')).toBeNull();
 
     await click('Этап 1. Фундамент');
-    await click('Восстановить дополнительный этап');
+    await click('Доп. этап');
 
-    expect(input('stages.2.plannedWorkAmount')).toHaveValue('250');
+    expect(input('stages.2.plannedWorkAmount')).toHaveValue('');
   });
 });

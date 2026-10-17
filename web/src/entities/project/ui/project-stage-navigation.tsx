@@ -1,4 +1,3 @@
-import { cn } from 'cn';
 import { CircleAlertIcon } from 'lucide-react';
 
 import { Button } from '@shared/ui/button';
@@ -18,7 +17,7 @@ export function ProjectStageNavigation({
           <Button
             type="button"
             variant={currentStage === stage.index ? 'selected' : 'ghost'}
-            className="h-auto min-h-12 w-full justify-start gap-3 px-3 py-3"
+            className="h-auto min-h-12 w-full justify-start gap-3 px-3 py-3 active:not-aria-[haspopup]:translate-y-0"
             aria-label={`Этап ${position + 1}. ${stage.title}${stage.hasError ? '. Есть ошибки' : ''}`}
             aria-current={currentStage === stage.index ? 'step' : undefined}
             disabled={disabled}
@@ -27,13 +26,9 @@ export function ProjectStageNavigation({
             <span aria-hidden="true" className="w-5 shrink-0 text-center text-xs tabular-nums opacity-60">
               {position + 1}
             </span>
-            <span className="min-w-0 flex-1 whitespace-normal text-left font-semibold text-sm">{stage.title}</span>
+            <span className="min-w-0 flex-1 truncate text-left font-semibold text-sm">{stage.title}</span>
             {stage.hasError && (
-              <CircleAlertIcon
-                aria-hidden="true"
-                data-icon="inline-end"
-                className={cn(currentStage !== stage.index && 'text-destructive')}
-              />
+              <CircleAlertIcon aria-hidden="true" data-icon="inline-end" className="text-destructive" />
             )}
           </Button>
         </li>

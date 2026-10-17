@@ -17,8 +17,15 @@ describe('project creation: direct stage switching', () => {
     });
   }
 
-  it('jumps from the object to a nonadjacent stage and validates object fields on submission', async () => {
+  it('requires object fields before opening a stage and validates them on submission', async () => {
     await context.multipleStages();
+    await selectStage('Этап 3. Крыша');
+
+    expect(context.container.querySelector('h2')).toHaveTextContent('Объект');
+    expect(context.input('ownerName')).toHaveAttribute('aria-invalid', 'true');
+    await vi.waitFor(() => expect(context.input('ownerName')).toHaveFocus());
+
+    await context.objectStep(false);
     await selectStage('Этап 3. Крыша');
 
     expect(context.container.querySelector('h2')).toHaveTextContent('Крыша');
@@ -34,6 +41,8 @@ describe('project creation: direct stage switching', () => {
 
     expect(context.input('stages.2.plannedWorkAmount')).toHaveValue('350');
 
+    await context.clickStep(1);
+    await context.fill('ownerName', '');
     await context.submit();
 
     expect(context.container.querySelector('h2')).toHaveTextContent('Объект');

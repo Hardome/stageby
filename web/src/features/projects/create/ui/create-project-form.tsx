@@ -21,7 +21,7 @@ export function CreateProjectForm(properties: CreateProjectFormProperties) {
           stages={navigation.navigationStages}
           currentStage={navigation.currentStage}
           onStageChange={(index) => {
-            if (!isLocked) navigation.selectStage(index);
+            if (!isLocked) void navigation.selectStage(index);
           }}
           disabled={isLocked}
           onStepChange={(target) => {

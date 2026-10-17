@@ -16,11 +16,13 @@ export function useAdditionalStage(
     const index = stages.findIndex((stage) => stage.type === 'additional');
     if (index !== -1 && stages[index]?.enabled) return;
 
-    if (index === -1) form.setValue('stages', [...stages, emptyAdditionalStage()], { shouldDirty: true });
-    else form.setValue(`stages.${index}.enabled`, true, { shouldDirty: true });
+    const nextStages = [...stages];
+    const additionalIndex = index === -1 ? stages.length : index;
+    nextStages[additionalIndex] = emptyAdditionalStage();
+    form.setValue('stages', nextStages, { shouldDirty: true });
 
-    navigation.showStage(index === -1 ? stages.length : index);
+    navigation.showStage(additionalIndex);
   }
 
-  return { canAdd, add, isRestoring: additional !== undefined };
+  return { canAdd, add };
 }
