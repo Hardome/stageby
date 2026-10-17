@@ -1329,8 +1329,24 @@ export type CreateMaterialInvoice = {
     amountMinor: PositiveMoneyAmountMinor;
 };
 
+export type DeleteMaterialInvoice = {
+    expectedVersion: ExpectedVersion;
+};
+
 export type UpdateMaterialInvoice = {
     expectedVersion: ExpectedVersion;
+    /**
+     * Новая сумма выставленного счёта; не изменяет фактическую оплату.
+     */
+    amountMinor?: PositiveMoneyAmountMinor;
+    /**
+     * Новый поставщик; null очищает значение.
+     */
+    supplierName?: string | null;
+    /**
+     * Новый загруженный файл счёта.
+     */
+    fileId?: number;
     /**
      * Требуемая отметка оплаты. При true обязательны paidAmountMinor и paidDate, при false они очищаются.
      */
@@ -3681,6 +3697,49 @@ export type CreateStageMaterialInvoiceResponses = {
 
 export type CreateStageMaterialInvoiceResponse = CreateStageMaterialInvoiceResponses[keyof CreateStageMaterialInvoiceResponses];
 
+export type DeleteMaterialInvoiceData = {
+    body: DeleteMaterialInvoice;
+    path: {
+        invoiceId: number;
+    };
+    query?: never;
+    url: '/material-invoices/{invoiceId}';
+};
+
+export type DeleteMaterialInvoiceErrors = {
+    /**
+     * Некорректные поля, формат, даты, неизвестные параметры или неподдерживаемый MIME файла. Для MIME используется код unsupported_mime_type.
+     */
+    400: ApiError;
+    /**
+     * Сессионная cookie отсутствует, недействительна, истекла или отозвана. При входе — одинаковая ошибка для неизвестного логина, неверного пароля и неактивной учётной записи.
+     */
+    401: ApiError;
+    /**
+     * Роль не разрешает эту операцию или изменение поля.
+     */
+    403: ApiError;
+    /**
+     * Запись не существует либо находится вне доступной пользователю области. В частности, запрос мастера к чужому этапу или его вложенному ресурсу возвращает этот ответ и не раскрывает существование записи.
+     */
+    404: ApiError;
+    /**
+     * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
+     */
+    409: ApiError;
+};
+
+export type DeleteMaterialInvoiceError = DeleteMaterialInvoiceErrors[keyof DeleteMaterialInvoiceErrors];
+
+export type DeleteMaterialInvoiceResponses = {
+    /**
+     * Счёт удалён.
+     */
+    204: void;
+};
+
+export type DeleteMaterialInvoiceResponse = DeleteMaterialInvoiceResponses[keyof DeleteMaterialInvoiceResponses];
+
 export type UpdateMaterialInvoiceData = {
     body: UpdateMaterialInvoice;
     path: {
@@ -3711,6 +3770,10 @@ export type UpdateMaterialInvoiceErrors = {
      * Конфликт версии, логина, зависимости, состояния, лимита счетов, checksum или upload-сессии. Изменения не применены. Повтор Idempotency-Key с другим телом возвращает idempotency_conflict; конкурентное превышение десяти счетов — invoice_limit_exceeded; файловые операции используют checksum_mismatch, upload_incomplete и upload_expired.
      */
     409: ApiError;
+    /**
+     * Файл превышает допустимый для его назначения размер. Upload-сессия не завершается.
+     */
+    413: ApiError;
 };
 
 export type UpdateMaterialInvoiceError = UpdateMaterialInvoiceErrors[keyof UpdateMaterialInvoiceErrors];

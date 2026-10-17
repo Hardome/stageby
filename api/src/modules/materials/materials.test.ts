@@ -147,6 +147,194 @@ async function createInvoice(stageId: number, fileId: number, amountMinor: numbe
 }
 
 describe('Материалы, счета и нехватки', () => {
+  it('изменяет реквизиты и файл оплаченного счёта, сохраняя отметки и нехватки', async () => {
+    const data = await fixture();
+    const file = await uploadedInvoiceFile(data.manager.user.id);
+    const replacement = await uploadedInvoiceFile(data.manager.user.id, 'image/jpeg');
+    const created = await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie);
+    const invoice = created.json<StageMaterialInvoice>();
+    const update = (payload: object, cookie = data.manager.cookie) =>
+      getApp().inject({
+        method: 'PATCH',
+        url: `/material-invoices/${invoice.id}`,
+        headers: { cookie },
+        payload,
+      });
+    const marked = await update({
+      expectedVersion: 1,
+      isPaid: true,
+      paidAmountMinor: 9500,
+      paidDate: '2026-10-04',
+      isDelivered: true,
+    });
+    expect(marked.statusCode, marked.body).toBe(200);
+    await getApp().inject({
+      method: 'POST',
+      url: `/material-invoices/${invoice.id}/shortages`,
+      headers: { cookie: data.foreman.cookie },
+      payload: { comment: 'Не хватает крепежа' },
+    });
+    for (const fields of [{ amountMinor: 20_000 }, { supplierName: null }, { fileId: replacement.id }]) {
+      expect((await update({ expectedVersion: 2, ...fields }, data.foreman.cookie)).statusCode).toBe(403);
+    }
+    const changed = await update({
+      expectedVersion: 2,
+      amountMinor: 20_000,
+      supplierName: '  Новый поставщик  ',
+      fileId: replacement.id,
+    });
+    expect(changed.statusCode, changed.body).toBe(200);
+    expect(changed.json()).toMatchObject({
+      amountMinor: 20_000,
+      supplierName: 'Новый поставщик',
+      fileId: replacement.id,
+      version: 3,
+      paidAmountMinor: 9500,
+      paidDate: '2026-10-04',
+      paidAt: marked.json().paidAt,
+      deliveredAt: marked.json().deliveredAt,
+      shortages: [{ comment: 'Не хватает крепежа' }],
+    });
+    const cleared = await update({ expectedVersion: 3, supplierName: null, fileId: replacement.id });
+    expect(cleared.statusCode, cleared.body).toBe(200);
+    expect(cleared.json()).toMatchObject({ supplierName: null, amountMinor: 20_000, fileId: replacement.id });
+    expect((await update({ expectedVersion: 3, amountMinor: 30_000 })).json()).toMatchObject({
+      code: 'version_conflict',
+    });
+  });
+
+  it('отклоняет некорректные реквизиты и файлы без изменения счёта', async () => {
+    const data = await fixture();
+    const file = await uploadedInvoiceFile(data.manager.user.id);
+    const usedFile = await uploadedInvoiceFile(data.manager.user.id);
+    const oversized = await uploadedInvoiceFile(data.manager.user.id, 'application/pdf', 10 * 1024 * 1024 + 1);
+    const invalidMime = await uploadedInvoiceFile(data.manager.user.id, 'image/png');
+    const invoice = (
+      await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie)
+    ).json<StageMaterialInvoice>();
+    await createInvoice(data.stage.id, usedFile.id, 10_000, data.manager.cookie);
+    for (const fields of [
+      { amountMinor: 0 },
+      { amountMinor: 101 },
+      { amountMinor: Number.MAX_SAFE_INTEGER + 1 },
+      { supplierName: '   ' },
+      { fileId: usedFile.id },
+      { fileId: invalidMime.id },
+      { fileId: 2_147_483_647 },
+    ]) {
+      const response = await getApp().inject({
+        method: 'PATCH',
+        url: `/material-invoices/${invoice.id}`,
+        headers: { cookie: data.manager.cookie },
+        payload: { expectedVersion: 1, ...fields },
+      });
+      expect(response.statusCode, response.body).toBe(400);
+    }
+    const response = await getApp().inject({
+      method: 'PATCH',
+      url: `/material-invoices/${invoice.id}`,
+      headers: { cookie: data.manager.cookie },
+      payload: { expectedVersion: 1, fileId: oversized.id },
+    });
+    expect(response.statusCode, response.body).toBe(413);
+    expect((await auditRecords(getApp().db, data.manager.user.id, 'updateMaterialInvoice')).events).toHaveLength(0);
+  });
+
+  it('удаляет оплаченный доставленный счёт со всеми нехватками и аудитом', async () => {
+    const data = await fixture();
+    const file = await uploadedInvoiceFile(data.manager.user.id);
+    const invoice = (
+      await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie)
+    ).json<StageMaterialInvoice>();
+    await getApp().inject({
+      method: 'PATCH',
+      url: `/material-invoices/${invoice.id}`,
+      headers: { cookie: data.manager.cookie },
+      payload: { expectedVersion: 1, isPaid: true, paidAmountMinor: 9500, paidDate: '2026-10-04', isDelivered: true },
+    });
+    for (const resolved of [true, false]) {
+      const shortage = await getApp().inject({
+        method: 'POST',
+        url: `/material-invoices/${invoice.id}/shortages`,
+        headers: { cookie: data.foreman.cookie },
+        payload: { comment: 'Не хватает крепежа' },
+      });
+      if (resolved)
+        await getApp().inject({
+          method: 'POST',
+          url: `/material-shortages/${shortage.json().id}/resolution`,
+          headers: { cookie: data.manager.cookie },
+          payload: { expectedVersion: 1 },
+        });
+    }
+    const remove = (cookie: string, expectedVersion: number) =>
+      getApp().inject({
+        method: 'DELETE',
+        url: `/material-invoices/${invoice.id}`,
+        headers: { cookie },
+        payload: { expectedVersion },
+      });
+    expect((await remove(data.foreman.cookie, 2)).statusCode).toBe(403);
+    expect((await remove(data.manager.cookie, 1)).json()).toMatchObject({ code: 'version_conflict' });
+    const deleted = await remove(data.manager.cookie, 2);
+    expect(deleted.statusCode, deleted.body).toBe(204);
+    expect(deleted.body).toBe('');
+    expect((await remove(data.manager.cookie, 2)).statusCode).toBe(404);
+    const summary = (await loadStageSummaries(getApp().db, [data.stage.id])).get(data.stage.id)!;
+    expect(summary).toMatchObject({ actualMaterialAmountMinor: 0, materialSummary: { invoiceCount: 0, color: 'red' } });
+    const [stage] = await getApp().db.select().from(stages).where(eq(stages.id, data.stage.id));
+    expect(stage!.status).toBe('assigned');
+    const audit = await auditRecords(getApp().db, data.manager.user.id, 'deleteMaterialInvoice');
+    expect(audit.events).toHaveLength(1);
+    expect(audit.changes.filter((change) => change.entityType === 'material_shortages')).toHaveLength(2);
+    expect(audit.changes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          entityType: 'material_invoices',
+          action: 'delete',
+          after: null,
+          stageId: data.stage.id,
+        }),
+        expect.objectContaining({
+          entityType: 'stages',
+          before: expect.objectContaining({ status: 'supplied' }),
+          after: expect.objectContaining({ status: 'assigned' }),
+        }),
+      ]),
+    );
+    expect(await getApp().db.select().from(files).where(eq(files.id, file.id))).toHaveLength(1);
+  });
+
+  it('запрещает изменение и удаление в архиве и исключённом этапе', async () => {
+    const data = await fixture();
+    const file = await uploadedInvoiceFile(data.manager.user.id);
+    const invoice = (
+      await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie)
+    ).json<StageMaterialInvoice>();
+    await getApp().db.update(projects).set({ isArchived: true }).where(eq(projects.id, data.stage.projectId));
+    for (const method of ['PATCH', 'DELETE'] as const) {
+      const response = await getApp().inject({
+        method,
+        url: `/material-invoices/${invoice.id}`,
+        headers: { cookie: data.manager.cookie },
+        payload: { expectedVersion: 1, ...(method === 'PATCH' ? { amountMinor: 20_000 } : {}) },
+      });
+      expect(response.statusCode, response.body).toBe(409);
+      expect(response.json()).toMatchObject({ code: 'project_archived' });
+    }
+    await getApp().db.update(projects).set({ isArchived: false }).where(eq(projects.id, data.stage.projectId));
+    await getApp().db.update(stages).set({ isIncluded: false }).where(eq(stages.id, data.stage.id));
+    for (const method of ['PATCH', 'DELETE'] as const) {
+      const response = await getApp().inject({
+        method,
+        url: `/material-invoices/${invoice.id}`,
+        headers: { cookie: data.manager.cookie },
+        payload: { expectedVersion: 1, ...(method === 'PATCH' ? { amountMinor: 20_000 } : {}) },
+      });
+      expect(response.statusCode, response.body).toBe(404);
+    }
+  });
+
   it('считает факт по отдельной сумме оплаты и очищает её вместе с датой при снятии отметки', async () => {
     const data = await fixture();
     const file = await uploadedInvoiceFile(data.manager.user.id);
@@ -512,6 +700,16 @@ describe('Материалы, счета и нехватки', () => {
       headers: { cookie: data.manager.cookie },
     });
     expect(listed.json<StageMaterialInvoice[]>()).toHaveLength(10);
+    const first = listed.json<StageMaterialInvoice[]>()[0]!;
+    const deleted = await getApp().inject({
+      method: 'DELETE',
+      url: `/material-invoices/${first.id}`,
+      headers: { cookie: data.manager.cookie },
+      payload: { expectedVersion: first.version },
+    });
+    expect(deleted.statusCode, deleted.body).toBe(204);
+    const replacement = await uploadedInvoiceFile(data.manager.user.id);
+    expect((await createInvoice(data.stage.id, replacement.id, 10_000, data.manager.cookie)).statusCode).toBe(201);
   });
 
   it('проверяет лимит файла счёта при привязке к этапу', async () => {

@@ -12,7 +12,7 @@ import { listStageMaterialInvoicesQueryKey } from '@api/queries/useListStageMate
 import type { Stage } from '@api/types';
 import { apiErrorSchema } from '@api/zod/apiErrorSchema';
 
-export function useMaterialAction(stage: Stage) {
+export function useMaterialAction(stage: Stage, invoiceId?: number) {
   const client = useQueryClient();
   const accessError = useAccessError();
   const busy = useRef(false);
@@ -70,9 +70,15 @@ export function useMaterialAction(stage: Stage) {
       ]);
       client.setQueryData(getStageQueryKey({ path }), current);
       client.setQueryData(listStageMaterialInvoicesQueryKey({ path }), invoices);
-      setUnavailable(current.projectIsArchived || !current.isIncluded);
+      const isMissing = invoiceId !== undefined && invoices.every((invoice) => invoice.id !== invoiceId);
+      setUnavailable(current.projectIsArchived || !current.isIncluded || isMissing);
       setNeedsReload(false);
-      setMessage('Данные обновлены. Проверьте ввод и подтвердите действие.');
+      setMessage(
+        isMissing
+          ? 'Счёт уже удалён. Действие недоступно.'
+          : 'Данные обновлены. Проверьте ввод и подтвердите действие.',
+      );
+      return invoices;
     } catch (error) {
       accessError(error);
       setMessage('Не удалось обновить данные. Повторите попытку.');

@@ -10,12 +10,15 @@ import type { StageMaterialInvoice } from '@api/types';
 
 import { useInvoiceCreate } from './use-invoice-create';
 import { useInvoiceDelivery } from './use-invoice-delivery';
+import { useInvoiceEditor } from './use-invoice-editor';
 import { useInvoicePayment } from './use-invoice-payment';
 import { useInvoiceShortages } from './use-invoice-shortages';
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
+  remove: vi.fn(),
+  saved: vi.fn(),
   shortage: vi.fn(),
   resolve: vi.fn(),
   invalidate: vi.fn(),
@@ -45,6 +48,7 @@ const probe = {
   create: {} as ReturnType<typeof useInvoiceCreate>,
   payment: {} as ReturnType<typeof useInvoicePayment>,
   delivery: {} as ReturnType<typeof useInvoiceDelivery>,
+  editor: {} as ReturnType<typeof useInvoiceEditor>,
   shortage: {} as ReturnType<typeof useInvoiceShortages>,
 };
 
@@ -59,9 +63,10 @@ function Probe({ version, paymentInvoice }: ProbeProperties) {
   const payment = useInvoicePayment(stage, paymentInvoice ?? { ...invoice, version });
   const delivery = useInvoiceDelivery(stage, paymentInvoice ?? { ...invoice, version });
   const shortage = useInvoiceShortages(stage, invoice);
+  const editor = useInvoiceEditor(stage, invoice, mocks.saved);
 
   useLayoutEffect(() => {
-    Object.assign(probe, { create, payment, shortage, delivery });
+    Object.assign(probe, { create, payment, shortage, delivery, editor });
   });
 
   return null;
@@ -72,6 +77,9 @@ vi.mock('@api/clients/createStageMaterialInvoice', () => ({
 }));
 vi.mock('@api/clients/updateMaterialInvoice', () => ({
   updateMaterialInvoice: (options: unknown) => ({ unwrap: () => mocks.update(options) as Promise<unknown> }),
+}));
+vi.mock('@api/clients/deleteMaterialInvoice', () => ({
+  deleteMaterialInvoice: (options: unknown) => ({ unwrap: () => mocks.remove(options) as Promise<unknown> }),
 }));
 vi.mock('@api/clients/createMaterialShortage', () => ({
   createMaterialShortage: (options: unknown) => ({ unwrap: () => mocks.shortage(options) as Promise<unknown> }),

@@ -183,10 +183,23 @@ function invoiceStateUpdate(
           deliveredAt: input.isDelivered ? (invoice.deliveredAt ?? now) : null,
           deliveredByUserId: input.isDelivered ? (invoice.deliveredByUserId ?? actor.id) : null,
         };
-  return { ...paid, ...delivered, version: sql`${materialInvoices.version} + 1`, updatedAt: now };
+  return {
+    ...paid,
+    ...delivered,
+    ...(input.amountMinor === undefined ? {} : { amountMinor: input.amountMinor }),
+    ...(input.supplierName === undefined ? {} : { supplierName: input.supplierName }),
+    ...(input.fileId === undefined ? {} : { fileId: input.fileId }),
+    version: sql`${materialInvoices.version} + 1`,
+    updatedAt: now,
+  };
 }
 
 function invoicePaymentError(input: UpdateMaterialInvoice, actor: Actor): MaterialOperationError | null {
+  if (
+    actor.role !== 'manager' &&
+    (input.amountMinor !== undefined || input.supplierName !== undefined || input.fileId !== undefined)
+  )
+    return 'forbidden';
   const hasPaymentFields = input.paidAmountMinor !== undefined || input.paidDate !== undefined;
   if (actor.role === 'foreman' && (input.isPaid !== undefined || hasPaymentFields)) return 'forbidden';
   if (input.isPaid === true && (input.paidAmountMinor === undefined || input.paidDate === undefined))
@@ -205,6 +218,11 @@ async function getInvoiceFileError(transaction: Transaction, fileId: number): Pr
     .from(materialInvoices)
     .where(eq(materialInvoices.fileId, fileId));
   return used ? 'invalid_request' : null;
+}
+
+async function getReplacementFileError(transaction: Transaction, currentFileId: number, fileId?: number) {
+  if (fileId === undefined || fileId === currentFileId) return null;
+  return getInvoiceFileError(transaction, fileId);
 }
 
 export class MaterialRepository {
@@ -286,6 +304,8 @@ export class MaterialRepository {
       if (invoice.version !== input.expectedVersion) return { status: 'version_conflict' };
       const paymentError = invoicePaymentError(input, actor);
       if (paymentError) return { status: paymentError };
+      const fileError = await getReplacementFileError(transaction, invoice.fileId, input.fileId);
+      if (fileError) return { status: fileError };
       await audit.mutate(materialInvoices, eq(materialInvoices.id, invoiceId), () =>
         transaction
           .update(materialInvoices)
@@ -295,6 +315,34 @@ export class MaterialRepository {
       await syncSupplyStatus(transaction, stageContext.stage.id, audit);
       const invoices = await loadInvoices(transaction, invoice.stageId);
       return { status: 'ok', value: invoices.find(({ id }) => id === invoiceId)! };
+    });
+  }
+
+  deleteInvoice(
+    invoiceId: number,
+    expectedVersion: number,
+    actor: Actor,
+    context: AuditContext = { source: 'system' },
+  ): Promise<MaterialOperationResult<undefined>> {
+    if (actor.role !== 'manager') return Promise.resolve({ status: 'forbidden' });
+    return auditedTransaction(this.database, context, 'deleteMaterialInvoice', async (transaction, audit) => {
+      const stageContext = await stageContextByInvoice(transaction, invoiceId, true);
+      const [invoice] = await transaction
+        .select()
+        .from(materialInvoices)
+        .where(eq(materialInvoices.id, invoiceId))
+        .for('update');
+      if (!invoice || !stageContext || !stageContext.stage.isIncluded) return { status: 'not_found' };
+      if (stageContext.isArchived) return { status: 'project_archived' };
+      if (invoice.version !== expectedVersion) return { status: 'version_conflict' };
+      await audit.mutate(materialShortages, eq(materialShortages.invoiceId, invoiceId), () =>
+        transaction.delete(materialShortages).where(eq(materialShortages.invoiceId, invoiceId)),
+      );
+      await audit.mutate(materialInvoices, eq(materialInvoices.id, invoiceId), () =>
+        transaction.delete(materialInvoices).where(eq(materialInvoices.id, invoiceId)),
+      );
+      await syncSupplyStatus(transaction, invoice.stageId, audit);
+      return { status: 'ok', value: undefined };
     });
   }
 

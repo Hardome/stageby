@@ -11,6 +11,9 @@ import { stageMaterialInvoiceSchema } from './stageMaterialInvoiceSchema'
 
 export const updateMaterialInvoiceSchema = z.object({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
+  amountMinor: positiveMoneyAmountMinorSchema.optional().describe('Новая сумма выставленного счёта; не изменяет фактическую оплату.').meta({ examples: [500000] }),
+  supplierName: z.string().min(1).max(255).nullish().describe('Новый поставщик; null очищает значение.').meta({ examples: ['Стройснаб'] }),
+  fileId: z.int().min(1).max(2147483647).optional().describe('Новый загруженный файл счёта.').meta({ examples: [201] }),
   isPaid: z.boolean().optional().describe('Требуемая отметка оплаты. При true обязательны paidAmountMinor и paidDate, при false они очищаются.').meta({ examples: [true] }),
   paidAmountMinor: positiveMoneyAmountMinorSchema.optional().describe('Фактическая сумма оплаты; обязательна вместе с isPaid true.').meta({ examples: [500000] }),
   paidDate: z.iso.date().optional().describe('Календарная дата оплаты; обязательна вместе с isPaid true.').meta({ examples: ['2026-10-02'] }),
@@ -47,11 +50,15 @@ export const updateMaterialInvoiceStatus409Schema = apiErrorSchema
 
 export type UpdateMaterialInvoiceStatus409SchemaType = z.infer<typeof updateMaterialInvoiceStatus409Schema>
 
+export const updateMaterialInvoiceStatus413Schema = apiErrorSchema
+
+export type UpdateMaterialInvoiceStatus413SchemaType = z.infer<typeof updateMaterialInvoiceStatus413Schema>
+
 export const updateMaterialInvoiceResponseSchema = updateMaterialInvoiceStatus200Schema
 
 export type UpdateMaterialInvoiceResponseSchemaType = z.infer<typeof updateMaterialInvoiceResponseSchema>
 
-export const updateMaterialInvoiceErrorSchema = z.union([updateMaterialInvoiceStatus400Schema, updateMaterialInvoiceStatus401Schema, updateMaterialInvoiceStatus403Schema, updateMaterialInvoiceStatus404Schema, updateMaterialInvoiceStatus409Schema])
+export const updateMaterialInvoiceErrorSchema = z.union([updateMaterialInvoiceStatus400Schema, updateMaterialInvoiceStatus401Schema, updateMaterialInvoiceStatus403Schema, updateMaterialInvoiceStatus404Schema, updateMaterialInvoiceStatus409Schema, updateMaterialInvoiceStatus413Schema])
 
 export type UpdateMaterialInvoiceErrorSchemaType = z.infer<typeof updateMaterialInvoiceErrorSchema>
 
@@ -81,6 +88,7 @@ export const updateMaterialInvoiceResponsesSchema = z.object({
   '403': updateMaterialInvoiceStatus403Schema,
   '404': updateMaterialInvoiceStatus404Schema,
   '409': updateMaterialInvoiceStatus409Schema,
+  '413': updateMaterialInvoiceStatus413Schema,
 })
 
 export type UpdateMaterialInvoiceResponsesSchemaType = z.infer<typeof updateMaterialInvoiceResponsesSchema>

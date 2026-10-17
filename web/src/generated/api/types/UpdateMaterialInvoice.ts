@@ -17,6 +17,31 @@ export type UpdateMaterialInvoice = {
     */
     expectedVersion: ExpectedVersion;
     /**
+     * @description Новая сумма выставленного счёта; не изменяет фактическую оплату.
+     *
+     * Format: `int64`
+     * @minLength 100
+     * @example 500000
+     * @type integer | undefined
+    */
+    amountMinor?: PositiveMoneyAmountMinor;
+    /**
+     * @description Новый поставщик; null очищает значение.
+     * @minLength 1
+     * @maxLength 255
+     * @example Стройснаб
+     * @type string | undefined
+    */
+    supplierName?: string | null;
+    /**
+     * @description Новый загруженный файл счёта.
+     * @minLength 1
+     * @maxLength 2147483647
+     * @example 201
+     * @type integer | undefined
+    */
+    fileId?: number;
+    /**
      * @description Требуемая отметка оплаты. При true обязательны paidAmountMinor и paidDate, при false они очищаются.
      * @example true
      * @type boolean | undefined
@@ -68,6 +93,8 @@ export type UpdateMaterialInvoiceStatus404 = ApiError;
 
 export type UpdateMaterialInvoiceStatus409 = ApiError;
 
+export type UpdateMaterialInvoiceStatus413 = ApiError;
+
 export type UpdateMaterialInvoiceBody = UpdateMaterialInvoice;
 
 export type UpdateMaterialInvoiceOptions = {
@@ -84,9 +111,10 @@ export type UpdateMaterialInvoiceResponses = {
     "403": UpdateMaterialInvoiceStatus403;
     "404": UpdateMaterialInvoiceStatus404;
     "409": UpdateMaterialInvoiceStatus409;
+    "413": UpdateMaterialInvoiceStatus413;
 };
 
 /**
  * @description Union of all possible responses
 */
-export type UpdateMaterialInvoiceResponse = (UpdateMaterialInvoiceStatus200 | UpdateMaterialInvoiceStatus400 | UpdateMaterialInvoiceStatus401 | UpdateMaterialInvoiceStatus403 | UpdateMaterialInvoiceStatus404 | UpdateMaterialInvoiceStatus409);
+export type UpdateMaterialInvoiceResponse = (UpdateMaterialInvoiceStatus200 | UpdateMaterialInvoiceStatus400 | UpdateMaterialInvoiceStatus401 | UpdateMaterialInvoiceStatus403 | UpdateMaterialInvoiceStatus404 | UpdateMaterialInvoiceStatus409 | UpdateMaterialInvoiceStatus413);
