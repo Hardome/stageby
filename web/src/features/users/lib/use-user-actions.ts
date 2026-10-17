@@ -76,6 +76,7 @@ export function useUserActions(search: UsersSearch) {
         title: userSuccessMessages[action],
         description: 'Войдите снова, чтобы продолжить.',
       });
+
       return;
     }
 

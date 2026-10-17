@@ -29,6 +29,13 @@ function makeUpload(): PhotoUpload {
 describe('photo upload checkpoints', () => {
   const signal = new AbortController().signal;
   let put: ReturnType<typeof vi.fn>;
+  let item: PhotoUpload;
+
+  function save(next: PhotoUpload) {
+    item = next;
+
+    return Promise.resolve();
+  }
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -56,11 +63,7 @@ describe('photo upload checkpoints', () => {
   it.each(['prepare', 'create', 'put', 'complete', 'attach'])(
     'resumes after failure at %s without duplicate files',
     async (step) => {
-      let item = makeUpload();
-      const save = (next: PhotoUpload) => {
-        item = next;
-        return Promise.resolve();
-      };
+      item = makeUpload();
       const failing = step === 'put' ? put : mocks[step as keyof typeof mocks];
       failing.mockRejectedValueOnce(new Error('Connection lost'));
 
@@ -87,11 +90,7 @@ describe('photo upload checkpoints', () => {
   );
 
   it('replaces only a confirmed expired session and rotates its completion key', async () => {
-    let item = makeUpload();
-    const save = (next: PhotoUpload) => {
-      item = next;
-      return Promise.resolve();
-    };
+    item = makeUpload();
     mocks.complete.mockRejectedValueOnce(new Error('Connection lost'));
 
     await expect(uploadPhoto(item, 7, signal, save)).rejects.toThrow();
@@ -107,11 +106,7 @@ describe('photo upload checkpoints', () => {
   });
 
   it('keeps uploaded file and attachment identity after a concurrent photo limit rejection', async () => {
-    let item = makeUpload();
-    const save = (next: PhotoUpload) => {
-      item = next;
-      return Promise.resolve();
-    };
+    item = makeUpload();
     mocks.attach.mockRejectedValueOnce({ status: 409, data: { code: 'photo_limit_exceeded' } });
 
     await expect(uploadPhoto(item, 7, signal, save)).rejects.toMatchObject({ status: 409 });

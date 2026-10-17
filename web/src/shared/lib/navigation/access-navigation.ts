@@ -19,6 +19,7 @@ export function safeReturnTo(value: unknown): string | undefined {
     if (decoded.startsWith('//') || hasUnsafeCharacters(decoded)) return;
     const url = new URL(value, 'https://stageby.invalid');
     if (url.origin !== 'https://stageby.invalid' || /^\/login\/?$/.test(url.pathname)) return;
+
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return;

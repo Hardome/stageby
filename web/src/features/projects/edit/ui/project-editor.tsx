@@ -1,15 +1,10 @@
-import { useEffect, useState } from 'react';
-
 import { ProjectFormSkeleton } from '@entities/project';
-import { useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { DataRegion } from '@shared/ui/data-region';
 import { NotFound } from '@shared/ui/not-found';
 
-import { useGetProjectEdit } from '@api/queries/useGetProjectEdit';
-import type { ProjectEdit } from '@api/types';
-
+import { useProjectEditor } from '../lib/use-project-editor';
 import type { EditProjectFormProperties } from '../model/types';
 import { EditProjectForm } from './edit-project-form';
 
@@ -18,24 +13,7 @@ interface ProjectEditorProperties extends Omit<EditProjectFormProperties, 'snaps
 }
 
 export function ProjectEditor({ projectId, ...properties }: ProjectEditorProperties) {
-  const query = useGetProjectEdit({ path: { projectId } }, { query: { retry: false, refetchOnMount: 'always' } });
-  const [snapshot, setSnapshot] = useState<ProjectEdit | null>(null);
-  const [revision, setRevision] = useState(0);
-  const accessError = useAccessError();
-  // При входе ждём свежий снимок; последующие обновления не заменяют правки и исходные версии.
-  if (snapshot === null && query.isFetchedAfterMount && query.isSuccess && !query.isFetching) setSnapshot(query.data);
-
-  useEffect(() => {
-    if (query.error) accessError(query.error);
-  }, [query.error, accessError]);
-
-  async function reload() {
-    const result = await query.refetch();
-    if (result.error || !result.data) throw new Error('Не удалось загрузить объект.');
-    setSnapshot(result.data);
-    setRevision((previous) => previous + 1);
-    properties.onDirtyChange(false);
-  }
+  const { query, snapshot, revision, reload } = useProjectEditor(projectId, properties.onDirtyChange);
 
   if (query.error?.status === 403 || query.error?.status === 404) return <NotFound />;
 

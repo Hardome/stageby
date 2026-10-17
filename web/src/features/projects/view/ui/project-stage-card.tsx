@@ -18,6 +18,7 @@ interface ProjectStageCardProperties {
 
 export function ProjectStageCard({ stage, number, today }: ProjectStageCardProperties) {
   const isComplete = stage.status === 'completed' || stage.status === 'paid';
+
   return (
     <Card className={cn('min-w-0 gap-4', stage.status === 'in_progress' && 'border-primary/60')}>
       <CardHeader className="gap-3">

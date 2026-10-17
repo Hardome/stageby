@@ -71,6 +71,7 @@ export function useStageForm(stage: Stage, onSuccess?: () => void) {
       if (Object.keys(body).length === 1) {
         setMessage('Нет изменений.');
         onSuccess?.();
+
         return;
       }
       await mutation.mutateAsync({ path, body });

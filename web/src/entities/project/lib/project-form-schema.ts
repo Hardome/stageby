@@ -40,7 +40,7 @@ const amount = z.string().superRefine((value, context) => {
 
 export const objectFormSchema = z
   .object({
-    ownerName: contractSchema.shape.ownerName.trim().min(1, 'Укажите клиента.').max(150, 'Не более 150 символов.'),
+    ownerName: contractSchema.shape.ownerName.trim().min(1, 'Укажите клиента.'),
     address: contractSchema.shape.address.trim().min(1, 'Укажите адрес.'),
     coordinates: z
       .string()

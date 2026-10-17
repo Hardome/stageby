@@ -45,6 +45,7 @@ describe('uploader interactions', () => {
   function input() {
     const element = container.querySelector('input');
     if (!element) throw new Error('Missing file input');
+
     return element;
   }
   async function select(files: File[]) {

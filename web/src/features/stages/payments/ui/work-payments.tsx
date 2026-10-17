@@ -23,7 +23,11 @@ import { WorkPaymentsSkeleton } from './work-payments-skeleton';
 import { WorkPlanRow } from './work-plan-row';
 import { WorkPlanToolbar } from './work-plan-toolbar';
 
-export function WorkPayments({ stage }: { stage: Stage }) {
+interface WorkPaymentsProperties {
+  stage: Stage;
+}
+
+export function WorkPayments({ stage }: WorkPaymentsProperties) {
   const { user } = useAuth();
   const data = useWorkPayments(stage.id);
   const [action, setAction] = useState<WorkAction | null>(null);

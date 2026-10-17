@@ -50,6 +50,7 @@ describe('creation form draft lifecycle', () => {
   function input(id: string): HTMLInputElement {
     const element = container.querySelector<HTMLInputElement>(`#${id}`);
     if (!element) throw new Error(`Missing input: ${id}`);
+
     return element;
   }
 

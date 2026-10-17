@@ -18,7 +18,12 @@ import { useInvoiceCreate } from '../lib/use-invoice-create';
 import { MaterialDialog } from './material-dialog';
 import { MaterialFeedback } from './material-feedback';
 
-export function InvoiceCreate({ stage, count }: { stage: Stage; count: number }) {
+interface InvoiceCreateProperties {
+  stage: Stage;
+  count: number;
+}
+
+export function InvoiceCreate({ stage, count }: InvoiceCreateProperties) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const { form, upload, action, submit, locked } = useInvoiceCreate(stage, () => setOpen(false));

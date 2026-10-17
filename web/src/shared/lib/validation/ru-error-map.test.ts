@@ -7,6 +7,7 @@ import { configureZod, ruErrorMap } from './ru-error-map';
 function errorMessage(schema: z.ZodType, input: unknown): string {
   const result = schema.safeParse(input);
   if (result.success) throw new Error('Expected validation to fail');
+
   return result.error.issues[0]?.message ?? '';
 }
 

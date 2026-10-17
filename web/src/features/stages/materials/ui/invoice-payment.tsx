@@ -13,15 +13,13 @@ import { useInvoicePayment } from '../lib/use-invoice-payment';
 import { InvoicePaymentForm } from './invoice-payment-form';
 import { MaterialDialog } from './material-dialog';
 
-export function InvoicePayment({
-  stage,
-  invoice,
-  canManage,
-}: {
+interface InvoicePaymentProperties {
   stage: Stage;
   invoice: StageMaterialInvoice;
   canManage: boolean;
-}) {
+}
+
+export function InvoicePayment({ stage, invoice, canManage }: InvoicePaymentProperties) {
   const [open, setOpen] = useState(false);
   const editor = useInvoicePayment(stage, invoice, () => setOpen(false));
   const isPaid = invoice.paidAt !== null;

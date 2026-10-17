@@ -85,6 +85,26 @@ describe('project view', () => {
     expect(container).toHaveTextContent('404 — Страница не найдена');
     expect(container.querySelector('button')).toBeNull();
   });
+
+  it.each([403, 404])('hides cached project data when either query returns %s', async (status) => {
+    const data = { items: [stage] };
+    await render({ data: project }, { data });
+    expect(container).toHaveTextContent('Анна');
+
+    const error = { status };
+    await render({ data: project, isError: true, error }, { data });
+
+    expect(container).toHaveTextContent('404 — Страница не найдена');
+    expect(container).not.toHaveTextContent('Анна');
+    expect(mocks.access).toHaveBeenCalledWith(error);
+
+    await render({ data: project }, { data, isError: true, error });
+
+    expect(container).toHaveTextContent('404 — Страница не найдена');
+    expect(container).not.toHaveTextContent('Анна');
+    expect(container).not.toHaveTextContent('Стены');
+  });
+
   it('keeps project content when stages fail, supports retry and partial plans', async () => {
     await render({ data: project }, { isError: true, error: { status: 500 } });
     expect(container).toHaveTextContent('Анна');

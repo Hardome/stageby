@@ -12,5 +12,6 @@ export function materialDescriptions(summary: MaterialIndicator): string[] {
   if (summary.isPartiallyPaid) payment = 'Оплачено частично';
   let delivery = summary.deliveredInvoiceCount === summary.invoiceCount ? 'Материалы доставлены' : 'Ожидается доставка';
   if (summary.isPartiallyDelivered) delivery = 'Доставлено частично';
+
   return [payment, delivery];
 }

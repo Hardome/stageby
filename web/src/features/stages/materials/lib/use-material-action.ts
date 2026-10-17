@@ -40,6 +40,7 @@ export function useMaterialAction(stage: Stage) {
     setMessage(
       code === 'version_conflict' ? 'Данные изменились. Обновите их и проверьте ввод перед повтором.' : fallback,
     );
+
     return code;
   }
 
@@ -82,5 +83,6 @@ export function useMaterialAction(stage: Stage) {
   }
 
   const isPending = mutation.isPending || reloading;
+
   return { run, reload, pending: isPending, message, needsReload, blocked: isPending || needsReload || unavailable };
 }

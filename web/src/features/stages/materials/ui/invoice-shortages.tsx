@@ -13,17 +13,14 @@ import { InvoiceShortageItem } from './invoice-shortage-item';
 import { MaterialDialog } from './material-dialog';
 import { MaterialFeedback } from './material-feedback';
 
-export function InvoiceShortages({
-  stage,
-  invoice,
-  canReceive,
-  canManage,
-}: {
+interface InvoiceShortagesProperties {
   stage: Stage;
   invoice: StageMaterialInvoice;
   canReceive: boolean;
   canManage: boolean;
-}) {
+}
+
+export function InvoiceShortages({ stage, invoice, canReceive, canManage }: InvoiceShortagesProperties) {
   const [open, setOpen] = useState(false);
   const editor = useInvoiceShortages(stage, invoice, () => setOpen(false));
   const active = invoice.shortages.filter((shortage) => !shortage.resolvedAt);

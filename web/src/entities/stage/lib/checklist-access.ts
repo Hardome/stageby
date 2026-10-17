@@ -10,5 +10,6 @@ export function canEditChecklistPhotos(stage: Stage, item: ChecklistItem, role?:
   if (role !== 'manager' && role !== 'foreman') return false;
   if (role === 'manager') return true;
   if (role === 'foreman' && stage.status === 'acceptance') return false;
+
   return role === 'foreman' && stage.status === 'rework' ? item.requiresRework : stage.status !== 'created';
 }
