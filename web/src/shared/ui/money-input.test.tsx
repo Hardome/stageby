@@ -18,6 +18,7 @@ function ControlledInput({
   ...properties
 }: Partial<ComponentProps<typeof MoneyInput>> & { initialValue: string }) {
   const [amount, setAmount] = useState(initialValue);
+
   return (
     <MoneyInput
       value={amount}
@@ -37,6 +38,7 @@ describe('MoneyInput', () => {
   function input() {
     const element = container.querySelector('input');
     if (!element) throw new Error('Missing money input');
+
     return element;
   }
 

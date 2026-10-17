@@ -22,6 +22,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       if (theme === 'system') applyTheme(theme);
     };
     media.addEventListener('change', onSystemThemeChange);
+
     return () => media.removeEventListener('change', onSystemThemeChange);
   }, [theme]);
 
@@ -32,6 +33,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       }
     };
     window.addEventListener('storage', onStorage);
+
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 

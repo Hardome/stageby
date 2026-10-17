@@ -21,7 +21,11 @@ interface TestUpload extends UploadItem {
 const upload = vi.fn<(item: TestUpload, update: (values: Partial<TestUpload>) => void) => Promise<void>>();
 const onError = vi.fn();
 
-function Example({ onChange }: { onChange: (value: ReturnType<typeof useFileUploader<TestUpload>>) => void }) {
+interface ExampleProperties {
+  onChange: (value: ReturnType<typeof useFileUploader<TestUpload>>) => void;
+}
+
+function Example({ onChange }: ExampleProperties) {
   const result = useFileUploader<TestUpload>({
     createItem: (file) => ({ id: crypto.randomUUID(), key: crypto.randomUUID(), file, status: 'uploading' }),
     validateFile: (file) => (file.size === 0 ? 'Пустой файл' : undefined),
@@ -29,7 +33,9 @@ function Example({ onChange }: { onChange: (value: ReturnType<typeof useFileUplo
     onError,
     errorMessage: () => 'Ошибка передачи',
   });
+
   useEffect(() => onChange(result), [result, onChange]);
+
   return null;
 }
 
@@ -64,10 +70,12 @@ describe('file uploader state', () => {
     upload
       .mockImplementationOnce((_item, update) => {
         update({ session: 'saved-session' });
+
         return Promise.reject(new Error('Lost response'));
       })
       .mockImplementationOnce((_item, update) => {
         update({ fileId: 42 });
+
         return Promise.resolve();
       });
     await flush(() =>
@@ -82,6 +90,7 @@ describe('file uploader state', () => {
     upload.mockImplementationOnce((item, update) => {
       expect(item).toMatchObject({ session: 'saved-session', key: failed.key });
       update({ fileId: 41 });
+
       return Promise.resolve();
     });
     await act(async () => {

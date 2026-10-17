@@ -8,7 +8,12 @@ import { DataRegion } from '@shared/ui/data-region';
 import { NotFound } from '@shared/ui/not-found';
 import { Skeleton } from '@shared/ui/skeleton';
 
-export function StageMaterialsPage({ stageId, offset }: { stageId: string; offset?: number }) {
+interface StageMaterialsPageProperties {
+  stageId: string;
+  offset?: number;
+}
+
+export function StageMaterialsPage({ stageId, offset }: StageMaterialsPageProperties) {
   const { query, invalidId } = useStageAccess(stageId);
 
   if (invalidId || query.error?.status === 403 || query.error?.status === 404) {

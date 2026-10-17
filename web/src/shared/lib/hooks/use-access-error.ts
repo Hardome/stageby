@@ -6,6 +6,7 @@ import { errorStatus } from '../errors/error-status';
 
 export function useAccessError() {
   const { clearSession, refetch } = useAuth();
+
   return useCallback(
     (error: unknown) => {
       const status = errorStatus(error);

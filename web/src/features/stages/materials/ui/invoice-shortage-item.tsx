@@ -6,15 +6,13 @@ import { Button } from '@shared/ui/button';
 
 import type { MaterialShortage } from '@api/types';
 
-export function InvoiceShortageItem({
-  shortage,
-  canResolve,
-  onResolve,
-}: {
+interface InvoiceShortageItemProperties {
   shortage: MaterialShortage;
   canResolve: boolean;
   onResolve?: () => void;
-}) {
+}
+
+export function InvoiceShortageItem({ shortage, canResolve, onResolve }: InvoiceShortageItemProperties) {
   return (
     <Alert variant={shortage.resolvedAt ? 'default' : 'destructive'}>
       {shortage.resolvedAt ? <CheckIcon aria-hidden="true" /> : <AlertTriangleIcon aria-hidden="true" />}

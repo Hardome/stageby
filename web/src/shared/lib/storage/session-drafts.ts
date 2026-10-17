@@ -3,6 +3,7 @@ const prefix = 'stageby:draft:';
 export function readSessionDraft(key: string): unknown {
   try {
     const value = sessionStorage.getItem(prefix + key);
+
     return value ? (JSON.parse(value) as unknown) : undefined;
   } catch {
     return undefined;

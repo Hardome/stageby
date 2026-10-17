@@ -17,6 +17,7 @@ function AuthenticatedLayout() {
   if (isPending || error) return <AuthStatus />;
   if (!user) {
     const returnTo = safeReturnTo(href);
+
     return returnTo ? <Navigate to="/login" search={{ returnTo }} replace /> : <AuthStatus />;
   }
 

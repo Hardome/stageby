@@ -14,6 +14,7 @@ interface UserActionsProperties {
 
 export function UserActions({ user, search }: UserActionsProperties) {
   const parameters = { userId: String(user.id) };
+
   return (
     <div className="flex gap-2">
       <Button

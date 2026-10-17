@@ -10,15 +10,13 @@ import type { Stage, StageMaterialInvoice } from '@api/types';
 import { useInvoiceDelivery } from '../lib/use-invoice-delivery';
 import { MaterialFeedback } from './material-feedback';
 
-export function InvoiceDelivery({
-  stage,
-  invoice,
-  canReceive,
-}: {
+interface InvoiceDeliveryProperties {
   stage: Stage;
   invoice: StageMaterialInvoice;
   canReceive: boolean;
-}) {
+}
+
+export function InvoiceDelivery({ stage, invoice, canReceive }: InvoiceDeliveryProperties) {
   const { action, toggle } = useInvoiceDelivery(stage, invoice);
   const deliveredBy = invoice.deliveredBy ? ` · ${invoice.deliveredBy.fullName}` : '';
   const description = invoice.deliveredAt

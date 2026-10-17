@@ -13,6 +13,7 @@ export function isWorkActionUnchanged(action: WorkAction, values: WorkFormValues
       body.dueDate === action.row.dueDate
     );
   }
+
   return action.kind === 'payment' && action.payment
     ? parseAmount(values.amount) === action.payment.amountMinor &&
         values.date === action.payment.paidAt &&

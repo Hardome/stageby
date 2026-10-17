@@ -11,15 +11,13 @@ import { Spinner } from '@shared/ui/spinner';
 import type { useInvoicePayment } from '../lib/use-invoice-payment';
 import { MaterialFeedback } from './material-feedback';
 
-export function InvoicePaymentForm({
-  editor,
-  isPaid,
-  onClose,
-}: {
+interface InvoicePaymentFormProperties {
   editor: ReturnType<typeof useInvoicePayment>;
   isPaid: boolean;
   onClose: () => void;
-}) {
+}
+
+export function InvoicePaymentForm({ editor, isPaid, onClose }: InvoicePaymentFormProperties) {
   const id = useId();
   const { form, action, submit, clear, hasChanges } = editor;
   const errors = form.formState.errors;

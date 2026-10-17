@@ -22,6 +22,7 @@ export function ProjectStages({ stages, isPending, isFetching, hasError, onRetry
     ?.filter((stage) => stage.isIncluded)
     .toSorted((left, right) => left.position - right.position);
   const today = todayInYekaterinburg();
+
   return (
     <section aria-label="Этапы объекта" aria-busy={isFetching} className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4">

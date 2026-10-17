@@ -29,7 +29,12 @@ const presentation = {
   paid: { title: 'Завершение расчёта', description: 'Подтвердите выплату принятого этапа.', icon: CircleCheckIcon },
 };
 
-export function WorkEditorHeading({ action, stage }: Pick<WorkEditorProperties, 'action' | 'stage'>) {
+interface WorkEditorHeadingProperties {
+  action: WorkEditorProperties['action'];
+  stage: WorkEditorProperties['stage'];
+}
+
+export function WorkEditorHeading({ action, stage }: WorkEditorHeadingProperties) {
   const { title, description, icon: Icon } = presentation[action.kind];
 
   return (

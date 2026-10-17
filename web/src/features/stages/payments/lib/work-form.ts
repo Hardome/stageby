@@ -58,12 +58,11 @@ export type WorkFormValues = z.infer<ReturnType<typeof workFormSchema>>;
 export function workFormDefaults(action: WorkAction): WorkFormValues {
   const payment = action.kind === 'payment' ? action.payment : undefined;
   const planRow = action.kind === 'row' ? action.row : undefined;
+  const isNewPayment = !payment && action.kind === 'payment';
+  const isNewPlanRow = !planRow && action.kind === 'row';
 
   return {
-    amount:
-      (!payment && action.kind === 'payment') || (!planRow && action.kind === 'row')
-        ? ''
-        : String((payment?.amountMinor ?? planRow?.amountMinor ?? 0n) / 100n),
+    amount: isNewPayment || isNewPlanRow ? '' : String((payment?.amountMinor ?? planRow?.amountMinor ?? 0n) / 100n),
     recipient: planRow?.recipientId ? { id: planRow.recipientId, label: `Получатель №${planRow.recipientId}` } : null,
     date: payment?.paidAt ?? planRow?.dueDate ?? (action.kind === 'payment' ? todayInYekaterinburg() : ''),
     comment: payment?.comment ?? '',

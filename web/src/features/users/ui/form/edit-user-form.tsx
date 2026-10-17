@@ -1,18 +1,12 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
+import { Controller, FormProvider } from 'react-hook-form';
 
-import { useSessionFormDraft } from '@shared/lib/hooks';
 import { Checkbox } from '@shared/ui/checkbox';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@shared/ui/field';
 
-import { useUpdateUser } from '@api/mutations/useUpdateUser';
 import type { User } from '@api/types';
 
-import { editUserDraftSchema } from '../../lib/edit-draft';
-import { editFormSchema } from '../../lib/schemas';
-import { notifyUserError, useUserAccessError, useUserActions } from '../../lib/use-user-actions';
-import { getUserChanges, shouldRevokeOwnSession } from '../../lib/user-form';
-import type { EditFormOutput, EditFormValues, UsersSearch } from '../../model/types';
+import { useEditUserForm } from '../../lib/use-edit-user-form';
+import type { UsersSearch } from '../../model/types';
 import { FormActions } from './form-actions';
 import { ProfileFields } from './profile-fields';
 import { TextField } from './text-field';
@@ -23,32 +17,7 @@ interface EditUserFormProperties {
 }
 
 export function EditUserForm({ user, search }: EditUserFormProperties) {
-  const form = useForm<EditFormValues, unknown, EditFormOutput>({
-    resolver: zodResolver(editFormSchema),
-    mode: 'onChange',
-    defaultValues: { fullName: user.fullName, phone: user.phone ?? '', role: user.role, isActive: user.isActive },
-  });
-
-  const clearDraft = useSessionFormDraft(form, `edit-user:v1:${user.id}`, editUserDraftSchema);
-
-  const { finish, currentUser } = useUserActions(search);
-
-  const mutation = useUpdateUser({
-    mutation: {
-      onSuccess: (updated, { body }) => {
-        clearDraft();
-        return finish('updated', updated, shouldRevokeOwnSession(currentUser?.id, user, body));
-      },
-      onError: notifyUserError,
-    },
-  });
-  useUserAccessError(mutation.error);
-
-  function submit(values: EditFormOutput) {
-    const body = getUserChanges(user, values);
-    if (Object.keys(body).length > 0) mutation.mutate({ path: { userId: user.id }, body });
-    else form.reset({ ...values, phone: values.phone ?? '' });
-  }
+  const { form, mutation, submit } = useEditUserForm(user, search);
 
   return (
     <FormProvider {...form}>

@@ -42,6 +42,7 @@ function parsedType(input: unknown): string {
   if (typeof input === 'number' && Number.isNaN(input)) return 'NaN';
   if (input instanceof Date) return 'дата';
   if (input instanceof Map) return 'словарь';
+
   return input instanceof Set ? 'множество' : (typeNames[typeof input] ?? typeof input);
 }
 
@@ -52,11 +53,13 @@ function isEmptyInput(input: unknown): boolean {
 function getInvalidTypeMessage(issue: ZodIssueByCode<'invalid_type'>): string {
   if (isEmptyInput(issue.input)) return requiredFieldMessage;
   const expected = typeNames[issue.expected] ?? issue.expected;
+
   return `Неверный ввод: ожидался ${expected}, получен — ${parsedType(issue.input)}`;
 }
 
 function getTooSmallMessage(issue: ZodIssueByCode<'too_small'>): string {
   if (issue.origin === 'string') return `Минимум символов: ${issue.minimum}`;
+
   return issue.origin === 'array'
     ? `Минимальное количество элементов: ${issue.minimum}`
     : `Минимальное значение: ${issue.minimum}`;
@@ -64,6 +67,7 @@ function getTooSmallMessage(issue: ZodIssueByCode<'too_small'>): string {
 
 function getTooBigMessage(issue: ZodIssueByCode<'too_big'>): string {
   if (issue.origin === 'string') return `Максимум символов: ${issue.maximum}`;
+
   return issue.origin === 'array'
     ? `Максимальное количество элементов: ${issue.maximum}`
     : `Максимальное значение: ${issue.maximum}`;
@@ -73,6 +77,7 @@ function symbolCount(count: number): string {
   const lastTwo = count % 100;
   if (lastTwo >= 11 && lastTwo <= 14) return `${count} символов`;
   if (count % 10 === 1) return `${count} символ`;
+
   return count % 10 >= 2 && count % 10 <= 4 ? `${count} символа` : `${count} символов`;
 }
 
@@ -100,6 +105,7 @@ function getInvalidFormatMessage(issue: ZodIssueByCode<'invalid_format'>): strin
     return `Строка должна начинаться с "${issue.prefix}"`;
   if (issue.format === 'ends_with' && typeof issue.suffix === 'string')
     return `Строка должна заканчиваться на "${issue.suffix}"`;
+
   return issue.format === 'includes' && typeof issue.includes === 'string'
     ? `Строка должна содержать "${issue.includes}"`
     : 'Неверный формат';

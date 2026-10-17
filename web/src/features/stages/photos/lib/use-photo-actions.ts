@@ -39,6 +39,7 @@ export function usePhotoActions(stage: Stage, item: ChecklistItem, version: numb
       await action();
       await refresh();
       setSuccess(successMessage);
+
       return true;
     } catch (error_) {
       accessError(error_);

@@ -21,6 +21,7 @@ interface ProjectCreatorProperties {
 export function ProjectCreator(properties: ProjectCreatorProperties) {
   const query = useListActiveStageTypes();
   const accessError = useAccessError();
+
   useEffect(() => {
     if (query.error) accessError(query.error);
   }, [query.error, accessError]);
@@ -41,6 +42,7 @@ export function ProjectCreator(properties: ProjectCreatorProperties) {
         </EmptyHeader>
       </Empty>
     );
+
   return (
     <Alert variant="destructive">
       <AlertDescription>

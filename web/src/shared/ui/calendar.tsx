@@ -150,6 +150,7 @@ function CalendarDayButton({
   const calendarLocale = locale ?? dayPickerProps.locale;
 
   const reference = React.useRef<HTMLButtonElement>(null);
+
   React.useEffect(() => {
     if (modifiers.focused) reference.current?.focus();
   }, [modifiers.focused]);
@@ -202,6 +203,7 @@ function CalendarRoot({ className, rootRef, ...properties }: React.ComponentProp
 function CalendarChevron({ className, orientation, ...properties }: React.ComponentProps<typeof Chevron>) {
   const horizontalIcon = orientation === 'left' ? ChevronLeftIcon : ChevronRightIcon;
   const Icon = orientation === 'down' || orientation === 'up' ? ChevronDownIcon : horizontalIcon;
+
   return <Icon className={cn('size-4', className)} {...properties} />;
 }
 

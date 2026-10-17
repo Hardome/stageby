@@ -1,11 +1,11 @@
 import { Skeleton } from '@shared/ui/skeleton';
 
-import { DashboardActivity } from './dashboard-activity';
+import { DashboardActivitySkeleton } from './dashboard-activity-skeleton';
 
 export function DashboardSummarySkeleton() {
   return (
     <div aria-hidden="true" className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
-      <DashboardActivity count={0} isLoading />
+      <DashboardActivitySkeleton />
       <div className="overflow-hidden rounded-2xl border bg-card text-card-foreground">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-5 sm:pt-4">
           <h3 className="font-semibold">Общий итог</h3>

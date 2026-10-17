@@ -5,6 +5,7 @@ const key = 'stageby:session-user';
 export function sessionOwner(): number | undefined {
   try {
     const value = Number(sessionStorage.getItem(key));
+
     return Number.isSafeInteger(value) && value > 0 ? value : undefined;
   } catch {
     return;

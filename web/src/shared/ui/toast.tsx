@@ -28,6 +28,7 @@ function ToastList() {
       >
         {toasts.map((item) => {
           const Icon = icons[item.type as keyof typeof icons] ?? InfoIcon;
+
           return (
             <ToastPrimitive.Root
               key={item.id}

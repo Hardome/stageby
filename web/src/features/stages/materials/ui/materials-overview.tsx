@@ -4,7 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
 
 import type { Stage } from '@api/types';
 
-export function MaterialsOverview({ stage }: { stage: Stage }) {
+interface MaterialsOverviewProperties {
+  stage: Stage;
+}
+
+export function MaterialsOverview({ stage }: MaterialsOverviewProperties) {
   const balance =
     stage.plannedMaterialAmountMinor === null
       ? null

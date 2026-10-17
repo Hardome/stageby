@@ -15,7 +15,11 @@ const first = editStage().checklist.items[0];
 if (!first) throw new Error('Нет пункта чек-листа');
 const items = [first, { ...first, id: 212, title: 'Соединения', position: 2 }];
 
-function Form({ submit }: { submit: (values: ReworkFormValues) => void }) {
+interface FormProperties {
+  submit: (values: ReworkFormValues) => void;
+}
+
+function Form({ submit }: FormProperties) {
   const schema = reworkFormSchema(
     items.map((item) => item.id),
     '2026-10-16',
@@ -69,6 +73,7 @@ describe('individual rework comments', () => {
   function input(id: number) {
     const textarea = container.querySelector<HTMLTextAreaElement>(`#rework-comment-${id}`);
     if (!textarea) throw new Error('Нет поля замечания');
+
     return textarea;
   }
 

@@ -28,6 +28,7 @@ export function StageParameters({ stage, onClose, onPendingChange }: StageParame
 
   useEffect(() => {
     onPendingChange(editor.pending);
+
     return () => onPendingChange(false);
   }, [editor.pending, onPendingChange]);
 

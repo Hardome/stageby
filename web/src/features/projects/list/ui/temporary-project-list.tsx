@@ -33,9 +33,11 @@ export function TemporaryProjectList({ search, onPageChange }: TemporaryProjectL
   );
   const accessError = useAccessError();
   const offset = search.offset ?? 0;
+
   useEffect(() => {
     if (query.error) accessError(query.error);
   }, [query.error, accessError]);
+
   useEffect(() => {
     if (
       !query.error &&

@@ -12,5 +12,6 @@ export const Route = createFileRoute('/_auth/stages/$stageId_/materials')({
 function MaterialsRoute() {
   const { stageId } = Route.useParams();
   const { offset } = Route.useSearch();
+
   return <StageMaterialsPage stageId={stageId} offset={offset} />;
 }

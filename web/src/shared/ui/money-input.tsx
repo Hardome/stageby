@@ -10,6 +10,7 @@ interface MoneyInputProperties
 
 function formatAmount(value: string) {
   const digits = value.replaceAll(/\s/g, '');
+
   return /^\d*$/.test(digits)
     ? Array.from(digits, (digit, index) => (index > 0 && (digits.length - index) % 3 === 0 ? ` ${digit}` : digit)).join(
         '',
@@ -26,6 +27,7 @@ function selectionPosition(value: string, position: number, formatted: string) {
     if (character !== ' ') digits += 1;
     if (digits === digitsBefore) return index + 1;
   }
+
   return formatted.length;
 }
 
@@ -37,6 +39,7 @@ function separatorDeletion(input: HTMLInputElement, key: string) {
   const separator = isBackwards ? start - 1 : start;
   if (input.value[separator] !== ' ') return;
   const digit = isBackwards ? separator - 1 : separator + 1;
+
   return {
     value: input.value.slice(0, digit) + input.value.slice(digit + 1),
     caret: isBackwards ? digit : start,

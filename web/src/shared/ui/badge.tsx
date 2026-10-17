@@ -43,6 +43,7 @@ function Badge({
   ...properties
 }: useRender.ComponentProps<'span'> & VariantProps<typeof badgeVariants>) {
   const mergedProperties = mergeProps<'span'>({ className: cn(badgeVariants({ variant }), className) }, properties);
+
   return useRender({
     defaultTagName: 'span',
     props: mergedProperties,

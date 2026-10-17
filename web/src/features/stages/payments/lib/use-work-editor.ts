@@ -20,6 +20,7 @@ import { type WorkFormValues, workFormDefaults, workFormSchema } from './work-fo
 
 function actionVersion(action: WorkAction, stageVersion: number) {
   if ('row' in action && action.row) return action.row.version;
+
   return 'payment' in action && action.payment ? action.payment.version : stageVersion;
 }
 
@@ -55,6 +56,7 @@ export function useWorkEditor({ stage, action, onClose }: WorkEditorProperties) 
     if (needsReload || unavailable || busy.current) return;
     if (isWorkActionUnchanged(snapshot, values)) {
       onClose();
+
       return;
     }
 
@@ -84,11 +86,13 @@ export function useWorkEditor({ stage, action, onClose }: WorkEditorProperties) 
       if (currentStage.projectIsArchived || !currentStage.isIncluded) {
         setUnavailable(true);
         setMessage('Изменения этапа недоступны.');
+
         return;
       }
       if (snapshot.kind === 'paid' && !canConfirmPaid(currentStage)) {
         setUnavailable(true);
         setMessage('Подтверждение выплаты больше недоступно. Проверьте статус и остаток этапа.');
+
         return;
       }
       const updated = await reloadWorkAction(stage.id, snapshot);
