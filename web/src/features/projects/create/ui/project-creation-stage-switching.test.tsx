@@ -41,6 +41,7 @@ describe('project creation: direct stage switching', () => {
 
     expect(context.input('stages.2.plannedWorkAmount')).toHaveValue('350');
 
+    await context.fill('ownerName', '');
     await context.submit();
 
     expect(context.container.querySelector('h2')).toHaveTextContent('Объект');

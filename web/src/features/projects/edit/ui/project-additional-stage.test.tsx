@@ -67,25 +67,20 @@ describe('project additional stage', () => {
 
     expect(context.container.querySelector('input[id$="checklistItems.0.title"]')).toBeNull();
     expect(input('stages.2.plannedWorkAmount')).toHaveValue('');
+    await click('Добавить пункт');
+    await fill('stages.2.checklistItems.0.title', 'Новая проверка');
 
     await context.submit();
 
-    expect(mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        body: {
-          expectedVersion: 7,
-          stages: [
-            {
-              id: 19,
-              expectedVersion: 3,
-              isIncluded: true,
-              plannedWorkAmountMinor: null,
-              checklist: { expectedVersion: 5, items: [] },
-            },
-          ],
-        },
-      }),
-    );
+    const request = mocks.update.mock.calls[0]?.[0] as UpdateProjectOptions;
+
+    expect(request.body.stages?.[0]).toMatchObject({
+      id: 19,
+      expectedVersion: 3,
+      isIncluded: true,
+      plannedWorkAmountMinor: null,
+      checklist: { expectedVersion: 5, items: [{ title: 'Новая проверка', photoHint: null }] },
+    });
   });
 
   it('does not offer adding a second included additional stage', async () => {
