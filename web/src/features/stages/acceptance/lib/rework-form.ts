@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 import { todayInYekaterinburg } from '@entities/project';
 
 import { rejectStageSchema } from '@api/zod/rejectStageSchema';
@@ -6,13 +8,25 @@ export function reworkFormSchema(itemIds: number[], today = todayInYekaterinburg
   const availableIds = new Set(itemIds);
 
   return rejectStageSchema.omit({ expectedVersion: true }).extend({
-    comment: rejectStageSchema.shape.comment.trim().min(1, 'Укажите замечания.'),
     correctionDueDate: rejectStageSchema.shape.correctionDueDate.unwrap().refine((date) => date >= today, {
       message: 'Срок не может быть раньше сегодняшнего дня.',
     }),
-    itemIds: rejectStageSchema.shape.itemIds.refine((selected) => selected.every((id) => availableIds.has(id)), {
-      message: 'Состав чек-листа изменился. Проверьте выбранные пункты.',
-    }),
+    items: rejectStageSchema.shape.items.element
+      .extend({
+        comment: z
+          .string()
+          .trim()
+          .min(1, 'Укажите замечание к пункту.')
+          .pipe(rejectStageSchema.shape.items.element.shape.comment),
+      })
+      .array()
+      .min(1, 'Выберите хотя бы один пункт.')
+      .refine((selected) => selected.every((item) => availableIds.has(item.itemId)), {
+        message: 'Состав чек-листа изменился. Проверьте выбранные пункты.',
+      })
+      .refine((selected) => new Set(selected.map((item) => item.itemId)).size === selected.length, {
+        message: 'Пункты не должны повторяться.',
+      }),
   });
 }
 

@@ -894,7 +894,7 @@ paths:
       tags:
         - Stages
       summary: Вернуть этап на доработку
-      description: Только руководитель. Только из acceptance. Замечание, дата исправления и itemIds обязательны; дата не раньше текущей даты объекта. Интерфейс может предложить сегодня + 2 календарных дня, сервер не угадывает срок. Все itemIds должны принадлежать этому чек-листу, иначе 400 invalid_request. Переводит в rework, пишет latestAcceptance с decision=rejected и сбрасывает только указанные пункты для повторной проверки (completedAt/completedBy=null), остальные отметки сохраняет. Увеличивает версии этапа и чек-листа атомарно. Архив — 409 project_archived.
+      description: Только руководитель. Только из acceptance. Индивидуальные замечания items обязательны; дата не раньше текущей даты объекта. По умолчанию сегодня + 2 календарных дня. Все items[].itemId должны принадлежать этому чек-листу, иначе 400 invalid_request. Переводит в rework, пишет latestAcceptance с decision=rejected и сбрасывает только указанные пункты для повторной проверки (completedAt/completedBy=null), остальные отметки сохраняет. Увеличивает версии этапа и чек-листа атомарно. Архив — 409 project_archived.
       requestBody:
         required: true
         content:
@@ -2912,7 +2912,7 @@ components:
           examples:
             - Устранить замечания по качеству выполнения контрольной точки.
             - null
-          description: Комментарий к решению. Для возврата на доработку содержит обязательное замечание; при приёмке может быть null.
+          description: 'Комментарий при успешной приёмке, может быть null. При возврате на доработку null: индивидуальные замечания доступны в reworkComment пунктов.'
           type:
             - string
             - 'null'
@@ -3605,38 +3605,48 @@ components:
             - 'null'
           minLength: 1
           maxLength: 5000
+    ReworkItem:
+      type: object
+      additionalProperties: false
+      required:
+        - itemId
+        - comment
+      properties:
+        itemId:
+          description: ID пункта текущего чек-листа, требующего повторного выполнения.
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          examples:
+            - 1
+        comment:
+          description: Индивидуальное замечание к пункту; пробелы по краям удаляются, пустой текст запрещён.
+          type: string
+          minLength: 1
+          maxLength: 5000
+          examples:
+            - Исправить угол.
     RejectStage:
       type: object
       additionalProperties: false
       required:
         - expectedVersion
-        - comment
-        - itemIds
+        - items
       properties:
         expectedVersion:
           $ref: '#/components/schemas/ExpectedVersion'
-        comment:
-          examples:
-            - Устранить замечания по качеству выполнения контрольной точки.
-          description: Обязательное замечание с причиной возврата этапа на доработку.
-          type: string
-          minLength: 1
-          maxLength: 5000
         correctionDueDate:
           examples:
             - '2026-09-27'
           description: Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.
           type: string
           format: date
-        itemIds:
+        items:
+          description: Пункты для доработки с индивидуальными замечаниями. itemId не должны повторяться.
           type: array
-          items:
-            type: integer
-            minimum: 1
-            maximum: 2147483647
           minItems: 1
-          uniqueItems: true
-          description: Пункты текущего чек-листа, требующие повторного выполнения.
+          items:
+            $ref: '#/components/schemas/ReworkItem'
     PositiveMoneyAmountMinor:
       type: integer
       format: int64

@@ -20,7 +20,7 @@ export type Acceptance = {
     */
     decision: AcceptanceDecisionEnumKey;
     /**
-     * @description Комментарий к решению. Для возврата на доработку содержит обязательное замечание; при приёмке может быть null.
+     * @description Комментарий при успешной приёмке, может быть null. При возврате на доработку null: индивидуальные замечания доступны в reworkComment пунктов.
      * @minLength 1
      * @maxLength 5000
      * @example Устранить замечания по качеству выполнения контрольной точки.

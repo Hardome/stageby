@@ -5,12 +5,12 @@
 
 import * as z from 'zod'
 import { expectedVersionSchema } from './expectedVersionSchema'
+import { reworkItemSchema } from './reworkItemSchema'
 
 export const rejectStageSchema = z.object({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
-  comment: z.string().min(1).max(5000).describe('Обязательное замечание с причиной возврата этапа на доработку.').meta({ examples: ['Устранить замечания по качеству выполнения контрольной точки.'] }),
   correctionDueDate: z.iso.date().optional().describe('Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.').meta({ examples: ['2026-09-27'] }),
-  itemIds: z.array(z.int().min(1).max(2147483647)).min(1).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).describe('Пункты текущего чек-листа, требующие повторного выполнения.'),
+  items: z.array(reworkItemSchema).min(1).describe('Пункты для доработки с индивидуальными замечаниями. itemId не должны повторяться.'),
 }).strict()
 
 export type RejectStageSchemaType = z.infer<typeof rejectStageSchema>

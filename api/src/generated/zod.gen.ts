@@ -560,11 +560,15 @@ export const zAcceptStage = z.object({
     comment: z.string().min(1).max(5000).nullish()
 });
 
+export const zReworkItem = z.object({
+    itemId: z.int().gte(1).lte(2147483647),
+    comment: z.string().min(1).max(5000)
+});
+
 export const zRejectStage = z.object({
     expectedVersion: zExpectedVersion,
-    comment: z.string().min(1).max(5000),
     correctionDueDate: z.iso.date().optional(),
-    itemIds: z.array(z.int().gte(1).lte(2147483647)).min(1)
+    items: z.array(zReworkItem).min(1)
 });
 
 /**
