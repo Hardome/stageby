@@ -8,8 +8,9 @@ import { DataRegion } from '@shared/ui/data-region';
 import { NotFound } from '@shared/ui/not-found';
 
 import { useGetDashboardSummary } from '@api/queries/useGetDashboardSummary';
+import { useListDashboardProjects } from '@api/queries/useListDashboardProjects';
 
-import { isCalculationAvailable } from '../lib/dashboard-search';
+import { dashboardPageSize, isCalculationAvailable } from '../lib/dashboard-search';
 import { DashboardActivity } from './dashboard-activity';
 import { DashboardError } from './dashboard-error';
 import { DashboardFinanceOverview } from './dashboard-finance-overview';
@@ -27,6 +28,10 @@ export function DashboardSummary({ through, today }: DashboardSummaryProperties)
     { query: { enabled: isAvailable, retry: false, placeholderData: keepPreviousData } },
   );
   const accessError = useAccessError();
+  const projects = useListDashboardProjects(
+    { query: { limit: dashboardPageSize, offset: 0 } },
+    { query: { enabled: isAvailable && query.data?.activeProjectCount === 0, retry: false } },
+  );
 
   useEffect(() => {
     if (query.error) accessError(query.error);
@@ -60,7 +65,7 @@ export function DashboardSummary({ through, today }: DashboardSummaryProperties)
       >
         {query.data && (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
-            <DashboardActivity count={query.data.activeProjectCount} />
+            <DashboardActivity count={query.data.activeProjectCount} total={projects.data?.total} />
             <DashboardFinanceOverview summary={query.data} through={query.data.through} />
           </div>
         )}

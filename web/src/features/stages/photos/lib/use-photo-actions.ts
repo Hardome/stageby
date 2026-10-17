@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 
 import { invalidateStage } from '@entities/stage';
 import { useAccessError } from '@shared/lib/hooks';
@@ -14,6 +15,7 @@ import { photoFailure, photoFailureMessage } from './photo-failure';
 
 export function usePhotoActions(stage: Stage, item: ChecklistItem, version: number) {
   const client = useQueryClient();
+  const navigate = useNavigate();
   const accessError = useAccessError();
   const lock = useRef(false);
   const [busy, setBusy] = useState(false);
@@ -37,6 +39,7 @@ export function usePhotoActions(stage: Stage, item: ChecklistItem, version: numb
       await action();
       await refresh();
       setSuccess(successMessage);
+      return true;
     } catch (error_) {
       accessError(error_);
       setError(photoFailureMessage(error_));
@@ -48,12 +51,13 @@ export function usePhotoActions(stage: Stage, item: ChecklistItem, version: numb
   }
 
   async function done() {
-    await execute(async () => {
+    const completed = await execute(async () => {
       await updateChecklistItem({
         path: { stageId: stage.id, itemId: item.id },
         body: { expectedVersion: version, isCompleted: true },
       }).unwrap();
     }, 'Пункт выполнен.');
+    if (completed) await navigate({ to: '/stages/$stageId/checklist', params: { stageId: String(stage.id) } });
   }
 
   async function remove(photo: ChecklistItemPhoto, isConfirmed = false) {

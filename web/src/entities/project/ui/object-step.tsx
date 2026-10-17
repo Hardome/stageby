@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 
 import { CalendarDaysIcon, MapPinIcon } from 'lucide-react';
+import { useFormContext, useWatch } from 'react-hook-form';
 
 import { FieldGroup, FieldLegend, FieldSet } from '@shared/ui/field';
 import { Separator } from '@shared/ui/separator';
 
 import type { useDocuments } from '../lib/use-documents';
+import type { ProjectFormValues } from '../model/types';
 import { DocumentPicker } from './document-picker';
 import { ProjectDateField } from './project-date-field';
 import { ProjectField } from './project-field';
@@ -17,6 +19,9 @@ interface ObjectStepProperties {
 }
 
 export function ObjectStep({ isLocked, uploads, children }: ObjectStepProperties) {
+  const { control } = useFormContext<ProjectFormValues>();
+  const plannedStartDate = useWatch({ control, name: 'plannedStartDate', exact: true });
+
   return (
     <FieldGroup className="gap-4">
       <FieldSet>
@@ -51,7 +56,13 @@ export function ObjectStep({ isLocked, uploads, children }: ObjectStepProperties
         </FieldLegend>
         <FieldGroup className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
           <ProjectDateField name="plannedStartDate" label="Начало проекта" required disabled={isLocked} />
-          <ProjectDateField name="plannedEndDate" label="Окончание проекта" required disabled={isLocked} />
+          <ProjectDateField
+            name="plannedEndDate"
+            label="Окончание проекта"
+            min={plannedStartDate}
+            required
+            disabled={isLocked}
+          />
         </FieldGroup>
       </FieldSet>
       <Separator />

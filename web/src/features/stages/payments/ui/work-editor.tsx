@@ -9,6 +9,7 @@ import { useWorkEditor } from '../lib/use-work-editor';
 import type { WorkEditorProperties } from '../model/types';
 import { WorkDistributionFields } from './work-distribution-fields';
 import { WorkEditorHeading } from './work-editor-heading';
+import { WorkFinancialOverview } from './work-financial-overview';
 import { WorkPaymentFields } from './work-payment-fields';
 import { WorkRowFields } from './work-row-fields';
 
@@ -51,6 +52,16 @@ export function WorkEditor(properties: WorkEditorProperties) {
               )}
               {action.kind === 'delete-row' && (
                 <p>Будет удалена строка на {formatMoney(action.row.amountMinor)} без выплат.</p>
+              )}
+              {action.kind === 'paid' && (
+                <>
+                  <WorkFinancialOverview stage={stage} />
+                  <p className="text-sm">
+                    Этап перейдёт в статус «Выплачен».
+                    <br />
+                    Подтверждение завершает расчёт и не создаёт новый платёж.
+                  </p>
+                </>
               )}
               {editor.message && (
                 <Alert>

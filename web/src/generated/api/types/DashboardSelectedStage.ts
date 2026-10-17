@@ -18,7 +18,7 @@ export type DashboardSelectedStage = {
     */
     stageId: number;
     /**
-     * @description Позиция выбранного этапа среди типов справочника.
+     * @description Порядковый номер выбранного этапа среди включённых этапов объекта.
      * @minLength 1
      * @maxLength 8
      * @example 2

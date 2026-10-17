@@ -1620,7 +1620,7 @@ export type DashboardSelectedStage = {
      */
     stageId: number;
     /**
-     * Позиция выбранного этапа среди типов справочника.
+     * Порядковый номер выбранного этапа среди включённых этапов объекта.
      */
     position: number;
     /**
@@ -2049,7 +2049,7 @@ export type DashboardSelectedStageWritable = {
      */
     stageId: number;
     /**
-     * Позиция выбранного этапа среди типов справочника.
+     * Порядковый номер выбранного этапа среди включённых этапов объекта.
      */
     position: number;
     /**

@@ -34,7 +34,13 @@ vi.mock('@tanstack/react-router', () => ({
   }) => (
     <a
       {...properties}
-      href={['', to.split('/', 2)[1], params.projectId ?? params.stageId].join('/') + (hash ? `#${hash}` : '')}
+      href={
+        to
+          .split('$projectId')
+          .join(params.projectId ?? '')
+          .split('$stageId')
+          .join(params.stageId ?? '') + (hash ? `#${hash}` : '')
+      }
     >
       {children}
     </a>
@@ -95,6 +101,25 @@ describe('manager dashboard', () => {
     expect(container).toHaveTextContent('0 ₽');
   });
 
+  it('updates activity descriptions when there are no active projects', async () => {
+    await render();
+    expect(container).toHaveTextContent('Есть этапы, которые ещё не выплачены');
+    expect(container).toHaveTextContent('В работе до полной выплаты');
+
+    mocks.summary.mockReturnValue({ data: { ...dashboardSummary, activeProjectCount: 0 } });
+    await render();
+
+    expect(container).toHaveTextContent('Все этапы выплачены');
+    expect(container).not.toHaveTextContent('Новые объекты появятся здесь');
+    expect(container).not.toHaveTextContent('Есть этапы, которые ещё не выплачены');
+    expect(container).not.toHaveTextContent('В работе до полной выплаты');
+
+    mocks.projects.mockReturnValue({ data: { items: [], total: 0 } });
+    await render();
+    expect(container).not.toHaveTextContent('Все этапы выплачены');
+    expect(container).not.toHaveTextContent('Есть этапы, которые ещё не выплачены');
+  });
+
   it('keeps the summary mounted with its response date while another date loads', async () => {
     await render();
     const summary = container.querySelector('[aria-label="Финансовая сводка"]');
@@ -145,9 +170,9 @@ describe('manager dashboard', () => {
 
     const links = () => [...container.querySelectorAll(':scope tbody a[target="_blank"]')];
     expect(links().map((link) => link.getAttribute('href'))).toEqual([
-      '/stages/11#materials',
-      '/stages/11#parameters',
-      '/stages/11#checklist',
+      '/stages/11/materials',
+      '/stages/11',
+      '/stages/11/checklist',
     ]);
     expect(container.querySelector('[data-variant="warning"]')).toHaveTextContent('До старта ≤ 7 дней');
     expect(container.querySelector('[data-variant="warning"]')?.closest('a')).toBeNull();
@@ -164,12 +189,14 @@ describe('manager dashboard', () => {
     });
     await render();
 
-    expect(links().every((link) => link.getAttribute('href')?.startsWith('/stages/12#'))).toBe(true);
-    expect(
-      [...(cards?.querySelectorAll('a[target="_blank"]') ?? [])].every((link) =>
-        link.getAttribute('href')?.startsWith('/stages/12#'),
-      ),
-    ).toBe(true);
+    expect(links().map((link) => link.getAttribute('href'))).toEqual([
+      '/stages/12/materials',
+      '/stages/12',
+      '/stages/12/checklist',
+    ]);
+    expect([...(cards?.querySelectorAll('a[target="_blank"]') ?? [])].map((link) => link.getAttribute('href'))).toEqual(
+      ['/stages/12/checklist', '/stages/12/materials', '/stages/12'],
+    );
   });
 
   it('omits the warning without a start and all stage actions for completed projects', async () => {

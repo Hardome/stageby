@@ -5,9 +5,18 @@ import { canConfirmPaid } from './work-availability';
 import { rowRequest, workFormDefaults, workFormSchema } from './work-form';
 
 describe('work payment forms', () => {
-  it('accepts a zero row and clears the recipient and date explicitly', () => {
+  it('requires an explicit planned amount when adding a row', () => {
     const action = { kind: 'row' as const };
     const values = workFormDefaults(action);
+
+    expect(values.amount).toBe('');
+    expect(workFormSchema(action).safeParse(values).success).toBe(false);
+    expect(workFormSchema(action).safeParse({ ...values, amount: '100' }).success).toBe(true);
+  });
+
+  it('accepts an explicit zero row and clears the recipient and date', () => {
+    const action = { kind: 'row' as const };
+    const values = { ...workFormDefaults(action), amount: '0' };
 
     expect(workFormSchema(action).safeParse(values).success).toBe(true);
     expect(rowRequest(values)).toEqual({ amountMinor: 0n, recipientId: null, dueDate: null });

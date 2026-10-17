@@ -1,6 +1,5 @@
 import { BanknoteIcon, CircleCheckIcon, ListPlusIcon, SplitIcon, Trash2Icon } from 'lucide-react';
 
-import { formatMoney } from '@entities/project';
 import { DialogDescription, DialogTitle } from '@shared/ui/dialog';
 
 import type { WorkEditorProperties } from '../model/types';
@@ -41,11 +40,9 @@ export function WorkEditorHeading({ action, stage }: Pick<WorkEditorProperties, 
       <div className="flex min-w-0 flex-col gap-2">
         <p className="font-semibold text-muted-foreground text-xs">Оплата работ · {stage.title}</p>
         <DialogTitle className="font-bold text-xl tracking-tight">{title}</DialogTitle>
-        <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
-          {action.kind === 'paid'
-            ? `Выплачено ${formatMoney(stage.actualWorkAmountMinor)}. Подтвердите статус «Выплачен».`
-            : description}
-        </DialogDescription>
+        {action.kind !== 'paid' && (
+          <DialogDescription className="text-muted-foreground text-sm leading-relaxed">{description}</DialogDescription>
+        )}
       </div>
     </div>
   );
