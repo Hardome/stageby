@@ -12,6 +12,7 @@ function jpegTransfer(isValid = true): FileTransfer {
   const bytes = new Uint8Array(isValid ? [255, 216, 255, 224] : [1, 2, 3]);
   const file = new File([bytes], 'invoice.jpg', { type: 'image/jpeg' });
   Object.defineProperty(file, 'arrayBuffer', { value: () => Promise.resolve(bytes.buffer) });
+
   return { id: 'upload', key: 'completion-key', file, status: 'uploading' };
 }
 

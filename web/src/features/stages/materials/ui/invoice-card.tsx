@@ -10,19 +10,15 @@ import { InvoiceFile } from './invoice-file';
 import { InvoicePayment } from './invoice-payment';
 import { InvoiceShortages } from './invoice-shortages';
 
-export function InvoiceCard({
-  stage,
-  invoice,
-  number,
-  canReceive,
-  canManage,
-}: {
+interface InvoiceCardProperties {
   stage: Stage;
   invoice: StageMaterialInvoice;
   number: number;
   canReceive: boolean;
   canManage: boolean;
-}) {
+}
+
+export function InvoiceCard({ stage, invoice, number, canReceive, canManage }: InvoiceCardProperties) {
   return (
     <Card>
       <CardHeader>

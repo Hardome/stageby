@@ -32,6 +32,7 @@ interface DatePickerProperties
 function subscribeToPointer(onChange: () => void) {
   const media = window.matchMedia?.('(pointer: coarse)');
   media?.addEventListener('change', onChange);
+
   return () => media?.removeEventListener('change', onChange);
 }
 
@@ -46,12 +47,14 @@ function useIsNativeDatePicker() {
 function calendarDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
   const date = parseISO(value);
+
   return isValid(date) && format(date, 'yyyy-MM-dd') === value ? date : undefined;
 }
 
 function inputDate(value: string) {
   if (!/^\d{2}\.\d{2}\.\d{4}$/.test(value)) return value;
   const date = parse(value, 'dd.MM.yyyy', new Date(2000, 0, 1));
+
   return isValid(date) && format(date, 'dd.MM.yyyy') === value ? format(date, 'yyyy-MM-dd') : value;
 }
 
@@ -64,6 +67,7 @@ export function DatePicker({ showClearButton = true, ...properties }: DatePicker
   const isNative = useIsNativeDatePicker();
   if (isNative) {
     const { value, onChange, ref, min, max, onBlur, ...inputProperties } = properties;
+
     return (
       <Input
         {...inputProperties}
@@ -79,6 +83,7 @@ export function DatePicker({ showClearButton = true, ...properties }: DatePicker
       />
     );
   }
+
   return <DesktopDatePicker {...properties} showClearButton={showClearButton} />;
 }
 
@@ -96,6 +101,7 @@ function DesktopDatePicker({
   const [open, setOpen] = useState(false);
   const [shouldFocusCalendar, setShouldFocusCalendar] = useState(true);
   const selected = calendarDate(value);
+
   return (
     <Popover open={open && !properties.disabled} onOpenChange={setOpen}>
       <InputGroup ref={fieldReference} className="h-12" data-disabled={properties.disabled}>

@@ -47,4 +47,11 @@ export default defineConfig(
       'unicorn/prevent-abbreviations': 'off',
     },
   },
+  {
+    files: ['src/**/*.test.{ts,tsx}', 'src/**/*-test-setup.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
+    rules: {
+      // Vitest требует вызовов vi.mock на верхнем уровне модуля.
+      'unicorn/no-top-level-side-effects': 'off',
+    },
+  },
 );

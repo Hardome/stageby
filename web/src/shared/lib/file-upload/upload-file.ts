@@ -26,6 +26,7 @@ export async function uploadFile(
     const recoveredFileId = await recoverExpiredUpload(session, checksum, key);
     if (recoveredFileId !== null) {
       update({ fileId: recoveredFileId });
+
       return;
     }
 

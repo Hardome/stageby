@@ -7,6 +7,7 @@ import { useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 import { DataRegion } from '@shared/ui/data-region';
+import { NotFound } from '@shared/ui/not-found';
 
 import { useGetProject } from '@api/queries/useGetProject';
 import { useListProjectStages } from '@api/queries/useListProjectStages';
@@ -34,9 +35,14 @@ export function ProjectView({ projectId, onEdit }: ProjectViewProperties) {
     if (stages.error) accessError(stages.error);
   }, [stages.error, accessError]);
 
+  if ([project.error?.status, stages.error?.status].some((status) => status === 403 || status === 404)) {
+    return <NotFound />;
+  }
+
   if (!project.data) {
     return <ProjectUnavailable query={project} />;
   }
+
   const value = project.data;
 
   return (

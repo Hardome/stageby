@@ -13,11 +13,13 @@ export async function completeUpload(session: FileUpload, checksum: string, key:
 export async function recoverExpiredUpload(session: FileUpload, checksum: string, key: string): Promise<number | null> {
   try {
     const file = await completeUpload(session, checksum, key);
+
     return file.id;
   } catch (error) {
     const failure = error as { status?: number; data?: { code?: string } };
     const isExpired = failure.status === 409 && failure.data?.code === 'upload_expired';
     if (!isExpired) throw error;
+
     return null;
   }
 }

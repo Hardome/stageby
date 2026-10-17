@@ -15,6 +15,7 @@ export function ProjectFinances({ finances }: ProjectFinancesProperties) {
     { label: 'Работы', plan: finances.plannedWorkAmountMinor, actual: finances.actualWorkAmountMinor },
     { label: 'Материалы', plan: finances.plannedMaterialAmountMinor, actual: finances.actualMaterialAmountMinor },
   ];
+
   return (
     <Card className="min-w-0">
       <CardHeader className="gap-3">

@@ -1,6 +1,7 @@
 export async function inspectFile(file: File, mimeType: 'application/pdf' | 'image/jpeg', savedChecksum?: string) {
   const buffer = await file.arrayBuffer();
   validateContents(buffer, mimeType);
+
   return savedChecksum ?? createChecksum(buffer);
 }
 
@@ -8,6 +9,7 @@ function validateContents(buffer: ArrayBuffer, mimeType: 'application/pdf' | 'im
   if (mimeType === 'application/pdf') {
     const signature = new TextDecoder().decode(buffer.slice(0, 5));
     if (signature !== '%PDF-') throw new Error('Содержимое файла не является PDF.');
+
     return;
   }
 
@@ -18,5 +20,6 @@ function validateContents(buffer: ArrayBuffer, mimeType: 'application/pdf' | 'im
 
 async function createChecksum(buffer: ArrayBuffer) {
   const digest = await crypto.subtle.digest('SHA-256', buffer);
+
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }

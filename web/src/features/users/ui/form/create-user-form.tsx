@@ -1,18 +1,10 @@
-import { useEffect } from 'react';
-
-import { zodResolver } from '@hookform/resolvers/zod';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider } from 'react-hook-form';
 
 import { Button } from '@shared/ui/button';
 import { FieldDescription, FieldGroup } from '@shared/ui/field';
 
-import { useCreateUser } from '@api/mutations/useCreateUser';
-
-import { clearCreateDraft, loadCreateDraft, saveCreateDraft } from '../../lib/create-draft';
-import { userCreationFormSchema } from '../../lib/schemas';
-import { notifyUserError, userErrorMessage, useUserAccessError, useUserActions } from '../../lib/use-user-actions';
-import { emptyDraft } from '../../model/data';
-import type { CreateFormOutput, CreateFormValues, UsersSearch } from '../../model/types';
+import { useCreateUserForm } from '../../lib/use-create-user-form';
+import type { UsersSearch } from '../../model/types';
 import { ControlledTextField } from './controlled-text-field';
 import { FormActions } from './form-actions';
 import { PasswordFields } from './password-fields';
@@ -24,64 +16,14 @@ interface CreateUserFormProperties {
 }
 
 export function CreateUserForm({ managerId, search }: CreateUserFormProperties) {
-  const form = useForm<CreateFormValues, unknown, CreateFormOutput>({
-    resolver: zodResolver(userCreationFormSchema),
-    defaultValues: () => Promise.resolve({ ...loadCreateDraft(managerId), password: '', confirmPassword: '' }),
-    mode: 'onChange',
-  });
-
-  const { finish } = useUserActions(search);
-
-  const mutation = useCreateUser({
-    mutation: {
-      onSuccess: async (user) => {
-        clearCreateDraft(managerId);
-        await finish('created', user);
-      },
-      onError: (error) => {
-        if (error.data?.code === 'login_taken') {
-          form.setError('login', { type: 'server', message: userErrorMessage(error) }, { shouldFocus: true });
-          return;
-        }
-        notifyUserError(error);
-      },
-    },
-  });
-
-  useUserAccessError(mutation.error);
-
-  const {
-    subscribe,
-    reset,
-    handleSubmit,
-    formState: { errors, isLoading },
-  } = form;
-
-  const loginValidationMessage = errors.login
-    ? 'От 3 до 64 символов: строчные латинские буквы, цифры, точка, дефис, подчёркивание. ' +
-      'Первый символ — буква или цифра.'
-    : undefined;
-
-  useEffect(
-    () => subscribe({ formState: { values: true }, callback: ({ values }) => saveCreateDraft(managerId, values) }),
-    [subscribe, managerId],
+  const { form, mutation, errors, isLoading, loginValidationMessage, clearDraft, submit } = useCreateUserForm(
+    managerId,
+    search,
   );
-
-  function clearDraft() {
-    reset({ ...emptyDraft, role: undefined, password: '', confirmPassword: '' });
-    clearCreateDraft(managerId);
-    mutation.reset();
-  }
 
   return (
     <FormProvider {...form}>
-      <form
-        className="flex flex-col gap-4"
-        noValidate
-        onSubmit={(event) =>
-          void handleSubmit(({ confirmPassword: _confirmation, ...body }) => mutation.mutate({ body }))(event)
-        }
-      >
+      <form className="flex flex-col gap-4" noValidate onSubmit={(event) => void submit(event)}>
         <FieldGroup>
           <ProfileFields disabled={mutation.isPending || isLoading} />
           <ControlledTextField

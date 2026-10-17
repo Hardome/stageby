@@ -59,6 +59,7 @@ function Item({
   ...properties
 }: useRender.ComponentProps<'div'> & VariantProps<typeof itemVariants>) {
   const mergedProperties = mergeProps<'div'>({ className: cn(itemVariants({ variant, size, className })) }, properties);
+
   return useRender({
     defaultTagName: 'div',
     props: mergedProperties,

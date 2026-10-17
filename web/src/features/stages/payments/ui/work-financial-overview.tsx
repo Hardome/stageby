@@ -6,7 +6,11 @@ import { Badge } from '@shared/ui/badge';
 
 import type { Stage } from '@api/types';
 
-export function WorkFinancialOverview({ stage }: { stage: Stage }) {
+interface WorkFinancialOverviewProperties {
+  stage: Stage;
+}
+
+export function WorkFinancialOverview({ stage }: WorkFinancialOverviewProperties) {
   const balance = stage.workBalanceAmountMinor;
   const isOverpaid = balance !== null && balance < 0n;
   const balanceAmount = isOverpaid ? -balance : balance;

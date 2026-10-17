@@ -4,7 +4,7 @@
 
 ## Токены
 
-Все значения находятся в `web/src/app/styles/index.css`. Блок `shadcn tokens` содержит стандартные семантические роли, `Custom tokens - Stageby design system` — дополнительные роли приложения, `Tailwind theme settings` — настройки шрифтов, отступов и теней.
+Значения светлой и тёмной тем находятся в `web/src/app/styles/tokens.css`, подключённом из `index.css`. Блок `shadcn tokens` содержит стандартные семантические роли, `Custom tokens - Stageby design system` — дополнительные роли приложения. Настройки Tailwind и привязки семантических ролей находятся в `web/src/app/styles/index.css`.
 
 Стили слоя `components` находятся в `web/src/app/styles/components.css`, подключённом из `index.css`.
 

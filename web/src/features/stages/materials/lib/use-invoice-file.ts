@@ -15,6 +15,7 @@ export function useInvoiceFile(fileId: number) {
     const tab = window.open('about:blank', '_blank');
     if (!tab) {
       setMessage('Разрешите открытие новой вкладки и повторите попытку.');
+
       return;
     }
     tab.opener = null;

@@ -6,6 +6,7 @@ import { Skeleton } from '@shared/ui/skeleton';
 export function StageFinancesSkeleton({ category }: { category: 'materials' | 'work' }) {
   const isMaterials = category === 'materials';
   const Icon = isMaterials ? PackageIcon : WalletIcon;
+
   return (
     <Card>
       <CardHeader>

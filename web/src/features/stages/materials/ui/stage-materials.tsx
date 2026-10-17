@@ -13,7 +13,11 @@ import { InvoiceCard } from './invoice-card';
 import { InvoiceCreate } from './invoice-create';
 import { MaterialsSkeleton } from './materials-skeleton';
 
-export function StageMaterials({ stage }: { stage: Stage }) {
+interface StageMaterialsProperties {
+  stage: Stage;
+}
+
+export function StageMaterials({ stage }: StageMaterialsProperties) {
   const query = useMaterials(stage.id);
   const { user } = useAuth();
 

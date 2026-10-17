@@ -3,7 +3,11 @@ import { Button } from '@shared/ui/button';
 
 import type { useMaterialAction } from '../lib/use-material-action';
 
-export function MaterialFeedback({ action }: { action: ReturnType<typeof useMaterialAction> }) {
+interface MaterialFeedbackProperties {
+  action: ReturnType<typeof useMaterialAction>;
+}
+
+export function MaterialFeedback({ action }: MaterialFeedbackProperties) {
   return (
     <>
       {action.message && (

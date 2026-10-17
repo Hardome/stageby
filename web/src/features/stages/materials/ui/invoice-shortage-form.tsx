@@ -8,13 +8,12 @@ import { Textarea } from '@shared/ui/textarea';
 import type { useInvoiceShortages } from '../lib/use-invoice-shortages';
 import { MaterialFeedback } from './material-feedback';
 
-export function InvoiceShortageForm({
-  editor,
-  onClose,
-}: {
+interface InvoiceShortageFormProperties {
   editor: ReturnType<typeof useInvoiceShortages>;
   onClose: () => void;
-}) {
+}
+
+export function InvoiceShortageForm({ editor, onClose }: InvoiceShortageFormProperties) {
   const id = useId();
   const { form, action, submit } = editor;
   const error = form.formState.errors.comment;

@@ -35,8 +35,10 @@ export function useInvoicePayment(stage: Stage, invoice: StageMaterialInvoice, o
     if (isInvoicePaymentUnchanged(current, values)) {
       form.reset(invoicePaymentValues(current));
       onSaved?.();
+
       return;
     }
+
     return action.run(async () => {
       const updated = await updateMaterialInvoice({
         path: { invoiceId: invoice.id },
@@ -64,5 +66,6 @@ export function useInvoicePayment(stage: Stage, invoice: StageMaterialInvoice, o
       saved(updated);
     });
   }
+
   return { form, action, submit, clear, hasChanges };
 }
