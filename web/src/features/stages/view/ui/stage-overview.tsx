@@ -19,9 +19,17 @@ interface StageOverviewProperties {
   actions?: (stage: Stage) => ReactNode;
   payments?: (stage: Stage) => ReactNode;
   checklistLink?: (stage: Stage) => ReactNode;
+  acceptance?: (stage: Stage) => ReactNode;
 }
 
-export function StageOverview({ stageId, backLink, actions, payments, checklistLink }: StageOverviewProperties) {
+export function StageOverview({
+  stageId,
+  backLink,
+  actions,
+  payments,
+  checklistLink,
+  acceptance,
+}: StageOverviewProperties) {
   const { query, invalidId } = useStageAccess(stageId);
 
   if (invalidId || query.error?.status === 403 || query.error?.status === 404) {
@@ -68,6 +76,7 @@ export function StageOverview({ stageId, backLink, actions, payments, checklistL
           {actions?.(query.data)}
         </div>
         <StageSummary stage={query.data} refreshing={query.isFetching} />
+        {acceptance?.(query.data)}
         <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-3">
             {checklistLink?.(query.data)}
