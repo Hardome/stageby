@@ -37,10 +37,10 @@ export function InvoiceCard({ stage, invoice, number, canReceive, canManage }: I
         <CardDescription className="wrap-anywhere">
           {invoice.supplierName ?? 'Поставщик не указан'} · Добавлен {formatDate(invoice.createdAt.slice(0, 10))}
         </CardDescription>
-        <CardAction>
+        <CardAction className="flex items-start gap-2">
           <InvoiceFile fileId={invoice.fileId} />
           {canManage && (
-            <>
+            <div className="flex h-12 shrink-0 items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -60,7 +60,7 @@ export function InvoiceCard({ stage, invoice, number, canReceive, canManage }: I
               >
                 <Trash2Icon />
               </Button>
-            </>
+            </div>
           )}
         </CardAction>
       </CardHeader>
