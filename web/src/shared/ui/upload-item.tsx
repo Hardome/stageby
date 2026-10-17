@@ -26,11 +26,6 @@ export function UploadItem<T extends UploadItemModel>({ item, disabled, onRetry,
         </p>
         {item.error && <p className="wrap-anywhere text-destructive text-sm">{item.error}</p>}
       </div>
-      {item.status === 'failed' && (
-        <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => onRetry(item)}>
-          Повторить
-        </Button>
-      )}
       <Button
         type="button"
         variant="ghost"
@@ -42,6 +37,18 @@ export function UploadItem<T extends UploadItemModel>({ item, disabled, onRetry,
       >
         <Trash2Icon />
       </Button>
+      {item.status === 'failed' && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="basis-full"
+          disabled={disabled}
+          onClick={() => onRetry(item)}
+        >
+          Повторить
+        </Button>
+      )}
     </li>
   );
 }

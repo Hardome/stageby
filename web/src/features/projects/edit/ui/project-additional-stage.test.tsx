@@ -13,16 +13,16 @@ describe('project additional stage', () => {
     await context.render();
     await fill('ownerName', 'Мария');
 
-    expect(context.container).not.toHaveTextContent('Добавить дополнительный этап');
+    expect(context.container).not.toHaveTextContent('Доп. этап');
 
     await click('Далее');
     await click('Заполнить этапы');
     await fill('stages.0.plannedWorkAmount', '200');
-    await click('Добавить дополнительный этап');
+    await click('Доп. этап');
 
     expect(context.container.querySelector('h2')).toHaveTextContent('Дополнительный этап');
     expect(context.container.querySelector('input[id$="checklistItems.0.title"]')).toBeNull();
-    expect(context.container).not.toHaveTextContent('Добавить дополнительный этап');
+    expect(context.container).not.toHaveTextContent('Доп. этап');
     expect(context.container.querySelector('input[id$="title"]')).toBeNull();
 
     await context.submit();
@@ -36,7 +36,7 @@ describe('project additional stage', () => {
     await click('Назад');
 
     expect(input('stages.0.plannedWorkAmount')).toHaveValue('200');
-    expect(context.container).not.toHaveTextContent('Добавить дополнительный этап');
+    expect(context.container).not.toHaveTextContent('Доп. этап');
 
     await click('Следующий этап');
 
@@ -56,24 +56,34 @@ describe('project additional stage', () => {
     expect(mocks.success).toHaveBeenCalledOnce();
   });
 
-  it('restores an excluded additional stage by ID with its previous values', async () => {
+  it('starts an excluded additional stage with empty values', async () => {
     context.snapshot.stages.push(
       editStage({ id: 19, type: 'additional', title: 'Дополнительный этап', isIncluded: false }),
     );
     await context.render();
     await click('Далее');
     await click('Заполнить этапы');
-    await click('Восстановить дополнительный этап');
+    await click('Доп. этап');
 
-    expect(input('stages.2.checklistItems.0.title')).toHaveValue('Армирование');
-    expect(input('stages.2.plannedWorkAmount')).toHaveValue('100');
-    expect(context.container).not.toHaveTextContent('Восстановить дополнительный этап');
+    expect(context.container.querySelector('input[id$="checklistItems.0.title"]')).toBeNull();
+    expect(input('stages.2.plannedWorkAmount')).toHaveValue('');
 
     await context.submit();
 
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        body: { expectedVersion: 7, stages: [{ id: 19, expectedVersion: 3, isIncluded: true }] },
+        body: {
+          expectedVersion: 7,
+          stages: [
+            {
+              id: 19,
+              expectedVersion: 3,
+              isIncluded: true,
+              plannedWorkAmountMinor: null,
+              checklist: { expectedVersion: 5, items: [] },
+            },
+          ],
+        },
       }),
     );
   });
@@ -84,20 +94,20 @@ describe('project additional stage', () => {
     await click('Далее');
     await click('Заполнить этапы');
 
-    expect(context.container).not.toHaveTextContent('Добавить дополнительный этап');
+    expect(context.container).not.toHaveTextContent('Доп. этап');
 
     await click('Следующий этап');
 
     expect(context.container.querySelector('h2')).toHaveTextContent('Дополнительный этап');
-    expect(context.container).not.toHaveTextContent('Добавить дополнительный этап');
-    expect(context.container).not.toHaveTextContent('Восстановить дополнительный этап');
+    expect(context.container).not.toHaveTextContent('Доп. этап');
+    expect(context.container).not.toHaveTextContent('Доп. этап');
   });
 
-  it('keeps a new excluded stage as a draft and reuses it when restored', async () => {
+  it('resets a new excluded stage before adding it again', async () => {
     await context.render();
     await click('Далее');
     await click('Заполнить этапы');
-    await click('Добавить дополнительный этап');
+    await click('Доп. этап');
     await click('Добавить пункт');
     await fill('stages.2.checklistItems.0.title', 'Контроль');
     await click('Назад');
@@ -109,9 +119,11 @@ describe('project additional stage', () => {
     expect(mocks.update).not.toHaveBeenCalled();
 
     await click('Заполнить этапы');
-    await click('Восстановить дополнительный этап');
+    await click('Доп. этап');
 
-    expect(input('stages.2.checklistItems.0.title')).toHaveValue('Контроль');
+    expect(context.container.querySelector('input[id$="checklistItems.0.title"]')).toBeNull();
+    await click('Добавить пункт');
+    await fill('stages.2.checklistItems.0.title', 'Повторная проверка');
 
     const pending = Promise.withResolvers<typeof context.snapshot.project>();
     mocks.update.mockReturnValueOnce(pending.promise);
@@ -119,6 +131,7 @@ describe('project additional stage', () => {
     await context.submit();
 
     expect(mocks.update).toHaveBeenCalledOnce();
+    expect(input('stages.2.checklistItems.0.title')).toHaveValue('Повторная проверка');
     expect(input('stages.2.checklistItems.0.title')).toBeDisabled();
 
     await flush(() => pending.resolve({ ...context.snapshot.project, version: 8 }));
