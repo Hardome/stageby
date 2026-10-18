@@ -7,6 +7,8 @@ import { Badge } from '@shared/ui/badge';
 
 import type { ChecklistItem } from '@api/types';
 
+import { ChecklistItemCompletion } from './checklist-item-completion';
+
 interface StageChecklistItemProperties {
   item: ChecklistItem;
   action?: ReactNode;
@@ -44,6 +46,7 @@ export function StageChecklistItem({ item, action }: StageChecklistItemPropertie
             {item.requiresRework ? 'Доработка' : completion}
           </Badge>
         </div>
+        <ChecklistItemCompletion item={item} />
         {item.photoHint && (
           <p className="wrap-anywhere col-span-2 flex items-start gap-2 text-muted-foreground text-sm leading-normal">
             <ScanLineIcon className="mt-1 size-4 shrink-0" aria-hidden="true" />

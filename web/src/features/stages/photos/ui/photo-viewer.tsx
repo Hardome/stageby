@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@shared/u
 import type { ChecklistItemPhoto } from '@api/types';
 
 import { PhotoImage } from './photo-image';
+import { PhotoUploadDetails } from './photo-upload-details';
 
 interface PhotoViewerProperties {
   photos: ChecklistItemPhoto[];
@@ -47,6 +48,11 @@ export function PhotoViewer({ photos, selected, onSelect }: PhotoViewerPropertie
             <XIcon />
           </Button>
         </div>
+        {photo && (
+          <div className="px-4">
+            <PhotoUploadDetails photo={photo} />
+          </div>
+        )}
         <DialogDescription className="sr-only">Листайте стрелками или смахивайте фотографии.</DialogDescription>
         <div
           className="flex min-h-0 flex-1 touch-pan-y flex-col justify-center overflow-auto"
