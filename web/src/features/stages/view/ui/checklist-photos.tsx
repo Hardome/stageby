@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { cn } from 'cn';
 import { ImageOffIcon, LockKeyholeIcon, RotateCcwIcon, ScanLineIcon } from 'lucide-react';
 
+import { ChecklistItemCompletion } from '@entities/stage';
 import { Alert, AlertDescription, AlertTitle } from '@shared/ui/alert';
 import { Badge } from '@shared/ui/badge';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
@@ -43,6 +44,7 @@ export function ChecklistPhotos({ item, canEdit, children }: ChecklistPhotosProp
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        <ChecklistItemCompletion item={item} />
         {item.photoHint && (
           <div className="flex items-start gap-3 rounded-xl border bg-secondary p-4 text-secondary-foreground">
             <ScanLineIcon className="mt-0.5 size-5 shrink-0 text-primary-text" aria-hidden="true" />
