@@ -18,7 +18,7 @@ export function AcceptanceDecision({ decision, isRework }: AcceptanceDecisionPro
       <AlertTitle>{decision.decision === 'accepted' ? 'Этап принят' : 'Замечания по приёмке'}</AlertTitle>
       <AlertDescription className="flex flex-col gap-2">
         <p className="wrap-anywhere">
-          {decision.decidedBy.fullName} · <time dateTime={decision.decidedAt}>{decidedAt}</time> (Екатеринбург)
+          {decision.decidedBy.fullName} · <time dateTime={decision.decidedAt}>{decidedAt}</time>
         </p>
         {decision.comment && <p className="wrap-anywhere whitespace-pre-wrap">{decision.comment}</p>}
         {decision.correctionDueDate && <p>Срок исправления: {formatDate(decision.correctionDueDate)}</p>}

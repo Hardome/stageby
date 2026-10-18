@@ -3,6 +3,7 @@ import { Button } from '@shared/ui/button';
 import type { ChecklistItemPhoto } from '@api/types';
 
 import { PhotoImage } from './photo-image';
+import { PhotoUploadDetails } from './photo-upload-details';
 
 interface PhotoTileProperties {
   photo: ChecklistItemPhoto;
@@ -20,6 +21,7 @@ export function PhotoTile({ photo, canEdit, busy, onOpen, onDelete }: PhotoTileP
         <Button variant="ghost" size="sm" onClick={onOpen}>
           Фото {photo.position}
         </Button>
+        <PhotoUploadDetails photo={photo} />
         {canEdit && (
           <Button variant="outline" size="sm" disabled={busy} onClick={onDelete}>
             Удалить
