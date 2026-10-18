@@ -607,18 +607,11 @@ describe('File uploads and checklist photos', () => {
       payload: { fileId: invoiceFile.upload!.fileId, amountMinor: 10_000, supplierName: 'Поставщик' },
     });
     expect(invoice.statusCode, invoice.body).toBe(201);
-    const plannedPayment = await getApp().inject({
-      method: 'POST',
-      url: `/stages/${fixture.stage.id}/work-plan-rows`,
-      headers: { cookie: fixture.manager.cookie },
-      payload: { amountMinor: 5000, recipientId: fixture.foreman.user.id },
-    });
-    expect(plannedPayment.statusCode, plannedPayment.body).toBe(201);
     const payment = await getApp().inject({
       method: 'POST',
       url: `/stages/${fixture.stage.id}/work-payments`,
       headers: { cookie: fixture.manager.cookie },
-      payload: { paidAt: '2026-10-04', amountMinor: 5000, workPlanRowId: plannedPayment.json().id },
+      payload: { paidAt: '2026-10-04', amountMinor: 5000 },
     });
     expect(payment.statusCode, payment.body).toBe(201);
     const download = (cookie: string, fileId: number) =>

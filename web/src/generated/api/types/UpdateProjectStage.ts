@@ -10,7 +10,6 @@ import type { Notes } from './Notes'
 import type { PlannedEndDate } from './PlannedEndDate'
 import type { PlannedMoneyAmountMinor } from './PlannedMoneyAmountMinor'
 import type { PlannedStartDate } from './PlannedStartDate'
-import type { ProjectWorkPlanRowChange } from './ProjectWorkPlanRowChange'
 import type { WorkSubtypes } from './WorkSubtypes'
 
 export type UpdateProjectStage = {
@@ -101,9 +100,4 @@ export type UpdateProjectStage = {
      * @type object | undefined
     */
     checklist?: ConfigureChecklist;
-    /**
-     * @description Частичные операции. Пропущенные строки сохраняются. Новая строка требует amountMinor; существующая — id и expectedVersion. delete и distribute нельзя сочетать с правками полей.
-     * @type array | undefined
-    */
-    workPlanRows?: ProjectWorkPlanRowChange[];
 };

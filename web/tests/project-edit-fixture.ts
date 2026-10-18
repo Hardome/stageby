@@ -20,7 +20,7 @@ export function editStage(overrides: Partial<Stage> = {}): ProjectEditStage {
     position: 1,
     isIncluded: true,
     workSubtypes: [],
-    assignee: { id: 4, fullName: 'Иван', phone: null },
+    assignee: { id: 4, fullName: 'Иван', phone: null, isActive: true },
     status: 'assigned',
     plannedStartDate: '2026-10-05',
     plannedEndDate: '2026-10-20',
@@ -54,7 +54,6 @@ export function editStage(overrides: Partial<Stage> = {}): ProjectEditStage {
 
   return {
     stage,
-    workPlanRows: [],
     checklist: {
       id: stage.id + 100,
       stageId: stage.id,

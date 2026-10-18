@@ -31,7 +31,6 @@ const expectedTables = [
   'stages',
   'users',
   'work_payments',
-  'work_plan_rows',
 ];
 
 const expectedIndexes = [
@@ -76,9 +75,6 @@ const expectedIndexes = [
   'users_login_unique',
   'users_role_active_idx',
   'work_payments_stage_paid_at_idx',
-  'work_payments_plan_row_idx',
-  'work_plan_rows_stage_due_date_idx',
-  'work_plan_rows_recipient_idx',
 ];
 
 const expectedForeignKeys = [
@@ -113,9 +109,6 @@ const expectedForeignKeys = [
   'stages_stageTypeCode_stage_types_code_fk',
   'work_payments_stageId_stages_id_fk',
   'work_payments_createdByUserId_users_id_fk',
-  'work_payments_plan_row_stage_fk',
-  'work_plan_rows_stageId_stages_id_fk',
-  'work_plan_rows_recipientId_users_id_fk',
 ];
 
 describe('миграции БД', () => {
@@ -273,13 +266,13 @@ describe('миграции БД', () => {
       await expect(
         temporaryPool.query(`update stages set "plannedEndDate" = '2026-12-31' where "projectId" = $1`, [projectId]),
       ).rejects.toMatchObject({ code: '23514' });
-      expect(firstJournal.rows[0]?.count).toBe('4');
+      expect(firstJournal.rows[0]?.count).toBe('5');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);
       expect(indexes.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedIndexes));
       expect(foreignKeys.rows.map((row) => row.name)).toEqual(expect.arrayContaining(expectedForeignKeys));
-      expect(checkConstraints.rows[0]?.count).toBe('69');
+      expect(checkConstraints.rows[0]?.count).toBe('67');
       expect(triggers.rows.map((row) => row.name)).toEqual([
         'projects_stage_dates_trigger',
         'stages_active_type_trigger',

@@ -6,7 +6,7 @@ import { Field, FieldError, FieldLabel } from '@shared/ui/field';
 import { Textarea } from '@shared/ui/textarea';
 
 import type { WorkFormValues } from '../lib/work-form';
-import { WorkRowFields } from './work-row-fields';
+import { WorkAmountFields } from './work-amount-fields';
 
 export function WorkPaymentFields({ disabled }: { disabled: boolean }) {
   const id = useId();
@@ -17,7 +17,7 @@ export function WorkPaymentFields({ disabled }: { disabled: boolean }) {
 
   return (
     <>
-      <WorkRowFields disabled={disabled} payment />
+      <WorkAmountFields disabled={disabled} />
       <Field data-invalid={Boolean(errors.comment)}>
         <FieldLabel htmlFor={id}>Комментарий (необязательно)</FieldLabel>
         <Textarea

@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { getProjectEditResponseSchema, getProjectEditErrorSchema } from '../zod/getProjectEditSchema'
 
 /**
- * @description Только руководитель. Согласованный снимок реквизитов, документов, всех этапов (включая исключённые), чек-листов, строк плана и версий.
+ * @description Только руководитель. Согласованный снимок реквизитов, документов, всех этапов (включая исключённые), чек-листов и версий.
  * @summary Загрузить форму редактирования объекта
  * {@link /projects/:projectId/edit}
  */

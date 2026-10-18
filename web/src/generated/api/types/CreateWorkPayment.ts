@@ -9,14 +9,6 @@ import type { WorkPayment } from './WorkPayment'
 
 export type CreateWorkPayment = {
     /**
-     * @description ID строки своего этапа. Получатель копируется из строки и должен быть активным мастером.
-     * @minLength 1
-     * @maxLength 2147483647
-     * @example 2
-     * @type integer
-    */
-    workPlanRowId: number;
-    /**
      * @description Дата фактической оплаты в формате YYYY-MM-DD.
      *
      * Format: `date`

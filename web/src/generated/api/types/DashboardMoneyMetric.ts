@@ -13,7 +13,7 @@ import type { SignedMoneyAmountMinor } from './SignedMoneyAmountMinor'
 */
 export type DashboardMoneyMetric = {
     /**
-     * @description Сумма планов обязательств в расчёте; null при неполноте категории. Для работ — строки выплат, для материалов — ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.
+     * @description Сумма планов обязательств в расчёте; null при неполноте категории. Для работ и материалов используются ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.
      *
      * Format: `int64`
      * @minLength 0
@@ -24,7 +24,7 @@ export type DashboardMoneyMetric = {
     */
     readonly plannedAmountMinor: PlannedMoneyAmountMinor | null;
     /**
-     * @description Фактическая сумма оплат с датой не позже through по тем же строкам работ или этапам материалов, которые вошли в расчёт плана.
+     * @description Фактическая сумма оплат с датой не позже through по тем же этапам, которые вошли в расчёт плана.
      *
      * Format: `int64`
      * @minLength 0
@@ -43,7 +43,7 @@ export type DashboardMoneyMetric = {
     */
     readonly balanceAmountMinor: SignedMoneyAmountMinor | null;
     /**
-     * @description true, если план категории полон в выбранном периметре. Для работ неполнота означает отсутствие строк у этапа с окончанием не позже through; для материалов — незаданный план выбранного этапа. Нулевой план считается заданным.
+     * @description true, если план категории полон в выбранном периметре. Неполнота означает незаданный ручной план категории у выбранного этапа. Нулевой план считается заданным.
      * @example true
      * @type boolean
     */

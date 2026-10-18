@@ -11,7 +11,6 @@ import { notesSchema } from './notesSchema'
 import { plannedEndDateSchema } from './plannedEndDateSchema'
 import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { plannedStartDateSchema } from './plannedStartDateSchema'
-import { projectWorkPlanRowChangeSchema } from './projectWorkPlanRowChangeSchema'
 import { workSubtypesSchema } from './workSubtypesSchema'
 
 export const updateProjectStageSchema = z.object({
@@ -26,7 +25,6 @@ export const updateProjectStageSchema = z.object({
   workSubtypes: workSubtypesSchema.optional().describe('Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.'),
   notes: notesSchema.nullish().describe('Новые примечания к этапу; null очищает сохранённые примечания.').meta({ examples: ['Согласовать время доставки бетона.', ] }),
   checklist: configureChecklistSchema.optional().describe('Индивидуальный чек-лист и его версия.'),
-  workPlanRows: z.array(projectWorkPlanRowChangeSchema).optional().describe('Частичные операции. Пропущенные строки сохраняются. Новая строка требует amountMinor; существующая — id и expectedVersion. delete и distribute нельзя сочетать с правками полей.'),
 }).strict()
 
 export type UpdateProjectStageSchemaType = z.infer<typeof updateProjectStageSchema>

@@ -8,6 +8,7 @@ import * as z from 'zod'
 export const stageAssigneeSchema = z.object({
   id: z.int().min(1).max(2147483647).describe('ID назначенного мастера.').meta({ examples: [1] }),
   fullName: z.string().min(1).max(255).describe('Полное имя назначенного мастера.').meta({ examples: ['Иван Петров'] }),
+  isActive: z.boolean().describe('Активен ли назначенный мастер; неактивному мастеру нельзя добавлять выплаты.').meta({ examples: [true] }),
   phone: z.string().min(1).max(32).nullable().describe('Контактный телефон мастера; null — не указан.').meta({ examples: ['+7 900 000-00-00', ] }),
 }).strict().describe('Назначенный мастер этапа и его контактный телефон.')
 

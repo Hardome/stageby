@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRoot, type Root } from 'react-dom/client';
 
 import { editStage } from '@tests/project-edit-fixture';
-import { workPayment, workRow } from '@tests/work-payment-data';
+import { workPayment } from '@tests/work-payment-data';
 
 import type { Stage } from '@api/types';
 
@@ -14,7 +14,6 @@ import { WorkPayments } from './work-payments';
 const mocks = vi.hoisted(() => ({ rows: vi.fn(), payments: vi.fn(), role: 'manager', user: vi.fn() }));
 vi.mock('@shared/context', () => ({ useAuth: () => ({ user: { id: 4, fullName: 'Иван', role: mocks.role } }) }));
 vi.mock('@shared/lib/hooks', () => ({ useAccessError: () => vi.fn() }));
-vi.mock('@api/queries/useListWorkPlanRows', () => ({ useListWorkPlanRows: mocks.rows }));
 vi.mock('@api/queries/useListWorkPayments', () => ({ useListWorkPayments: mocks.payments }));
 vi.mock('@api/queries/useGetUser', () => ({ useGetUser: mocks.user }));
 
@@ -25,7 +24,6 @@ describe('work payments access and totals', () => {
   beforeEach(() => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     mocks.role = 'manager';
-    mocks.rows.mockReturnValue({ data: [workRow()] });
     mocks.payments.mockReturnValue({ data: [] });
     mocks.user.mockReturnValue({ data: { id: 8, fullName: 'Пётр', isActive: false } });
     container = document.createElement('div');
@@ -53,67 +51,40 @@ describe('work payments access and totals', () => {
     });
   }
 
-  function confirm() {
-    return [...container.querySelectorAll('button')].find((button) => button.textContent === 'Подтвердить «Выплачен»');
-  }
-
-  it('allows distribution and deletion only for an unpaid row without recipient', async () => {
+  it('adds payments only with an active assignee and has no manual paid action', async () => {
     await render();
-
-    expect(container).toHaveTextContent('Распределить');
-    expect(container.querySelector('[aria-label="Удалить строку"]')).toBeInTheDocument();
     expect(
-      [...container.querySelectorAll('button')].find((button) => button.textContent === 'Добавить платёж'),
+      [...container.querySelectorAll('button')].find((button) => button.textContent === 'Добавить выплату'),
+    ).not.toBeDisabled();
+    expect(container).not.toHaveTextContent('Подтвердить «Выплачен»');
+    expect(container).not.toHaveTextContent('Распределить');
+    await render({ assignee: null });
+    expect(
+      [...container.querySelectorAll('button')].find((button) => button.textContent === 'Добавить выплату'),
     ).toBeDisabled();
+    expect(container).toHaveTextContent('назначьте активного мастера');
+    await render({ assignee: { id: 8, fullName: 'Пётр', phone: null, isActive: false } });
+    expect(
+      [...container.querySelectorAll('button')].find((button) => button.textContent === 'Добавить выплату'),
+    ).toBeDisabled();
+  });
 
-    mocks.rows.mockReturnValue({ data: [workRow({ recipientId: 8 })] });
+  it('shows the foreman payments as one list without editing controls', async () => {
+    mocks.role = 'foreman';
     mocks.payments.mockReturnValue({ data: [workPayment(), workPayment({ id: 32 })] });
     await render();
-
-    expect(container).toHaveTextContent('Пётр (неактивен)');
-    expect(container).toHaveTextContent('Переплата');
-    expect(container).not.toHaveTextContent('Удалить строку');
-    expect(container).not.toHaveTextContent('Распределить');
-  });
-
-  it('preserves a foreman historical payment and labels the partial detail', async () => {
-    mocks.role = 'foreman';
-    mocks.rows.mockReturnValue({ data: [workRow({ recipientId: 4 })] });
-    mocks.payments.mockReturnValue({ data: [workPayment(), workPayment({ id: 32, workPlanRowId: 22 })] });
-    await render();
-
-    expect(container).toHaveTextContent('Мои выплаты по строке');
-    expect(container).toHaveTextContent('Мои выплаты по недоступным строкам');
-    expect(container).not.toHaveTextContent('Остаток строки');
-    expect(container).not.toHaveTextContent('Добавить строку');
-    expect(container).not.toHaveTextContent('Изменить платёж');
-    expect(mocks.user).toHaveBeenLastCalledWith(
-      { path: { userId: 4 } },
-      {
-        query: { enabled: false, retry: false },
-      },
-    );
-  });
-
-  it('requires acceptance and a known settled manual plan for paid confirmation', async () => {
-    await render();
-
-    expect(confirm()).toBeDisabled();
-
-    await render({ status: 'completed', plannedWorkAmountMinor: 0n, workBalanceAmountMinor: 0n });
-    expect(confirm()).not.toBeDisabled();
-
-    await render({ status: 'completed', plannedWorkAmountMinor: null, workBalanceAmountMinor: null });
-    expect(confirm()).toBeDisabled();
+    expect(container).toHaveTextContent('Ваши выплаты за работы');
+    expect(container.querySelectorAll('li')).toHaveLength(2);
+    expect(container.querySelector('[aria-label="Изменить платёж"]')).not.toBeInTheDocument();
+    expect(container).not.toHaveTextContent('Добавить выплату');
   });
 
   it('hides all editing for archived projects and renders unavailable responses neutrally', async () => {
     await render({ projectIsArchived: true });
 
-    expect(container).not.toHaveTextContent('Добавить строку');
-    expect(container).not.toHaveTextContent('Изменить строку');
+    expect(container.querySelector('[aria-label="Изменить платёж"]')).not.toBeInTheDocument();
 
-    mocks.rows.mockReturnValue({ error: { status: 403 } });
+    mocks.payments.mockReturnValue({ error: { status: 403 } });
     await render();
 
     expect(container).toHaveTextContent('404 — Страница не найдена');

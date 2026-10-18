@@ -10,7 +10,6 @@ import { userBriefSchema } from './userBriefSchema'
 export const workPaymentSchema = z.object({
   id: z.int().min(1).max(2147483647).describe('Стабильный идентификатор платежа.').meta({ examples: [501] }),
   stageId: z.int().min(1).max(2147483647).describe('Идентификатор оплачиваемого этапа.').meta({ examples: [1001] }),
-  workPlanRowId: z.int().min(1).max(2147483647).describe('Строка планирования выплаты своего этапа.').meta({ examples: [10] }),
   paidAt: z.iso.date().describe('Дата фактической оплаты в формате YYYY-MM-DD.').meta({ examples: ['2026-10-01'] }),
   amountMinor: positiveMoneyAmountMinorSchema.describe('Положительная сумма платежа или счёта в копейках. В первой версии минимум 100 копеек и только целые рубли.').meta({ examples: [500000] }),
   comment: z.string().min(1).max(1000).nullable().describe('Комментарий руководителя; null — комментарий отсутствует.').meta({ examples: ['Аванс', ] }),

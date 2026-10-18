@@ -13,14 +13,10 @@ import type { WorkAction, WorkEditorProperties } from '../model/types';
 import { executeWorkAction } from './execute-work-action';
 import { invalidateWork } from './invalidate-work';
 import { reloadWorkAction } from './reload-work-action';
-import { useWorkRecipient } from './use-work-recipient';
-import { canConfirmPaid } from './work-availability';
 import { isWorkActionUnchanged } from './work-changes';
 import { type WorkFormValues, workFormDefaults, workFormSchema } from './work-form';
 
 function actionVersion(action: WorkAction, stageVersion: number) {
-  if ('row' in action && action.row) return action.row.version;
-
   return 'payment' in action && action.payment ? action.payment.version : stageVersion;
 }
 
@@ -35,7 +31,6 @@ export function useWorkEditor({ stage, action, onClose }: WorkEditorProperties) 
   const client = useQueryClient();
   const accessError = useAccessError();
   const form = useForm({ defaultValues: workFormDefaults(action), resolver: zodResolver(workFormSchema(snapshot)) });
-  useWorkRecipient(action, form);
 
   function report(error: unknown) {
     accessError(error);
@@ -66,7 +61,7 @@ export function useWorkEditor({ stage, action, onClose }: WorkEditorProperties) 
 
     try {
       await executeWorkAction(stage.id, snapshot, values, version);
-      await invalidateWork(client, stage, 'row' in snapshot ? snapshot.row?.id : undefined);
+      await invalidateWork(client, stage);
       onClose();
     } catch (error) {
       report(error);
@@ -86,12 +81,6 @@ export function useWorkEditor({ stage, action, onClose }: WorkEditorProperties) 
       if (currentStage.projectIsArchived || !currentStage.isIncluded) {
         setUnavailable(true);
         setMessage('Изменения этапа недоступны.');
-
-        return;
-      }
-      if (snapshot.kind === 'paid' && !canConfirmPaid(currentStage)) {
-        setUnavailable(true);
-        setMessage('Подтверждение выплаты больше недоступно. Проверьте статус и остаток этапа.');
 
         return;
       }
