@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, isNull, lt, sql, sum } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
 
 import { acceptanceItems, acceptances } from '#app/db/schema/acceptances';
 import {
@@ -14,7 +14,6 @@ import { projects } from '#app/db/schema/projects';
 import { stageTypes } from '#app/db/schema/stage-types';
 import { stagePredecessors, stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
-import { workPayments } from '#app/db/schema/work-payments';
 import type {
   ActiveStageType,
   Checklist,
@@ -34,7 +33,7 @@ import { isSupplyComplete, loadStageSummaries } from '#app/modules/materials/sum
 import { stageDatesValid } from '#app/modules/stages/dates';
 import { lockProjectStage } from '#app/modules/stages/lock';
 import type { Actor, Database, OperationResult, StageOperationError } from '#app/modules/stages/types';
-import { preservesPaidInvariant } from '#app/modules/work-payments/paid-invariant';
+import { paidStatus } from '#app/modules/work-payments/paid-status';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
@@ -145,6 +144,7 @@ export async function loadStages(database: Database | Transaction, ids: number[]
       assigneeId: users.id,
       assigneeName: users.fullName,
       assigneePhone: users.phone,
+      assigneeIsActive: users.isActive,
       progressPercent:
         sql<number>`(select coalesce(round(100.0 * count(*) filter (where i."isCompleted") / nullif(count(*), 0)), 0)
         from checklist_items i join checklists c on c.id = i."checklistId" where c."stageId" = "stages".id and i."deletedAt" is null)`.mapWith(
@@ -224,7 +224,12 @@ export async function loadStages(database: Database | Transaction, ids: number[]
         assignee:
           row.assigneeId === null
             ? null
-            : { id: row.assigneeId, fullName: row.assigneeName!, phone: row.assigneePhone },
+            : {
+                id: row.assigneeId,
+                fullName: row.assigneeName!,
+                phone: row.assigneePhone,
+                isActive: row.assigneeIsActive!,
+              },
         status: row.stage.status,
         plannedStartDate: row.stage.plannedStartDate,
         plannedEndDate: row.stage.plannedEndDate,
@@ -286,14 +291,6 @@ async function getStagePatchError(
   const start = input.plannedStartDate === undefined ? locked.stage.plannedStartDate : input.plannedStartDate;
   const end = input.plannedEndDate === undefined ? locked.stage.plannedEndDate : input.plannedEndDate;
   if (!stageDatesValid(start, end, project!.plannedStartDate, project!.plannedEndDate)) return 'invalid_request';
-  if (
-    !(await preservesPaidInvariant(transaction, {
-      ...locked.stage,
-      plannedWorkAmountMinor:
-        input.plannedWorkAmountMinor === undefined ? locked.stage.plannedWorkAmountMinor : input.plannedWorkAmountMinor,
-    }))
-  )
-    return 'invalid_transition';
   if (input.assigneeId !== undefined && !(await isActiveForeman(transaction, input.assigneeId)))
     return 'invalid_request';
   return null;
@@ -303,20 +300,10 @@ async function getStatusTransitionError(
   transaction: Transaction,
   locked: LockedStage,
   stageId: number,
-  status: 'supplied' | 'paid',
+  status: 'supplied',
 ): Promise<StageOperationError | null> {
-  if (status === 'supplied') {
-    const isComplete = await isMaterialSupplyComplete(transaction, stageId);
-    return locked.stage.status === 'assigned' && isComplete ? null : 'invalid_transition';
-  }
-  if (locked.stage.status !== 'completed' || locked.stage.plannedWorkAmountMinor === null) {
-    return 'invalid_transition';
-  }
-  const [paid] = await transaction
-    .select({ amount: sum(workPayments.amountMinor).mapWith(Number) })
-    .from(workPayments)
-    .where(eq(workPayments.stageId, stageId));
-  return locked.stage.plannedWorkAmountMinor - (paid?.amount ?? 0) <= 0 ? null : 'invalid_transition';
+  const isComplete = await isMaterialSupplyComplete(transaction, stageId);
+  return status === 'supplied' && locked.stage.status === 'assigned' && isComplete ? null : 'invalid_transition';
 }
 
 function getChecklistUpdateError(
@@ -553,7 +540,7 @@ export class StageRepository {
       if (patchError) return { status: patchError };
       const { expectedVersion: _version, ...fields } = input;
       const updated = { ...locked.stage, ...fields };
-      let status = locked.stage.status;
+      let status = await paidStatus(transaction, updated);
       if (['created', 'assigned'].includes(status)) status = updated.assigneeId === null ? 'created' : 'assigned';
       if (
         Object.entries(fields).some(
@@ -627,7 +614,7 @@ export class StageRepository {
   changeStatus(
     stageId: number,
     expectedVersion: number,
-    status: 'supplied' | 'paid',
+    status: 'supplied',
     context: AuditContext = { source: 'system' },
   ): Promise<OperationResult<Stage>> {
     return auditedTransaction(this.#database, context, 'changeStageStatus', async (transaction, audit) => {
@@ -798,11 +785,12 @@ export class StageRepository {
           })
           .returning(),
       );
+      const status = await paidStatus(transaction, { ...locked.stage, status: 'completed' });
       await audit.mutate(stages, eq(stages.id, stageId), () =>
         transaction
           .update(stages)
           .set({
-            status: 'completed',
+            status,
             actualEndDate: today(),
             version: sql`${stages.version} + 1`,
             updatedAt: new Date(),

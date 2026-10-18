@@ -17,7 +17,7 @@ export const dashboardSelectedStageSchema = z.object({
   plannedStartDate: z.iso.date().nullable().describe('Плановое начало выбранного этапа или null.').meta({ examples: ['2026-10-10'] }),
   plannedEndDate: z.iso.date().nullable().describe('Плановое окончание выбранного этапа или null.').meta({ examples: ['2026-10-25'] }),
   assignee: z.union([userBriefSchema, z.null()]).describe('Назначенный мастер выбранного этапа или null.'),
-  status: stageStatusSchema.describe('Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.').meta({ examples: ['in_progress'] }),
+  status: stageStatusSchema.describe('Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. После приёмки paid рассчитывается автоматически при заданном плане работ и сумме выплат не меньше плана; появление долга возвращает completed. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.').meta({ examples: ['in_progress'] }),
   progressPercent: z.int().min(0).max(100).describe('Вычисляемая готовность выбранного этапа.').meta({ examples: [50] }),
   materials: materialIndicatorSchema.describe('Вычисляемое состояние счетов и нехваток выбранного этапа.'),
   finances: stageFinancialSummarySchema.describe('Вычисляемые финансовые итоги одного этапа. Все поля доступны только для чтения.'),

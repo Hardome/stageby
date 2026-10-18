@@ -35,7 +35,7 @@ paths:
       tags:
         - Work payments
       summary: Добавить платёж за работы
-      description: Только руководитель. Сумма положительна и кратна 100 копейкам. Архивный проект изменить нельзя.
+      description: Только руководитель. Получатель — текущий активный назначенный мастер этапа, фиксируется сервером и не изменяется. После приёмки статус автоматически пересчитывается по сумме выплат и ручному плану работ. Сумма положительна и кратна 100 копейкам. Архивный проект изменить нельзя.
       requestBody:
         required: true
         content:
@@ -131,7 +131,6 @@ components:
       required:
         - id
         - stageId
-        - workPlanRowId
         - paidAt
         - amountMinor
         - comment
@@ -155,12 +154,6 @@ components:
           examples:
             - 1001
           description: Идентификатор оплачиваемого этапа.
-        workPlanRowId:
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-          description: Строка планирования выплаты своего этапа.
-          example: 10
         paidAt:
           type: string
           format: date
@@ -206,16 +199,9 @@ components:
       type: object
       additionalProperties: false
       required:
-        - workPlanRowId
         - paidAt
         - amountMinor
       properties:
-        workPlanRowId:
-          example: 2
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-          description: ID строки своего этапа. Получатель копируется из строки и должен быть активным мастером.
         paidAt:
           type: string
           format: date
@@ -241,12 +227,6 @@ components:
       required:
         - expectedVersion
       properties:
-        recipientId:
-          example: 3
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-          description: Новый получатель — активный мастер. Изменение назначения этапа само по себе получателя не меняет.
         expectedVersion:
           $ref: ../common/common.yaml#/components/schemas/ExpectedVersion
         paidAt:

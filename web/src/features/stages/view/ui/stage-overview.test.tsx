@@ -96,7 +96,7 @@ describe('stage overview', () => {
       position: 5,
       includedStageNumber: 2,
       includedStageCount: 3,
-      assignee: { id: 4, fullName: 'Иван', phone: '+79000000000' },
+      assignee: { id: 4, fullName: 'Иван', phone: '+79000000000', isActive: true },
       projectDocumentFileIds: [71],
       workBalanceAmountMinor: -10000n,
     });

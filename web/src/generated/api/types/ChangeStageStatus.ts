@@ -7,13 +7,6 @@ import type { ApiError } from './ApiError'
 import type { ExpectedVersion } from './ExpectedVersion'
 import type { Stage } from './Stage'
 
-export const changeStageStatusStatusEnum = {
-    supplied: "supplied",
-    paid: "paid"
-} as const;
-
-export type ChangeStageStatusStatusEnumKey = (typeof changeStageStatusStatusEnum)[keyof typeof changeStageStatusStatusEnum];
-
 export type ChangeStageStatus = {
     /**
      * @description Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.
@@ -23,11 +16,11 @@ export type ChangeStageStatus = {
     */
     expectedVersion: ExpectedVersion;
     /**
-     * @description Явный переход в supplied после комплектации или в paid после полной выплаты работ. Повтор текущего статуса допустим; остальные переходы запрещены.
+     * @description Явный переход в supplied после комплектации. Повтор текущего статуса допустим; остальные переходы запрещены.
      * @example supplied
      * @type string
     */
-    status: ChangeStageStatusStatusEnumKey;
+    status: "supplied";
 };
 
 export type ChangeStageStatusPath = {

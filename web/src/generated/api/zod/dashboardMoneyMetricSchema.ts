@@ -9,10 +9,10 @@ import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { signedMoneyAmountMinorSchema } from './signedMoneyAmountMinorSchema'
 
 export const dashboardMoneyMetricSchema = z.object({
-  plannedAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Сумма планов обязательств в расчёте; null при неполноте категории. Для работ — строки выплат, для материалов — ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.').meta({ examples: [12500000, 0, ] }),
-  actualAmountMinor: moneyAmountMinorSchema.describe('Фактическая сумма оплат с датой не позже through по тем же строкам работ или этапам материалов, которые вошли в расчёт плана.').meta({ examples: [12500000] }),
+  plannedAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Сумма планов обязательств в расчёте; null при неполноте категории. Для работ и материалов используются ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.').meta({ examples: [12500000, 0, ] }),
+  actualAmountMinor: moneyAmountMinorSchema.describe('Фактическая сумма оплат с датой не позже through по тем же этапам, которые вошли в расчёт плана.').meta({ examples: [12500000] }),
   balanceAmountMinor: signedMoneyAmountMinorSchema.nullable().describe('План минус факт; отрицательное значение означает переплату, null — план неполон.').meta({ examples: [250000, -100000, ] }),
-  isPlanComplete: z.boolean().describe('true, если план категории полон в выбранном периметре. Для работ неполнота означает отсутствие строк у этапа с окончанием не позже through; для материалов — незаданный план выбранного этапа. Нулевой план считается заданным.').meta({ examples: [true] }),
+  isPlanComplete: z.boolean().describe('true, если план категории полон в выбранном периметре. Неполнота означает незаданный ручной план категории у выбранного этапа. Нулевой план считается заданным.').meta({ examples: [true] }),
 }).strict().describe('План, факт, остаток и полнота плана одной финансовой категории.')
 
 export type DashboardMoneyMetricSchemaType = z.infer<typeof dashboardMoneyMetricSchema>

@@ -25,7 +25,6 @@ import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
 import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
-import { createPaymentPlanRow } from '#test/work-plan-row';
 
 const PASSWORD = 'Stages-test-password-123!';
 const createdUserIds: number[] = [];
@@ -192,7 +191,7 @@ describe('Stage statuses and checklists', () => {
       projectPlannedEndDate: '2026-12-31',
       includedStageNumber: 1,
       includedStageCount: 1,
-      assignee: { id: fixture.foreman.user.id, fullName: fixture.foreman.user.fullName, phone: null },
+      assignee: { id: fixture.foreman.user.id, fullName: fixture.foreman.user.fullName, isActive: true, phone: null },
     });
     await getApp().db.update(users).set({ phone: '+7 900 000-00-00' }).where(eq(users.id, fixture.foreman.user.id));
     await getApp().db.update(projects).set({ plannedEndDate: '2026-11-30' }).where(eq(projects.id, fixture.project.id));
@@ -202,6 +201,7 @@ describe('Stage statuses and checklists', () => {
       id: fixture.foreman.user.id,
       fullName: fixture.foreman.user.fullName,
       phone: '+7 900 000-00-00',
+      isActive: true,
     });
     expect((await read(fixture.manager.cookie)).json()).toEqual(own.json());
     expect((await read(stranger.cookie)).statusCode).toBe(404);
@@ -868,7 +868,7 @@ describe('Stage statuses and checklists', () => {
     expect(acceptedAgain!.status).toBe('acceptance');
   });
 
-  it('только руководитель подтверждает этап и переводит completed в paid при нулевом остатке', async () => {
+  it('только руководитель подтверждает приёмку; ручной переход в paid запрещён', async () => {
     const fixture = await createFixture({ itemCount: 1, plannedWorkAmountMinor: 10_000 });
     await attachUploadedPhoto(fixture.items[0]!.id);
     await updateItem(fixture.foreman.cookie, fixture.stage.id, fixture.items[0]!.id, 1);
@@ -891,31 +891,13 @@ describe('Stage statuses and checklists', () => {
     expect(completed.status).toBe('completed');
     expect(completed.actualEndDate).not.toBeNull();
 
-    const unpaid = await getApp().inject({
+    const manual = await getApp().inject({
       method: 'PUT',
       url: `/stages/${fixture.stage.id}/status`,
       headers: { cookie: fixture.manager.cookie },
       payload: { expectedVersion: completed.version, status: 'paid' },
     });
-    expect(unpaid.statusCode).toBe(409);
-    await getApp()
-      .db.insert(workPayments)
-      .values({
-        stageId: fixture.stage.id,
-        workPlanRowId: (await createPaymentPlanRow(getApp().db, fixture.stage.id, fixture.foreman.user.id)).id,
-        recipientId: fixture.foreman.user.id,
-        paidAt: '2026-10-01',
-        amountMinor: 10_000,
-        createdByUserId: fixture.manager.user.id,
-      });
-    const paid = await getApp().inject({
-      method: 'PUT',
-      url: `/stages/${fixture.stage.id}/status`,
-      headers: { cookie: fixture.manager.cookie },
-      payload: { expectedVersion: completed.version, status: 'paid' },
-    });
-    expect(paid.statusCode, paid.body).toBe(200);
-    expect(paid.json<Stage>().status).toBe('paid');
+    expect(manual.statusCode).toBe(400);
   });
 
   it('разрешает только одно из двух конкурентных изменений одной версии', async () => {
@@ -1005,6 +987,6 @@ describe('Stage statuses and checklists', () => {
       payload: { expectedVersion: 1, status: 'paid' },
     });
     expect(supplied.statusCode).toBe(409);
-    expect(paid.statusCode).toBe(409);
+    expect(paid.statusCode).toBe(400);
   });
 });

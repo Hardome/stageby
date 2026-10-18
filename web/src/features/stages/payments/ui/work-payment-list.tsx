@@ -47,7 +47,7 @@ export function WorkPaymentList({ payments, editable, onAction }: WorkPaymentLis
                 size="icon-sm"
                 aria-label="Изменить платёж"
                 title="Изменить платёж"
-                onClick={() => onAction({ kind: 'payment', rowId: payment.workPlanRowId, payment })}
+                onClick={() => onAction({ kind: 'payment', payment })}
               >
                 <PencilIcon />
               </Button>

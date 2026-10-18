@@ -19,8 +19,6 @@ tags:
     description: Фиксированные виды работ, назначения, зависимости и приёмка.
   - name: Checklists
     description: Один чек-лист с контрольными точками и фотографиями на этап.
-  - name: Work plans
-    description: Планирование выплат мастерам по строкам.
   - name: Work payments
     description: Фактические платежи за выполненные работы этапа. Изменение доступно только руководителю.
   - name: Files
@@ -30,198 +28,6 @@ tags:
   - name: Dashboard
     description: Независимые агрегаты и строки панели руководителя.
 paths:
-  /stages/{stageId}/work-plan-rows:
-    parameters:
-      - name: stageId
-        in: path
-        required: true
-        description: Идентификатор ресурса.
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-    get:
-      operationId: listWorkPlanRows
-      tags:
-        - Work plans
-      summary: Строки планирования выплат
-      description: Изменения доступны руководителю. Назначенный мастер читает только собственные строки. Архивный объект не изменяется.
-      responses:
-        '200':
-          description: Успешный ответ
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/WorkPlanRow'
-        '400':
-          $ref: '#/components/responses/ApiBadRequest'
-        '401':
-          $ref: '#/components/responses/ApiUnauthorized'
-        '403':
-          $ref: '#/components/responses/ApiForbidden'
-        '404':
-          $ref: '#/components/responses/ApiNotFound'
-        '409':
-          $ref: '#/components/responses/ApiConflict'
-    post:
-      operationId: createWorkPlanRow
-      tags:
-        - Work plans
-      summary: Добавить строку выплаты
-      description: Изменения доступны руководителю. Назначенный мастер читает только собственные строки. Архивный объект не изменяется.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateWorkPlanRow'
-      responses:
-        '201':
-          description: Успешный ответ
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkPlanRow'
-        '400':
-          $ref: '#/components/responses/ApiBadRequest'
-        '401':
-          $ref: '#/components/responses/ApiUnauthorized'
-        '403':
-          $ref: '#/components/responses/ApiForbidden'
-        '404':
-          $ref: '#/components/responses/ApiNotFound'
-        '409':
-          $ref: '#/components/responses/ApiConflict'
-  /work-plan-rows/{rowId}:
-    parameters:
-      - name: rowId
-        in: path
-        required: true
-        description: Идентификатор ресурса.
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-    get:
-      operationId: getWorkPlanRow
-      tags:
-        - Work plans
-      summary: Прочитать строку выплаты
-      description: Изменения доступны руководителю. Назначенный мастер читает только собственные строки. Архивный объект не изменяется.
-      responses:
-        '200':
-          description: Успешный ответ
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkPlanRow'
-        '400':
-          $ref: '#/components/responses/ApiBadRequest'
-        '401':
-          $ref: '#/components/responses/ApiUnauthorized'
-        '403':
-          $ref: '#/components/responses/ApiForbidden'
-        '404':
-          $ref: '#/components/responses/ApiNotFound'
-        '409':
-          $ref: '#/components/responses/ApiConflict'
-    patch:
-      operationId: updateWorkPlanRow
-      tags:
-        - Work plans
-      summary: Изменить строку выплаты
-      description: Изменения доступны руководителю. Назначенный мастер читает только собственные строки. Архивный объект не изменяется.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateWorkPlanRow'
-      responses:
-        '200':
-          description: Успешный ответ
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkPlanRow'
-        '400':
-          $ref: '#/components/responses/ApiBadRequest'
-        '401':
-          $ref: '#/components/responses/ApiUnauthorized'
-        '403':
-          $ref: '#/components/responses/ApiForbidden'
-        '404':
-          $ref: '#/components/responses/ApiNotFound'
-        '409':
-          $ref: '#/components/responses/ApiConflict'
-    delete:
-      operationId: deleteWorkPlanRow
-      tags:
-        - Work plans
-      summary: Удалить строку без выплат
-      description: Изменения доступны руководителю. Назначенный мастер читает только собственные строки. Архивный объект не изменяется.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeleteWorkPlanRow'
-      responses:
-        '204':
-          description: Строка удалена
-        '400':
-          $ref: '#/components/responses/ApiBadRequest'
-        '401':
-          $ref: '#/components/responses/ApiUnauthorized'
-        '403':
-          $ref: '#/components/responses/ApiForbidden'
-        '404':
-          $ref: '#/components/responses/ApiNotFound'
-        '409':
-          $ref: '#/components/responses/ApiConflict'
-  /work-plan-rows/{rowId}/distribute:
-    parameters:
-      - name: rowId
-        in: path
-        required: true
-        description: Идентификатор ресурса.
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-    post:
-      operationId: distributeWorkPlanRow
-      tags:
-        - Work plans
-      summary: Распределить строку без получателя и выплат
-      description: Изменения доступны руководителю. Назначенный мастер читает только собственные строки. Архивный объект не изменяется.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DistributeWorkPlanRow'
-      responses:
-        '200':
-          description: Успешный ответ
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/WorkPlanRow'
-        '400':
-          $ref: '#/components/responses/ApiBadRequest'
-        '401':
-          $ref: '#/components/responses/ApiUnauthorized'
-        '403':
-          $ref: '#/components/responses/ApiForbidden'
-        '404':
-          $ref: '#/components/responses/ApiNotFound'
-        '409':
-          $ref: '#/components/responses/ApiConflict'
   /users:
     get:
       operationId: listUsers
@@ -584,7 +390,7 @@ paths:
       tags:
         - Projects
       summary: Изменить или архивировать проект
-      description: Только руководитель. Атомарно сохраняет реквизиты, документы, этапы, чек-листы, строки плана и дополнительный этап. Проверяет версии и итоговое состояние формы. Пропущенные поля и этапы сохраняются; null очищает nullable-поле. Исключение явно задаётся isIncluded=false, разрешено до фактического старта и без фото (включая удалённые), счетов и выплат. Восстановление сохраняет ID и историю. Минимум один включённый этап обязателен. Архивный объект допускает только отдельное разархивирование isArchived=false. Общие планы объекта не редактируются.
+      description: Только руководитель. Атомарно сохраняет реквизиты, документы, этапы, чек-листы и дополнительный этап. Проверяет версии и итоговое состояние формы. Пропущенные поля и этапы сохраняются; null очищает nullable-поле. Исключение явно задаётся isIncluded=false, разрешено до фактического старта и без фото (включая удалённые), счетов и выплат. Восстановление сохраняет ID и историю. Минимум один включённый этап обязателен. Архивный объект допускает только отдельное разархивирование isArchived=false. Общие планы объекта не редактируются.
       requestBody:
         required: true
         content:
@@ -614,7 +420,7 @@ paths:
       tags:
         - Projects
       summary: Загрузить форму редактирования объекта
-      description: Только руководитель. Согласованный снимок реквизитов, документов, всех этапов (включая исключённые), чек-листов, строк плана и версий.
+      description: Только руководитель. Согласованный снимок реквизитов, документов, всех этапов (включая исключённые), чек-листов и версий.
       parameters:
         - name: projectId
           in: path
@@ -777,7 +583,7 @@ paths:
       tags:
         - Stages
       summary: Настроить этап
-      description: Только руководитель. Можно передать любое непустое сочетание полей; все проверки выполняются по результирующей записи, изменения атомарны и увеличивают version один раз. Назначать можно только активного foreman; null снимает назначение. Даты, мастер и ручные планы редактируются после старта, включая completed и paid; фактические даты сохраняются. Для paid план работ должен оставаться заданным, а остаток работ — не больше нуля, иначе возвращается 409 invalid_transition без изменения статуса. Даты независимо nullable; каждая заданная дата находится внутри обеих границ проекта, окончание не раньше начала при наличии обеих дат; соседние этапы не переносятся. Устаревшая expectedVersion — 409 version_conflict, архив — 409 project_archived.
+      description: Только руководитель. Можно передать любое непустое сочетание полей; все проверки выполняются по результирующей записи, изменения атомарны и увеличивают version один раз. Назначать можно только активного foreman; null снимает назначение. Даты, мастер и ручные планы редактируются после старта, включая completed и paid; фактические даты сохраняются. После приёмки статус автоматически становится paid при заданном плане и сумме выплат не меньше плана, иначе completed. Финансовые исправления могут вернуть paid в completed. Даты независимо nullable; каждая заданная дата находится внутри обеих границ проекта, окончание не раньше начала при наличии обеих дат; соседние этапы не переносятся. Устаревшая expectedVersion — 409 version_conflict, архив — 409 project_archived.
       requestBody:
         required: true
         content:
@@ -816,7 +622,7 @@ paths:
       tags:
         - Stages
       summary: Перевести этап в следующий рабочий статус
-      description: Только руководитель. Явно разрешены assigned→supplied при наличии хотя бы одного заказа, хотя бы одного счёта в каждом заказе и доставке всех счетов, а также completed→paid при нулевом остатке по работам. Старт, переход на приёмку и возврат с доработки выполняются автоматически изменением пунктов. Повтор текущего статуса с актуальной версией возвращает запись без изменения. Остальные переходы — 409 invalid_transition. Архив — 409 project_archived.
+      description: Только руководитель. Явно разрешён assigned→supplied при наличии хотя бы одного счёта этапа и доставке всех счетов. Статус paid рассчитывается автоматически после приёмки. Старт, переход на приёмку и возврат с доработки выполняются автоматически изменением пунктов. Повтор текущего статуса с актуальной версией возвращает запись без изменения. Остальные переходы — 409 invalid_transition. Архив — 409 project_archived.
       requestBody:
         required: true
         content:
@@ -1014,7 +820,7 @@ paths:
       tags:
         - Work payments
       summary: Добавить платёж за работы
-      description: Только руководитель. Сумма положительна и кратна 100 копейкам. Архивный проект изменить нельзя.
+      description: Только руководитель. Получатель — текущий активный назначенный мастер этапа, фиксируется сервером и не изменяется. После приёмки статус автоматически пересчитывается по сумме выплат и ручному плану работ. Сумма положительна и кратна 100 копейкам. Архивный проект изменить нельзя.
       requestBody:
         required: true
         content:
@@ -1519,7 +1325,8 @@ paths:
       tags:
         - Dashboard
       summary: Финансовая сводка панели руководителя
-      description: Только руководитель. Считает работы, материалы и общий итог независимо от таблицы объектов. Учитываются включённые этапы неархивных объектов, включая paid. Работы отбираются по dueDate строки, иначе по plannedEndDate этапа; дата должна быть не позже through. Явный срок строки всегда приоритетен; без обеих дат строка и её выплаты исключаются. План работ — сумма строк в этом периметре, отдельно от ручного плана этапа и общего плана объекта. Материалы отбираются по plannedEndDate не позже through; используется ручной план материалов. Факт включает только выплаты по выбранным строкам и фактические суммы оплаты счетов выбранных этапов с датой оплаты не позже through. Оплата не уменьшает план; остаток сохраняет переплату. Если окончание этапа не позже through, но строк работ нет, план работ неизвестен; незаданный план материалов выбранного этапа также даёт null. Суммы не дублируются при соединении наборов данных.
+      description: |
+        Только руководитель. Учитываются включённые этапы неархивных объектов, включая выплаченные. Работы и материалы включаются по plannedEndDate этапа не позже through; без даты окончания этап исключается. План работ и материалов берётся из ручных планов этапа. Факт включает выплаты и фактические оплаты счетов выбранных этапов с датой оплаты не позже through. Оплата не уменьшает план; остаток сохраняет переплату. Незаданный план выбранного этапа делает план категории и остаток неизвестными (null); нулевой план считается заданным.
       parameters:
         - name: through
           in: query
@@ -1601,7 +1408,7 @@ components:
         - paid
       examples:
         - in_progress
-      description: Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
+      description: Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. После приёмки paid рассчитывается автоматически при заданном плане работ и сумме выплат не меньше плана; появление долга возвращает completed. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
     ApiErrorCode:
       type: string
       enum:
@@ -1628,191 +1435,6 @@ components:
       examples:
         - invalid_request
       description: Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.
-    WritableMoneyAmountMinor:
-      type: integer
-      format: int64
-      minimum: 0
-      multipleOf: 100
-      examples:
-        - 12500000
-      description: Денежная сумма в копейках, вводимая пользователем. В первой версии принимает только целые рубли.
-    WorkPlanRow:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - stageId
-        - amountMinor
-        - recipientId
-        - dueDate
-        - version
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-          description: Идентификатор строки.
-          example: 1
-        stageId:
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-          description: Этап строки.
-          example: 1
-        amountMinor:
-          $ref: '#/components/schemas/WritableMoneyAmountMinor'
-        recipientId:
-          type:
-            - integer
-            - 'null'
-          minimum: 1
-          maximum: 2147483647
-          description: Текущий получатель или null.
-          example: null
-        dueDate:
-          type:
-            - string
-            - 'null'
-          format: date
-          description: Срок выплаты; не ограничен датами проекта.
-          example: null
-        version:
-          type: integer
-          minimum: 1
-          description: Версия строки.
-          example: 1
-        createdAt:
-          type: string
-          format: date-time
-          description: Время создания.
-          example: '2026-10-12T08:00:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          description: Время изменения.
-          example: '2026-10-12T08:00:00Z'
-    ApiError:
-      type: object
-      additionalProperties: false
-      required:
-        - error
-        - code
-        - message
-      properties:
-        error:
-          examples:
-            - Bad Request
-          description: Краткое название ошибки HTTP, соответствующее статусу ответа.
-          type: string
-          minLength: 1
-          maxLength: 255
-        code:
-          $ref: '#/components/schemas/ApiErrorCode'
-        message:
-          examples:
-            - Плановое окончание не может быть раньше планового начала.
-          description: Описание причины ошибки для человека.
-          type: string
-          minLength: 1
-          maxLength: 2000
-        details:
-          description: Подробности ошибок отдельных полей запроса; могут отсутствовать.
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - path
-              - message
-            properties:
-              path:
-                examples:
-                  - body.plannedEndDate
-                type: string
-                minLength: 1
-                maxLength: 255
-                description: 'Путь к полю: body.plannedEndDate, query.limit и т. п.'
-              message:
-                examples:
-                  - Плановое окончание не может быть раньше планового начала.
-                description: Описание ошибки в поле запроса, указанном в path.
-                type: string
-                minLength: 1
-                maxLength: 1000
-    CreateWorkPlanRow:
-      type: object
-      additionalProperties: false
-      required:
-        - amountMinor
-      properties:
-        amountMinor:
-          $ref: '#/components/schemas/WritableMoneyAmountMinor'
-        recipientId:
-          type:
-            - integer
-            - 'null'
-          minimum: 1
-          maximum: 2147483647
-          description: Активный мастер или null.
-          example: null
-        dueDate:
-          type:
-            - string
-            - 'null'
-          format: date
-          description: Срок выплаты или null.
-          example: null
-    DeleteWorkPlanRow:
-      type: object
-      additionalProperties: false
-      required:
-        - expectedVersion
-      properties:
-        expectedVersion:
-          $ref: '#/components/schemas/ExpectedVersion'
-    UpdateWorkPlanRow:
-      type: object
-      additionalProperties: false
-      minProperties: 2
-      required:
-        - expectedVersion
-      properties:
-        expectedVersion:
-          $ref: '#/components/schemas/ExpectedVersion'
-        amountMinor:
-          $ref: '#/components/schemas/WritableMoneyAmountMinor'
-        recipientId:
-          type:
-            - integer
-            - 'null'
-          minimum: 1
-          maximum: 2147483647
-          description: Новый получатель; прошлые выплаты не изменяются.
-          example: null
-        dueDate:
-          type:
-            - string
-            - 'null'
-          format: date
-          description: Новый срок или null.
-          example: null
-    DistributeWorkPlanRow:
-      type: object
-      additionalProperties: false
-      required:
-        - expectedVersion
-        - rows
-      properties:
-        expectedVersion:
-          $ref: '#/components/schemas/ExpectedVersion'
-        rows:
-          type: array
-          minItems: 2
-          items:
-            $ref: '#/components/schemas/CreateWorkPlanRow'
-          description: Новые строки с суммой, равной исходному плану.
     UserRole:
       examples:
         - foreman
@@ -1930,6 +1552,54 @@ components:
           description: Количество пропущенных записей после фильтрации и проверки доступа.
           type: integer
           minimum: 0
+    ApiError:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+        - code
+        - message
+      properties:
+        error:
+          examples:
+            - Bad Request
+          description: Краткое название ошибки HTTP, соответствующее статусу ответа.
+          type: string
+          minLength: 1
+          maxLength: 255
+        code:
+          $ref: '#/components/schemas/ApiErrorCode'
+        message:
+          examples:
+            - Плановое окончание не может быть раньше планового начала.
+          description: Описание причины ошибки для человека.
+          type: string
+          minLength: 1
+          maxLength: 2000
+        details:
+          description: Подробности ошибок отдельных полей запроса; могут отсутствовать.
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - path
+              - message
+            properties:
+              path:
+                examples:
+                  - body.plannedEndDate
+                type: string
+                minLength: 1
+                maxLength: 255
+                description: 'Путь к полю: body.plannedEndDate, query.limit и т. п.'
+              message:
+                examples:
+                  - Плановое окончание не может быть раньше планового начала.
+                description: Описание ошибки в поле запроса, указанном в path.
+                type: string
+                minLength: 1
+                maxLength: 1000
     CreateUser:
       type: object
       additionalProperties: false
@@ -2397,14 +2067,14 @@ components:
           examples:
             - 17
             - null
-          description: Активный мастер этапа; отсутствие или null — мастер пока не назначен. Не становится получателем строки плана автоматически.
+          description: Активный мастер этапа; отсутствие или null — мастер пока не назначен. Становится получателем новых фактических выплат.
           type:
             - integer
             - 'null'
           minimum: 1
           maximum: 2147483647
         plannedWorkAmountMinor:
-          description: Ручной план работ. Отсутствие или null — план не задан, строка не создаётся. При заданном плане, включая 0, создаётся одна строка без получателя и срока.
+          description: Ручной план работ. Отсутствие или null — план не задан; 0 — заданный нулевой план. После приёмки статус оплаты определяется сравнением плана и фактических выплат.
           $ref: '#/components/schemas/PlannedMoneyAmountMinor'
         plannedMaterialAmountMinor:
           description: Ручной план материалов. Отсутствие или null — план не задан. Счета добавляются после создания объекта.
@@ -2593,51 +2263,6 @@ components:
                 maxLength: 1000
           minItems: 1
           description: Порядок массива определяет position. Равный вес каждого пункта.
-    recipientId:
-      type:
-        - integer
-        - 'null'
-      minimum: 1
-      maximum: 2147483647
-      description: Активный мастер или null.
-      example: null
-    dueDate:
-      type:
-        - string
-        - 'null'
-      format: date
-      description: Срок выплаты или null.
-      example: null
-    ProjectWorkPlanRowChange:
-      type: object
-      additionalProperties: false
-      properties:
-        id:
-          description: ID существующей записи.
-          example: 1
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-        expectedVersion:
-          $ref: '#/components/schemas/ExpectedVersion'
-        amountMinor:
-          $ref: '#/components/schemas/WritableMoneyAmountMinor'
-        recipientId:
-          $ref: '#/components/schemas/recipientId'
-        dueDate:
-          $ref: '#/components/schemas/dueDate'
-        delete:
-          description: Удалить строку без выплат.
-          example: true
-          type: boolean
-          enum:
-            - true
-        distribute:
-          description: Заменить нераспределённую строку строками с той же суммой.
-          type: array
-          minItems: 2
-          items:
-            $ref: '#/components/schemas/CreateWorkPlanRow'
     UpdateProjectStage:
       type: object
       additionalProperties: false
@@ -2674,11 +2299,6 @@ components:
         checklist:
           description: Индивидуальный чек-лист и его версия.
           $ref: '#/components/schemas/ConfigureChecklist'
-        workPlanRows:
-          type: array
-          description: Частичные операции. Пропущенные строки сохраняются. Новая строка требует amountMinor; существующая — id и expectedVersion. delete и distribute нельзя сочетать с правками полей.
-          items:
-            $ref: '#/components/schemas/ProjectWorkPlanRowChange'
     CreateAdditionalStage:
       type: object
       additionalProperties: false
@@ -2809,6 +2429,7 @@ components:
         - id
         - fullName
         - phone
+        - isActive
       properties:
         id:
           description: ID назначенного мастера.
@@ -2822,6 +2443,11 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        isActive:
+          type: boolean
+          readOnly: true
+          description: Активен ли назначенный мастер; неактивному мастеру нельзя добавлять выплаты.
+          example: true
         phone:
           examples:
             - +7 900 000-00-00
@@ -3390,7 +3016,6 @@ components:
       required:
         - stage
         - checklist
-        - workPlanRows
       properties:
         stage:
           description: Параметры и версия этапа.
@@ -3398,11 +3023,6 @@ components:
         checklist:
           description: Индивидуальный чек-лист и его версия.
           $ref: '#/components/schemas/Checklist'
-        workPlanRows:
-          description: Строки плана выплат с ID и версиями.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkPlanRow'
     ProjectEdit:
       type: object
       additionalProperties: false
@@ -3609,11 +3229,10 @@ components:
         status:
           examples:
             - supplied
-          description: Явный переход в supplied после комплектации или в paid после полной выплаты работ. Повтор текущего статуса допустим; остальные переходы запрещены.
+          description: Явный переход в supplied после комплектации. Повтор текущего статуса допустим; остальные переходы запрещены.
           type: string
           enum:
             - supplied
-            - paid
     AcceptStage:
       type: object
       additionalProperties: false
@@ -3688,7 +3307,6 @@ components:
       required:
         - id
         - stageId
-        - workPlanRowId
         - paidAt
         - amountMinor
         - comment
@@ -3712,12 +3330,6 @@ components:
           examples:
             - 1001
           description: Идентификатор оплачиваемого этапа.
-        workPlanRowId:
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-          description: Строка планирования выплаты своего этапа.
-          example: 10
         paidAt:
           type: string
           format: date
@@ -3763,16 +3375,9 @@ components:
       type: object
       additionalProperties: false
       required:
-        - workPlanRowId
         - paidAt
         - amountMinor
       properties:
-        workPlanRowId:
-          example: 2
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-          description: ID строки своего этапа. Получатель копируется из строки и должен быть активным мастером.
         paidAt:
           type: string
           format: date
@@ -3806,12 +3411,6 @@ components:
       required:
         - expectedVersion
       properties:
-        recipientId:
-          example: 3
-          type: integer
-          minimum: 1
-          maximum: 2147483647
-          description: Новый получатель — активный мастер. Изменение назначения этапа само по себе получателя не меняет.
         expectedVersion:
           $ref: '#/components/schemas/ExpectedVersion'
         paidAt:
@@ -4389,12 +3988,12 @@ components:
       properties:
         plannedAmountMinor:
           readOnly: true
-          description: Сумма планов обязательств в расчёте; null при неполноте категории. Для работ — строки выплат, для материалов — ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.
+          description: Сумма планов обязательств в расчёте; null при неполноте категории. Для работ и материалов используются ручные планы этапов. Обязательства вне расчёта не влияют на полноту; пустой периметр даёт 0.
           allOf:
             - $ref: '#/components/schemas/PlannedMoneyAmountMinor'
         actualAmountMinor:
           readOnly: true
-          description: Фактическая сумма оплат с датой не позже through по тем же строкам работ или этапам материалов, которые вошли в расчёт плана.
+          description: Фактическая сумма оплат с датой не позже through по тем же этапам, которые вошли в расчёт плана.
           allOf:
             - $ref: '#/components/schemas/MoneyAmountMinor'
         balanceAmountMinor:
@@ -4406,7 +4005,7 @@ components:
           type: boolean
           readOnly: true
           example: true
-          description: true, если план категории полон в выбранном периметре. Для работ неполнота означает отсутствие строк у этапа с окончанием не позже through; для материалов — незаданный план выбранного этапа. Нулевой план считается заданным.
+          description: true, если план категории полон в выбранном периметре. Неполнота означает незаданный ручной план категории у выбранного этапа. Нулевой план считается заданным.
     DashboardSummary:
       type: object
       additionalProperties: false

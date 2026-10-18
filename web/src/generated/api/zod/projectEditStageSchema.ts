@@ -6,12 +6,10 @@
 import * as z from 'zod'
 import { checklistSchema } from './checklistSchema'
 import { stageSchema } from './stageSchema'
-import { workPlanRowSchema } from './workPlanRowSchema'
 
 export const projectEditStageSchema = z.object({
   stage: stageSchema.describe('Параметры и версия этапа.'),
   checklist: checklistSchema.describe('Индивидуальный чек-лист и его версия.'),
-  workPlanRows: z.array(workPlanRowSchema).describe('Строки плана выплат с ID и версиями.'),
 }).strict()
 
 export type ProjectEditStageSchemaType = z.infer<typeof projectEditStageSchema>

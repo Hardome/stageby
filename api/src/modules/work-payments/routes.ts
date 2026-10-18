@@ -55,7 +55,6 @@ const createBodySchema = zCreateWorkPaymentBody
   .transform(
     (body): CreateWorkPayment => ({
       paidAt: body.paidAt,
-      workPlanRowId: body.workPlanRowId,
       amountMinor: Number(body.amountMinor),
       ...(body.comment === undefined ? {} : { comment: typeof body.comment === 'string' ? body.comment.trim() : null }),
     }),
@@ -65,19 +64,13 @@ const updateBodySchema = zUpdateWorkPaymentBody
   .strict()
   .superRefine((body, context) => {
     validateAmountAndComment(body, context);
-    if (
-      body.recipientId === undefined &&
-      body.paidAt === undefined &&
-      body.amountMinor === undefined &&
-      body.comment === undefined
-    ) {
+    if (body.paidAt === undefined && body.amountMinor === undefined && body.comment === undefined) {
       context.addIssue({ code: 'custom', message: 'Нужно передать хотя бы одно изменяемое поле.' });
     }
   })
   .transform(
     (body): UpdateWorkPayment => ({
       expectedVersion: body.expectedVersion,
-      ...(body.recipientId === undefined ? {} : { recipientId: body.recipientId }),
       ...(body.paidAt === undefined ? {} : { paidAt: body.paidAt }),
       ...(body.amountMinor === undefined ? {} : { amountMinor: Number(body.amountMinor) }),
       ...(body.comment === undefined ? {} : { comment: typeof body.comment === 'string' ? body.comment.trim() : null }),
@@ -85,14 +78,6 @@ const updateBodySchema = zUpdateWorkPaymentBody
   );
 
 const errorDetails: Record<WorkPaymentOperationError, { statusCode: 400 | 404 | 409; error: ApiError }> = {
-  invalid_transition: {
-    statusCode: 409,
-    error: {
-      error: 'Conflict',
-      code: 'invalid_transition',
-      message: 'Изменение нарушает финансовые условия выплаченного этапа.',
-    },
-  },
   invalid_request: {
     statusCode: 400,
     error: { error: 'Bad Request', code: 'invalid_request', message: 'Получателем должен быть активный мастер.' },

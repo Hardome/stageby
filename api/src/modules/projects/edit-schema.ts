@@ -6,8 +6,6 @@ import {
   zCoordinates,
   zCreateAdditionalStage,
   zCreateProjectChecklistItem,
-  zCreateWorkPlanRow,
-  zProjectWorkPlanRowChange,
   zUpdateProjectBody,
   zUpdateProjectStage,
 } from '#app/generated/zod.gen';
@@ -15,12 +13,7 @@ import {
 const checklist = zConfigureChecklist
   .extend({ items: zConfigureChecklist.shape.items.element.strict().array().min(1) })
   .strict();
-const row = zProjectWorkPlanRowChange
-  .extend({ distribute: zCreateWorkPlanRow.strict().array().min(2).optional() })
-  .strict();
-const stage = zUpdateProjectStage
-  .extend({ checklist: checklist.optional(), workPlanRows: row.array().optional() })
-  .strict();
+const stage = zUpdateProjectStage.extend({ checklist: checklist.optional() }).strict();
 const additional = zCreateAdditionalStage
   .extend({ checklistItems: zCreateProjectChecklistItem.strict().array().min(1) })
   .strict();

@@ -62,7 +62,7 @@ export type DashboardSelectedStage = {
     */
     assignee: (UserBrief | null);
     /**
-     * @description Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
+     * @description Статус этапа в цепочке created → assigned → supplied → in_progress → acceptance → completed → paid. После приёмки paid рассчитывается автоматически при заданном плане работ и сумме выплат не меньше плана; появление долга возвращает completed. Работу можно начать из assigned; из acceptance возможен возврат в rework и повторный переход в acceptance.
      * @example in_progress
      * @type string
     */

@@ -12,7 +12,6 @@ import { projects } from '#app/db/schema/projects';
 import { stageTypes } from '#app/db/schema/stage-types';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
-import { workPlanRows } from '#app/db/schema/work-plan-rows';
 import type { CreateProject, ListProjectsData, Project, ProjectPage, UpdateProject } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
@@ -219,15 +218,6 @@ async function insertStage(
   );
   if (!stage) {
     throw new Error('Не удалось создать этап');
-  }
-  if (stage.plannedWorkAmountMinor !== null) {
-    await audit.created(
-      workPlanRows,
-      await transaction
-        .insert(workPlanRows)
-        .values({ stageId: stage.id, amountMinor: stage.plannedWorkAmountMinor })
-        .returning(),
-    );
   }
   return stage;
 }

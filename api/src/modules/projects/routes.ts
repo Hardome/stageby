@@ -15,7 +15,6 @@ import {
   zProjectEditStage,
   zProjectFinancialSummary,
   zProjectPage,
-  zWorkPlanRow,
 } from '#app/generated/zod.gen';
 import { requestAuditContext } from '#app/modules/audit/context';
 import { updateProjectBody } from '#app/modules/projects/edit-schema';
@@ -189,7 +188,6 @@ export function registerProjectRoutes(app: FastifyInstance, service: ProjectServ
           stages: zProjectEditStage
             .extend({
               stage: stageResponseSchema,
-              workPlanRows: zWorkPlanRow.extend({ amountMinor: z.number().int().nonnegative() }).array(),
             })
             .array(),
         }),

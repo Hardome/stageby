@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { HistoryIcon, WalletCardsIcon } from 'lucide-react';
+import { WalletCardsIcon } from 'lucide-react';
 
 import { useAuth } from '@shared/context';
 import { Alert, AlertDescription } from '@shared/ui/alert';
@@ -15,13 +15,9 @@ import { useWorkPayments } from '../lib/use-work-payments';
 import { canEditWork } from '../lib/work-availability';
 import type { WorkAction } from '../model/types';
 import { WorkEditor } from './work-editor';
-import { WorkEmpty } from './work-empty';
 import { WorkFinancialOverview } from './work-financial-overview';
-import { WorkPaidAction } from './work-paid-action';
 import { WorkPaymentList } from './work-payment-list';
 import { WorkPaymentsSkeleton } from './work-payments-skeleton';
-import { WorkPlanRow } from './work-plan-row';
-import { WorkPlanToolbar } from './work-plan-toolbar';
 
 interface WorkPaymentsProperties {
   stage: Stage;
@@ -36,10 +32,7 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
 
   if (data.error?.status === 403 || data.error?.status === 404) return <NotFound />;
 
-  const rows = data.rows.data ?? [];
   const payments = data.payments.data ?? [];
-  const total = rows.reduce((sum, row) => sum + row.amountMinor, 0n);
-  const historical = payments.filter((payment) => rows.every((row) => row.id !== payment.workPlanRowId));
 
   return (
     <Card id="work" className="scroll-mt-6 overflow-hidden">
@@ -52,9 +45,9 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
         </CardTitle>
         <CardDescription>
           {isManager
-            ? 'Планирование выплат по получателям и срокам.'
-            : 'Строки вашего плана и ваши собственные выплаты. Детализация может быть неполной.'}{' '}
-          {isManager && ' Ручной план этапа задаётся отдельно от строк выплат.'}
+            ? 'Фактические выплаты назначенному мастеру этапа.'
+            : 'Ваши выплаты за работы. Итоги этапа включают выплаты всем мастерам.'}{' '}
+          Статус «Выплачен» определяется автоматически после приёмки.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 sm:px-5">
@@ -75,46 +68,25 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
           skeleton={<WorkPaymentsSkeleton />}
           label="Обновляем оплату работ…"
         >
-          {data.rows.data && data.payments.data && (
+          {data.payments.data && (
             <div className="flex flex-col gap-4">
-              <WorkPlanToolbar
-                total={total}
-                count={rows.length}
-                manager={isManager}
-                editable={isEditable}
-                onCreate={() => setAction({ kind: 'row' })}
-              />
-              {rows.length === 0 ? (
-                <WorkEmpty manager={isManager} />
+              {isManager && (
+                <div className="flex flex-col items-start gap-2">
+                  <Button
+                    disabled={!isEditable || !stage.assignee?.isActive}
+                    onClick={() => setAction({ kind: 'payment' })}
+                  >
+                    Добавить выплату
+                  </Button>
+                  {!stage.assignee?.isActive && (
+                    <p className="text-muted-foreground text-sm">Для добавления выплаты назначьте активного мастера.</p>
+                  )}
+                </div>
+              )}
+              {payments.length === 0 ? (
+                <p className="py-4 text-muted-foreground text-sm">Выплат пока нет.</p>
               ) : (
-                <ul className="flex flex-col gap-4">
-                  {rows.map((row) => (
-                    <WorkPlanRow
-                      key={row.id}
-                      row={row}
-                      payments={payments.filter((payment) => payment.workPlanRowId === row.id)}
-                      manager={isManager}
-                      editable={isEditable && !data.error}
-                      onAction={setAction}
-                    />
-                  ))}
-                </ul>
-              )}
-              {historical.length > 0 && (
-                <section className="flex flex-col gap-4 rounded-xl border p-4 sm:p-5" aria-label="Исторические выплаты">
-                  <h3 className="flex items-center gap-2 font-semibold text-sm">
-                    <HistoryIcon className="size-4 text-muted-foreground" aria-hidden="true" />
-                    Мои выплаты по недоступным строкам
-                  </h3>
-                  <WorkPaymentList payments={historical} editable={isEditable} onAction={setAction} />
-                </section>
-              )}
-              {isEditable && (
-                <WorkPaidAction
-                  stage={stage}
-                  disabled={Boolean(data.error)}
-                  onConfirm={() => setAction({ kind: 'paid' })}
-                />
+                <WorkPaymentList payments={payments} editable={isEditable} onAction={setAction} />
               )}
             </div>
           )}

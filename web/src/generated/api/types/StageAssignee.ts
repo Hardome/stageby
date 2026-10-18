@@ -25,6 +25,12 @@ export type StageAssignee = {
     */
     fullName: string;
     /**
+     * @description Активен ли назначенный мастер; неактивному мастеру нельзя добавлять выплаты.
+     * @example true
+     * @type boolean
+    */
+    readonly isActive: boolean;
+    /**
      * @description Контактный телефон мастера; null — не указан.
      * @minLength 1
      * @maxLength 32

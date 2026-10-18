@@ -5,7 +5,6 @@
 
 import type { Checklist } from './Checklist'
 import type { Stage } from './Stage'
-import type { WorkPlanRow } from './WorkPlanRow'
 
 export type ProjectEditStage = {
     /**
@@ -18,9 +17,4 @@ export type ProjectEditStage = {
      * @type object
     */
     checklist: Checklist;
-    /**
-     * @description Строки плана выплат с ID и версиями.
-     * @type array
-    */
-    workPlanRows: WorkPlanRow[];
 };
