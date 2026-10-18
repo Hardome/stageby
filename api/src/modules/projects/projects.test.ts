@@ -14,7 +14,6 @@ import { stageTypes as stageTypeCatalog } from '#app/db/schema/stage-types';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
 import { workPayments } from '#app/db/schema/work-payments';
-import { workPlanRows } from '#app/db/schema/work-plan-rows';
 import type { CreateProject, Project, ProjectEdit, StageType } from '#app/generated/types.gen';
 import { hashPassword } from '#app/modules/auth/password-hasher';
 import { SessionRepository } from '#app/modules/auth/session-repository';
@@ -236,7 +235,6 @@ describe('Composite project editing', () => {
     expect(edited.stages[0]).toMatchObject({
       stage: { id: first.stage.id, isIncluded: false },
       checklist: { id: first.checklist.id },
-      workPlanRows: [{ id: first.workPlanRows[0]!.id }],
     });
     for (const cookie of ['', foreman.cookie])
       expect((await getApp().inject({ url: `/projects/${project.id}/edit`, headers: { cookie } })).statusCode).toBe(
@@ -249,15 +247,13 @@ describe('Composite project editing', () => {
     expect(list.json().items.map((item: { id: number }) => item.id)).toEqual([form.stages[1]!.stage.id]);
   });
 
-  it('сохраняет реквизиты и вложенные изменения одним событием аудита с ID строк и выплат', async () => {
+  it('сохраняет реквизиты и вложенные изменения одним событием аудита с сохранением выплат', async () => {
     const { manager, foreman, form, project, patch } = await editFixture();
     const first = form.stages[0]!;
-    const row = first.workPlanRows[0]!;
     const [payment] = await getApp()
       .db.insert(workPayments)
       .values({
         stageId: first.stage.id,
-        workPlanRowId: row.id,
         recipientId: foreman.user.id,
         amountMinor: 100,
         paidAt: '2026-10-12',
@@ -274,7 +270,6 @@ describe('Composite project editing', () => {
           plannedStartDate: null,
           plannedWorkAmountMinor: 5000,
           checklist: { expectedVersion: first.checklist.version, items: [{ title: 'Новый пункт' }] },
-          workPlanRows: [{ id: row.id, expectedVersion: row.version, recipientId: null, amountMinor: 700 }],
         },
       ],
     });
@@ -287,7 +282,6 @@ describe('Composite project editing', () => {
     expect(edited.stages[0]).toMatchObject({
       stage: { id: first.stage.id, plannedStartDate: null, version: 2 },
       checklist: { id: first.checklist.id, version: 2, items: [{ title: 'Новый пункт' }] },
-      workPlanRows: [{ id: row.id, version: 2, amountMinor: 700, recipientId: null }],
     });
     expect(edited.stages[1]).toEqual({
       ...form.stages[1],
@@ -296,12 +290,11 @@ describe('Composite project editing', () => {
     expect((await getApp().db.select().from(workPayments).where(eq(workPayments.id, payment!.id)))[0]).toMatchObject({
       id: payment!.id,
       recipientId: foreman.user.id,
-      workPlanRowId: row.id,
     });
     const audit = await auditRecords(getApp().db, manager.user.id, 'updateProject');
     expect(audit.events).toHaveLength(1);
     expect(new Set(audit.changes.map((change) => change.entityType))).toEqual(
-      new Set(['projects', 'stages', 'checklists', 'checklist_items', 'work_plan_rows']),
+      new Set(['projects', 'stages', 'checklists', 'checklist_items']),
     );
     expect(audit.changes.find((change) => change.entityType === 'projects')?.after).toMatchObject({ version: 2 });
   });
@@ -319,15 +312,6 @@ describe('Composite project editing', () => {
             id: second.stage.id,
             expectedVersion: 1,
             checklist: { expectedVersion: 99, items: [{ title: 'Не сохранить' }] },
-          },
-        ],
-      },
-      {
-        stages: [
-          {
-            id: second.stage.id,
-            expectedVersion: 1,
-            workPlanRows: [{ id: second.workPlanRows[0]!.id, expectedVersion: 99, amountMinor: 200 }],
           },
         ],
       },
@@ -372,20 +356,11 @@ describe('Composite project editing', () => {
   it('проверяет итоговые границы, принадлежность ресурсов и запрет ручного изменения общих планов', async () => {
     const { manager, form, project, patch } = await editFixture();
     const first = form.stages[0]!;
-    const second = form.stages[1]!;
+    const _second = form.stages[1]!;
     for (const change of [
       { plannedStartDate: '2026-10-06' },
       { plannedEndDate: '2026-10-20' },
       { stages: [{ id: first.stage.id, expectedVersion: 1, plannedEndDate: '2026-10-04' }] },
-      {
-        stages: [
-          {
-            id: first.stage.id,
-            expectedVersion: 1,
-            workPlanRows: [{ id: second.workPlanRows[0]!.id, expectedVersion: 1, amountMinor: 200 }],
-          },
-        ],
-      },
       {
         stages: [
           { id: first.stage.id, expectedVersion: 1 },
@@ -435,7 +410,6 @@ describe('Composite project editing', () => {
     expect(edited.stages[0]).toMatchObject({
       stage: { id: first.stage.id, isIncluded: true },
       checklist: { id: first.checklist.id },
-      workPlanRows: [{ id: first.workPlanRows[0]!.id }],
     });
   });
 
@@ -467,7 +441,6 @@ describe('Composite project editing', () => {
       if (history === 'payment')
         await getApp().db.insert(workPayments).values({
           stageId: first.stage.id,
-          workPlanRowId: first.workPlanRows[0]!.id,
           recipientId: foreman.user.id,
           createdByUserId: manager.user.id,
           amountMinor: 100,
@@ -542,7 +515,6 @@ describe('Composite project editing', () => {
     expect(additional).toMatchObject({
       stage: { type: 'additional', position: 9, isIncluded: true },
       checklist: { items: [{ title: 'Дополнительные работы' }] },
-      workPlanRows: [{ amountMinor: 0, recipientId: null }],
     });
     expect(
       (
@@ -569,61 +541,6 @@ describe('Composite project editing', () => {
     expect((await editForm(manager.cookie, project.id)).project.status).toBe('completed');
   });
 
-  it('распределяет строки атомарно без двойного учёта, сохраняет ручной план и запрещает удаление строки с выплатой', async () => {
-    const { manager, foreman, form, project, patch } = await editFixture();
-    const first = form.stages[0]!;
-    const original = first.workPlanRows[0]!;
-    const distribute = (amount: number) => ({
-      stages: [
-        {
-          id: first.stage.id,
-          expectedVersion: 1,
-          workPlanRows: [
-            {
-              id: original.id,
-              expectedVersion: 1,
-              distribute: [{ amountMinor: 600, recipientId: foreman.user.id }, { amountMinor: amount }],
-            },
-          ],
-        },
-      ],
-    });
-    expect((await patch(distribute(500))).statusCode).toBe(400);
-    expect(await editForm(manager.cookie, project.id)).toEqual(form);
-    expect((await patch(distribute(400))).statusCode).toBe(200);
-    const edited = await editForm(manager.cookie, project.id);
-    expect(edited.stages[0]!.workPlanRows.map((row) => row.amountMinor)).toEqual([600, 400]);
-    expect(edited.project.finances.plannedWorkAmountMinor).toBe(2000);
-    const audit = await auditRecords(getApp().db, manager.user.id, 'updateProject');
-    expect(audit.events).toHaveLength(1);
-    expect(
-      audit.changes.filter((change) => change.entityType === 'work_plan_rows').map((change) => change.action),
-    ).toEqual(['create', 'create', 'delete']);
-    const row = edited.stages[0]!.workPlanRows[0]!;
-    await getApp().db.insert(workPayments).values({
-      stageId: first.stage.id,
-      workPlanRowId: row.id,
-      recipientId: foreman.user.id,
-      createdByUserId: manager.user.id,
-      amountMinor: 100,
-      paidAt: '2026-10-12',
-    });
-    expect(
-      (
-        await patch({
-          expectedVersion: 2,
-          stages: [
-            {
-              id: first.stage.id,
-              expectedVersion: 2,
-              workPlanRows: [{ id: row.id, expectedVersion: 1, delete: true }],
-            },
-          ],
-        })
-      ).statusCode,
-    ).toBe(409);
-  });
-
   it('не меняет архивный объект, разархивирует отдельно и проверяет версии', async () => {
     const { manager, project, patch } = await editFixture();
     expect((await patch({ isArchived: true })).statusCode).toBe(200);
@@ -642,7 +559,7 @@ describe('Composite project editing', () => {
     expect((await auditRecords(getApp().db, manager.user.id, 'updateProject')).events).toHaveLength(1);
   });
 
-  it('сохраняет ID и версии при повторном сохранении тех же строк, чек-листа и документов', async () => {
+  it('сохраняет ID и версии при повторном сохранении того же чек-листа и документов', async () => {
     const { manager, form, project, patch } = await editFixture();
     const first = form.stages[0]!;
     const response = await patch({
@@ -656,13 +573,6 @@ describe('Composite project editing', () => {
             expectedVersion: first.checklist.version,
             items: first.checklist.items.map(({ title, photoHint }) => ({ title, photoHint })),
           },
-          workPlanRows: first.workPlanRows.map(({ id, version, amountMinor, recipientId, dueDate }) => ({
-            id,
-            expectedVersion: version,
-            amountMinor,
-            recipientId,
-            dueDate,
-          })),
         },
       ],
     });
@@ -671,12 +581,11 @@ describe('Composite project editing', () => {
     expect((await auditRecords(getApp().db, manager.user.id, 'updateProject')).events).toHaveLength(0);
   });
 
-  it('проверяет инвариант paid в составном сохранении, сохраняя фактические даты и прошлых получателей', async () => {
+  it('пересчитывает paid в составном сохранении, сохраняя фактические даты и прошлых получателей', async () => {
     const { manager, foreman, form, project, patch } = await editFixture();
     const first = form.stages[0]!;
     await getApp().db.insert(workPayments).values({
       stageId: first.stage.id,
-      workPlanRowId: first.workPlanRows[0]!.id,
       recipientId: foreman.user.id,
       createdByUserId: manager.user.id,
       amountMinor: 1000,
@@ -686,22 +595,22 @@ describe('Composite project editing', () => {
       .db.update(stages)
       .set({ status: 'paid', actualStartDate: '2026-10-05', actualEndDate: '2026-10-12' })
       .where(eq(stages.id, first.stage.id));
-    for (const amount of [null, 1100])
-      expect(
-        (
-          await patch({
-            notes: 'Не сохранить',
-            stages: [{ id: first.stage.id, expectedVersion: 1, plannedWorkAmountMinor: amount }],
-          })
-        ).statusCode,
-      ).toBe(409);
+    const increased = await patch({
+      stages: [{ id: first.stage.id, expectedVersion: 1, plannedWorkAmountMinor: 1100 }],
+    });
+    expect(increased.statusCode, increased.body).toBe(200);
+    expect((await editForm(manager.cookie, project.id)).stages[0]!.stage).toMatchObject({
+      status: 'completed',
+      version: 2,
+    });
     expect(
       (
         await patch({
+          expectedVersion: 2,
           stages: [
             {
               id: first.stage.id,
-              expectedVersion: 1,
+              expectedVersion: 2,
               plannedWorkAmountMinor: 900,
               plannedStartDate: null,
               assigneeId: null,
@@ -751,10 +660,8 @@ describe('Composite project editing', () => {
   });
 
   it.each(['payment', 'invoice'] as const)('согласует исключение этапа и отдельное создание %s', async (resource) => {
-    const { manager, foreman, form, project, patch } = await editFixture();
+    const { manager, form, project, patch } = await editFixture();
     const first = form.stages[0]!;
-    const row = first.workPlanRows[0]!;
-    await getApp().db.update(workPlanRows).set({ recipientId: foreman.user.id }).where(eq(workPlanRows.id, row.id));
     const file = await storedFile(manager.user.id, 'material_invoice');
     const mutation = getApp().inject({
       method: 'POST',
@@ -764,9 +671,7 @@ describe('Composite project editing', () => {
           : `/stages/${first.stage.id}/material-invoices`,
       headers: { cookie: manager.cookie },
       payload:
-        resource === 'payment'
-          ? { workPlanRowId: row.id, amountMinor: 100, paidAt: '2026-10-12' }
-          : { fileId: file.id, amountMinor: 100 },
+        resource === 'payment' ? { amountMinor: 100, paidAt: '2026-10-12' } : { fileId: file.id, amountMinor: 100 },
     });
     const [excluded, created] = await Promise.all([
       patch({ stages: [{ id: first.stage.id, expectedVersion: 1, isIncluded: false }] }),
@@ -778,34 +683,6 @@ describe('Composite project editing', () => {
     ]).toContainEqual([excluded.statusCode, created.statusCode]);
     const edited = await editForm(manager.cookie, project.id);
     expect(edited.stages[0]!.stage.isIncluded).toBe(created.statusCode === 201);
-  });
-
-  it('согласует составное сохранение с отдельной правкой строки без потери изменений', async () => {
-    const { manager, form, project, patch } = await editFixture();
-    const first = form.stages[0]!;
-    const row = first.workPlanRows[0]!;
-    const [composite, single] = await Promise.all([
-      patch({
-        notes: 'Из формы',
-        stages: [
-          {
-            id: first.stage.id,
-            expectedVersion: 1,
-            workPlanRows: [{ id: row.id, expectedVersion: 1, amountMinor: 200 }],
-          },
-        ],
-      }),
-      getApp().inject({
-        method: 'PATCH',
-        url: `/work-plan-rows/${row.id}`,
-        headers: { cookie: manager.cookie },
-        payload: { expectedVersion: 1, amountMinor: 300 },
-      }),
-    ]);
-    expect([composite.statusCode, single.statusCode].sort()).toEqual([200, 409]);
-    const edited = await editForm(manager.cookie, project.id);
-    expect(edited.stages[0]!.workPlanRows[0]!.amountMinor).toBe(composite.statusCode === 200 ? 200 : 300);
-    expect(edited.project.notes).toBe(composite.statusCode === 200 ? 'Из формы' : null);
   });
 });
 
@@ -842,8 +719,6 @@ describe('Composite project creation', () => {
       plannedMaterialAmountMinor: 20_000,
     });
     expect(selected.checklist.items.map(({ title }) => title)).toEqual(['Индивидуальный пункт']);
-    expect(selected.workPlanRows).toHaveLength(1);
-    expect(selected.workPlanRows[0]).toMatchObject({ amountMinor: 10_000, recipientId: null, dueDate: null });
     const unopened = form.stages.filter(({ stage }) => stage.type !== selectedType);
     expect(unopened).toHaveLength(7);
     for (const entry of unopened) {
@@ -856,7 +731,6 @@ describe('Composite project creation', () => {
       });
       expect(entry.checklist.items.length).toBeGreaterThan(0);
       expect(entry.checklist.items.map(({ title }) => title)).toContain('Уборка');
-      expect(entry.workPlanRows).toEqual([]);
     }
     expect(await getApp().db.select().from(stageTypeCatalog).orderBy(stageTypeCatalog.position)).toEqual(catalogBefore);
     expect(await getApp().db.select().from(checklistTemplateItems).orderBy(checklistTemplateItems.id)).toEqual(
@@ -902,16 +776,6 @@ describe('Composite project creation', () => {
         ),
       );
     expect(items).toHaveLength(34);
-    const rows = await getApp()
-      .db.select()
-      .from(workPlanRows)
-      .where(
-        inArray(
-          workPlanRows.stageId,
-          storedStages.map(({ id }) => id),
-        ),
-      );
-    expect(rows).toHaveLength(0);
   });
 
   it('сохраняет заполненный и неоткрытые этапы, различает нулевой и незаданный план', async () => {
@@ -936,27 +800,8 @@ describe('Composite project creation', () => {
     expect(response.statusCode, response.body).toBe(201);
     const storedStages = await getApp().db.select().from(stages).where(eq(stages.projectId, response.json().id));
     expect(storedStages).toHaveLength(3);
-    const rows = await getApp()
-      .db.select()
-      .from(workPlanRows)
-      .where(
-        inArray(
-          workPlanRows.stageId,
-          storedStages.map(({ id }) => id),
-        ),
-      );
-    expect(rows).toHaveLength(2);
-    expect(
-      rows.find(
-        ({ stageId }) => stageId === storedStages.find(({ stageTypeCode }) => stageTypeCode === 'foundation')!.id,
-      ),
-    ).toMatchObject({ amountMinor: 0, recipientId: null, dueDate: null });
-    expect(rows.find(({ amountMinor }) => amountMinor === 10_000)).toMatchObject({ recipientId: null, dueDate: null });
-    expect(
-      (await auditRecords(getApp().db, manager.user.id, 'createProject')).changes.filter(
-        ({ entityType }) => entityType === 'work_plan_rows',
-      ),
-    ).toHaveLength(2);
+    expect(storedStages.find((item) => item.stageTypeCode === 'foundation')?.plannedWorkAmountMinor).toBe(0);
+    expect(storedStages.find((item) => item.stageTypeCode === 'walls')?.plannedWorkAmountMinor).toBe(10_000);
   });
 
   it.each([
@@ -1311,18 +1156,11 @@ describe('Composite project creation', () => {
       plannedWorkAmountMinor: 50_000_000,
       plannedMaterialAmountMinor: 70_000_000,
     });
-    const rows = await getApp().db.select().from(workPlanRows).where(eq(workPlanRows.stageId, storedStage!.id));
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ amountMinor: 50_000_000, recipientId: null, dueDate: null });
     const repeated = await createProject(manager.cookie, body, key);
     expect(repeated.statusCode, repeated.body).toBe(201);
     expect(repeated.json()).toEqual(project);
-    expect(await getApp().db.select().from(workPlanRows).where(eq(workPlanRows.stageId, storedStage!.id))).toEqual(
-      rows,
-    );
     const audit = await auditRecords(getApp().db, manager.user.id, 'createProject');
     expect(audit.events).toHaveLength(1);
-    expect(audit.changes.filter(({ entityType }) => entityType === 'work_plan_rows')).toHaveLength(1);
     expect(audit.changes.filter(({ entityType }) => entityType === 'project_documents')).toHaveLength(2);
   });
 

@@ -7,20 +7,10 @@ import { Dialog, DialogContent } from '@shared/ui/dialog';
 
 import { useWorkEditor } from '../lib/use-work-editor';
 import type { WorkEditorProperties } from '../model/types';
-import { WorkDistributionFields } from './work-distribution-fields';
 import { WorkEditorHeading } from './work-editor-heading';
-import { WorkFinancialOverview } from './work-financial-overview';
 import { WorkPaymentFields } from './work-payment-fields';
-import { WorkRowFields } from './work-row-fields';
 
-const submitLabels = {
-  row: 'Сохранить строку',
-  payment: 'Сохранить платёж',
-  distribute: 'Распределить',
-  'delete-row': 'Удалить строку',
-  'delete-payment': 'Удалить платёж',
-  paid: 'Подтвердить выплату',
-};
+const submitLabels = { payment: 'Сохранить платёж', 'delete-payment': 'Удалить платёж' };
 
 export function WorkEditor(properties: WorkEditorProperties) {
   const editor = useWorkEditor(properties);
@@ -42,26 +32,16 @@ export function WorkEditor(properties: WorkEditorProperties) {
             onSubmit={(event) => void editor.form.handleSubmit(editor.submit)(event)}
           >
             <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-4">
-              {action.kind === 'row' && <WorkRowFields disabled={isDisabled} />}
-              {action.kind === 'payment' && <WorkPaymentFields disabled={isDisabled} />}
-              {editor.snapshot.kind === 'distribute' && (
-                <WorkDistributionFields row={editor.snapshot.row} disabled={isDisabled} />
+              {action.kind === 'payment' && (
+                <>
+                  <p className="text-sm">
+                    Получатель: {action.payment?.recipient.fullName ?? stage.assignee?.fullName ?? 'Мастер не назначен'}
+                  </p>
+                  <WorkPaymentFields disabled={isDisabled} />
+                </>
               )}
               {action.kind === 'delete-payment' && (
                 <p>Будет удалён платёж {formatMoney(action.payment.amountMinor)}. Итоги этапа пересчитаются.</p>
-              )}
-              {action.kind === 'delete-row' && (
-                <p>Будет удалена строка на {formatMoney(action.row.amountMinor)} без выплат.</p>
-              )}
-              {action.kind === 'paid' && (
-                <>
-                  <WorkFinancialOverview stage={stage} />
-                  <p className="text-sm">
-                    Этап перейдёт в статус «Выплачен».
-                    <br />
-                    Подтверждение завершает расчёт и не создаёт новый платёж.
-                  </p>
-                </>
               )}
               {editor.message && (
                 <Alert>

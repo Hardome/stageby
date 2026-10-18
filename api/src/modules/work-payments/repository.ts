@@ -5,14 +5,13 @@ import { projects } from '#app/db/schema/projects';
 import { stages } from '#app/db/schema/stages';
 import { users } from '#app/db/schema/users';
 import { workPayments } from '#app/db/schema/work-payments';
-import { workPlanRows } from '#app/db/schema/work-plan-rows';
 import type { CreateWorkPayment, UpdateWorkPayment, WorkPayment } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { auditedTransaction } from '#app/modules/audit/repository';
 import { lockProjectStage } from '#app/modules/stages/lock';
 import type { Actor } from '#app/modules/stages/types';
 import { toWorkPayment } from '#app/modules/work-payments/mapper';
-import { preservesPaidInvariant } from '#app/modules/work-payments/paid-invariant';
+import { syncPaidStatus } from '#app/modules/work-payments/paid-status';
 import type { Database, WorkPaymentOperationError, WorkPaymentOperationResult } from '#app/modules/work-payments/types';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -122,13 +121,8 @@ export class WorkPaymentRepository {
       if (!locked) return { status: 'not_found' };
       if (!locked.stage.isIncluded) return { status: 'not_found' };
       if (locked.isArchived) return { status: 'project_archived' };
-      const [row] = await transaction
-        .select()
-        .from(workPlanRows)
-        .where(and(eq(workPlanRows.id, input.workPlanRowId), eq(workPlanRows.stageId, stageId)))
-        .for('update');
-      if (!row) return { status: 'not_found' };
-      if (row.recipientId === null || !(await validRecipient(transaction, row.recipientId)))
+      const recipientId = locked.stage.assigneeId;
+      if (recipientId === null || !(await validRecipient(transaction, recipientId)))
         return { status: 'invalid_request' };
       const [created] = await audit.created(
         workPayments,
@@ -136,8 +130,7 @@ export class WorkPaymentRepository {
           .insert(workPayments)
           .values({
             stageId,
-            workPlanRowId: row.id,
-            recipientId: row.recipientId,
+            recipientId,
             paidAt: input.paidAt,
             amountMinor: input.amountMinor,
             comment: input.comment ?? null,
@@ -145,6 +138,7 @@ export class WorkPaymentRepository {
           })
           .returning(),
       );
+      await syncPaidStatus(transaction, audit, locked.stage);
       return { status: 'ok', value: (await loadPayment(transaction, created!.id))! };
     });
   }
@@ -159,16 +153,6 @@ export class WorkPaymentRepository {
       const error = getMutationError(locked, input.expectedVersion);
       if (error) return { status: error };
       if (!locked!.stage.isIncluded) return { status: 'not_found' };
-      if (
-        !(await preservesPaidInvariant(
-          transaction,
-          locked!.stage,
-          (input.amountMinor ?? locked!.payment.amountMinor) - locked!.payment.amountMinor,
-        ))
-      )
-        return { status: 'invalid_transition' };
-      if (input.recipientId !== undefined && !(await validRecipient(transaction, input.recipientId)))
-        return { status: 'invalid_request' };
       await audit.mutate(
         workPayments,
         and(eq(workPayments.id, paymentId), eq(workPayments.version, input.expectedVersion)),
@@ -176,7 +160,6 @@ export class WorkPaymentRepository {
           transaction
             .update(workPayments)
             .set({
-              ...(input.recipientId === undefined ? {} : { recipientId: input.recipientId }),
               ...(input.paidAt === undefined ? {} : { paidAt: input.paidAt }),
               ...(input.amountMinor === undefined ? {} : { amountMinor: input.amountMinor }),
               ...(input.comment === undefined ? {} : { comment: input.comment }),
@@ -185,6 +168,7 @@ export class WorkPaymentRepository {
             })
             .where(and(eq(workPayments.id, paymentId), eq(workPayments.version, input.expectedVersion))),
       );
+      await syncPaidStatus(transaction, audit, locked!.stage);
       return { status: 'ok', value: (await loadPayment(transaction, paymentId))! };
     });
   }
@@ -199,11 +183,10 @@ export class WorkPaymentRepository {
       const error = getMutationError(locked, expectedVersion);
       if (error) return { status: error };
       if (!locked!.stage.isIncluded) return { status: 'not_found' };
-      if (!(await preservesPaidInvariant(transaction, locked!.stage, -locked!.payment.amountMinor)))
-        return { status: 'invalid_transition' };
       await audit.mutate(workPayments, eq(workPayments.id, paymentId), () =>
         transaction.delete(workPayments).where(eq(workPayments.id, paymentId)),
       );
+      await syncPaidStatus(transaction, audit, locked!.stage);
       return { status: 'ok', value: undefined };
     });
   }

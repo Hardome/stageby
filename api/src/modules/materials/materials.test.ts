@@ -24,7 +24,6 @@ import { registerAuthentication } from '#app/plugins/authentication';
 import { registerErrorHandler } from '#app/plugins/error-handler';
 import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
-import { createPaymentPlanRow } from '#test/work-plan-row';
 
 const PASSWORD = 'Materials-test-password-123!';
 const createdProjectIds: number[] = [];
@@ -444,13 +443,11 @@ describe('Материалы, счета и нехватки', () => {
       isPartiallyPaid: true,
       isPartiallyDelivered: true,
     });
-    const planRow = await createPaymentPlanRow(getApp().db, data.stage.id, data.foreman.user.id);
     await getApp()
       .db.insert(workPayments)
       .values([
         {
           stageId: data.stage.id,
-          workPlanRowId: planRow.id,
           recipientId: data.foreman.user.id,
           amountMinor: 30_000,
           paidAt: '2026-10-04',
@@ -458,7 +455,6 @@ describe('Материалы, счета и нехватки', () => {
         },
         {
           stageId: data.stage.id,
-          workPlanRowId: planRow.id,
           recipientId: data.foreman.user.id,
           amountMinor: 40_000,
           paidAt: '2026-10-04',

@@ -8,7 +8,6 @@ export { getProjectEditQueryKey, getProjectEditQueryOptions, useGetProjectEdit }
 export { getStageQueryKey, getStageQueryOptions, useGetStage } from './useGetStage'
 export { getStageChecklistQueryKey, getStageChecklistQueryOptions, useGetStageChecklist } from './useGetStageChecklist'
 export { getUserQueryKey, getUserQueryOptions, useGetUser } from './useGetUser'
-export { getWorkPlanRowQueryKey, getWorkPlanRowQueryOptions, useGetWorkPlanRow } from './useGetWorkPlanRow'
 export { listActiveStageTypesQueryKey, listActiveStageTypesQueryOptions, useListActiveStageTypes } from './useListActiveStageTypes'
 export { listChecklistItemPhotosQueryKey, listChecklistItemPhotosQueryOptions, useListChecklistItemPhotos } from './useListChecklistItemPhotos'
 export { listDashboardProjectsQueryKey, listDashboardProjectsQueryOptions, useListDashboardProjects } from './useListDashboardProjects'
@@ -18,4 +17,3 @@ export { listStageMaterialInvoicesQueryKey, listStageMaterialInvoicesQueryOption
 export { listStagesQueryKey, listStagesQueryOptions, useListStages } from './useListStages'
 export { listUsersQueryKey, listUsersQueryOptions, useListUsers } from './useListUsers'
 export { listWorkPaymentsQueryKey, listWorkPaymentsQueryOptions, useListWorkPayments } from './useListWorkPayments'
-export { listWorkPlanRowsQueryKey, listWorkPlanRowsQueryOptions, useListWorkPlanRows } from './useListWorkPlanRows'

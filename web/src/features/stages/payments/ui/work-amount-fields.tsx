@@ -2,32 +2,24 @@ import { useId } from 'react';
 
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { AssigneePicker } from '@entities/user';
 import { DatePicker } from '@shared/ui/date-picker';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@shared/ui/field';
 import { MoneyInput } from '@shared/ui/money-input';
 
 import type { WorkFormValues } from '../lib/work-form';
 
-interface WorkRowFieldsProperties {
-  disabled: boolean;
-  payment?: boolean;
-  index?: number;
-}
-
-export function WorkRowFields({ disabled, payment = false, index }: WorkRowFieldsProperties) {
+export function WorkAmountFields({ disabled }: { disabled: boolean }) {
   const id = useId();
   const { control } = useFormContext<WorkFormValues>();
-  const prefix = index === undefined ? ('' as const) : (`rows.${index}.` as const);
 
   return (
     <FieldGroup>
       <Controller
-        name={`${prefix}amount`}
+        name={'amount'}
         control={control}
         render={({ field, fieldState: { error } }) => (
           <Field data-invalid={Boolean(error)}>
-            <FieldLabel htmlFor={`${id}-amount`}>{payment ? 'Сумма платежа, ₽' : 'План строки, ₽'}</FieldLabel>
+            <FieldLabel htmlFor={`${id}-amount`}>Сумма платежа, ₽</FieldLabel>
             <MoneyInput
               id={`${id}-amount`}
               value={field.value}
@@ -42,27 +34,12 @@ export function WorkRowFields({ disabled, payment = false, index }: WorkRowField
           </Field>
         )}
       />
-      {!payment && (
-        <Controller
-          name={`${prefix}recipient`}
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <AssigneePicker
-              {...field}
-              id={`${id}-recipient`}
-              label="Получатель"
-              disabled={disabled}
-              error={error?.message}
-            />
-          )}
-        />
-      )}
       <Controller
-        name={`${prefix}date`}
+        name={'date'}
         control={control}
         render={({ field, fieldState: { error } }) => (
           <Field data-invalid={Boolean(error)}>
-            <FieldLabel htmlFor={`${id}-date`}>{payment ? 'Дата платежа' : 'Срок выплаты (необязательно)'}</FieldLabel>
+            <FieldLabel htmlFor={`${id}-date`}>Дата платежа</FieldLabel>
             <DatePicker
               {...field}
               id={`${id}-date`}

@@ -10,7 +10,6 @@ import { positiveMoneyAmountMinorSchema } from './positiveMoneyAmountMinorSchema
 import { workPaymentSchema } from './workPaymentSchema'
 
 export const updateWorkPaymentSchema = z.object({
-  recipientId: z.int().min(1).max(2147483647).optional().describe('Новый получатель — активный мастер. Изменение назначения этапа само по себе получателя не меняет.').meta({ examples: [3] }),
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   paidAt: z.iso.date().optional().describe('Новая дата фактической оплаты.').meta({ examples: ['2026-10-02'] }),
   amountMinor: positiveMoneyAmountMinorSchema.optional().describe('Положительная сумма платежа или счёта в копейках. В первой версии минимум 100 копеек и только целые рубли.').meta({ examples: [500000] }),

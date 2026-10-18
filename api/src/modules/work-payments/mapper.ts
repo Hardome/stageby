@@ -9,7 +9,6 @@ export function toWorkPayment(
   return {
     id: payment.id,
     stageId: payment.stageId,
-    workPlanRowId: payment.workPlanRowId,
     paidAt: payment.paidAt,
     amountMinor: payment.amountMinor,
     comment: payment.comment,

@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { createWorkPaymentResponseSchema, createWorkPaymentErrorSchema } from '../zod/createWorkPaymentSchema'
 
 /**
- * @description Только руководитель. Сумма положительна и кратна 100 копейкам. Архивный проект изменить нельзя.
+ * @description Только руководитель. Получатель — текущий активный назначенный мастер этапа, фиксируется сервером и не изменяется. После приёмки статус автоматически пересчитывается по сумме выплат и ручному плану работ. Сумма положительна и кратна 100 копейкам. Архивный проект изменить нельзя.
  * @summary Добавить платёж за работы
  * {@link /stages/:stageId/work-payments}
  */

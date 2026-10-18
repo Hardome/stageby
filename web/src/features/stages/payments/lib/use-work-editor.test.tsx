@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRoot, type Root } from 'react-dom/client';
 
 import { editStage } from '@tests/project-edit-fixture';
-import { workRow } from '@tests/work-payment-data';
+import { workPayment } from '@tests/work-payment-data';
 
 import type { WorkEditorProperties } from '../model/types';
 import { useWorkEditor } from './use-work-editor';
@@ -20,7 +20,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('./execute-work-action', () => ({ executeWorkAction: mocks.execute }));
 vi.mock('./invalidate-work', () => ({ invalidateWork: mocks.invalidate }));
 vi.mock('./reload-work-action', () => ({ reloadWorkAction: mocks.reload }));
-vi.mock('./use-work-recipient', () => ({ useWorkRecipient: vi.fn() }));
 vi.mock('@api/clients/getStage', () => ({ getStage: mocks.stage }));
 vi.mock('@shared/lib/hooks', async (original) => ({
   ...(await original<object>()),
@@ -48,14 +47,18 @@ describe('payment saving and conflicts', () => {
     mocks.execute.mockResolvedValue(undefined);
     mocks.invalidate.mockResolvedValue(undefined);
     mocks.stage.mockReturnValue({ unwrap: () => Promise.resolve(editStage().stage) });
-    mocks.reload.mockResolvedValue({ kind: 'row', row: workRow({ version: 8 }) });
+    mocks.reload.mockResolvedValue({ kind: 'payment', payment: workPayment({ version: 8 }) });
     container = document.createElement('div');
     root = createRoot(container);
 
     await act(async () => {
       root.render(
         <QueryClientProvider client={new QueryClient()}>
-          <EditorProbe stage={editStage().stage} action={{ kind: 'row', row: workRow() }} onClose={mocks.close} />
+          <EditorProbe
+            stage={editStage().stage}
+            action={{ kind: 'payment', payment: workPayment() }}
+            onClose={mocks.close}
+          />
         </QueryClientProvider>,
       );
       await Promise.resolve();
@@ -90,7 +93,7 @@ describe('payment saving and conflicts', () => {
   it('closes unchanged edits without a mutation or cache refresh', async () => {
     await act(async () => {
       probe.editor.form.setValue('amount', '95');
-      probe.editor.form.setValue('amount', '100');
+      probe.editor.form.setValue('amount', '60');
       await probe.editor.submit(probe.editor.form.getValues());
     });
 
@@ -134,25 +137,5 @@ describe('payment saving and conflicts', () => {
 
     expect(mocks.execute).toHaveBeenLastCalledWith(11, expect.anything(), expect.objectContaining({ amount: '95' }), 8);
     expect(mocks.close).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps a paid-stage refusal visible without closing the form or clearing input', async () => {
-    mocks.execute.mockRejectedValueOnce({
-      status: 409,
-      data: {
-        error: 'Conflict',
-        code: 'invalid_transition',
-        message: 'Остаток выплаченного этапа не может быть положительным.',
-      },
-    });
-
-    await act(async () => {
-      probe.editor.form.setValue('amount', '95');
-      await probe.editor.submit(probe.editor.form.getValues());
-    });
-
-    expect(probe.editor.message).toContain('Остаток выплаченного этапа');
-    expect(probe.editor.form.getValues('amount')).toBe('95');
-    expect(mocks.close).not.toHaveBeenCalled();
   });
 });

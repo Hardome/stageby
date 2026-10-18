@@ -12,8 +12,8 @@ export const createProjectStageSchema = z.object({
   type: stageTypeSchema.describe('Стандартный тип этапа; дополнительный этап доступен только при редактировании.').meta({ examples: ['foundation'] }),
   plannedStartDate: z.iso.date().nullish().describe('Необязательное независимое начало внутри срока проекта. Отсутствие или null означает незаданную дату.').meta({ examples: ['2026-10-05'] }),
   plannedEndDate: z.iso.date().nullish().describe('Необязательное независимое окончание внутри срока проекта; при заданном начале не раньше него. Отсутствие или null означает незаданную дату.').meta({ examples: ['2026-10-30'] }),
-  assigneeId: z.int().min(1).max(2147483647).nullish().describe('Активный мастер этапа; отсутствие или null — мастер пока не назначен. Не становится получателем строки плана автоматически.').meta({ examples: [17, ] }),
-  plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Ручной план работ. Отсутствие или null — план не задан, строка не создаётся. При заданном плане, включая 0, создаётся одна строка без получателя и срока.').meta({ examples: [12500000, 0, ] }),
+  assigneeId: z.int().min(1).max(2147483647).nullish().describe('Активный мастер этапа; отсутствие или null — мастер пока не назначен. Становится получателем новых фактических выплат.').meta({ examples: [17, ] }),
+  plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Ручной план работ. Отсутствие или null — план не задан; 0 — заданный нулевой план. После приёмки статус оплаты определяется сравнением плана и фактических выплат.').meta({ examples: [12500000, 0, ] }),
   plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Ручной план материалов. Отсутствие или null — план не задан. Счета добавляются после создания объекта.').meta({ examples: [12500000, 0, ] }),
   checklistItems: z.array(createProjectChecklistItemSchema).min(1).optional().describe('Изменённый индивидуальный список. Если поле отсутствует, копируется активный шаблон типа этапа.'),
 }).strict()
