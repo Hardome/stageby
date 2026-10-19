@@ -10,9 +10,10 @@ vi.mock('@api/queries/useGetProject', () => ({ useGetProject: mocks.project }));
 vi.mock('@api/queries/useListProjectStages', () => ({ useListProjectStages: mocks.stages }));
 vi.mock('@shared/lib/hooks', () => ({ useAccessError: () => mocks.access }));
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, params }: { children: React.ReactNode; params: { stageId: string } }) => (
-    <a href={`/stages/${params.stageId}`}>{children}</a>
+  Link: ({ children, params, to }: { children: React.ReactNode; params?: { stageId: string }; to: string }) => (
+    <a href={params ? `/stages/${params.stageId}` : to}>{children}</a>
   ),
+  useNavigate: () => vi.fn(),
 }));
 
 const finances = {
@@ -110,7 +111,10 @@ describe('project view', () => {
     expect(container).toHaveTextContent('Анна');
     expect(container).toHaveTextContent('Не задан');
     expect(container).toHaveTextContent('План: 0 ₽');
-    expect(container.querySelector('a')).toHaveAttribute('href', 'https://yandex.ru/maps/?pt=60,56&z=16&l=map');
+    expect(container.querySelector('a[target="_blank"]')).toHaveAttribute(
+      'href',
+      'https://yandex.ru/maps/?pt=60,56&z=16&l=map',
+    );
     const retry = [...container.querySelectorAll('button')].find(
       (button) => button.textContent === 'Повторить загрузку этапов',
     );

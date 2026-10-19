@@ -11,10 +11,11 @@ import type { WorkAction } from '../model/types';
 interface WorkPaymentListProperties {
   payments: WorkPayment[];
   editable: boolean;
+  showComments: boolean;
   onAction: (action: WorkAction) => void;
 }
 
-export function WorkPaymentList({ payments, editable, onAction }: WorkPaymentListProperties) {
+export function WorkPaymentList({ payments, editable, showComments, onAction }: WorkPaymentListProperties) {
   return (
     <ul className="flex flex-col divide-y">
       {payments.map((payment) => (
@@ -29,14 +30,14 @@ export function WorkPaymentList({ payments, editable, onAction }: WorkPaymentLis
             <ArrowDownLeftIcon className="size-4" aria-hidden="true" />
           </div>
           <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <p className="wrap-anywhere font-bold text-sm tabular-nums">{formatMoney(payment.amountMinor)}</p>
-              <time dateTime={payment.paidAt} className="text-muted-foreground text-xs tabular-nums">
+            <p className="wrap-anywhere font-bold text-sm tabular-nums">{formatMoney(payment.amountMinor)}</p>
+            <p className="wrap-anywhere text-muted-foreground text-xs">
+              {payment.recipient.fullName} ·{' '}
+              <time dateTime={payment.paidAt} className="tabular-nums">
                 {formatDate(payment.paidAt)}
               </time>
-            </div>
-            <p className="wrap-anywhere text-muted-foreground text-xs">Получатель: {payment.recipient.fullName}</p>
-            {payment.comment && (
+            </p>
+            {showComments && payment.comment && (
               <p className="wrap-anywhere mt-1 whitespace-pre-wrap text-sm leading-relaxed">{payment.comment}</p>
             )}
           </div>

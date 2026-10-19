@@ -49,14 +49,14 @@ describe('stage overview', () => {
     mocks.stage.mockReturnValue({ data, refetch: mocks.retry });
 
     await act(async () => {
-      root.render(<StageOverview stageId="11" payments={paymentDraft} />);
+      root.render(<StageOverview stageId="11" content={paymentDraft} />);
       await Promise.resolve();
     });
     const input = container.querySelector('input');
 
     mocks.stage.mockReturnValue({ data, error: { status: 500 }, refetch: mocks.retry });
     await act(async () => {
-      root.render(<StageOverview stageId="11" payments={paymentDraft} />);
+      root.render(<StageOverview stageId="11" content={paymentDraft} />);
       await Promise.resolve();
     });
 
@@ -106,15 +106,8 @@ describe('stage overview', () => {
 
     expect(container).toHaveTextContent('Этап 2 из 3');
     expect(container.querySelector('a')).toHaveAttribute('href', 'tel:+79000000000');
-    expect(container.querySelector('button')).toHaveAttribute('aria-label', 'Открыть PDF 1');
-    expect(container).toHaveTextContent('Предыдущий этап ещё не выполнен');
-    expect(container).toHaveTextContent('Переплата');
-    expect([...container.querySelectorAll('h2')].map((heading) => heading.textContent)).toEqual([
-      'Чек-лист',
-      'Проект',
-      'Материалы',
-      'Оплата работ',
-    ]);
+    expect(container.querySelector('button[aria-label="Открыть PDF 1"]')).not.toBeNull();
+    expect([...container.querySelectorAll('h2')].map((heading) => heading.textContent)).toEqual(['Проект']);
     expect(container.querySelector('header')).toHaveAttribute('aria-busy', 'true');
 
     await render({ error: { status: 404 } });

@@ -16,9 +16,9 @@ interface DashboardStageSignalProperties {
 }
 
 const destinations = {
-  materials: { to: '/stages/$stageId/materials', label: 'Материалы' },
+  materials: { to: '/stages/$stageId', label: 'Материалы' },
   assignee: { to: '/stages/$stageId', label: 'Мастер' },
-  status: { to: '/stages/$stageId/checklist', label: 'Чек-лист' },
+  status: { to: '/stages/$stageId', label: 'Чек-лист' },
 } as const;
 
 export function DashboardStageSignal({ project, kind, today }: DashboardStageSignalProperties) {
@@ -40,6 +40,8 @@ export function DashboardStageSignal({ project, kind, today }: DashboardStageSig
       <Link
         to={destination.to}
         params={{ stageId: String(stage.stageId) }}
+        search={{ tab: kind === 'materials' ? 'materials' : 'checklist' }}
+        hash={kind === 'assignee' ? 'parameters' : undefined}
         target="_blank"
         rel="noopener noreferrer"
         className={cn(

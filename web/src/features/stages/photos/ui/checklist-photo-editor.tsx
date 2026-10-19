@@ -19,9 +19,18 @@ interface ChecklistPhotoEditorProperties {
   item: ChecklistItem;
   version: number;
   canEdit: boolean;
+  onComplete: () => void | Promise<void>;
 }
 
-export function ChecklistPhotoEditor({ stage, item, version, canEdit }: ChecklistPhotoEditorProperties) {
+function hasCompletedItemDetails(item: ChecklistItem) {
+  return Boolean(item.isCompleted && item.completedBy && item.completedAt);
+}
+
+function shouldShowCompletionActions(item: ChecklistItem, canEdit: boolean, hasNoAssignee: boolean) {
+  return (canEdit && !hasCompletedItemDetails(item)) || hasNoAssignee;
+}
+
+export function ChecklistPhotoEditor({ stage, item, version, canEdit, onComplete }: ChecklistPhotoEditorProperties) {
   const {
     query,
     queue,
@@ -36,9 +45,12 @@ export function ChecklistPhotoEditor({ stage, item, version, canEdit }: Checklis
     canComplete,
     isUnavailable,
     feedback,
-  } = usePhotoEditor(stage, item, version, canEdit);
+  } = usePhotoEditor(stage, item, version, canEdit, onComplete);
 
   if (isUnavailable) return <NotFound />;
+
+  const hasCompletionDetails = hasCompletedItemDetails(item);
+  const hasNoAssignee = stage.assignee === null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -113,17 +125,21 @@ export function ChecklistPhotoEditor({ stage, item, version, canEdit }: Checklis
           ))}
         </div>
       </DataRegion>
-      {canEdit && (
+      {shouldShowCompletionActions(item, canEdit, hasNoAssignee) && (
         <div className="flex flex-col gap-2 border-t pt-4">
-          <p className="text-muted-foreground text-sm">
-            Фото сохраняются сразу. Чтобы отметить выполнение пункта, нажмите «Готово».
-          </p>
-          {item.requiresRework && (
+          {canEdit && item.requiresRework && (
             <p className="text-sm">Для доработки требуется фото, загруженное после возврата пункта.</p>
           )}
-          <Button className="self-start" disabled={!canComplete || actions.busy} onClick={() => void actions.done()}>
-            {actions.busy ? 'Сохранение…' : 'Готово'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            {canEdit && !hasCompletionDetails && (
+              <Button disabled={!canComplete || actions.busy} onClick={() => void actions.done()}>
+                {actions.busy ? 'Сохранение…' : 'Готово'}
+              </Button>
+            )}
+            {hasNoAssignee && (
+              <p className="text-muted-foreground text-sm">Чтобы завершить пункт чек-листа, назначьте мастера.</p>
+            )}
+          </div>
         </div>
       )}
       <PhotoViewer photos={photos} selected={selected} onSelect={setSelected} />

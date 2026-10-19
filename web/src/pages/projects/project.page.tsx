@@ -34,7 +34,7 @@ export function ProjectPage({ projectId }: ProjectPageProperties) {
   }
 
   return (
-    <main className="min-w-0 flex-1 bg-background px-3 py-4 sm:px-5 sm:py-6">
+    <main className="min-w-0 flex-1 bg-background px-3 py-4 sm:px-5 sm:py-5">
       <div className="mx-auto w-full max-w-6xl">{content}</div>
     </main>
   );

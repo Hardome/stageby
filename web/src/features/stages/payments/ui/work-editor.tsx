@@ -3,19 +3,20 @@ import { FormProvider } from 'react-hook-form';
 import { formatMoney } from '@entities/project';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
-import { Dialog, DialogContent } from '@shared/ui/dialog';
+import { Dialog, DialogBody, DialogContent, DialogFooter } from '@shared/ui/dialog';
 
 import { useWorkEditor } from '../lib/use-work-editor';
 import type { WorkEditorProperties } from '../model/types';
 import { WorkEditorHeading } from './work-editor-heading';
 import { WorkPaymentFields } from './work-payment-fields';
 
-const submitLabels = { payment: 'Сохранить платёж', 'delete-payment': 'Удалить платёж' };
+const submitLabels = { payment: 'Добавить', 'delete-payment': 'Удалить платёж' };
 
 export function WorkEditor(properties: WorkEditorProperties) {
   const editor = useWorkEditor(properties);
   const { action, stage, onClose } = properties;
   const isDisabled = editor.pending || editor.needsReload || editor.unavailable;
+  const submitLabel = action.kind === 'payment' && action.payment ? 'Сохранить' : submitLabels[action.kind];
 
   return (
     <Dialog
@@ -25,21 +26,14 @@ export function WorkEditor(properties: WorkEditorProperties) {
       }}
     >
       <DialogContent>
-        <WorkEditorHeading action={action} stage={stage} />
+        <WorkEditorHeading action={action} stage={stage} pending={editor.pending} />
         <FormProvider {...editor.form}>
           <form
             className="flex min-h-0 flex-1 flex-col"
             onSubmit={(event) => void editor.form.handleSubmit(editor.submit)(event)}
           >
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-4">
-              {action.kind === 'payment' && (
-                <>
-                  <p className="text-sm">
-                    Получатель: {action.payment?.recipient.fullName ?? stage.assignee?.fullName ?? 'Мастер не назначен'}
-                  </p>
-                  <WorkPaymentFields disabled={isDisabled} />
-                </>
-              )}
+            <DialogBody>
+              {action.kind === 'payment' && <WorkPaymentFields disabled={isDisabled} />}
               {action.kind === 'delete-payment' && (
                 <p>Будет удалён платёж {formatMoney(action.payment.amountMinor)}. Итоги этапа пересчитаются.</p>
               )}
@@ -53,8 +47,8 @@ export function WorkEditor(properties: WorkEditorProperties) {
                   Обновить данные, сохранив ввод
                 </Button>
               )}
-            </div>
-            <div className="flex shrink-0 justify-end gap-3 border-t bg-background p-4 sm:px-5">
+            </DialogBody>
+            <DialogFooter>
               <Button type="button" variant="outline" disabled={editor.pending} onClick={onClose}>
                 Отмена
               </Button>
@@ -63,9 +57,9 @@ export function WorkEditor(properties: WorkEditorProperties) {
                 variant={action.kind.startsWith('delete') ? 'destructive' : 'default'}
                 disabled={isDisabled}
               >
-                {editor.pending ? 'Сохранение…' : submitLabels[action.kind]}
+                {editor.pending ? 'Сохранение…' : submitLabel}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </FormProvider>
       </DialogContent>

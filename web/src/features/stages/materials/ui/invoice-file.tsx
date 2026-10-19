@@ -11,8 +11,8 @@ export function InvoiceFile({ fileId }: { fileId: number }) {
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <Button variant="outline" disabled={pending} onClick={() => void open()}>
-        {pending && <Spinner data-icon="inline-start" />}Открыть файл
+      <Button size="sm" variant="outline" disabled={pending} onClick={() => void open()}>
+        {pending && <Spinner data-icon="inline-start" />}Посмотреть счёт
         <ArrowUpRightIcon data-icon="inline-end" />
       </Button>
       {message && (

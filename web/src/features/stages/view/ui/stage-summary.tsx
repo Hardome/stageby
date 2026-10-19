@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { LayersIcon } from 'lucide-react';
+import { LayersIcon, MapPinIcon } from 'lucide-react';
 
 import { stageStatuses } from '@entities/project';
 import { Badge } from '@shared/ui/badge';
@@ -20,8 +20,8 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
     <header className="overflow-hidden rounded-2xl border bg-card text-card-foreground" aria-busy={refreshing}>
       <div
         className={cn(
-          'grid gap-5 bg-surface-inverse p-4 text-surface-inverse-foreground',
-          'sm:p-5 lg:grid-cols-[1fr_280px]',
+          'grid gap-4 bg-surface-inverse p-3 text-surface-inverse-foreground',
+          'sm:p-4 lg:grid-cols-[1fr_280px]',
         )}
       >
         <div className="flex min-w-0 flex-col items-start gap-4">
@@ -40,8 +40,9 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
             <Badge variant={isComplete ? 'success' : 'secondary'}>{stageStatuses[stage.status]}</Badge>
           </div>
           <h1 className="wrap-anywhere font-bold text-2xl tracking-tight sm:text-3xl">{stage.title}</h1>
-          <p className="wrap-anywhere max-w-xl text-sm text-surface-inverse-muted leading-relaxed">
-            {stage.projectAddress}
+          <p className="flex max-w-xl items-center gap-2 text-sm text-surface-inverse-muted leading-relaxed">
+            <MapPinIcon className="size-4 shrink-0" aria-hidden="true" />
+            <span className="wrap-anywhere min-w-0">{stage.projectAddress}</span>
           </p>
           {stage.workSubtypes.length > 0 && (
             <p className="wrap-anywhere text-surface-inverse-muted text-xs">{stage.workSubtypes.join(' · ')}</p>
@@ -72,7 +73,6 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
               '[&::-moz-progress-bar]:bg-primary [&::-webkit-progress-value]:bg-primary',
             )}
           />
-          <p className="text-surface-inverse-muted text-xs">По выполненным пунктам чек-листа</p>
         </div>
       </div>
       <StageDetails stage={stage} />

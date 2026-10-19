@@ -1,3 +1,5 @@
+import { BadgeCheckIcon } from 'lucide-react';
+
 import { useAuth } from '@shared/context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 
@@ -19,11 +21,14 @@ export function StageAcceptance({ stage }: StageAcceptanceProperties) {
     <Card>
       <CardHeader>
         <CardTitle>
-          <h2>Приёмка работ</h2>
+          <h2 className="flex items-center gap-2">
+            <BadgeCheckIcon className="size-5 text-primary-text" aria-hidden="true" />
+            Приёмка работ
+          </h2>
         </CardTitle>
-        <CardDescription>
-          {stage.status === 'acceptance' ? 'Работы готовы к проверке руководителем.' : 'Последнее решение руководителя'}
-        </CardDescription>
+        {stage.status === 'acceptance' && user?.role === 'foreman' && (
+          <CardDescription>Работы готовы к проверке руководителем.</CardDescription>
+        )}
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {stage.latestAcceptance && (

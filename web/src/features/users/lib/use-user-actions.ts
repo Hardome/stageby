@@ -90,7 +90,7 @@ export function useUserActions(search: UsersSearch) {
     toast.add({
       type: 'success',
       title: userSuccessMessages[action],
-      description: user ? `${user.fullName} (${user.login})` : 'Все сессии пользователя завершены.',
+      description: user ? user.fullName : 'Все сессии пользователя завершены.',
     });
   }
 

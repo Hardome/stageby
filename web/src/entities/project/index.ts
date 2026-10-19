@@ -9,6 +9,8 @@ export { projectStatuses, stageStatuses } from './model/data';
 export type { DocumentUpload, ProjectFormValues } from './model/types';
 export { ObjectStep } from './ui/object-step';
 export { ProjectDocument } from './ui/project-document';
+export { ProjectDocumentsCard } from './ui/project-documents-card';
+export { ProjectDocumentsCardSkeleton } from './ui/project-documents-card-skeleton';
 export { ProjectFormPanel } from './ui/project-form-panel';
 export { ProjectFormSkeleton } from './ui/project-form-skeleton';
 export { ProjectProgress } from './ui/project-progress';

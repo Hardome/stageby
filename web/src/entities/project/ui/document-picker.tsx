@@ -20,7 +20,7 @@ export function DocumentPicker({ documents, ...properties }: DocumentPickerPrope
       id="project-documents"
       compact
       items={documents}
-      label="Проект (PDF)"
+      label="Проект"
       description="Один или несколько PDF до 50 МБ каждый"
       listLabel="Файлы проекта"
       accept={{ 'application/pdf': ['.pdf'] }}

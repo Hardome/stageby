@@ -3,25 +3,6 @@ import { Skeleton } from '@shared/ui/skeleton';
 export function StageChecklistSkeleton() {
   return (
     <div aria-hidden="true" className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3 rounded-2xl border p-3">
-        <div className="flex items-end justify-between gap-3">
-          <div className="flex flex-col gap-3">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-4 w-28" />
-          </div>
-          <Skeleton className="h-10 w-20" />
-        </div>
-        <Skeleton className="h-2 w-full" />
-        <div className="grid grid-cols-3 gap-3 border-t pt-2">
-          {[1, 2, 3].map((statistic) => (
-            <div key={statistic} className="flex flex-col gap-3">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-6 w-10" />
-            </div>
-          ))}
-        </div>
-      </div>
       <ol className="flex flex-col gap-3">
         {[1, 2, 3].map((row) => (
           <li key={row} className="flex items-start gap-3 rounded-xl border p-3 sm:p-3">

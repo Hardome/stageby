@@ -22,6 +22,7 @@ export function WorkAmountFields({ disabled }: { disabled: boolean }) {
             <FieldLabel htmlFor={`${id}-amount`}>Сумма платежа, ₽</FieldLabel>
             <MoneyInput
               id={`${id}-amount`}
+              placeholder="Укажите сумму"
               value={field.value}
               onValueChange={field.onChange}
               onBlur={field.onBlur}

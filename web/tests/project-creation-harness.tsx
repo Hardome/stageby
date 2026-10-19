@@ -12,6 +12,7 @@ import type { ActiveStageType } from '@api/types';
 
 import { testStageTypes } from './project-create-fixture';
 import { getProjectCreationMocks } from './project-creation-mock-state';
+import { revealProjectChecklist } from './reveal-project-checklist';
 
 export const types = testStageTypes.slice(0, 1);
 
@@ -34,6 +35,8 @@ export function setupProjectCreation() {
     return element;
   }
   async function fill(name: string, value: string) {
+    await revealProjectChecklist(input(name));
+
     await flush(() => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input(name), value);
       input(name).dispatchEvent(new Event('input', { bubbles: true }));
@@ -47,6 +50,8 @@ export function setupProjectCreation() {
   async function click(label: string) {
     const button = [...container.querySelectorAll('button')].find((element) => element.textContent === label);
     if (!button) throw new Error(`Missing button ${label}`);
+    await revealProjectChecklist(button);
+
     await flush(() => button.click());
   }
   async function clickStep(step: number) {

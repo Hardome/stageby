@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, ArrowRightIcon, SaveIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, SaveIcon, Trash2Icon } from 'lucide-react';
 
 import type { useProjectNavigation } from '@entities/project';
 import { Button } from '@shared/ui/button';
@@ -14,6 +14,8 @@ interface EditActionsProperties {
   reloading: boolean;
   onCancel: () => void;
   navigation: ReturnType<typeof useProjectNavigation>;
+  canRemoveAdditionalStage: boolean;
+  onRemoveAdditionalStage: () => void;
 }
 export function EditActions({
   screen,
@@ -23,6 +25,8 @@ export function EditActions({
   reloading,
   onCancel,
   navigation,
+  canRemoveAdditionalStage,
+  onRemoveAdditionalStage,
 }: EditActionsProperties) {
   const { nextLabel } = navigation;
 
@@ -38,6 +42,18 @@ export function EditActions({
         Отмена
       </Button>
       <div className="flex flex-wrap gap-2 sm:justify-end">
+        {canRemoveAdditionalStage && (
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 sm:flex-none"
+            disabled={isLocked}
+            onClick={onRemoveAdditionalStage}
+          >
+            <Trash2Icon data-icon="inline-start" />
+            Удалить доп. этап
+          </Button>
+        )}
         {screen !== 'object' && (
           <Button
             type="button"

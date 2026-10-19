@@ -14,9 +14,9 @@ describe('manager dashboard', () => {
 
     const links = () => [...context.container.querySelectorAll(':scope tbody a[target="_blank"]')];
     expect(links().map((link) => link.getAttribute('href'))).toEqual([
-      '/stages/11/materials',
-      '/stages/11',
-      '/stages/11/checklist',
+      '/stages/11?tab=materials',
+      '/stages/11?tab=checklist#parameters',
+      '/stages/11?tab=checklist',
     ]);
     expect(context.container.querySelector('[data-variant="warning"]')).toHaveTextContent('До старта ≤ 7 дней');
     expect(context.container.querySelector('[data-variant="warning"]')?.closest('a')).toBeNull();
@@ -34,12 +34,12 @@ describe('manager dashboard', () => {
     await render();
 
     expect(links().map((link) => link.getAttribute('href'))).toEqual([
-      '/stages/12/materials',
-      '/stages/12',
-      '/stages/12/checklist',
+      '/stages/12?tab=materials',
+      '/stages/12?tab=checklist#parameters',
+      '/stages/12?tab=checklist',
     ]);
     expect([...(cards?.querySelectorAll('a[target="_blank"]') ?? [])].map((link) => link.getAttribute('href'))).toEqual(
-      ['/stages/12/checklist', '/stages/12/materials', '/stages/12'],
+      ['/stages/12?tab=checklist', '/stages/12?tab=materials', '/stages/12?tab=checklist#parameters'],
     );
   });
 

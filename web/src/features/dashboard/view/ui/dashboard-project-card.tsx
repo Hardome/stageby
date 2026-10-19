@@ -56,7 +56,7 @@ export function DashboardProjectCard({ project, today }: DashboardProjectCardPro
             </dd>
           </div>
           <div className="flex flex-col gap-2 border-t pt-4">
-            <dt className="text-muted-foreground text-xs">Ответственный мастер</dt>
+            <dt className="text-muted-foreground text-xs">Мастер</dt>
             <dd>
               <DashboardStageSignal project={project} kind="assignee" today={today} />
             </dd>

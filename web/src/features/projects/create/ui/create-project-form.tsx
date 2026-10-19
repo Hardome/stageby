@@ -66,6 +66,7 @@ export function CreateProjectForm(properties: CreateProjectFormProperties) {
               isLocked={isLocked}
               uploads={uploads}
               registerErrorGroup={registerErrorGroup}
+              disableAutocomplete
             />
             {screen !== 'object' && hasUnfinishedUploads && <UnfinishedUploadsWarning />}
           </ProjectFormPanel>

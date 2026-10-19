@@ -1,14 +1,19 @@
-import { Link, useLocation, useSearch } from '@tanstack/react-router';
+import { Link, useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 
 import { StageAcceptance } from '@features/stages/acceptance';
 import { StageEditor } from '@features/stages/edit';
+import { MaterialsOverview, StageMaterials } from '@features/stages/materials';
 import { WorkPayments } from '@features/stages/payments';
 import { StageOverview } from '@features/stages/view';
 import { useAuth } from '@shared/context';
-import { Button, buttonVariants } from '@shared/ui/button';
+import { Button } from '@shared/ui/button';
+
+import { StageTabs } from './ui/stage-tabs';
+import { StageWorkingChecklist } from './ui/stage-working-checklist';
 
 export function StagePage({ stageId }: { stageId: string }) {
   const search = useSearch({ from: '/_auth/stages/$stageId' });
+  const navigate = useNavigate({ from: '/stages/$stageId' });
   const hash = useLocation({ select: (location) => location.hash });
   const { user } = useAuth();
   const isManager = user?.role === 'manager';
@@ -18,33 +23,22 @@ export function StagePage({ stageId }: { stageId: string }) {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
         <StageOverview
           stageId={stageId}
-          acceptance={(stage) => <StageAcceptance key={`acceptance:${stage.id}`} stage={stage} />}
-          checklistLink={(stage) => (
-            <div className="flex flex-wrap gap-2">
-              <Link
-                className={buttonVariants({ variant: 'outline' })}
-                to="/stages/$stageId/materials"
-                params={{ stageId: String(stage.id) }}
-                search={{ offset: search.offset }}
-              >
-                Материалы и счета
-              </Link>
-              <Button
-                variant="outline"
-                nativeButton={false}
-                render={
-                  <Link
-                    to="/stages/$stageId/checklist"
-                    params={{ stageId: String(stage.id) }}
-                    search={{ offset: search.offset }}
-                  />
-                }
-              >
-                Открыть рабочий чек-лист
-              </Button>
-            </div>
+          acceptance={(stage) => <StageAcceptance key={stage.id} stage={stage} />}
+          content={(stage) => (
+            <StageTabs
+              key={stage.id}
+              tab={search.tab ?? 'checklist'}
+              onTabChange={(tab) => void navigate({ search: (previous) => ({ ...previous, tab }), hash })}
+              checklist={<StageWorkingChecklist stage={stage} offset={search.offset} />}
+              materials={
+                <>
+                  <MaterialsOverview stage={stage} />
+                  <StageMaterials stage={stage} />
+                </>
+              }
+              work={<WorkPayments stage={stage} />}
+            />
           )}
-          payments={(stage) => <WorkPayments key={stage.id} stage={stage} />}
           actions={
             isManager
               ? (stage) => <StageEditor key={stage.id} stage={stage} defaultOpen={hash === 'parameters'} />

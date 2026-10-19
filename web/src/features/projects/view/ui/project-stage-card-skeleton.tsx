@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { PackageIcon, UserRoundIcon } from 'lucide-react';
+import { ArrowUpRightIcon, PackageIcon, UserRoundIcon } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
 import { Skeleton } from '@shared/ui/skeleton';
@@ -15,7 +15,10 @@ export function ProjectStageCardSkeleton() {
               <Skeleton className="h-6 w-32 max-w-full" />
             </CardTitle>
           </div>
-          <Skeleton className="h-6 w-20 shrink-0" />
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <ArrowUpRightIcon className="size-4 text-primary-text" aria-hidden="true" />
+            <Skeleton className="h-6 w-20" />
+          </div>
         </div>
         <CardDescription>
           <Skeleton className="h-4 w-3/4" />

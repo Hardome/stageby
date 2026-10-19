@@ -46,9 +46,7 @@ export function PasswordForm({ user, search }: PasswordFormProperties) {
           })(event)
         }
       >
-        <p className="wrap-anywhere">
-          {user.fullName} · {user.login}
-        </p>
+        <p className="wrap-anywhere">{user.fullName}</p>
         <FieldGroup>
           <PasswordFields disabled={mutation.isPending} />
         </FieldGroup>

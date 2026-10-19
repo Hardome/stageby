@@ -13,9 +13,10 @@ describe('project additional stage', () => {
     await context.render();
     await fill('ownerName', 'Мария');
 
-    expect(context.container).not.toHaveTextContent('Доп. этап');
+    expect(context.container).toHaveTextContent('Доп. этап');
 
     await click('Далее');
+    expect(context.container).toHaveTextContent('Доп. этап');
     await click('Заполнить этапы');
     await fill('stages.0.plannedWorkAmount', '200');
     await click('Доп. этап');
@@ -54,6 +55,14 @@ describe('project additional stage', () => {
       additionalStage: { plannedMaterialAmountMinor: 0n, checklistItems: [{ title: 'Контроль', photoHint: null }] },
     });
     expect(mocks.success).toHaveBeenCalledOnce();
+  });
+
+  it('adds a stage directly from project details', async () => {
+    await context.render();
+    await click('Доп. этап');
+
+    expect(context.container.querySelector('h2')).toHaveTextContent('Дополнительный этап');
+    expect(context.container).not.toHaveTextContent('Доп. этап');
   });
 
   it('starts an excluded additional stage with empty values', async () => {

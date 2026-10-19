@@ -40,7 +40,7 @@ describe('working checklist', () => {
     });
   }
 
-  it('sorts items and displays server progress, rework comments and photo states', async () => {
+  it('sorts items and displays rework comments and photo states without progress', async () => {
     const { checklist } = editStage();
     const first = checklist.items[0];
     if (!first) throw new Error('Отсутствует тестовый пункт');
@@ -61,8 +61,8 @@ describe('working checklist', () => {
       '/photos/2',
       '/photos/3',
     ]);
-    expect(container).toHaveTextContent('Выполнено 1 из 3 · 33%');
-    expect(container.querySelector('progress')).toHaveAttribute('value', '33');
+    expect(container).not.toHaveTextContent('Выполнено 1 из 3');
+    expect(container.querySelector('progress')).toBeNull();
     expect(container).toHaveTextContent('Фото не приложены');
     expect(container).toHaveTextContent('Фото: 2');
     expect(container).toHaveTextContent('Выполнение сохраняется');
@@ -75,8 +75,7 @@ describe('working checklist', () => {
   it('does not present an empty checklist as completed', async () => {
     await render({ data: { ...editStage().checklist, items: [] } });
     expect(container).toHaveTextContent('Чек-лист пуст');
-    expect(container).toHaveTextContent('0 из 0 · 0%');
-    expect(container.querySelector('progress')).toHaveAttribute('value', '0');
+    expect(container.querySelector('progress')).toBeNull();
   });
 
   it('preserves data on background failure and supports retry', async () => {

@@ -1,11 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import { StagePage } from '@pages/stage/stage.page';
-import { myStagesSearchSchema } from '@features/stages/list';
+import { StagePage, stageSearchSchema } from '@pages/stage';
 
 export const Route = createFileRoute('/_auth/stages/$stageId')({
   component: StageRoute,
-  validateSearch: myStagesSearchSchema.loose(),
+  validateSearch: stageSearchSchema,
   head: () => ({ meta: [{ title: 'Этап' }] }),
 });
 

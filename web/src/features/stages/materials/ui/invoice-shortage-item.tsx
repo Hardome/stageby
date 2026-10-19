@@ -14,9 +14,9 @@ interface InvoiceShortageItemProperties {
 
 export function InvoiceShortageItem({ shortage, canResolve, onResolve }: InvoiceShortageItemProperties) {
   return (
-    <Alert variant={shortage.resolvedAt ? 'default' : 'destructive'}>
+    <Alert variant={shortage.resolvedAt ? 'default' : 'destructive'} className="p-3">
       {shortage.resolvedAt ? <CheckIcon aria-hidden="true" /> : <AlertTriangleIcon aria-hidden="true" />}
-      <AlertDescription className="flex flex-col gap-2">
+      <AlertDescription className="flex flex-col gap-1 [&_p:not(:last-child)]:mb-0">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <p className="font-semibold">{shortage.resolvedAt ? 'Нехватка устранена' : 'Не хватает материалов'}</p>
           {!shortage.resolvedAt && <span className="text-xs">Требует решения</span>}

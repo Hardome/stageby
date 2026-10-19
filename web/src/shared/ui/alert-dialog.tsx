@@ -24,7 +24,7 @@ function AlertDialogOverlay({ className, ...properties }: AlertDialogPrimitive.B
       className={cn(
         [
           'data-open:fade-in-0 data-closed:fade-out-0 fixed inset-0 isolate z-50 bg-surface-inverse/40',
-          'duration-100 data-closed:animate-out data-open:animate-in',
+          'duration-200 ease-out data-closed:animate-out data-open:animate-in motion-reduce:animate-none',
           'supports-backdrop-filter:backdrop-blur-xs',
         ],
         className,
@@ -49,10 +49,11 @@ function AlertDialogContent({
         data-size={size}
         className={cn(
           [
-            'group/alert-dialog-content data-open:fade-in-0 data-open:zoom-in-95',
-            'data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 left-1/2 z-50 grid w-max',
+            'group/alert-dialog-content data-open:fade-in-0 data-open:zoom-in-[0.98]',
+            'data-closed:fade-out-0 data-closed:zoom-out-[0.98] fixed top-1/2 left-1/2 z-50 grid w-max',
             '-translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4',
-            'text-popover-foreground outline-none ring-1 ring-foreground/10 duration-100',
+            'text-popover-foreground outline-none ring-1 ring-foreground/10',
+            'duration-200 ease-out motion-reduce:animate-none',
             'max-w-[calc(100vw-2rem)] data-[size=sm]:max-w-xs data-closed:animate-out data-open:animate-in',
           ],
           className,
