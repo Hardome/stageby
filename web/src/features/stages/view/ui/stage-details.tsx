@@ -36,7 +36,7 @@ export function StageDetails({ stage }: StageDetailsProperties) {
           <dd>
             <a
               className={cn(
-                'flex w-fit items-center gap-2 rounded-sm text-primary-text text-xs',
+                'flex w-fit items-center gap-2 rounded-sm text-muted-foreground text-xs',
                 'underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring',
               )}
               href={`tel:${stage.assignee.phone}`}

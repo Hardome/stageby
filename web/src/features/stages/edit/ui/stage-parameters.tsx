@@ -51,7 +51,7 @@ export function StageParameters({ stage, focusAssignee = false, onClose, onPendi
         </DialogClose>
       </div>
       <FormProvider {...editor.form}>
-        <form onSubmit={editor.save} className="flex min-h-0 flex-1 flex-col">
+        <form autoComplete="off" onSubmit={editor.save} className="flex min-h-0 flex-1 flex-col">
           <DialogBody className="overscroll-contain sm:p-4">
             <FieldGroup className="grid gap-4 sm:grid-cols-2">
               <StageParameterField

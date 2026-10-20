@@ -14,7 +14,7 @@ export function isSupplyComplete(counts: Pick<Counts, 'invoiceCount' | 'delivere
   return counts.invoiceCount > 0 && counts.deliveredInvoiceCount === counts.invoiceCount;
 }
 
-export function materialIndicator(counts: Counts): MaterialIndicator {
+export function materialIndicator(counts: Counts & { paymentInvoiceCount: number }): MaterialIndicator {
   let color: MaterialIndicator['color'] = 'yellow';
   if (counts.invoiceCount === 0 || counts.openShortageCount > 0) color = 'red';
   else if (counts.paidInvoiceCount === counts.invoiceCount && isSupplyComplete(counts)) color = 'green';
@@ -24,7 +24,7 @@ export function materialIndicator(counts: Counts): MaterialIndicator {
     deliveredInvoiceCount: counts.deliveredInvoiceCount,
     openShortageCount: counts.openShortageCount,
     color,
-    isPartiallyPaid: counts.paidInvoiceCount > 0 && counts.paidInvoiceCount < counts.invoiceCount,
+    isPartiallyPaid: counts.paymentInvoiceCount > 0 && counts.paidInvoiceCount < counts.invoiceCount,
     isPartiallyDelivered: counts.deliveredInvoiceCount > 0 && counts.deliveredInvoiceCount < counts.invoiceCount,
   };
 }
@@ -49,6 +49,10 @@ export async function loadStageSummaries(db: Db, stageIds: number[]) {
         Number,
       ),
       paidInvoiceCount:
+        sql<number>`(select count(*) from material_invoices i where i."stageId" = "stages"."id" and i."paidAt" is not null and i."paidAmountMinor" >= i."amountMinor")`.mapWith(
+          Number,
+        ),
+      paymentInvoiceCount:
         sql<number>`(select count(*) from material_invoices i where i."stageId" = "stages"."id" and i."paidAt" is not null)`.mapWith(
           Number,
         ),

@@ -11,7 +11,7 @@ export const materialIndicatorSchema = z.object({
   paidInvoiceCount: z.int().min(0).max(10).describe('Количество полностью оплаченных счетов выбранного этапа.').meta({ examples: [2] }),
   deliveredInvoiceCount: z.int().min(0).max(10).describe('Количество доставленных счетов выбранного этапа.').meta({ examples: [1] }),
   openShortageCount: z.int().min(0).describe('Количество отдельно не устранённых нехваток выбранного этапа.').meta({ examples: [0] }),
-  isPartiallyPaid: z.boolean().describe('true, только если оплачено больше нуля, но меньше общего количества счетов.').meta({ examples: [true] }),
+  isPartiallyPaid: z.boolean().describe('true, если есть оплата хотя бы одного счёта, но не все счета оплачены полностью. Полная оплата — фактическая сумма не меньше суммы счёта.').meta({ examples: [true] }),
   isPartiallyDelivered: z.boolean().describe('true, только если доставлено больше нуля, но меньше общего количества счетов.').meta({ examples: [true] }),
 }).strict().describe('Вычисляемое состояние счетов и нехваток выбранного этапа.')
 

@@ -33,8 +33,8 @@ function screenDetails(screen: ProjectScreen, stages: StageSummary[], selectedIn
   };
 }
 
-export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
-  const [screen, setScreen] = useState<ProjectScreen>('object');
+export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>, initialStageIndex?: number) {
+  const [screen, setScreen] = useState<ProjectScreen>(initialStageIndex ?? 'object');
   const [focusRequest, setFocusRequest] = useState(0);
   const errorGroupReference = useRef<HTMLElement>(null);
   const handledFocusRequest = useRef(0);

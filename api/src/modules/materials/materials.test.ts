@@ -422,7 +422,12 @@ describe('Материалы, счета и нехватки', () => {
       const file = await uploadedInvoiceFile(data.manager.user.id);
       invoices.push((await createInvoice(data.stage.id, file.id, amount, data.manager.cookie)).json());
     }
-    const update = async (invoice: StageMaterialInvoice, isPaid: boolean, isDelivered: boolean) => {
+    const update = async (
+      invoice: StageMaterialInvoice,
+      isPaid: boolean,
+      isDelivered: boolean,
+      paidAmountMinor = invoice.amountMinor,
+    ) => {
       const response = await getApp().inject({
         method: 'PATCH',
         url: `/material-invoices/${invoice.id}`,
@@ -431,12 +436,18 @@ describe('Материалы, счета и нехватки', () => {
           expectedVersion: invoice.version,
           isPaid,
           isDelivered,
-          ...(isPaid ? { paidAmountMinor: invoice.amountMinor, paidDate: '2026-10-04' } : {}),
+          ...(isPaid ? { paidAmountMinor, paidDate: '2026-10-04' } : {}),
         },
       });
       expect(response.statusCode, response.body).toBe(200);
       return response.json<StageMaterialInvoice>();
     };
+    invoices[0] = await update(invoices[0]!, true, true, 5000);
+    expect((await read()).materialSummary).toMatchObject({
+      paidInvoiceCount: 0,
+      color: 'yellow',
+      isPartiallyPaid: true,
+    });
     invoices[0] = await update(invoices[0]!, true, true);
     expect((await read()).materialSummary).toMatchObject({
       color: 'yellow',
@@ -465,6 +476,13 @@ describe('Материалы, счета и нехватки', () => {
       .db.update(stages)
       .set({ status: 'in_progress', plannedWorkAmountMinor: null })
       .where(eq(stages.id, data.stage.id));
+    invoices[1] = await update(invoices[1]!, true, true, 15_000);
+    expect((await read()).materialSummary).toMatchObject({
+      paidInvoiceCount: 1,
+      color: 'yellow',
+      isPartiallyPaid: true,
+      isPartiallyDelivered: false,
+    });
     invoices[1] = await update(invoices[1]!, true, true);
     expect(await read()).toMatchObject({
       status: 'in_progress',

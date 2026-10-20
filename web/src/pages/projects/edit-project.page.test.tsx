@@ -1,11 +1,18 @@
 // cspell:ignore unstub
-import { act } from 'react';
+import { act, type ComponentProps, type ReactNode } from 'react';
 
 import { createRoot, type Root } from 'react-dom/client';
 
+import type { ProjectEditor } from '@features/projects/edit';
+
 import { EditProjectPage } from './edit-project.page';
 
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), editor: vi.fn(), navigate: vi.fn(), blocker: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  auth: vi.fn(),
+  editor: vi.fn<(properties: ComponentProps<typeof ProjectEditor>) => ReactNode>(),
+  navigate: vi.fn(),
+  blocker: vi.fn(),
+}));
 vi.mock('@shared/context', () => ({ useAuth: mocks.auth }));
 vi.mock('@features/projects/edit', () => ({ ProjectEditor: mocks.editor }));
 vi.mock('@tanstack/react-router', () => ({
@@ -16,12 +23,14 @@ vi.mock('@tanstack/react-router', () => ({
 describe('project editor route access', () => {
   let root: Root;
   let container: HTMLDivElement;
-  async function render(projectId: string) {
+
+  async function render(projectId: string, stageId?: number) {
     await act(async () => {
-      root.render(<EditProjectPage projectId={projectId} />);
+      root.render(<EditProjectPage projectId={projectId} stageId={stageId} />);
       await Promise.resolve();
     });
   }
+
   beforeEach(() => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     vi.clearAllMocks();
@@ -32,6 +41,7 @@ describe('project editor route access', () => {
     document.body.append(container);
     root = createRoot(container);
   });
+
   afterEach(async () => {
     await act(async () => {
       root.unmount();
@@ -61,5 +71,25 @@ describe('project editor route access', () => {
     await render('17');
 
     expect(mocks.editor).toHaveBeenCalledWith(expect.objectContaining({ projectId: 17 }), undefined);
+  });
+
+  it.each([true, false])('returns to the original stage after saving (changes: %s)', async (hasChanges) => {
+    await render('17', 42);
+
+    await act(async () => {
+      await mocks.editor.mock.calls.at(-1)?.[0].onSuccess(hasChanges);
+    });
+
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/stages/$stageId', params: { stageId: '42' } });
+  });
+
+  it('returns to the project after saving when opened without a stage', async () => {
+    await render('17');
+
+    await act(async () => {
+      await mocks.editor.mock.calls.at(-1)?.[0].onSuccess(false);
+    });
+
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/projects/$projectId', params: { projectId: '17' } });
   });
 });

@@ -1,6 +1,5 @@
-import { RefreshCwIcon } from 'lucide-react';
-
 import { Alert, AlertDescription } from '@shared/ui/alert';
+import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { DataRegion } from '@shared/ui/data-region';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@shared/ui/empty';
@@ -26,15 +25,13 @@ export function MyStagesList({ search, onPageChange }: MyStagesListProperties) {
 
   return (
     <section aria-label="Мои этапы" aria-busy={query.isFetching} className="flex min-w-0 flex-col gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="font-bold text-2xl">Мои этапы</h1>
-          <p className="text-muted-foreground text-sm">Назначенные вам этапы строительства.</p>
-        </div>
-        <Button variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}>
-          <RefreshCwIcon data-icon="inline-start" />
-          Обновить
-        </Button>
+      <header className="flex items-center justify-between gap-3">
+        <h1 className="font-bold text-2xl">Мои этапы</h1>
+        {query.data && (
+          <Badge variant="secondary" aria-live="polite">
+            Найдено: {query.data.total}
+          </Badge>
+        )}
       </header>
       {query.isError && (
         <Alert variant="destructive">
@@ -56,9 +53,6 @@ export function MyStagesList({ search, onPageChange }: MyStagesListProperties) {
       >
         {query.data && (
           <>
-            <p className="text-muted-foreground text-sm" aria-live="polite">
-              Найдено: {query.data.total}
-            </p>
             {query.data.items.length > 0 ? (
               <StageListResults stages={query.data.items} offset={offset} />
             ) : (

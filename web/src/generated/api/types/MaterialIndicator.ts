@@ -54,7 +54,7 @@ export type MaterialIndicator = {
     */
     openShortageCount: number;
     /**
-     * @description true, только если оплачено больше нуля, но меньше общего количества счетов.
+     * @description true, если есть оплата хотя бы одного счёта, но не все счета оплачены полностью. Полная оплата — фактическая сумма не меньше суммы счёта.
      * @example true
      * @type boolean
     */
