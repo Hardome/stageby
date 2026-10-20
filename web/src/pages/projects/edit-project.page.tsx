@@ -18,11 +18,17 @@ import { Button } from '@shared/ui/button';
 import { NotFound } from '@shared/ui/not-found';
 import { toast } from '@shared/ui/toast';
 
-export function EditProjectPage({ projectId }: { projectId: string }) {
+interface EditProjectPageProperties {
+  projectId: string;
+  stageId?: number;
+}
+
+export function EditProjectPage({ projectId, stageId }: EditProjectPageProperties) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [dirty, setDirty] = useState(false);
   const finished = useRef(false);
+
   const blocker = useBlocker({
     shouldBlockFn: () => Boolean(user) && dirty && !finished.current,
     enableBeforeUnload: () => Boolean(user) && dirty && !finished.current,
@@ -31,9 +37,15 @@ export function EditProjectPage({ projectId }: { projectId: string }) {
   const onDirtyChange = useCallback((isDirty: boolean) => setDirty(isDirty), []);
   const id = parseProjectId(projectId);
   const cancel = () => void navigate({ to: '/projects/$projectId', params: { projectId } });
+
   async function finish(hasChanges = true) {
     finished.current = true;
-    await navigate({ to: '/projects/$projectId', params: { projectId } });
+    if (stageId === undefined) {
+      await navigate({ to: '/projects/$projectId', params: { projectId } });
+    } else {
+      await navigate({ to: '/stages/$stageId', params: { stageId: String(stageId) } });
+    }
+
     if (hasChanges) toast.add({ type: 'success', title: 'Изменения сохранены' });
   }
 
@@ -53,6 +65,7 @@ export function EditProjectPage({ projectId }: { projectId: string }) {
         <ProjectEditor
           key={`${user.id}-${id}`}
           projectId={id}
+          initialStageId={stageId}
           onDirtyChange={onDirtyChange}
           onCancel={cancel}
           onSuccess={finish}

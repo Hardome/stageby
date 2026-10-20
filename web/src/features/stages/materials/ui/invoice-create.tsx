@@ -93,6 +93,7 @@ export function InvoiceCreate({ stage, count }: InvoiceCreateProperties) {
                     {...field}
                     onValueChange={field.onChange}
                     id={`${id}-amount`}
+                    autoComplete="off"
                     placeholder="Укажите сумму"
                     disabled={isDisabled || isLimitReached}
                     aria-invalid={Boolean(errors.amount)}

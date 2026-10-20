@@ -6,6 +6,21 @@ describe('project editing: direct stage switching', () => {
   const context = setupProjectEditing();
   const mocks = getProjectEditingMocks();
 
+  it('opens the requested stage immediately', async () => {
+    context.snapshot.stages.push(editStage({ id: 13, type: 'roof', title: 'Крыша', position: 3 }));
+    await context.render(13);
+
+    expect(context.container.querySelector('h2')).toHaveTextContent('Крыша');
+    expect(input('stages.2.plannedWorkAmount')).toBeInTheDocument();
+    expect(mocks.dirty).toHaveBeenLastCalledWith(false);
+  });
+
+  it.each([999, 12])('opens object fields when stage %s is missing or excluded', async (stageId) => {
+    await context.render(stageId);
+
+    expect(context.container.querySelector('h2')).toHaveTextContent('Объект');
+  });
+
   it('switches directly to nonadjacent stages and retains edits and error navigation', async () => {
     context.snapshot.stages.push(editStage({ id: 13, type: 'roof', title: 'Крыша', position: 3 }));
     await context.render();

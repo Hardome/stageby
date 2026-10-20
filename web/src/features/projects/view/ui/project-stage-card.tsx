@@ -28,7 +28,12 @@ export function ProjectStageCard({ stage, number, today }: ProjectStageCardPrope
         'focus-visible:outline-offset-2',
       ])}
     >
-      <Card className={cn('min-w-0 gap-4', stage.status === 'in_progress' && 'border-primary/60')}>
+      <Card
+        className={cn(
+          'min-w-0 gap-4 transition-[filter] group-hover:brightness-95',
+          stage.status === 'in_progress' && 'border-primary/60',
+        )}
+      >
         <CardHeader className="gap-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
