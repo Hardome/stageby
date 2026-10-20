@@ -12,15 +12,24 @@ interface ProjectStepProperties {
   screen: 'object' | 'selection' | number;
   stages: Pick<ProjectFormValues['stages'][number], 'type' | 'title' | 'enabled'>[];
   isLocked: boolean;
+  disableAutocomplete?: boolean;
   uploads: ReturnType<typeof useDocuments>;
   registerErrorGroup: (element: HTMLElement | null) => void;
 }
 
-export function ProjectStep({ screen, stages, isLocked, uploads, registerErrorGroup }: ProjectStepProperties) {
+export function ProjectStep({
+  screen,
+  stages,
+  isLocked,
+  uploads,
+  registerErrorGroup,
+  disableAutocomplete,
+}: ProjectStepProperties) {
   const {
     formState: { errors },
   } = useFormContext<ProjectFormValues>();
-  if (screen === 'object') return <ObjectStep isLocked={isLocked} uploads={uploads} />;
+  if (screen === 'object')
+    return <ObjectStep isLocked={isLocked} uploads={uploads} disableAutocomplete={disableAutocomplete} />;
   if (screen === 'selection')
     return <StagesStep stages={stages} isLocked={isLocked} registerErrorGroup={registerErrorGroup} />;
 

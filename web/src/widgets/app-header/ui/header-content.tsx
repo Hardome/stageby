@@ -43,7 +43,7 @@ export function HeaderContent({ user }: HeaderContentProperties) {
       },
     },
   });
-  const name = formatDisplayName(user.fullName, user.login);
+  const name = formatDisplayName(user.fullName);
 
   return (
     <header className="border-surface-inverse-border border-b bg-surface-inverse text-surface-inverse-foreground">
@@ -68,7 +68,7 @@ export function HeaderContent({ user }: HeaderContentProperties) {
           )}
         </nav>
         <div className="ml-auto flex min-w-0 items-center justify-end gap-2 sm:flex-1">
-          <Avatar aria-label={user.fullName || user.login}>
+          <Avatar aria-label={user.fullName}>
             <AvatarFallback variant="inverse">{name.initials}</AvatarFallback>
           </Avatar>
           <span className="hidden max-w-48 truncate text-sm sm:block" title={user.fullName}>

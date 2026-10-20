@@ -15,10 +15,11 @@ import { ProjectField } from './project-field';
 interface ObjectStepProperties {
   isLocked: boolean;
   uploads: ReturnType<typeof useDocuments>;
+  disableAutocomplete?: boolean;
   children?: ReactNode;
 }
 
-export function ObjectStep({ isLocked, uploads, children }: ObjectStepProperties) {
+export function ObjectStep({ isLocked, uploads, disableAutocomplete = false, children }: ObjectStepProperties) {
   const { control } = useFormContext<ProjectFormValues>();
   const plannedStartDate = useWatch({ control, name: 'plannedStartDate', exact: true });
 
@@ -34,16 +35,23 @@ export function ObjectStep({ isLocked, uploads, children }: ObjectStepProperties
           label="Клиент"
           required
           maxLength={150}
-          autoComplete="name"
+          autoComplete={disableAutocomplete ? 'off' : 'name'}
           disabled={isLocked}
         />
         <FieldGroup className="grid min-w-0 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-          <ProjectField name="address" label="Адрес" required autoComplete="street-address" disabled={isLocked} />
+          <ProjectField
+            name="address"
+            label="Адрес"
+            required
+            autoComplete={disableAutocomplete ? 'off' : 'street-address'}
+            disabled={isLocked}
+          />
           <ProjectField
             name="coordinates"
             label="Координаты"
             required
             placeholder="55.7558, 37.6176"
+            autoComplete={disableAutocomplete ? 'off' : undefined}
             disabled={isLocked}
           />
         </FieldGroup>

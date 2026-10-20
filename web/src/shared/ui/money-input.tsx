@@ -10,7 +10,6 @@ interface MoneyInputProperties
 
 function formatAmount(value: string) {
   const digits = value.replaceAll(/\s/g, '');
-
   return /^\d*$/.test(digits)
     ? Array.from(digits, (digit, index) => (index > 0 && (digits.length - index) % 3 === 0 ? ` ${digit}` : digit)).join(
         '',
@@ -19,8 +18,7 @@ function formatAmount(value: string) {
 }
 
 function selectionPosition(value: string, position: number, formatted: string) {
-  if (!/^[\d\s]*$/.test(value)) return position;
-  const digitsBefore = value.slice(0, position).replaceAll(/\s/g, '').length;
+  const digitsBefore = value.slice(0, position).replaceAll(/\D/g, '').length;
   if (digitsBefore === 0) return 0;
   let digits = 0;
   for (const [index, character] of [...formatted].entries()) {
@@ -57,6 +55,12 @@ function MoneyInput({ value, onValueChange, onKeyDown, inputMode = 'numeric', ..
   });
 
   function update(input: HTMLInputElement, nextValue: string, start: number, end: number) {
+    if (!/^[\d\s]*$/.test(nextValue)) {
+      input.value = formatAmount(value);
+
+      return;
+    }
+
     const formatted = formatAmount(nextValue);
     const nextStart = selectionPosition(nextValue, start, formatted);
     const nextEnd = selectionPosition(nextValue, end, formatted);

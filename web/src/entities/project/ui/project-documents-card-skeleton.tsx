@@ -1,9 +1,9 @@
 import { FileTextIcon } from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
 import { Skeleton } from '@shared/ui/skeleton';
 
-export function StageProjectSkeleton() {
+export function ProjectDocumentsCardSkeleton() {
   return (
     <Card>
       <CardHeader>
@@ -13,7 +13,6 @@ export function StageProjectSkeleton() {
             Проект
           </h2>
         </CardTitle>
-        <CardDescription>Документация для выполнения работ</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <Skeleton className="h-12 w-full" />

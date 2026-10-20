@@ -1,79 +1,50 @@
-import { useState } from 'react';
+import type { ReactNode } from 'react';
 
-import { FileTextIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { cn } from 'cn';
+import { FileTextIcon } from 'lucide-react';
 
 import { formatDate, formatMoney } from '@entities/project';
-import { Button } from '@shared/ui/button';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
+import { Badge } from '@shared/ui/badge';
 
-import type { Stage, StageMaterialInvoice } from '@api/types';
+import type { StageMaterialInvoice } from '@api/types';
 
-import { InvoiceDelivery } from './invoice-delivery';
-import { InvoiceEditor } from './invoice-editor';
-import { InvoiceFile } from './invoice-file';
-import { InvoicePayment } from './invoice-payment';
-import { InvoiceShortages } from './invoice-shortages';
+import { InvoiceFileMenu } from './invoice-file-menu';
 
 interface InvoiceCardProperties {
-  stage: Stage;
   invoice: StageMaterialInvoice;
   number: number;
-  canReceive: boolean;
-  canManage: boolean;
+  actions?: ReactNode;
+  children?: ReactNode;
+  className?: string;
 }
 
-export function InvoiceCard({ stage, invoice, number, canReceive, canManage }: InvoiceCardProperties) {
-  const [editing, setEditing] = useState<'edit' | 'delete' | null>(null);
+export function InvoiceCard({ invoice, number, actions, children, className }: InvoiceCardProperties) {
+  const shortages = invoice.shortages.filter((shortage) => !shortage.resolvedAt).length;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <FileTextIcon className="size-4" aria-hidden="true" />
-            <h3 className="text-sm">Счёт №{number}</h3>
-          </div>
-          <p className="wrap-anywhere mt-2 font-bold text-2xl tabular-nums">{formatMoney(invoice.amountMinor)}</p>
-        </CardTitle>
-        <CardDescription className="wrap-anywhere">
-          {invoice.supplierName ?? 'Поставщик не указан'} · Добавлен {formatDate(invoice.createdAt.slice(0, 10))}
-        </CardDescription>
-        <CardAction className="flex items-start gap-2">
-          <InvoiceFile fileId={invoice.fileId} />
-          {canManage && (
-            <div className="flex h-12 shrink-0 items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Изменить счёт"
-                title="Изменить счёт"
-                onClick={() => setEditing('edit')}
-              >
-                <PencilIcon />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="text-muted-foreground hover:text-destructive"
-                aria-label="Удалить счёт"
-                title="Удалить счёт"
-                onClick={() => setEditing('delete')}
-              >
-                <Trash2Icon />
-              </Button>
-            </div>
-          )}
-        </CardAction>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-          <InvoicePayment stage={stage} invoice={invoice} canManage={canManage} />
-          <InvoiceDelivery stage={stage} invoice={invoice} canReceive={canReceive} />
+    <li className={cn('grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 p-4', className)}>
+      <div className="contents">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
+          <FileTextIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="wrap-anywhere font-semibold text-sm">{invoice.supplierName ?? `Счёт №${number}`}</span>
+            <span className="text-muted-foreground text-xs">
+              {invoice.supplierName && `Счёт №${number} · `}
+              {formatDate(invoice.createdAt.slice(0, 10))}
+            </span>
+          </span>
+          <span className="shrink-0 font-bold text-base tabular-nums">{formatMoney(invoice.amountMinor)}</span>
         </div>
-        <InvoiceShortages stage={stage} invoice={invoice} canReceive={canReceive} canManage={canManage} />
-      </CardContent>
-      {canManage && editing && (
-        <InvoiceEditor stage={stage} invoice={invoice} kind={editing} onClose={() => setEditing(null)} />
-      )}
-    </Card>
+        {actions || <InvoiceFileMenu fileId={invoice.fileId} />}
+      </div>
+      <div className="col-start-1 flex min-w-0 flex-wrap items-center gap-2 sm:pl-8">
+        <Badge variant={invoice.paidAt ? 'success' : 'secondary'}>{invoice.paidAt ? 'Оплачен' : 'Не оплачен'}</Badge>
+        <Badge variant={invoice.deliveredAt ? 'success' : 'secondary'}>
+          {invoice.deliveredAt ? 'Доставлен' : 'Не доставлен'}
+        </Badge>
+        {shortages > 0 && <Badge variant="warning">Нехватки: {shortages}</Badge>}
+      </div>
+      {children && <div className="col-span-full sm:ml-8">{children}</div>}
+    </li>
   );
 }

@@ -21,8 +21,6 @@ import { Route as AuthUsersNewRouteImport } from './../../app/routes/_auth/users
 import { Route as PublicLoginIndexRouteImport } from './../../app/routes/_public/login/index';
 import { Route as AuthProjectsProjectIdIndexRouteImport } from './../../app/routes/_auth/projects/$projectId/index';
 import { Route as AuthProjectsProjectIdEditRouteImport } from './../../app/routes/_auth/projects/$projectId/edit';
-import { Route as AuthStagesStageIdChecklistRouteImport } from './../../app/routes/_auth/stages/$stageId_.checklist';
-import { Route as AuthStagesStageIdMaterialsRouteImport } from './../../app/routes/_auth/stages/$stageId_.materials';
 import { Route as AuthUsersUserIdEditRouteImport } from './../../app/routes/_auth/users/$userId/edit';
 import { Route as AuthUsersUserIdPasswordRouteImport } from './../../app/routes/_auth/users/$userId/password';
 import { Route as AuthStagesStageIdChecklistItemIdPhotosRouteImport } from './../../app/routes/_auth/stages/$stageId_/checklist_/$itemId/photos';
@@ -88,18 +86,6 @@ const AuthProjectsProjectIdEditRoute =
     path: '/projects/$projectId/edit',
     getParentRoute: () => AuthRoute,
   } as any);
-const AuthStagesStageIdChecklistRoute =
-  AuthStagesStageIdChecklistRouteImport.update({
-    id: '/stages/$stageId_/checklist',
-    path: '/stages/$stageId/checklist',
-    getParentRoute: () => AuthRoute,
-  } as any);
-const AuthStagesStageIdMaterialsRoute =
-  AuthStagesStageIdMaterialsRouteImport.update({
-    id: '/stages/$stageId_/materials',
-    path: '/stages/$stageId/materials',
-    getParentRoute: () => AuthRoute,
-  } as any);
 const AuthUsersUserIdEditRoute = AuthUsersUserIdEditRouteImport.update({
   id: '/$userId/edit',
   path: '/$userId/edit',
@@ -128,8 +114,6 @@ export interface FileRoutesByFullPath {
   '/users/': typeof AuthUsersIndexRoute;
   '/login/': typeof PublicLoginIndexRoute;
   '/projects/$projectId/edit': typeof AuthProjectsProjectIdEditRoute;
-  '/stages/$stageId/checklist': typeof AuthStagesStageIdChecklistRoute;
-  '/stages/$stageId/materials': typeof AuthStagesStageIdMaterialsRoute;
   '/users/$userId/edit': typeof AuthUsersUserIdEditRoute;
   '/users/$userId/password': typeof AuthUsersUserIdPasswordRoute;
   '/projects/$projectId/': typeof AuthProjectsProjectIdIndexRoute;
@@ -145,8 +129,6 @@ export interface FileRoutesByTo {
   '/users': typeof AuthUsersIndexRoute;
   '/login': typeof PublicLoginIndexRoute;
   '/projects/$projectId/edit': typeof AuthProjectsProjectIdEditRoute;
-  '/stages/$stageId/checklist': typeof AuthStagesStageIdChecklistRoute;
-  '/stages/$stageId/materials': typeof AuthStagesStageIdMaterialsRoute;
   '/users/$userId/edit': typeof AuthUsersUserIdEditRoute;
   '/users/$userId/password': typeof AuthUsersUserIdPasswordRoute;
   '/projects/$projectId': typeof AuthProjectsProjectIdIndexRoute;
@@ -165,8 +147,6 @@ export interface FileRoutesById {
   '/_auth/users/': typeof AuthUsersIndexRoute;
   '/_public/login/': typeof PublicLoginIndexRoute;
   '/_auth/projects/$projectId/edit': typeof AuthProjectsProjectIdEditRoute;
-  '/_auth/stages/$stageId_/checklist': typeof AuthStagesStageIdChecklistRoute;
-  '/_auth/stages/$stageId_/materials': typeof AuthStagesStageIdMaterialsRoute;
   '/_auth/users/$userId/edit': typeof AuthUsersUserIdEditRoute;
   '/_auth/users/$userId/password': typeof AuthUsersUserIdPasswordRoute;
   '/_auth/projects/$projectId/': typeof AuthProjectsProjectIdIndexRoute;
@@ -185,8 +165,6 @@ export interface FileRouteTypes {
     | '/users/'
     | '/login/'
     | '/projects/$projectId/edit'
-    | '/stages/$stageId/checklist'
-    | '/stages/$stageId/materials'
     | '/users/$userId/edit'
     | '/users/$userId/password'
     | '/projects/$projectId/'
@@ -202,8 +180,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/login'
     | '/projects/$projectId/edit'
-    | '/stages/$stageId/checklist'
-    | '/stages/$stageId/materials'
     | '/users/$userId/edit'
     | '/users/$userId/password'
     | '/projects/$projectId'
@@ -221,8 +197,6 @@ export interface FileRouteTypes {
     | '/_auth/users/'
     | '/_public/login/'
     | '/_auth/projects/$projectId/edit'
-    | '/_auth/stages/$stageId_/checklist'
-    | '/_auth/stages/$stageId_/materials'
     | '/_auth/users/$userId/edit'
     | '/_auth/users/$userId/password'
     | '/_auth/projects/$projectId/'
@@ -321,20 +295,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthProjectsProjectIdEditRouteImport;
       parentRoute: typeof AuthRoute;
     };
-    '/_auth/stages/$stageId_/checklist': {
-      id: '/_auth/stages/$stageId_/checklist';
-      path: '/stages/$stageId/checklist';
-      fullPath: '/stages/$stageId/checklist';
-      preLoaderRoute: typeof AuthStagesStageIdChecklistRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
-    '/_auth/stages/$stageId_/materials': {
-      id: '/_auth/stages/$stageId_/materials';
-      path: '/stages/$stageId/materials';
-      fullPath: '/stages/$stageId/materials';
-      preLoaderRoute: typeof AuthStagesStageIdMaterialsRouteImport;
-      parentRoute: typeof AuthRoute;
-    };
     '/_auth/users/$userId/edit': {
       id: '/_auth/users/$userId/edit';
       path: '/$userId/edit';
@@ -384,8 +344,6 @@ interface AuthRouteChildren {
   AuthProjectsNewRoute: typeof AuthProjectsNewRoute;
   AuthStagesStageIdRoute: typeof AuthStagesStageIdRoute;
   AuthProjectsProjectIdEditRoute: typeof AuthProjectsProjectIdEditRoute;
-  AuthStagesStageIdChecklistRoute: typeof AuthStagesStageIdChecklistRoute;
-  AuthStagesStageIdMaterialsRoute: typeof AuthStagesStageIdMaterialsRoute;
   AuthProjectsProjectIdIndexRoute: typeof AuthProjectsProjectIdIndexRoute;
   AuthStagesStageIdChecklistItemIdPhotosRoute: typeof AuthStagesStageIdChecklistItemIdPhotosRoute;
 }
@@ -397,8 +355,6 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthProjectsNewRoute: AuthProjectsNewRoute,
   AuthStagesStageIdRoute: AuthStagesStageIdRoute,
   AuthProjectsProjectIdEditRoute: AuthProjectsProjectIdEditRoute,
-  AuthStagesStageIdChecklistRoute: AuthStagesStageIdChecklistRoute,
-  AuthStagesStageIdMaterialsRoute: AuthStagesStageIdMaterialsRoute,
   AuthProjectsProjectIdIndexRoute: AuthProjectsProjectIdIndexRoute,
   AuthStagesStageIdChecklistItemIdPhotosRoute:
     AuthStagesStageIdChecklistItemIdPhotosRoute,

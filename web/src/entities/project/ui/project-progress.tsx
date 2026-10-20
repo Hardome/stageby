@@ -29,10 +29,7 @@ export function ProjectProgress({
   const { disabled, stages } = stageNavigation;
 
   return (
-    <nav aria-label={label} className="min-w-0 self-start lg:sticky lg:top-6">
-      <p className="mb-4 hidden font-semibold text-muted-foreground text-xs uppercase tracking-wider lg:block">
-        Настройка объекта
-      </p>
+    <nav aria-label={label} className="w-full min-w-0 self-start lg:sticky lg:top-6">
       <ol className="grid grid-cols-3 gap-2 lg:grid-cols-1 lg:gap-3">
         {steps.map(({ title, description, icon: Icon }, index) => (
           <li key={title} className="min-w-0">

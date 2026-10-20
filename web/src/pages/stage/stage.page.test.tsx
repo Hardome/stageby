@@ -27,6 +27,7 @@ vi.mock('@features/stages/view', () => ({
 vi.mock('@tanstack/react-router', () => ({
   useLocation: () => '',
   useSearch: () => ({ offset: 20 }),
+  useNavigate: () => vi.fn(),
   Link: ({ to, params, children }: { to: string; params?: { projectId: string }; children?: React.ReactNode }) => (
     <a href={params ? `/projects/${params.projectId}` : to}>{children}</a>
   ),

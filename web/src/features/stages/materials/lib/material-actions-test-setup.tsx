@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   remove: vi.fn(),
   saved: vi.fn(),
+  delivered: vi.fn(),
   shortage: vi.fn(),
   resolve: vi.fn(),
   invalidate: vi.fn(),
@@ -61,7 +62,7 @@ function Probe({ version, paymentInvoice }: ProbeProperties) {
   const { stage } = editStage();
   const create = useInvoiceCreate(stage);
   const payment = useInvoicePayment(stage, paymentInvoice ?? { ...invoice, version });
-  const delivery = useInvoiceDelivery(stage, paymentInvoice ?? { ...invoice, version });
+  const delivery = useInvoiceDelivery(stage, paymentInvoice ?? { ...invoice, version }, mocks.delivered);
   const shortage = useInvoiceShortages(stage, invoice);
   const editor = useInvoiceEditor(stage, invoice, mocks.saved);
 

@@ -144,7 +144,7 @@
   --primary-hover: #e8823a;
   --primary-text: #e8823a;
   --control-background: #1c2128;
-  --control-border: #8a8f96;
+  --control-border: #e2e5e3;
   --control-hover: color-mix(in oklch, var(--popover), var(--foreground) 10%);
   --control-selected: var(--foreground);
   --control-selected-foreground: var(--background);

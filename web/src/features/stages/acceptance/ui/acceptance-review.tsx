@@ -61,7 +61,7 @@ export function AcceptanceReview({ stage }: AcceptanceReviewProperties) {
               <div className="flex flex-wrap gap-2">
                 <Button variant="success" disabled={blocked || reworkOpen || stage.assignee === null} onClick={accept}>
                   {action.pending && <Spinner data-icon="inline-start" />}
-                  Подтвердить приёмку
+                  Подтвердить
                 </Button>
                 <Button variant="outline" disabled={blocked} onClick={() => setReworkOpen(!reworkOpen)}>
                   {reworkOpen ? 'Закрыть замечания' : 'Вернуть на доработку'}
@@ -73,7 +73,6 @@ export function AcceptanceReview({ stage }: AcceptanceReviewProperties) {
                 onSubmit={(event) => {
                   void submit(event);
                 }}
-                className="mt-4"
               >
                 <fieldset disabled={blocked} className="flex min-w-0 flex-col gap-4">
                   <ReworkFields form={form} />

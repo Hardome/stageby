@@ -24,12 +24,14 @@ vi.mock('@tanstack/react-router', () => ({
     to,
     params,
     hash,
+    search,
     children,
     ...properties
   }: {
     to: string;
     params: { projectId?: string; stageId?: string };
     hash?: string;
+    search?: { tab?: string };
     children: ReactNode;
   }) => (
     <a
@@ -39,7 +41,9 @@ vi.mock('@tanstack/react-router', () => ({
           .split('$projectId')
           .join(params.projectId ?? '')
           .split('$stageId')
-          .join(params.stageId ?? '') + (hash ? `#${hash}` : '')
+          .join(params.stageId ?? '') +
+        (search?.tab ? `?tab=${search.tab}` : '') +
+        (hash ? `#${hash}` : '')
       }
     >
       {children}

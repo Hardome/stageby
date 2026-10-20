@@ -4,9 +4,7 @@ import { Skeleton } from '@shared/ui/skeleton';
 
 export function UserEditorSkeleton({ mode }: { mode: 'edit' | 'password' }) {
   const isPassword = mode === 'password';
-  const labels = isPassword
-    ? ['Новый пароль', 'Повторите пароль']
-    : ['Логин', 'Полное имя', 'Роль', 'Телефон (необязательно)'];
+  const labels = isPassword ? ['Новый пароль', 'Повторите пароль'] : ['Полное имя', 'Роль', 'Телефон (необязательно)'];
 
   return (
     <div aria-hidden="true" className="flex flex-col gap-4">

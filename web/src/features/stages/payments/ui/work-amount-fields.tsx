@@ -19,9 +19,10 @@ export function WorkAmountFields({ disabled }: { disabled: boolean }) {
         control={control}
         render={({ field, fieldState: { error } }) => (
           <Field data-invalid={Boolean(error)}>
-            <FieldLabel htmlFor={`${id}-amount`}>Сумма платежа, ₽</FieldLabel>
+            <FieldLabel htmlFor={`${id}-amount`}>Сумма выплаты, ₽</FieldLabel>
             <MoneyInput
               id={`${id}-amount`}
+              placeholder="Укажите сумму"
               value={field.value}
               onValueChange={field.onChange}
               onBlur={field.onBlur}
@@ -39,7 +40,7 @@ export function WorkAmountFields({ disabled }: { disabled: boolean }) {
         control={control}
         render={({ field, fieldState: { error } }) => (
           <Field data-invalid={Boolean(error)}>
-            <FieldLabel htmlFor={`${id}-date`}>Дата платежа</FieldLabel>
+            <FieldLabel htmlFor={`${id}-date`}>Дата выплаты</FieldLabel>
             <DatePicker
               {...field}
               id={`${id}-date`}

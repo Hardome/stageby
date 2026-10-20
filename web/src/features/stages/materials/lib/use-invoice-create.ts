@@ -29,6 +29,7 @@ export function useInvoiceCreate(stage: Stage, onSaved?: () => void) {
   });
 
   async function submit(values: { amount: string; supplier: string }) {
+    if (upload.items[0]?.status !== 'uploaded') return;
     const fileId = upload.items[0]?.fileId;
     if (!fileId) return;
     request.current ??= invoiceSchema.parse({

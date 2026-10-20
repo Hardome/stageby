@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 
 import { cn } from 'cn';
-import { CameraIcon, CheckIcon, ImageOffIcon, RotateCcwIcon, ScanLineIcon } from 'lucide-react';
+import { CameraIcon, ImageOffIcon, RotateCcwIcon } from 'lucide-react';
 
 import { Badge } from '@shared/ui/badge';
 
 import type { ChecklistItem } from '@api/types';
 
 import { ChecklistItemCompletion } from './checklist-item-completion';
+import { ChecklistItemMarker } from './checklist-item-marker';
 
 interface StageChecklistItemProperties {
   item: ChecklistItem;
@@ -15,8 +16,8 @@ interface StageChecklistItemProperties {
 }
 
 export function StageChecklistItem({ item, action }: StageChecklistItemProperties) {
-  const completion = item.isCompleted ? 'Готово' : 'Не выполнено';
-  const completionVariant = item.isCompleted ? 'success' : 'secondary';
+  let statusLabel = 'Не выполнен';
+  if (item.isCompleted) statusLabel = item.requiresRework ? 'Доработан' : 'Выполнен';
 
   return (
     <li
@@ -24,35 +25,23 @@ export function StageChecklistItem({ item, action }: StageChecklistItemPropertie
         'group/checkpoint relative grid grid-cols-[auto_1fr] items-start gap-2 rounded-xl border bg-card p-3',
         'sm:flex sm:gap-3',
         'transition-colors motion-reduce:transition-none',
-        item.requiresRework && 'border-warning-border',
+        item.requiresRework && !item.isCompleted && 'border-warning-border',
         action && 'focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30',
         action && 'hover:border-control-border hover:bg-muted/40',
       )}
     >
-      <span
-        className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-lg border bg-secondary',
-          'font-bold text-secondary-foreground tabular-nums',
-          item.isCompleted && !item.requiresRework && 'border-success-border bg-success-subtle text-success',
-          item.requiresRework && 'border-warning-border bg-warning-subtle text-warning-foreground',
-        )}
-      >
-        {item.isCompleted ? <CheckIcon className="size-5" aria-hidden="true" /> : item.position}
-      </span>
+      <ChecklistItemMarker item={item} />
       <div className="contents sm:flex sm:min-w-0 sm:flex-1 sm:flex-col sm:gap-2">
         <div className="col-start-2 flex min-w-0 flex-col items-start justify-between gap-2 sm:flex-row">
           {action ?? <p className="wrap-anywhere font-semibold leading-relaxed">{item.title}</p>}
-          <Badge variant={item.requiresRework ? 'warning' : completionVariant}>
-            {item.requiresRework ? 'Доработка' : completion}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            {item.requiresRework && !item.isCompleted && <Badge variant="warning">Доработка</Badge>}
+            {(!item.requiresRework || item.isCompleted) && (
+              <Badge variant={item.isCompleted ? 'success' : 'secondary'}>{statusLabel}</Badge>
+            )}
+          </div>
         </div>
-        <ChecklistItemCompletion item={item} />
-        {item.photoHint && (
-          <p className="wrap-anywhere col-span-2 flex items-start gap-2 text-muted-foreground text-sm leading-normal">
-            <ScanLineIcon className="mt-1 size-4 shrink-0" aria-hidden="true" />
-            {item.photoHint}
-          </p>
-        )}
+        <ChecklistItemCompletion item={item} className="border-b pb-2" />
         {item.reworkComment && (
           <div
             className={cn(

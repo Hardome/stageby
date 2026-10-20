@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { keepPreviousData } from '@tanstack/react-query';
 
 import { useAccessError } from '@shared/lib/hooks';
-import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { DataRegion } from '@shared/ui/data-region';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@shared/ui/empty';
@@ -53,9 +52,7 @@ export function DashboardProjects({ offset, today, onPageChange }: DashboardProj
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h2 className="font-bold text-2xl tracking-tight">Объекты</h2>
-          <p className="text-muted-foreground text-sm">Ближайшие этапы, материалы и ответственные</p>
         </div>
-        {query.data && <Badge variant="outline">Всего {query.data.total}</Badge>}
       </div>
       {query.error && (
         <DashboardError

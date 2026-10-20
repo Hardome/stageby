@@ -42,13 +42,12 @@ export function EditProjectPage({ projectId }: { projectId: string }) {
   return (
     <main className="min-w-0 flex-1 bg-background px-3 py-4 sm:px-5 sm:py-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-5">
-        <header className="flex items-start gap-4">
+        <header className="flex items-center gap-4">
           <span className="hidden size-13 shrink-0 place-items-center rounded-(--radius-card) border bg-card sm:grid">
             <PencilRulerIcon aria-hidden="true" className="size-6 text-primary-text" />
           </span>
           <div className="flex flex-col gap-2">
             <h1 className="font-bold text-2xl sm:text-3xl">Редактирование объекта</h1>
-            <p className="text-muted-foreground text-sm">Реквизиты, документы и план работ в одном месте.</p>
           </div>
         </header>
         <ProjectEditor

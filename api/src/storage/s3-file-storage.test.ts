@@ -45,6 +45,7 @@ describe('S3FileStorage with MinIO', () => {
       const download = await storage.createDownloadRequest({ key, originalName: 'photo.jpg', expiresInSeconds: 60 });
       const downloadResponse = await fetch(download.url);
       expect(downloadResponse.status).toBe(200);
+      expect(downloadResponse.headers.get('content-disposition')).toBe("inline; filename*=UTF-8''photo.jpg");
       expect(Buffer.from(await downloadResponse.arrayBuffer())).toEqual(body);
     } finally {
       await storage.delete(key);

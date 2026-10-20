@@ -9,7 +9,6 @@ import { useEditUserForm } from '../../lib/use-edit-user-form';
 import type { UsersSearch } from '../../model/types';
 import { FormActions } from './form-actions';
 import { ProfileFields } from './profile-fields';
-import { TextField } from './text-field';
 
 interface EditUserFormProperties {
   user: User;
@@ -23,7 +22,6 @@ export function EditUserForm({ user, search }: EditUserFormProperties) {
     <FormProvider {...form}>
       <form className="flex flex-col gap-4" noValidate onSubmit={(event) => void form.handleSubmit(submit)(event)}>
         <FieldGroup>
-          <TextField id="user-login" label="Логин" value={user.login} readOnly />
           <ProfileFields disabled={mutation.isPending} />
           <Field orientation="horizontal" data-disabled={mutation.isPending}>
             <Controller

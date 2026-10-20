@@ -1,11 +1,8 @@
 import { useEffect } from 'react';
 
-import { FileTextIcon } from 'lucide-react';
-
-import { ProjectDocument } from '@entities/project';
+import { ProjectDocumentsCard } from '@entities/project';
 import { useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 import { DataRegion } from '@shared/ui/data-region';
 import { NotFound } from '@shared/ui/not-found';
 
@@ -55,26 +52,9 @@ export function ProjectView({ projectId, onEdit }: ProjectViewProperties) {
               <AlertDescription>Не удалось обновить объект. Показаны ранее загруженные данные.</AlertDescription>
             </Alert>
           )}
-          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <ProjectFinances finances={value.finances} />
-            <Card className="min-w-0">
-              <CardHeader>
-                <CardTitle>
-                  <h2 className="flex items-center gap-2">
-                    <FileTextIcon className="size-5 text-primary-text" aria-hidden="true" />
-                    Проект (PDF)
-                  </h2>
-                </CardTitle>
-                <CardDescription>Документация объекта</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                {value.documentFileIds.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">Документы не загружены</p>
-                ) : (
-                  value.documentFileIds.map((id, index) => <ProjectDocument key={id} fileId={id} number={index + 1} />)
-                )}
-              </CardContent>
-            </Card>
+            <ProjectDocumentsCard fileIds={value.documentFileIds} />
           </div>
         </div>
       </DataRegion>

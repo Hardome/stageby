@@ -1,4 +1,5 @@
 import { formatDate } from '@entities/project';
+import { useAuth } from '@shared/context';
 import { Alert, AlertDescription, AlertTitle } from '@shared/ui/alert';
 
 import type { Acceptance } from '@api/types';
@@ -11,10 +12,11 @@ interface AcceptanceDecisionProperties {
 }
 
 export function AcceptanceDecision({ decision, isRework }: AcceptanceDecisionProperties) {
+  const { user } = useAuth();
   const decidedAt = formatDecisionDate(decision.decidedAt);
 
   return (
-    <Alert>
+    <Alert className="border-0 p-0 lg:border lg:p-4.5">
       <AlertTitle>{decision.decision === 'accepted' ? 'Этап принят' : 'Замечания по приёмке'}</AlertTitle>
       <AlertDescription className="flex flex-col gap-2">
         <p className="wrap-anywhere">
@@ -22,8 +24,12 @@ export function AcceptanceDecision({ decision, isRework }: AcceptanceDecisionPro
         </p>
         {decision.comment && <p className="wrap-anywhere whitespace-pre-wrap">{decision.comment}</p>}
         {decision.correctionDueDate && <p>Срок исправления: {formatDate(decision.correctionDueDate)}</p>}
-        {isRework && (
-          <p>Исправьте отмеченные пункты и добавьте новые фотографии. Остальные пункты доступны для просмотра.</p>
+        {isRework && user?.role === 'foreman' && (
+          <p>
+            Исправьте отмеченные пункты и добавьте новые фотографии.
+            <br />
+            Остальные пункты доступны для просмотра.
+          </p>
         )}
       </AlertDescription>
     </Alert>

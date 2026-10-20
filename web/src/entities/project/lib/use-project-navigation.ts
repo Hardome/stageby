@@ -14,23 +14,21 @@ function screenDetails(screen: ProjectScreen, stages: StageSummary[], selectedIn
     return {
       step: 1,
       title: 'Объект',
-      description: 'Заполните сведения о доме. Поля со звёздочкой обязательны.',
+      description: 'Поля со звёздочкой обязательны',
       nextLabel: 'Далее',
     };
   if (screen === 'selection')
     return {
       step: 2,
       title: 'Выбор этапов',
-      description: `Включено этапов: ${selectedIndexes.length} из ${stages.length}. Выберите этапы для этого объекта.`,
+      description: `Включено этапов: ${selectedIndexes.length} из ${stages.length}.`,
       nextLabel: 'Заполнить этапы',
     };
 
   return {
     step: 3,
     title: stages[screen]?.title,
-    description:
-      `Этап ${position + 1} из ${selectedIndexes.length}. ` +
-      'Даты, мастер и планы необязательны. Этап можно заполнить позже.',
+    description: `Этап ${position + 1} из ${selectedIndexes.length}. Этап можно заполнить позже.`,
     nextLabel: position < selectedIndexes.length - 1 ? 'Следующий этап' : undefined,
   };
 }
@@ -162,6 +160,7 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>) {
     selectStage,
     revealErrors,
     showObject: () => moveTo('object'),
+    showSelection: () => moveTo('selection'),
     showStage: (index: number) => moveTo(index),
     back: () => moveTo(screen === 'selection' ? 'object' : (previousIndex ?? 'selection')),
   };

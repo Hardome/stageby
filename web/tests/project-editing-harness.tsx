@@ -13,6 +13,7 @@ import type { ProjectEdit } from '@api/types';
 
 import { editSnapshot } from './project-edit-fixture';
 import { getProjectEditingMocks } from './project-editing-mock-state';
+import { revealProjectChecklist } from './reveal-project-checklist';
 
 export async function flush(action: () => void) {
   await act(async () => {
@@ -28,6 +29,8 @@ export function input(name: string) {
 }
 
 export async function fill(name: string, value: string) {
+  await revealProjectChecklist(input(name));
+
   await flush(() => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input(name), value);
     input(name).dispatchEvent(new Event('input', { bubbles: true }));
@@ -38,6 +41,8 @@ export async function click(label: string) {
     (element) => element.textContent === label || element.getAttribute('aria-label') === label,
   );
   if (!button) throw new Error(`Missing button ${label}`);
+  await revealProjectChecklist(button);
+
   await flush(() => button.click());
 }
 
