@@ -13,9 +13,7 @@ export function InvoiceList({ count, emptyDescription, action, children }: Invoi
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-bold text-xl">
-          Счета <span className="text-muted-foreground">{count} / 10</span>
-        </h2>
+        <h2 className="font-bold text-xl">Счета</h2>
         {action}
       </div>
       {count === 0 ? (

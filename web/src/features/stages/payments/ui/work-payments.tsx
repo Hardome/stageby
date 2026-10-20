@@ -65,10 +65,10 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
           </Button>
         )}
       </div>
-      <Card className="overflow-hidden">
-        <CardContent className="flex flex-col gap-4 sm:px-5">
+      <Card className="overflow-hidden py-0">
+        <CardContent className="flex flex-col gap-4 px-0">
           {data.error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="m-4">
               <AlertDescription>
                 Не удалось загрузить оплату работ.
                 <Button variant="outline" disabled={data.fetching} onClick={() => void data.reload()}>
@@ -80,16 +80,22 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
           <DataRegion
             isLoading={data.loading}
             isFetching={data.fetching}
-            skeleton={<WorkPaymentsSkeleton />}
+            skeleton={
+              <div className="p-4">
+                <WorkPaymentsSkeleton />
+              </div>
+            }
             label="Обновляем оплату работ…"
           >
             {data.payments.data && (
               <div className="flex flex-col gap-4">
                 {isManager && !stage.assignee?.isActive && (
-                  <p className="text-muted-foreground text-sm">Для добавления выплаты назначьте активного мастера.</p>
+                  <p className="px-4 pt-4 text-muted-foreground text-sm">
+                    Для добавления выплаты назначьте активного мастера.
+                  </p>
                 )}
                 {payments.length === 0 ? (
-                  <p className="py-4 text-muted-foreground text-sm">Выплат пока нет.</p>
+                  <p className="p-4 text-muted-foreground text-sm">Выплат пока нет.</p>
                 ) : (
                   <WorkPaymentList
                     payments={payments}

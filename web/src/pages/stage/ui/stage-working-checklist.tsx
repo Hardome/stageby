@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
-import { ArrowUpRightIcon, PencilLineIcon } from 'lucide-react';
+import { PencilLineIcon } from 'lucide-react';
 
 import { StageEditor } from '@features/stages/edit';
 import { canEditChecklistComposition, StageChecklist } from '@entities/stage';
@@ -70,7 +70,6 @@ export function StageWorkingChecklist({ stage, offset }: StageWorkingChecklistPr
               {item.title}
               <span className="sr-only"> · Открыть фотографии пункта</span>
             </span>
-            <ArrowUpRightIcon className="mt-1 size-4 shrink-0 text-primary-text" aria-hidden="true" />
           </Link>
         )}
       />

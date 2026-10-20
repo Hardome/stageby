@@ -35,7 +35,7 @@ export function WorkEditor(properties: WorkEditorProperties) {
             <DialogBody>
               {action.kind === 'payment' && <WorkPaymentFields disabled={isDisabled} />}
               {action.kind === 'delete-payment' && (
-                <p>Будет удалён платёж {formatMoney(action.payment.amountMinor)}. Итоги этапа пересчитаются.</p>
+                <p>Будет удалена выплата {formatMoney(action.payment.amountMinor)}. Итоги этапа пересчитаются.</p>
               )}
               {editor.message && (
                 <Alert>

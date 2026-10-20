@@ -16,13 +16,16 @@ interface StageChecklistItemProperties {
 }
 
 export function StageChecklistItem({ item, action }: StageChecklistItemProperties) {
+  let statusLabel = 'Не выполнен';
+  if (item.isCompleted) statusLabel = item.requiresRework ? 'Доработан' : 'Выполнен';
+
   return (
     <li
       className={cn(
         'group/checkpoint relative grid grid-cols-[auto_1fr] items-start gap-2 rounded-xl border bg-card p-3',
         'sm:flex sm:gap-3',
         'transition-colors motion-reduce:transition-none',
-        item.requiresRework && 'border-warning-border',
+        item.requiresRework && !item.isCompleted && 'border-warning-border',
         action && 'focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30',
         action && 'hover:border-control-border hover:bg-muted/40',
       )}
@@ -31,7 +34,12 @@ export function StageChecklistItem({ item, action }: StageChecklistItemPropertie
       <div className="contents sm:flex sm:min-w-0 sm:flex-1 sm:flex-col sm:gap-2">
         <div className="col-start-2 flex min-w-0 flex-col items-start justify-between gap-2 sm:flex-row">
           {action ?? <p className="wrap-anywhere font-semibold leading-relaxed">{item.title}</p>}
-          {item.requiresRework && <Badge variant="warning">Доработка</Badge>}
+          <div className="flex flex-wrap items-center gap-2">
+            {item.requiresRework && !item.isCompleted && <Badge variant="warning">Доработка</Badge>}
+            {(!item.requiresRework || item.isCompleted) && (
+              <Badge variant={item.isCompleted ? 'success' : 'secondary'}>{statusLabel}</Badge>
+            )}
+          </div>
         </div>
         <ChecklistItemCompletion item={item} className="border-b pb-2" />
         {item.reworkComment && (

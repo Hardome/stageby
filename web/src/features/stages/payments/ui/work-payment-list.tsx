@@ -22,7 +22,7 @@ export function WorkPaymentList({ payments, editable, showComments, onAction }: 
         <li
           key={payment.id}
           className={cn(
-            'grid min-w-0 grid-cols-[auto_1fr] gap-x-3 gap-y-2 py-3 first:pt-0 last:pb-0',
+            'grid min-w-0 grid-cols-[auto_1fr] gap-x-3 gap-y-2 p-4',
             'sm:grid-cols-[auto_minmax(0,1fr)_auto]',
           )}
         >

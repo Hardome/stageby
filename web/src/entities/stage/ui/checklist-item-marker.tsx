@@ -13,8 +13,8 @@ export function ChecklistItemMarker({ item }: ChecklistItemMarkerProperties) {
       className={cn(
         'flex size-9 shrink-0 items-center justify-center rounded-lg border bg-secondary',
         'font-bold text-secondary-foreground tabular-nums',
-        item.isCompleted && !item.requiresRework && 'border-success-border bg-success-subtle text-success',
-        item.requiresRework && 'border-warning-border bg-warning-subtle text-warning-foreground',
+        item.isCompleted && 'border-success-border bg-success-subtle text-success',
+        item.requiresRework && !item.isCompleted && 'border-warning-border bg-warning-subtle text-warning-foreground',
       )}
     >
       {item.isCompleted ? <CheckIcon className="size-5" aria-hidden="true" /> : item.position}

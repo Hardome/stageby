@@ -9,7 +9,7 @@ interface WorkEditorHeadingProperties {
 }
 
 export function WorkEditorHeading({ action, stage, pending }: WorkEditorHeadingProperties) {
-  const title = action.kind === 'delete-payment' ? 'Удалить платёж?' : 'Платёж за работы';
+  const title = action.kind === 'delete-payment' ? 'Удалить выплату?' : 'Выплата за работы';
   const description =
     action.kind === 'payment'
       ? `Получатель: ${action.payment?.recipient.fullName ?? stage.assignee?.fullName ?? 'Мастер не назначен'}`
