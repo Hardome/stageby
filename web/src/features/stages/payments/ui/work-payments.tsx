@@ -14,6 +14,7 @@ import type { Stage } from '@api/types';
 
 import { useWorkPayments } from '../lib/use-work-payments';
 import { canEditWork } from '../lib/work-availability';
+import { workPaymentStatus } from '../lib/work-payment-status';
 import type { WorkAction } from '../model/types';
 import { WorkEditor } from './work-editor';
 import { WorkFinancialOverview } from './work-financial-overview';
@@ -34,7 +35,7 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
   if (data.error?.status === 403 || data.error?.status === 404) return <NotFound />;
 
   const payments = data.payments.data ?? [];
-  const paymentStatus = stage.actualWorkAmountMinor > 0n ? 'Оплачено частично' : 'Не оплачено';
+  const paymentStatus = workPaymentStatus(stage);
 
   return (
     <section id="work" className="flex min-w-0 scroll-mt-6 flex-col gap-4" aria-label="Оплата работ">
@@ -47,9 +48,7 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
             </h2>
           </CardTitle>
           <span className="flex max-w-full flex-wrap gap-1.5">
-            <Badge variant={stage.status === 'paid' ? 'success' : 'caution'}>
-              {stage.status === 'paid' ? 'Выплачен' : paymentStatus}
-            </Badge>
+            <Badge variant={paymentStatus.variant}>{paymentStatus.label}</Badge>
           </span>
         </CardHeader>
         <CardContent>
@@ -89,11 +88,6 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
           >
             {data.payments.data && (
               <div className="flex flex-col gap-4">
-                {isManager && !stage.assignee?.isActive && (
-                  <p className="px-4 pt-4 text-muted-foreground text-sm">
-                    Для добавления выплаты назначьте активного мастера.
-                  </p>
-                )}
                 {payments.length === 0 ? (
                   <p className="p-4 text-muted-foreground text-sm">Выплат пока нет.</p>
                 ) : (

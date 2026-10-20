@@ -51,6 +51,24 @@ describe('work payments access and totals', () => {
     });
   }
 
+  it.each([
+    { planned: 10000n, actual: 0n, label: 'Не оплачено' },
+    { planned: 10000n, actual: 5000n, label: 'Оплачено частично' },
+    { planned: 10000n, actual: 10000n, label: 'Оплачено' },
+    { planned: 10000n, actual: 12000n, label: 'Оплачено' },
+    { planned: null, actual: 5000n, label: 'Оплачено частично' },
+    { planned: null, actual: 0n, label: 'Не оплачено' },
+    { planned: 0n, actual: 0n, label: 'Оплачено' },
+  ])('shows $label for plan $planned and payments $actual', async ({ planned, actual, label }) => {
+    await render({ plannedWorkAmountMinor: planned, actualWorkAmountMinor: actual });
+
+    expect(container.querySelector('[data-slot="badge"]')).toHaveTextContent(new RegExp(`^${label}$`));
+    expect(container.querySelector('[data-slot="badge"]')).toHaveAttribute(
+      'data-variant',
+      label === 'Оплачено' ? 'success' : 'caution',
+    );
+  });
+
   it('adds payments only with an active assignee and has no manual paid action', async () => {
     await render();
     expect(
@@ -62,7 +80,6 @@ describe('work payments access and totals', () => {
     expect(
       [...container.querySelectorAll('button')].find((button) => button.textContent === 'Добавить выплату'),
     ).toBeDisabled();
-    expect(container).toHaveTextContent('назначьте активного мастера');
     await render({ assignee: { id: 8, fullName: 'Пётр', phone: null, isActive: false } });
     expect(
       [...container.querySelectorAll('button')].find((button) => button.textContent === 'Добавить выплату'),

@@ -2,13 +2,13 @@ import { Link } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { PencilLineIcon } from 'lucide-react';
 
-import { StageEditor } from '@features/stages/edit';
 import { canEditChecklistComposition, StageChecklist } from '@entities/stage';
 import { useAuth } from '@shared/context';
-import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 
 import type { Stage } from '@api/types';
+
+import { StageAssigneeWarning } from './stage-assignee-warning';
 
 interface StageWorkingChecklistProperties {
   stage: Stage;
@@ -21,27 +21,7 @@ export function StageWorkingChecklist({ stage, offset }: StageWorkingChecklistPr
 
   return (
     <>
-      {stage.assignee === null && stage.isIncluded && !stage.projectIsArchived && (
-        <Alert variant="warning">
-          <AlertDescription>
-            Чтобы завершить пункты чек-листа и принять работы,{' '}
-            {user?.role === 'manager' ? (
-              <StageEditor
-                stage={stage}
-                focusAssignee
-                trigger={
-                  <button type="button" className="cursor-pointer font-medium underline">
-                    назначьте мастера
-                  </button>
-                }
-              />
-            ) : (
-              'назначьте мастера'
-            )}
-            .
-          </AlertDescription>
-        </Alert>
-      )}
+      <StageAssigneeWarning stage={stage} purpose="checklist" />
       <StageChecklist
         stageId={stage.id}
         editorLink={
@@ -49,7 +29,13 @@ export function StageWorkingChecklist({ stage, offset }: StageWorkingChecklistPr
             <Button
               variant="outline"
               nativeButton={false}
-              render={<Link to="/projects/$projectId/edit" params={{ projectId: String(stage.projectId) }} />}
+              render={
+                <Link
+                  to="/projects/$projectId/edit"
+                  params={{ projectId: String(stage.projectId) }}
+                  search={{ stageId: stage.id }}
+                />
+              }
             >
               <PencilLineIcon data-icon="inline-start" />
               Изменить состав

@@ -24,7 +24,11 @@ export function InvoicePaymentForm({ editor, isPaid, onClose }: InvoicePaymentFo
   const errors = form.formState.errors;
 
   return (
-    <form onSubmit={(event) => void form.handleSubmit(submit)(event)} className="flex min-h-0 flex-1 flex-col">
+    <form
+      autoComplete="off"
+      onSubmit={(event) => void form.handleSubmit(submit)(event)}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <DialogBody>
         <FieldGroup className="grid gap-4 sm:grid-cols-2">
           <Field data-invalid={Boolean(errors.amount)}>

@@ -101,12 +101,16 @@ describe('my stages list', () => {
     expect(container).not.toHaveTextContent('9 876 543');
   });
 
-  it('refreshes server data and removes a revoked assignment', async () => {
+  it('keeps current stages during refresh and removes a revoked assignment afterward', async () => {
     await render({ data: { items: [stage], total: 1 } });
-    await click('Обновить');
-    expect(mocks.retry).toHaveBeenCalledOnce();
+
+    await render({ data: { items: [stage], total: 1 }, isFetching: true });
+
+    expect(container.querySelector('section')).toHaveAttribute('aria-busy', 'true');
+    expect(container).toHaveTextContent('Анна');
 
     await render({ data: { items: [], total: 0 } });
+
     expect(container).not.toHaveTextContent('Анна');
     expect(container).toHaveTextContent('Вам пока не назначены этапы');
   });

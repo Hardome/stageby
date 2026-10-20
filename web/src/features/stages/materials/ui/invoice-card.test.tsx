@@ -8,6 +8,7 @@ import { editStage } from '@tests/project-edit-fixture';
 import type { StageMaterialInvoice } from '@api/types';
 
 import { ForemanInvoiceList } from './foreman-invoice-list';
+import { InvoiceCard } from './invoice-card';
 import { ManagerInvoiceList } from './manager-invoice-list';
 
 const mocks = vi.hoisted(() => ({ open: vi.fn(), delivery: vi.fn() }));
@@ -87,6 +88,25 @@ describe('invoice list row', () => {
     await click('Посмотреть счёт');
 
     expect(mocks.open).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    { amount: 5_000_000n, label: 'Оплачен частично', variant: 'caution' },
+    { amount: 10_000_000n, label: 'Оплачен', variant: 'success' },
+    { amount: 12_000_000n, label: 'Оплачен', variant: 'success' },
+  ])('displays $label for a payment of $amount', async ({ amount, label, variant }) => {
+    await act(async () => {
+      root.render(
+        <ul>
+          <InvoiceCard invoice={{ ...invoice, paidAt: invoice.createdAt, paidAmountMinor: amount }} number={1} />
+        </ul>,
+      );
+      await Promise.resolve();
+    });
+
+    const badge = container.querySelector('[data-slot="badge"]');
+    expect(badge).toHaveTextContent(label);
+    expect(badge).toHaveAttribute('data-variant', variant);
   });
 
   it('gives the foreman delivery, shortage and file actions through the menu', async () => {

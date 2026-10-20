@@ -8,6 +8,7 @@ import { Badge } from '@shared/ui/badge';
 
 import type { StageMaterialInvoice } from '@api/types';
 
+import { invoicePaymentStatus } from '../lib/invoice-payment-status';
 import { InvoiceFileMenu } from './invoice-file-menu';
 
 interface InvoiceCardProperties {
@@ -20,6 +21,7 @@ interface InvoiceCardProperties {
 
 export function InvoiceCard({ invoice, number, actions, children, className }: InvoiceCardProperties) {
   const shortages = invoice.shortages.filter((shortage) => !shortage.resolvedAt).length;
+  const paymentStatus = invoicePaymentStatus(invoice);
 
   return (
     <li className={cn('grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 p-4', className)}>
@@ -38,7 +40,7 @@ export function InvoiceCard({ invoice, number, actions, children, className }: I
         {actions || <InvoiceFileMenu fileId={invoice.fileId} />}
       </div>
       <div className="col-start-1 flex min-w-0 flex-wrap items-center gap-2 sm:pl-8">
-        <Badge variant={invoice.paidAt ? 'success' : 'secondary'}>{invoice.paidAt ? 'Оплачен' : 'Не оплачен'}</Badge>
+        <Badge variant={paymentStatus.variant}>{paymentStatus.label}</Badge>
         <Badge variant={invoice.deliveredAt ? 'success' : 'secondary'}>
           {invoice.deliveredAt ? 'Доставлен' : 'Не доставлен'}
         </Badge>

@@ -7,7 +7,7 @@ import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRoot, type Root } from 'react-dom/client';
 
-import { ProjectEditor } from '@features/projects/edit/ui/project-editor';
+import { ProjectEditor } from '@features/projects/edit';
 
 import type { ProjectEdit } from '@api/types';
 
@@ -52,16 +52,24 @@ export function setupProjectEditing() {
   let root: Root;
   let client: QueryClient;
   let snapshot: ProjectEdit;
+
   async function submit() {
     await flush(() =>
       container.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })),
     );
   }
-  async function render() {
+
+  async function render(initialStageId?: number) {
     await flush(() =>
       root.render(
         <QueryClientProvider client={client}>
-          <ProjectEditor projectId={1} onDirtyChange={mocks.dirty} onCancel={() => {}} onSuccess={mocks.success} />
+          <ProjectEditor
+            projectId={1}
+            initialStageId={initialStageId}
+            onDirtyChange={mocks.dirty}
+            onCancel={() => {}}
+            onSuccess={mocks.success}
+          />
         </QueryClientProvider>,
       ),
     );
@@ -69,6 +77,7 @@ export function setupProjectEditing() {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
   }
+
   beforeEach(() => {
     sessionStorage.clear();
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
@@ -83,6 +92,7 @@ export function setupProjectEditing() {
     document.body.append(container);
     root = createRoot(container);
   });
+
   afterEach(async () => {
     await flush(() => root.unmount());
     client.clear();

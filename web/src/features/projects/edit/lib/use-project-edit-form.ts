@@ -12,7 +12,13 @@ import { projectExclusionReasons } from './project-exclusion-reasons';
 import { useAdditionalStage } from './use-additional-stage';
 import { useProjectUpdate } from './use-project-update';
 
-export function useProjectEditForm({ snapshot, onDirtyChange, onSuccess, onReload }: EditProjectFormProperties) {
+export function useProjectEditForm({
+  snapshot,
+  initialStageId,
+  onDirtyChange,
+  onSuccess,
+  onReload,
+}: EditProjectFormProperties) {
   const form = useForm<ProjectFormValues>({
     defaultValues: projectEditValues(snapshot),
     resolver: zodResolver(projectEditSchema(snapshot)),
@@ -20,7 +26,8 @@ export function useProjectEditForm({ snapshot, onDirtyChange, onSuccess, onReloa
     shouldFocusError: false,
   });
 
-  const navigation = useProjectNavigation(form);
+  const initialStageIndex = snapshot.stages.findIndex(({ stage }) => stage.id === initialStageId && stage.isIncluded);
+  const navigation = useProjectNavigation(form, initialStageIndex === -1 ? undefined : initialStageIndex);
   const additionalStage = useAdditionalStage(
     form,
     navigation,

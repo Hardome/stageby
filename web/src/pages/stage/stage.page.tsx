@@ -8,6 +8,7 @@ import { StageOverview } from '@features/stages/view';
 import { useAuth } from '@shared/context';
 import { Button } from '@shared/ui/button';
 
+import { StageAssigneeWarning } from './ui/stage-assignee-warning';
 import { StageTabs } from './ui/stage-tabs';
 import { StageWorkingChecklist } from './ui/stage-working-checklist';
 
@@ -36,7 +37,12 @@ export function StagePage({ stageId }: { stageId: string }) {
                   <StageMaterials stage={stage} />
                 </>
               }
-              work={<WorkPayments stage={stage} />}
+              work={
+                <>
+                  <StageAssigneeWarning stage={stage} purpose="work" />
+                  <WorkPayments stage={stage} />
+                </>
+              }
             />
           )}
           actions={
