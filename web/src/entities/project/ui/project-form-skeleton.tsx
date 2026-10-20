@@ -20,7 +20,7 @@ export function ProjectFormSkeleton() {
       <ProjectFormPanel
         step={1}
         title="Объект"
-        description="Заполните сведения о доме. Поля со звёздочкой обязательны."
+        description="Поля со звёздочкой обязательны"
         actions={
           <div className="flex w-full flex-wrap justify-between gap-3">
             <Button variant="outline" disabled>
@@ -60,7 +60,7 @@ export function ProjectFormSkeleton() {
           </FieldSet>
           <Separator />
           <div className="flex flex-col gap-3">
-            <p className="font-medium text-sm">Проект (PDF)</p>
+            <p className="font-medium text-sm">Проект</p>
             <p className="text-muted-foreground text-sm">Один или несколько PDF до 50 МБ каждый</p>
             <Skeleton className="h-24 w-full" />
           </div>

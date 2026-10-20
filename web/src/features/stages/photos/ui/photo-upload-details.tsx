@@ -9,7 +9,7 @@ interface PhotoUploadDetailsProperties {
 export function PhotoUploadDetails({ photo }: PhotoUploadDetailsProperties) {
   return (
     <p className="wrap-anywhere flex flex-col gap-1 text-muted-foreground text-xs leading-normal">
-      <span>Загрузил: {photo.uploadedBy.fullName}</span>
+      <span>{photo.uploadedBy.fullName}</span>
       <time dateTime={photo.uploadedAt}>{formatDateTime(photo.uploadedAt)}</time>
     </p>
   );

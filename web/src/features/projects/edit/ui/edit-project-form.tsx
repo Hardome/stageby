@@ -25,7 +25,7 @@ export function EditProjectForm(properties: EditProjectFormProperties) {
           if (!isLocked) void form.handleSubmit(editor.save, navigation.revealErrors)(event);
         }}
       >
-        <div className="flex min-w-0 flex-col gap-3 self-start lg:sticky lg:top-6">
+        <div className="flex w-full min-w-0 flex-col gap-3 self-start lg:sticky lg:top-6">
           <ProjectProgress
             step={step}
             stages={navigation.navigationStages}
@@ -64,6 +64,8 @@ export function EditProjectForm(properties: EditProjectFormProperties) {
                 reloading={reloading}
                 onCancel={properties.onCancel}
                 navigation={navigation}
+                canRemoveAdditionalStage={editor.additionalStage.canRemove}
+                onRemoveAdditionalStage={editor.additionalStage.remove}
               />
             }
           >

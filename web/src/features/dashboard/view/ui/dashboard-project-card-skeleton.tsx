@@ -31,7 +31,7 @@ export function DashboardProjectCardSkeleton() {
             </dd>
           </div>
           <div className="flex flex-col gap-2 border-t pt-4">
-            <dt className="text-muted-foreground text-xs">Ответственный мастер</dt>
+            <dt className="text-muted-foreground text-xs">Мастер</dt>
             <dd>
               <Skeleton className="h-5 w-40" />
             </dd>

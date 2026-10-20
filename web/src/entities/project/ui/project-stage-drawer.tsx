@@ -1,3 +1,4 @@
+import { cn } from 'cn';
 import { ChevronDownIcon, CircleAlertIcon, ListOrderedIcon, XIcon } from 'lucide-react';
 
 import { Badge } from '@shared/ui/badge';
@@ -40,19 +41,22 @@ export function ProjectStageDrawer(properties: ProjectStageNavigationProperties)
           <ChevronDownIcon data-icon="inline-end" />
         </DrawerTrigger>
         <DrawerContent finalFocus={finalFocus}>
-          <div className="flex shrink-0 items-start justify-between gap-3 border-b px-4 pt-1 pb-4">
-            <div className="flex min-w-0 flex-col gap-1">
-              <DrawerTitle className="font-semibold text-lg">Этапы проекта</DrawerTitle>
-              <DrawerDescription className="text-muted-foreground text-sm">
-                Включено этапов: {stages.length}. Выберите нужный.
-              </DrawerDescription>
-            </div>
+          <div
+            className={cn(
+              'grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1',
+              'border-b px-4 pt-1 pb-4',
+            )}
+          >
+            <DrawerTitle className="font-semibold text-lg">Этапы проекта</DrawerTitle>
             <DrawerClose
               render={<Button type="button" variant="ghost" size="icon-sm" />}
               aria-label="Закрыть список этапов"
             >
               <XIcon />
             </DrawerClose>
+            <DrawerDescription className="col-span-2 text-muted-foreground text-sm">
+              Включено этапов: {stages.length}. Выберите нужный.
+            </DrawerDescription>
           </div>
           <div ref={listReference} className="min-h-0 overflow-y-auto overscroll-contain px-3 py-3">
             <ProjectStageNavigation {...properties} onStageChange={selectStage} />

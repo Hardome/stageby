@@ -17,7 +17,6 @@ const mocks = vi.hoisted(() => ({
   access: vi.fn(),
   navigate: vi.fn(),
 }));
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('@api/clients/updateChecklistItem', () => ({
   updateChecklistItem: (...arguments_: unknown[]) => ({
     unwrap: () => mocks.update(...arguments_) as Promise<unknown>,
@@ -37,7 +36,7 @@ function ActionsProbe({ version }: { version: number }) {
   const data = editStage();
   const item = data.checklist.items[0];
   if (!item) throw new Error('Missing item');
-  const actions = usePhotoActions(data.stage, item, version);
+  const actions = usePhotoActions(data.stage, item, version, mocks.navigate);
 
   useLayoutEffect(() => {
     probe.actions = actions;
@@ -90,10 +89,8 @@ describe('explicit checklist photo actions', () => {
       body: { expectedVersion: 8, isCompleted: true },
     });
     expect(mocks.invalidate).toHaveBeenCalled();
-    expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith({
-      to: '/stages/$stageId/checklist',
-      params: { stageId: '11' },
-    });
+    expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith();
+    expect(mocks.invalidate.mock.invocationCallOrder[0]).toBeLessThan(mocks.navigate.mock.invocationCallOrder[0] ?? 0);
   });
 
   it('requires confirmation before removing completion with the final photo', async () => {

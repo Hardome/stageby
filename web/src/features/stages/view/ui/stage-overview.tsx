@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 
-import { StageChecklist, useStageAccess } from '@entities/stage';
+import { ProjectDocumentsCard } from '@entities/project';
+import { useStageAccess } from '@entities/stage';
+import { Accordion } from '@shared/ui/accordion';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Button } from '@shared/ui/button';
 import { DataRegion } from '@shared/ui/data-region';
@@ -8,28 +10,26 @@ import { NotFound } from '@shared/ui/not-found';
 
 import type { Stage } from '@api/types';
 
-import { StageFinances } from './stage-finances';
 import { StageOverviewSkeleton } from './stage-overview-skeleton';
-import { StageProject } from './stage-project';
+import { StageSidebarBlock } from './stage-sidebar-block';
 import { StageSummary } from './stage-summary';
 
 interface StageOverviewProperties {
   stageId: string;
   backLink?: (stage: Stage) => ReactNode;
   actions?: (stage: Stage) => ReactNode;
-  payments?: (stage: Stage) => ReactNode;
-  checklistLink?: (stage: Stage) => ReactNode;
+  content?: (stage: Stage) => ReactNode;
   acceptance?: (stage: Stage) => ReactNode;
 }
 
-export function StageOverview({
-  stageId,
-  backLink,
-  actions,
-  payments,
-  checklistLink,
-  acceptance,
-}: StageOverviewProperties) {
+function getAcceptanceSummary(stage: Stage) {
+  if (stage.status === 'acceptance') return 'Работы готовы к проверке';
+  if (stage.status === 'rework') return 'На доработке';
+
+  return stage.latestAcceptance?.decision === 'accepted' ? 'Этап принят' : 'Замечания по приёмке';
+}
+
+export function StageOverview({ stageId, backLink, actions, content, acceptance }: StageOverviewProperties) {
   const { query, invalidId } = useStageAccess(stageId);
 
   if (invalidId || query.error?.status === 403 || query.error?.status === 404) {
@@ -49,14 +49,7 @@ export function StageOverview({
     );
   }
 
-  if (!query.data)
-    return (
-      <DataRegion
-        initialLabel="Загрузка этапа"
-        isLoading
-        skeleton={<StageOverviewSkeleton withWorkSummary={!payments} />}
-      />
-    );
+  if (!query.data) return <DataRegion initialLabel="Загрузка этапа" isLoading skeleton={<StageOverviewSkeleton />} />;
 
   return (
     <DataRegion isFetching={query.isFetching} label="Обновляем этап…">
@@ -76,19 +69,23 @@ export function StageOverview({
           {actions?.(query.data)}
         </div>
         <StageSummary stage={query.data} refreshing={query.isFetching} />
-        {acceptance?.(query.data)}
         <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-          <div className="flex min-w-0 flex-col gap-3">
-            {checklistLink?.(query.data)}
-            <StageChecklist stageId={query.data.id} />
-          </div>
-          <div className="flex min-w-0 flex-col gap-4">
-            <StageProject stage={query.data} />
-            <StageFinances stage={query.data} category="materials" />
-            {!payments && <StageFinances stage={query.data} category="work" />}
-          </div>
+          <div className="order-2 min-w-0 lg:order-1">{content?.(query.data)}</div>
+          <Accordion
+            render={<aside aria-label="Проект и приёмка" />}
+            multiple={false}
+            className="order-1 min-w-0 gap-4 lg:order-2"
+          >
+            <StageSidebarBlock title="Проект" summary={`Документов: ${query.data.projectDocumentFileIds.length}`}>
+              <ProjectDocumentsCard fileIds={query.data.projectDocumentFileIds} />
+            </StageSidebarBlock>
+            {(query.data.status === 'acceptance' || query.data.latestAcceptance) && (
+              <StageSidebarBlock title="Приёмка работ" summary={getAcceptanceSummary(query.data)}>
+                {acceptance?.(query.data)}
+              </StageSidebarBlock>
+            )}
+          </Accordion>
         </div>
-        {payments?.(query.data)}
       </div>
     </DataRegion>
   );

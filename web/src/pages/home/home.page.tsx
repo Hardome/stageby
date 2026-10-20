@@ -33,7 +33,6 @@ export function HomePage() {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-col gap-3">
-            <p className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">Обзор строительства</p>
             <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">Дашборд руководителя</h1>
           </div>
           <Button render={<Link to="/projects/new" />} nativeButton={false}>

@@ -23,7 +23,7 @@ describe('project creation: fields', () => {
 
     await fill('stages.0.plannedWorkAmount', '-1');
 
-    expect(input('stages.0.plannedWorkAmount')).toHaveAttribute('aria-invalid', 'true');
+    expect(input('stages.0.plannedWorkAmount')).toHaveValue('1 000 000');
 
     await fill('stages.0.plannedWorkAmount', '1000000');
 

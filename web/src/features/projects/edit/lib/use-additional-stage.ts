@@ -7,9 +7,10 @@ import { emptyAdditionalStage } from './additional-stage';
 export function useAdditionalStage(
   form: UseFormReturn<ProjectFormValues>,
   navigation: ReturnType<typeof useProjectNavigation>,
+  isNewStage: boolean,
 ) {
   const additional = navigation.stages.find((stage) => stage.type === 'additional');
-  const canAdd = typeof navigation.screen === 'number' && !navigation.nextLabel && !additional?.enabled;
+  const canAdd = !additional?.enabled;
 
   function add() {
     const stages = form.getValues('stages');
@@ -24,5 +25,27 @@ export function useAdditionalStage(
     navigation.showStage(additionalIndex);
   }
 
-  return { canAdd, add };
+  function remove() {
+    if (!isNewStage) return;
+
+    const stages = form.getValues('stages');
+    const index = stages.findIndex((stage) => stage.type === 'additional');
+    if (index === -1) return;
+
+    form.setValue(
+      'stages',
+      stages.filter((stage) => stage.type !== 'additional'),
+      { shouldDirty: true },
+    );
+    form.clearErrors(`stages.${index}`);
+    navigation.showSelection();
+  }
+
+  const canRemove =
+    isNewStage &&
+    additional?.enabled === true &&
+    typeof navigation.screen === 'number' &&
+    navigation.stages[navigation.screen]?.type === 'additional';
+
+  return { canAdd, add, canRemove, remove };
 }

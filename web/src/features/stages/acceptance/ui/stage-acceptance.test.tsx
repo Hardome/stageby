@@ -108,8 +108,8 @@ describe('stage acceptance actions', () => {
 
   it('accepts using only the current version, updates the cache and blocks another submission', async () => {
     await render();
-    await click('Подтвердить приёмку');
-    await click('Подтвердить приёмку');
+    await click('Подтвердить');
+    await click('Подтвердить');
 
     expect(mocks.accept).toHaveBeenCalledTimes(1);
     expect(mocks.accept).toHaveBeenCalledWith({ path: { stageId: 11 }, body: { expectedVersion: 3 } });

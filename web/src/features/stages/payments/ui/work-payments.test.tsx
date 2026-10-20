@@ -73,10 +73,17 @@ describe('work payments access and totals', () => {
     mocks.role = 'foreman';
     mocks.payments.mockReturnValue({ data: [workPayment(), workPayment({ id: 32 })] });
     await render();
-    expect(container).toHaveTextContent('Ваши выплаты за работы');
+    expect(container).not.toHaveTextContent('Ваши выплаты за работы');
     expect(container.querySelectorAll('li')).toHaveLength(2);
     expect(container.querySelector('[aria-label="Изменить платёж"]')).not.toBeInTheDocument();
     expect(container).not.toHaveTextContent('Добавить выплату');
+    expect(container).not.toHaveTextContent('Аванс');
+  });
+
+  it('shows payment comments to the manager even for archived projects', async () => {
+    mocks.payments.mockReturnValue({ data: [workPayment()] });
+    await render({ projectIsArchived: true });
+    expect(container).toHaveTextContent('Аванс');
   });
 
   it('hides all editing for archived projects and renders unavailable responses neutrally', async () => {

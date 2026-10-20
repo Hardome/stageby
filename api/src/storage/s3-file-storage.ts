@@ -82,10 +82,11 @@ export class S3FileStorage implements FileStorage {
     originalName: string;
     expiresInSeconds: number;
   }): Promise<SignedStorageRequest> {
+    const disposition = /\.(pdf|jpe?g|png|webp)$/i.test(input.originalName) ? 'inline' : 'attachment';
     const command = new GetObjectCommand({
       Bucket: this.#bucket,
       Key: input.key,
-      ResponseContentDisposition: `attachment; filename*=UTF-8''${encodeURIComponent(input.originalName)}`,
+      ResponseContentDisposition: `${disposition}; filename*=UTF-8''${encodeURIComponent(input.originalName)}`,
     });
     return {
       url: await getSignedUrl(this.#client, command, { expiresIn: input.expiresInSeconds }),

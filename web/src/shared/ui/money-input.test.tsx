@@ -86,12 +86,17 @@ describe('MoneyInput', () => {
     expect(input()).toHaveValue(expected);
   });
 
-  it.each(['-1', '1.5', '12x'])('preserves invalid input %s for validation', async (value) => {
-    await renderInput();
-    await fill(value);
-    expect(input()).toHaveValue(value);
-    expect(changed).toHaveBeenLastCalledWith(value);
-  });
+  it.each(['-1', '1.5', '1,50', '12x', '1e3'])(
+    'rejects invalid input %s without changing the amount',
+    async (value) => {
+      await renderInput('1000');
+
+      await fill(value);
+
+      expect(input()).toHaveValue('1 000');
+      expect(changed).not.toHaveBeenCalled();
+    },
+  );
 
   it('preserves caret and selection when grouping changes', async () => {
     await renderInput();

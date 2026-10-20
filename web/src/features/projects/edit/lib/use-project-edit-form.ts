@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
-import { type ProjectFormValues, projectDraftSchema, useDocuments, useProjectNavigation } from '@entities/project';
-import { useAccessError, useSessionFormDraft } from '@shared/lib/hooks';
+import { type ProjectFormValues, useDocuments, useProjectNavigation } from '@entities/project';
+import { useAccessError } from '@shared/lib/hooks';
 
 import type { EditProjectFormProperties } from '../model/types';
 import { projectEditSchema, projectEditValues } from './project-edit-form';
@@ -20,14 +20,12 @@ export function useProjectEditForm({ snapshot, onDirtyChange, onSuccess, onReloa
     shouldFocusError: false,
   });
 
-  const clearDraft = useSessionFormDraft(
-    form,
-    `edit-project:v1:${snapshot.project.id}:${snapshot.project.version}`,
-    projectDraftSchema,
-  );
-
   const navigation = useProjectNavigation(form);
-  const additionalStage = useAdditionalStage(form, navigation);
+  const additionalStage = useAdditionalStage(
+    form,
+    navigation,
+    snapshot.stages.every(({ stage }) => stage.type !== 'additional'),
+  );
   const uploads = useDocuments({ onAccessError: useAccessError() });
 
   const [fileIds, setFileIds] = useState(snapshot.project.documentFileIds);
@@ -46,7 +44,6 @@ export function useProjectEditForm({ snapshot, onDirtyChange, onSuccess, onReloa
     snapshot,
     form,
     onSuccess: async (hasChanges) => {
-      clearDraft();
       await onSuccess(hasChanges);
     },
     onInvalid: (isFileError) => {
@@ -65,7 +62,6 @@ export function useProjectEditForm({ snapshot, onDirtyChange, onSuccess, onReloa
 
     try {
       await onReload();
-      clearDraft();
     } catch {
       setReloadError('Не удалось загрузить актуальные данные. Правки сохранены в форме.');
     } finally {

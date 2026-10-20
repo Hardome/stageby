@@ -6,7 +6,7 @@ import { useAccessError } from '@shared/lib/hooks';
 import { Alert, AlertDescription } from '@shared/ui/alert';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
 import { DataRegion } from '@shared/ui/data-region';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@shared/ui/empty';
 import { NotFound } from '@shared/ui/not-found';
@@ -14,7 +14,6 @@ import { NotFound } from '@shared/ui/not-found';
 import { useGetStageChecklist } from '@api/queries/useGetStageChecklist';
 import type { ChecklistItem } from '@api/types';
 
-import { ChecklistProgress } from './checklist-progress';
 import { StageChecklistItem } from './stage-checklist-item';
 import { StageChecklistSkeleton } from './stage-checklist-skeleton';
 
@@ -43,11 +42,12 @@ export function StageChecklist({ stageId, itemLink, editorLink }: StageChecklist
             <span>Чек-лист</span>
           </h2>
         </CardTitle>
-        <CardDescription>Контрольные точки и фотографии выполненных работ</CardDescription>
         {query.data && (
           <CardAction>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Пунктов: {query.data.items.length}</Badge>
+              <Badge variant="secondary">
+                {query.data.items.filter((item) => item.isCompleted).length} / {query.data.items.length}
+              </Badge>
               {editorLink}
             </div>
           </CardAction>
@@ -72,13 +72,12 @@ export function StageChecklist({ stageId, itemLink, editorLink }: StageChecklist
         >
           {query.data && (
             <>
-              <ChecklistProgress checklist={query.data} />
               {query.data.warnings.map((warning) => (
                 <Alert key={warning}>
                   <TriangleAlertIcon className="text-primary-text" aria-hidden="true" />
                   <AlertDescription>
                     {warning === 'predecessor_incomplete'
-                      ? 'Предыдущий этап ещё не выполнен. Предупреждение не блокирует работу.'
+                      ? 'Предыдущий этап ещё не выполнен.'
                       : 'Работы начаты до полной комплектации материалами.'}
                   </AlertDescription>
                 </Alert>

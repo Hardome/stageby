@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { AlertTriangleIcon } from 'lucide-react';
 
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@shared/ui/accordion';
 import { Button } from '@shared/ui/button';
 import { DialogTrigger } from '@shared/ui/dialog';
 
@@ -38,11 +39,8 @@ export function InvoiceShortages({ stage, invoice, canReceive, canManage }: Invo
         />
       ))}
       {!open && <MaterialFeedback action={editor.action} />}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-        <p className="text-muted-foreground text-xs">
-          {active.length > 0 ? `Открытых нехваток: ${active.length}` : 'Открытых нехваток нет'}
-        </p>
-        {canReceive && (
+      {canReceive && (
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
           <MaterialDialog
             isOpen={open}
             onOpenChange={setOpen}
@@ -58,19 +56,21 @@ export function InvoiceShortages({ stage, invoice, canReceive, canManage }: Invo
           >
             <InvoiceShortageForm editor={editor} onClose={() => setOpen(false)} />
           </MaterialDialog>
-        )}
-      </div>
+        </div>
+      )}
       {resolved.length > 0 && (
-        <details className="text-sm">
-          <summary className="cursor-pointer rounded-md py-2 text-muted-foreground outline-none focus-visible:ring-2">
-            Устранённые нехватки · {resolved.length}
-          </summary>
-          <div className="mt-2 flex flex-col gap-2">
-            {resolved.map((shortage) => (
-              <InvoiceShortageItem key={shortage.id} shortage={shortage} canResolve={false} />
-            ))}
-          </div>
-        </details>
+        <Accordion>
+          <AccordionItem value="resolved-shortages">
+            <AccordionTrigger className="flex-none items-center gap-2 text-muted-foreground">
+              Устранённые нехватки · {resolved.length}
+            </AccordionTrigger>
+            <AccordionContent className="flex flex-col gap-2">
+              {resolved.map((shortage) => (
+                <InvoiceShortageItem key={shortage.id} shortage={shortage} canResolve={false} />
+              ))}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
     </section>
   );

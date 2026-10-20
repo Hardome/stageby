@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { type ReactElement, type ReactNode, useState } from 'react';
 
 import { PencilIcon } from 'lucide-react';
 
 import { Button } from '@shared/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@shared/ui/dialog';
+import { Dialog, DialogTrigger } from '@shared/ui/dialog';
 
 import type { Stage } from '@api/types';
 
@@ -12,9 +12,11 @@ import { StageParameters } from './stage-parameters';
 interface StageEditorProperties {
   stage: Stage;
   defaultOpen?: boolean;
+  trigger?: ReactElement<{ children?: ReactNode }>;
+  focusAssignee?: boolean;
 }
 
-export function StageEditor({ stage, defaultOpen = false }: StageEditorProperties) {
+export function StageEditor({ stage, defaultOpen = false, trigger, focusAssignee = false }: StageEditorProperties) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [isPending, setIsPending] = useState(false);
   const isReadOnly = stage.projectIsArchived || !stage.isIncluded;
@@ -27,12 +29,23 @@ export function StageEditor({ stage, defaultOpen = false }: StageEditorPropertie
         if (!isPending) setIsOpen(value);
       }}
     >
-      <DialogTrigger disabled={isReadOnly} render={<Button variant="outline" />}>
-        <PencilIcon data-icon="inline-start" /> Редактировать этап
+      <DialogTrigger disabled={isReadOnly} render={trigger ?? <Button variant="outline" />}>
+        {trigger ? (
+          trigger.props.children
+        ) : (
+          <>
+            <PencilIcon data-icon="inline-start" /> Редактировать этап
+          </>
+        )}
       </DialogTrigger>
-      <DialogContent>
-        {isOpen && <StageParameters stage={stage} onClose={() => setIsOpen(false)} onPendingChange={setIsPending} />}
-      </DialogContent>
+      {isOpen && (
+        <StageParameters
+          stage={stage}
+          focusAssignee={focusAssignee}
+          onClose={() => setIsOpen(false)}
+          onPendingChange={setIsPending}
+        />
+      )}
     </Dialog>
   );
 }

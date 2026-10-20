@@ -23,8 +23,8 @@ export function useMaterialAction(stage: Stage, invoiceId?: number) {
   const mutation = useMutation({
     mutationFn: async ({ execute, onSuccess }: { execute: () => Promise<unknown>; onSuccess?: () => void }) => {
       await execute();
-      onSuccess?.();
       await invalidateStage(client, stage);
+      onSuccess?.();
     },
     retry: false,
   });

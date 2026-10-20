@@ -68,9 +68,7 @@ export function AssigneePicker({
   }, [users.error, accessError]);
 
   const items: AssigneeOption[] =
-    users.data?.pages.flatMap((page) =>
-      page.items.map((user) => ({ id: user.id, label: `${user.fullName} · ${user.login}` })),
-    ) ?? [];
+    users.data?.pages.flatMap((page) => page.items.map((user) => ({ id: user.id, label: user.fullName }))) ?? [];
 
   let emptyMessage = users.isPending ? 'Загрузка мастеров…' : 'Мастера не найдены';
 

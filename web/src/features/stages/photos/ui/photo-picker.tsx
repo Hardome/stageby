@@ -50,10 +50,7 @@ export function PhotoPicker({ disabled, available, onSelect }: PhotoPickerProper
           event.currentTarget.value = '';
         }}
       />
-      <p className="text-muted-foreground text-sm">
-        JPEG, PNG или HEIC до 20 МиБ. Свободно мест: {available} из 20. Если камера недоступна, выберите фото из
-        галереи.
-      </p>
+      <p className="text-muted-foreground text-sm">JPEG, PNG или HEIC до 20 МиБ. Свободно мест: {available} из 20.</p>
     </div>
   );
 }

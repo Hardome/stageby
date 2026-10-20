@@ -8,9 +8,9 @@ describe('formatDisplayName', () => {
     ['Петров Иван', 'Петров И.', 'ИП'],
     ['Петров', 'Петров', 'П'],
     ['  Петров  Иван   Иванович  ', 'Петров И. И.', 'ИП'],
-    ['', 'manager', 'M'],
-    [' '.repeat(3), 'manager', 'M'],
+    ['', '', ''],
+    [' '.repeat(3), '', ''],
   ])('formats %s', (fullName, label, initials) => {
-    expect(formatDisplayName(fullName, 'manager')).toEqual({ label, initials });
+    expect(formatDisplayName(fullName)).toEqual({ label, initials });
   });
 });
