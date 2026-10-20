@@ -137,7 +137,10 @@ describe('project view', () => {
         },
       },
     );
-    expect([...container.querySelectorAll('h3')].map((heading) => heading.textContent)).toEqual(['Фундамент', 'Стены']);
+    expect([...container.querySelectorAll('tr[role="link"]')].map((row) => row.getAttribute('aria-label'))).toEqual([
+      'Открыть этап: Фундамент',
+      'Открыть этап: Стены',
+    ]);
     expect(container).not.toHaveTextContent('Крыша');
     expect(container).toHaveTextContent('Даты не заданы');
     expect(container.querySelector('progress')).toHaveAttribute('value', '25');

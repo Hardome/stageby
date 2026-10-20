@@ -23,7 +23,7 @@ interface ProjectStagesProperties {
 }
 
 export function ProjectStages({ stages, isPending, isFetching, hasError, onRetry }: ProjectStagesProperties) {
-  const [displayMode, setDisplayMode] = useState<'cards' | 'table'>('cards');
+  const [displayMode, setDisplayMode] = useState<'cards' | 'table'>('table');
   const included = stages
     ?.filter((stage) => stage.isIncluded)
     .toSorted((left, right) => left.position - right.position);
@@ -46,11 +46,11 @@ export function ProjectStages({ stages, isPending, isFetching, hasError, onRetry
               if (value === 'cards' || value === 'table') setDisplayMode(value);
             }}
           >
-            <ToggleGroupItem value="cards" aria-label="Карточки" className="min-h-10">
-              Карточки
-            </ToggleGroupItem>
             <ToggleGroupItem value="table" aria-label="Таблица" className="min-h-10">
               Таблица
+            </ToggleGroupItem>
+            <ToggleGroupItem value="cards" aria-label="Карточки" className="min-h-10">
+              Карточки
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
