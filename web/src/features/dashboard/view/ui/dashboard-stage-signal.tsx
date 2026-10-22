@@ -8,6 +8,7 @@ import { Badge } from '@shared/ui/badge';
 import type { DashboardProjectRow } from '@api/types';
 
 import { addCalendarDays } from '../lib/dashboard-search';
+import { DashboardStageFinances } from './dashboard-stage-finances';
 
 interface DashboardStageSignalProperties {
   project: DashboardProjectRow;
@@ -70,6 +71,7 @@ export function DashboardStageSignal({ project, kind, today }: DashboardStageSig
         )}
       </Link>
       {needsAssignee && <Badge variant="warning">До старта ≤ 7 дней</Badge>}
+      {kind !== 'status' && <DashboardStageFinances finances={stage.finances} kind={kind} />}
     </div>
   );
 }
