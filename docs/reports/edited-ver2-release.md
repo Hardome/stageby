@@ -3,8 +3,8 @@
 <!-- cspell:ignore бэкенда фотоподсказок дашборда Дашборд атомарность фронтенда бакета бакетом бакет бакету PGHOST PGPORT PGUSER PGDATABASE createdb dbname -->
 
 Дата: 05.10.2026. Объём — проверка выпуска бэкенда по edited.ver2.
-Источник требований — [ТЗ edited.ver2](../plans/ТЗ%20на%20разработку%20страницы%20и%20сценарии%20edited.ver2.md)
-и [решения R1–R18](edited-ver2-decisions.md).
+Источник требований — [ТЗ edited.ver2](../rules/ТЗ%20на%20разработку%20страницы%20и%20сценарии%20edited.ver2.md)
+и [решения R1–R18](../decisions/edited-ver2-decisions.md).
 
 ## Проверки
 
