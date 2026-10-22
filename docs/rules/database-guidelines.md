@@ -10,12 +10,12 @@ API использует PostgreSQL, Drizzle ORM и SQL-миграции. Ком
 
 | Файл | Назначение |
 | --- | --- |
-| [db/schema/users.ts](../api/src/db/schema/users.ts) | Описание таблицы `users` и вывод типа `UserRow`. Для новой таблицы создайте соседний файл. |
-| [db/schema/index.ts](../api/src/db/schema/index.ts) | Экспорт всех таблиц; новую таблицу добавьте сюда. |
-| [drizzle.config.ts](../api/drizzle.config.ts) | Пути к схеме и миграциям, настройки Drizzle Kit. |
-| [db/migrations](../api/src/db/migrations) | SQL-файлы, снимки схемы и журнал генерации миграций; храните их вместе с кодом. |
-| [plugins/database.ts](../api/src/plugins/database.ts) | Подключение БД к Fastify как `app.db`. |
-| [modules/users/repository.ts](../api/src/modules/users/repository.ts) | Запросы приложения к таблице `users`. |
+| [db/schema/users.ts](../../api/src/db/schema/users.ts) | Описание таблицы `users` и вывод типа `UserRow`. Для новой таблицы создайте соседний файл. |
+| [db/schema/index.ts](../../api/src/db/schema/index.ts) | Экспорт всех таблиц; новую таблицу добавьте сюда. |
+| [drizzle.config.ts](../../api/drizzle.config.ts) | Пути к схеме и миграциям, настройки Drizzle Kit. |
+| [db/migrations](../../api/src/db/migrations) | SQL-файлы, снимки схемы и журнал генерации миграций; храните их вместе с кодом. |
+| [plugins/database.ts](../../api/src/plugins/database.ts) | Подключение БД к Fastify как `app.db`. |
+| [modules/users/repository.ts](../../api/src/modules/users/repository.ts) | Запросы приложения к таблице `users`. |
 
 Схема в TypeScript и история миграций — части одного изменения. Не редактируйте сгенерированные файлы в `db/migrations/meta` вручную.
 
@@ -36,15 +36,15 @@ pnpm run db:studio
 - `db:migrate` применяет ещё не выполненные SQL-миграции по порядку и записывает результат в журнал БД. Повторный запуск уже применённые миграции не накатывает заново.
 - `db:studio` открывает интерфейс для просмотра данных и схемы. Это не замена миграциям.
 
-При первом запуске проекта с уже существующими миграциями достаточно `pnpm run db:migrate`: заново генерировать начальную миграцию не нужно. Команды определены в [package.json](../api/package.json). Подробнее о механизме: [Drizzle Kit generate](https://orm.drizzle.team/docs/drizzle-kit-generate) и [migrate](https://orm.drizzle.team/docs/drizzle-kit-migrate).
+При первом запуске проекта с уже существующими миграциями достаточно `pnpm run db:migrate`: заново генерировать начальную миграцию не нужно. Команды определены в [package.json](../../api/package.json). Подробнее о механизме: [Drizzle Kit generate](https://orm.drizzle.team/docs/drizzle-kit-generate) и [migrate](https://orm.drizzle.team/docs/drizzle-kit-migrate).
 
 ## Изменение схемы
 
-1. Измените нужный файл в `api/src/db/schema/` — например, [users.ts](../api/src/db/schema/users.ts). Новую таблицу экспортируйте из [index.ts](../api/src/db/schema/index.ts).
-2. Запустите `pnpm run db:generate`. Проверьте новый SQL в [db/migrations](../api/src/db/migrations): соответствует ли он намерению и сохранит ли нужные данные. Если требуется перенос данных, продумайте его **до** применения миграции.
+1. Измените нужный файл в `api/src/db/schema/` — например, [users.ts](../../api/src/db/schema/users.ts). Новую таблицу экспортируйте из [index.ts](../../api/src/db/schema/index.ts).
+2. Запустите `pnpm run db:generate`. Проверьте новый SQL в [db/migrations](../../api/src/db/migrations): соответствует ли он намерению и сохранит ли нужные данные. Если требуется перенос данных, продумайте его **до** применения миграции.
 3. Запустите `pnpm run db:migrate`.
-4. Обновите [репозиторий](../api/src/modules/users/repository.ts) и [mapper.ts](../api/src/modules/users/mapper.ts), если изменились поля, которые использует API. Если меняется HTTP-контракт, обновите [OpenAPI](../contracts/references/stageby/stageby.yaml) и выполните из корня Stageby `pnpm run codegen`.
-5. Проверьте путь от запроса до БД и ответа через [интеграционный тест](../api/src/modules/users/users.test.ts): `pnpm run test`. Затем выполните `pnpm run typecheck`.
+4. Обновите [репозиторий](../../api/src/modules/users/repository.ts) и [mapper.ts](../../api/src/modules/users/mapper.ts), если изменились поля, которые использует API. Если меняется HTTP-контракт, обновите [OpenAPI](../../contracts/references/stageby/stageby.yaml) и выполните из корня Stageby `pnpm run codegen`.
+5. Проверьте путь от запроса до БД и ответа через [интеграционный тест](../../api/src/modules/users/users.test.ts): `pnpm run test`. Затем выполните `pnpm run typecheck`.
 
 Не меняйте уже применённый SQL-файл: на других базах он может быть выполнен, а история перестанет соответствовать коду.
 

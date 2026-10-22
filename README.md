@@ -86,6 +86,85 @@ pnpm run check
 
 В режиме разработки Vite перенаправляет запросы `/auth` и `/users` в API. Адрес сервера для прокси задаётся переменной `API_PROXY_TARGET` в `web/.env`.
 
+## Демо на продакшен-сборке через Quick Tunnel
+
+Все команды выполняйте из корня репозитория. Для первого запуска подготовьте проект через `pnpm run bootstrap`, как описано выше. Установите `cloudflared` и добавьте его в `PATH`.
+
+### 1. Запустите инфраструктуру и соберите приложения
+
+Откройте Docker Desktop и дождитесь готовности Docker Engine. Затем выполните:
+
+```sh
+pnpm run db:up
+pnpm --dir api run db:migrate
+pnpm --dir contracts run build
+pnpm --dir api run build
+pnpm --dir web run build
+```
+
+`db:up` запускает PostgreSQL и MinIO и дожидается их готовности. Ошибка API `ECONNREFUSED 127.0.0.1:9000` означает, что MinIO недоступен: проверьте Docker Desktop и повторите `pnpm run db:up`.
+
+### 2. Запустите туннели
+
+В отдельном терминале запустите туннель приложения:
+
+```sh
+pnpm run tunnel
+```
+
+В ещё одном терминале запустите туннель MinIO для загрузки и скачивания файлов с других устройств:
+
+```sh
+pnpm run tunnel:minio
+```
+
+Оставьте оба процесса работать и сохраните выданные HTTPS-ссылки. До запуска веб-приложения ссылка первого туннеля может возвращать ошибку — это ожидаемо.
+
+### 3. Настройте API
+
+В `api/.env` добавьте адрес туннеля приложения в `CORS_ORIGIN`, а адрес туннеля MinIO укажите в `S3_ENDPOINT`. Адреса указывайте без завершающего `/`:
+
+```dotenv
+CORS_ORIGIN=http://localhost:3000,https://ваш-адрес.trycloudflare.com
+S3_ENDPOINT=https://ваш-адрес-minio.trycloudflare.com
+```
+
+Для продакшен-режима API также установите `NODE_ENV=production`. В этом режиме обязательны `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID` и `S3_SECRET_ACCESS_KEY`; для локального MinIO остальные значения можно сохранить из `api/.env.example`. Сохраните `S3_CREATE_BUCKET=true`, чтобы API мог создать bucket при первом запуске.
+
+Команда `start` запускает собранный JavaScript, но сама не устанавливает `NODE_ENV`. При `NODE_ENV=production` cookie сессии имеет флаг `Secure`, поэтому для входа используйте HTTPS-ссылку туннеля.
+
+### 4. Запустите API и веб-приложение
+
+В отдельном терминале запустите API:
+
+```sh
+pnpm --dir api run start
+```
+
+В другом терминале запустите веб-приложение:
+
+```sh
+pnpm --dir web run preview --host 127.0.0.1 --port 3000 --strictPort
+```
+
+Перед запуском освободите порт 3000, остановив `pnpm run dev`, если он работает. `preview` отдаёт готовую продакшен-сборку без HMR и использует существующие настройки прокси API и разрешённых доменов `.trycloudflare.com`. Менять `web/vite.config.ts` не требуется.
+
+Откройте HTTPS-ссылку туннеля приложения и используйте её для демонстрации. Во время демо должны работать Docker, API, веб-приложение и оба туннеля. Изменения исходников требуют повторной сборки соответствующего приложения; после пересборки API перезапустите `start`.
+
+### 5. Завершите демо
+
+Остановите API, `preview` и оба туннеля через `Ctrl+C`. После перезапуска Quick Tunnel выдаёт новую ссылку: обновите соответствующие адреса в `api/.env` и перезапустите API. Изменения только этих настроек не требуют пересборки.
+
+Для возвращения к локальной разработке восстановите в `api/.env`:
+
+```dotenv
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000
+S3_ENDPOINT=http://127.0.0.1:9000
+```
+
+Затем запустите `pnpm run dev`. Если контейнеры больше не нужны, остановите их командой `pnpm run db:down`.
+
 ## Команды из корня
 
 | Команда | Назначение |
@@ -110,7 +189,7 @@ pnpm run check
 stageby/
 ├── api/         # Fastify API, схема БД и миграции
 ├── contracts/   # общий OpenAPI-контракт
-├── docs/        # правила разработки и технические руководства
+├── docs/        # правила, руководства, решения, отчёты и текущие планы
 ├── scripts/     # служебные скрипты проекта
 ├── web/         # React-приложение
 └── compose.yaml # локальные PostgreSQL и MinIO
@@ -130,9 +209,10 @@ pnpm run codegen
 
 ## Документация
 
-- [Предметная модель](docs/domain-model.md)
-- [Сценарии и правила API](docs/api-contract.md)
-- [Разработка API-модулей](docs/api-modules-guidelines.md)
-- [Работа с базой данных и миграциями](docs/database-guidelines.md)
-- [Согласованные продуктовые правила](docs/edited-ver2-decisions.md)
-- [Установка, проверки выпуска и восстановление](docs/edited-ver2-release.md)
+- [Карта документации и правила размещения](docs/README.md)
+- [Предметная модель](docs/rules/domain-model.md)
+- [Сценарии и правила API](docs/rules/api-contract.md)
+- [Разработка API-модулей](docs/rules/api-modules-guidelines.md)
+- [Работа с базой данных и миграциями](docs/rules/database-guidelines.md)
+- [Согласованные продуктовые правила](docs/decisions/edited-ver2-decisions.md)
+- [Установка, проверки выпуска и восстановление](docs/reports/edited-ver2-release.md)

@@ -1,12 +1,12 @@
 # API первой версии Stageby
 
 Документ описывает целевое поведение API по редакции от 12.10.2026. Предметные правила определены в
-[модели домена](domain-model.md) по [ТЗ edited.ver2](../plans/ТЗ%20на%20разработку%20страницы%20и%20сценарии%20edited.ver2.md), а исходники OpenAPI находятся в
-[`contracts/references`](../contracts/references/). Сгенерированный `contracts/openapi.yaml`
+[модели домена](domain-model.md) по [ТЗ edited.ver2](ТЗ%20на%20разработку%20страницы%20и%20сценарии%20edited.ver2.md), а исходники OpenAPI находятся в
+[`contracts/references`](../../contracts/references/). Сгенерированный `contracts/openapi.yaml`
 вручную не редактируется. Интеграционные проверки выполняются на отдельной чистой БД.
-Результаты проверки реализации описаны в [заметке о доработках бэкенда](edited-ver2-backend-update-release.md).
-Заменённые правила перечислены в [решениях R1–R18](edited-ver2-decisions.md).
-[Заметка о предыдущем выпуске](edited-ver2-release.md) описывает предыдущую поставку.
+Результаты проверки реализации описаны в [заметке о доработках бэкенда](../reports/edited-ver2-backend-update-release.md).
+Заменённые правила перечислены в [решениях R1–R18](../decisions/edited-ver2-decisions.md).
+[Заметка о предыдущем выпуске](../reports/edited-ver2-release.md) описывает предыдущую поставку.
 
 ## Согласованный объём
 

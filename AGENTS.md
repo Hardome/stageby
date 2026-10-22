@@ -2,16 +2,18 @@
 
 ## Project Structure & Module Organization
 
-Stageby has three pnpm packages: `api/`, `web/`, and `contracts/`. Package-specific instructions live in `api/AGENTS.md` and `web/AGENTS.md`. `contracts/references/` holds source OpenAPI definitions; `contracts/openapi.yaml` is the generated bundle. Design notes live in `docs/`.
+Stageby has three pnpm packages: `api/`, `web/`, and `contracts/`. Package-specific instructions live in `api/AGENTS.md` and `web/AGENTS.md`. `contracts/references/` holds source OpenAPI definitions; `contracts/openapi.yaml` is the generated bundle. Documentation is organized under `docs/`; its map and placement rules are in [docs/README.md](docs/README.md).
 
 ## Task-Specific Documentation
 
 Read documentation only when the task touches the area listed below, and read only the relevant sections. Do not preload all of `docs/` or follow every cross-reference; open another document only when it is needed for the current task. For tasks spanning several areas, use the applicable documents together.
 
+Keep requirements and project rules in `docs/rules/`, task instructions in `docs/guides/`, accepted decisions in `docs/decisions/`, and release verification reports in `docs/reports/`. Use `docs/templates/` for new plans and decisions. Track active plans in `docs/plans/` until the entire cycle passes acceptance; then preserve lasting knowledge in permanent documentation and delete the cycle's plan, subplans, and acceptance report. Do not create a plan archive. Local drafts and task materials belong in ignored `docs/tmp/plans/` and `docs/tmp/tasks/`; create these directories locally as needed.
+
 | Read when working on | Documentation |
 | --- | --- |
-| HTTP endpoints, request/response schemas, API errors, access rules, or OpenAPI contracts | [API contract](docs/api-contract.md) |
-| Business entities, relationships, roles, construction stages, checklists, or domain rules | [Domain model](docs/domain-model.md) |
+| HTTP endpoints, request/response schemas, API errors, access rules, or OpenAPI contracts | [API contract](docs/rules/api-contract.md) |
+| Business entities, relationships, roles, construction stages, checklists, or domain rules | [Domain model](docs/rules/domain-model.md) |
 
 ## Build, Test, and Development Commands
 

@@ -2,7 +2,7 @@
 
 Веб-интерфейс Stageby на React и Vite.
 
-[Установка ярлыка на главный экран Android и iOS](../docs/install-shortcut.md).
+[Установка ярлыка на главный экран Android и iOS](../docs/guides/install-shortcut.md).
 
 ## Быстрый старт
 
