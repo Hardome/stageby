@@ -1,11 +1,11 @@
-import { parseAmount } from '@entities/project';
+import { parseAmount, todayInYekaterinburg } from '@entities/project';
 
 import type { StageMaterialInvoice } from '@api/types';
 
 export function invoicePaymentValues(invoice: StageMaterialInvoice) {
   return {
     amount: invoice.paidAmountMinor === null ? '' : String(invoice.paidAmountMinor / 100n),
-    date: invoice.paidDate ?? '',
+    date: invoice.paidDate ?? todayInYekaterinburg(),
   };
 }
 

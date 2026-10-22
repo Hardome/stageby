@@ -9,6 +9,75 @@ describe('manager dashboard', () => {
   const context = setupTest();
   const { render } = context;
 
+  it('shows the selected stage finances in table cells and cards and updates them with the stage', async () => {
+    const stage = dashboardProject.selectedStage;
+    if (!stage) throw new Error('Expected a selected stage in the fixture');
+    mocks.projects.mockReturnValue({
+      data: {
+        items: [
+          {
+            ...dashboardProject,
+            selectedStage: {
+              ...stage,
+              finances: {
+                ...stage.finances,
+                plannedMaterialAmountMinor: 20000n,
+                actualMaterialAmountMinor: 15000n,
+                plannedWorkAmountMinor: 30000n,
+                actualWorkAmountMinor: 35000n,
+              },
+            },
+          },
+        ],
+        total: 1,
+      },
+    });
+    await render();
+
+    const cells = context.container.querySelectorAll(':scope tbody tr:first-child td');
+    const cards = context.container.querySelector('[aria-label="Карточки объектов"]');
+    expect(cells[2]).toHaveTextContent('План / факт: 200 ₽ / 150 ₽');
+    expect(cells[3]).toHaveTextContent('Не назначен');
+    expect(cells[3]).toHaveTextContent('План / факт: 300 ₽ / 350 ₽');
+    expect(cells[4]).not.toHaveTextContent('План / факт:');
+    expect(cards).toHaveTextContent('План / факт: 200 ₽ / 150 ₽');
+    expect(cards).toHaveTextContent('План / факт: 300 ₽ / 350 ₽');
+    for (const cell of [...cells].slice(2, 4)) {
+      expect(cell.querySelector('a')).not.toHaveTextContent('План / факт:');
+    }
+
+    mocks.projects.mockReturnValue({
+      data: {
+        items: [
+          {
+            ...dashboardProject,
+            selectedStage: {
+              ...stage,
+              stageId: 12,
+              assignee: { id: 9, fullName: 'Иван' },
+              finances: {
+                ...stage.finances,
+                plannedMaterialAmountMinor: null,
+                actualMaterialAmountMinor: 0n,
+                plannedWorkAmountMinor: 0n,
+                actualWorkAmountMinor: 0n,
+              },
+            },
+          },
+        ],
+        total: 1,
+      },
+    });
+    await render();
+
+    expect(cells[2]).toHaveTextContent('План / факт: Не задан / 0 ₽');
+    expect(cells[3]).toHaveTextContent('Иван');
+    expect(cells[3]).toHaveTextContent('План / факт: 0 ₽ / 0 ₽');
+    expect(cards).toHaveTextContent('План / факт: Не задан / 0 ₽');
+    expect(cards).toHaveTextContent('План / факт: 0 ₽ / 0 ₽');
+    expect(cards).not.toHaveTextContent('План / факт: 200 ₽ / 150 ₽');
+  });
+
   it('uses the same server stage for all action links until the server changes it', async () => {
     await render();
 
@@ -58,6 +127,10 @@ describe('manager dashboard', () => {
     expect(context.container).not.toHaveTextContent('До старта ≤ 7 дней');
     expect(context.container.querySelectorAll(':scope tbody tr:last-child a')).toHaveLength(1);
     expect(context.container.querySelector(':scope tbody tr:last-child')).toHaveTextContent('Выполнен');
+    expect(context.container.querySelector(':scope tbody tr:last-child')).not.toHaveTextContent('План / факт:');
+    expect(
+      context.container.querySelector(':scope [aria-label="Карточки объектов"] li:last-child'),
+    ).not.toHaveTextContent('План / факт:');
   });
 
   it('preserves server order, paginates and disables navigation during refresh', async () => {

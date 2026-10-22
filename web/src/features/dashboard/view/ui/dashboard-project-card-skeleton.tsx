@@ -26,14 +26,18 @@ export function DashboardProjectCardSkeleton() {
         <dl className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <dt className="text-muted-foreground text-xs">Материалы</dt>
-            <dd className="flex min-h-10 items-center">
-              <Skeleton className="h-6 w-36" />
+            <dd className="flex flex-col gap-1.5">
+              <div className="flex min-h-10 items-center">
+                <Skeleton className="h-6 w-36" />
+              </div>
+              <Skeleton className="h-4 w-44" />
             </dd>
           </div>
           <div className="flex flex-col gap-2 border-t pt-4">
             <dt className="text-muted-foreground text-xs">Мастер</dt>
-            <dd>
+            <dd className="flex flex-col gap-1.5">
               <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-44" />
             </dd>
           </div>
         </dl>
