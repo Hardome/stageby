@@ -4,5 +4,5 @@
 
 | Read when working on | Documentation |
 | --- | --- |
-| Web features, frontend layer boundaries, routing, forms, state, or client integration | [Web guidelines](../docs/web-guidelines.md) |
-| UI appearance, design-system components, tokens, colors, typography, spacing, or interaction states | [Design system](../docs/design-system.md) |
+| Web features, frontend layer boundaries, routing, forms, state, or client integration | [Web guidelines](../docs/rules/web-guidelines.md) |
+| UI appearance, design-system components, tokens, colors, typography, spacing, or interaction states | [Design system](../docs/rules/design-system.md) |
