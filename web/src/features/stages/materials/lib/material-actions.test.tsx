@@ -3,6 +3,8 @@ import { act } from 'react';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 
+import { todayInYekaterinburg } from '@entities/project';
+
 import { invoice, mocks, Probe, probe, setupTest } from './material-actions-test-setup';
 
 describe('material invoice actions', () => {
@@ -36,6 +38,7 @@ describe('material invoice actions', () => {
   });
 
   it('pays 95 000 against a 100 000 invoice and clears payment independently of delivery', async () => {
+    expect(probe.payment.form.getValues()).toEqual({ amount: '', date: todayInYekaterinburg() });
     await act(async () => {
       await probe.payment.submit({ amount: '95000', date: '2026-10-16' });
     });
@@ -50,7 +53,7 @@ describe('material invoice actions', () => {
       path: { invoiceId: 401 },
       body: { expectedVersion: 3, isPaid: false },
     });
-    expect(probe.payment.form.getValues()).toEqual({ amount: '', date: '' });
+    expect(probe.payment.form.getValues()).toEqual({ amount: '', date: todayInYekaterinburg() });
   });
 
   it('requires reload after a conflict, preserves input and accepts a fresh version', async () => {

@@ -35,12 +35,18 @@ export function DashboardProjectsSkeleton() {
                   </div>
                 </TableCell>
                 <TableCell className="max-w-64 whitespace-normal">
-                  <div className="flex min-h-10 items-center">
-                    <Skeleton className="h-6 w-32" />
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex min-h-10 items-center">
+                      <Skeleton className="h-6 w-32" />
+                    </div>
+                    <Skeleton className="h-4 w-44" />
                   </div>
                 </TableCell>
                 <TableCell className="max-w-56 whitespace-normal">
-                  <Skeleton className="h-5 w-32" />
+                  <div className="flex flex-col gap-1.5">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-44" />
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex min-h-10 items-center">
