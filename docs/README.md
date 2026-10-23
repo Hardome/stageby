@@ -35,6 +35,7 @@
 - [Ручной регресс: подготовка, чек-листы по функционалу и сквозные сценарии](guides/regression/README.md)
 - [Установка ярлыка на главный экран](guides/install-shortcut.md)
 - [Согласованные решения edited.ver2](decisions/edited-ver2-decisions.md)
+- [Проверка согласования ТЗ и реализации от 23.10.2026](reports/spec-alignment-verification.md)
 - [Проверка выпуска бэкенда от 05.10.2026, установка и восстановление](reports/edited-ver2-release.md)
 - [Проверка доработок бэкенда от 12.10.2026](reports/edited-ver2-backend-update-release.md)
 
@@ -42,7 +43,6 @@
 
 ## Текущие планы
 
-- [Расхождения ТЗ и реализации: 20 вопросов для согласования с заказчиком](plans/spec-implementation-alignment.md)
 
 Порядок работы с планом:
 

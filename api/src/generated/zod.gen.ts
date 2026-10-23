@@ -613,7 +613,7 @@ export const zUpdateChecklistItem = z.object({
 });
 
 /**
- * Назначение файла, определяющее MIME, размер и правила доступа. project_document — PDF до 50 МБ; material_invoice — PDF/JPEG до 10 МиБ; checklist_photo — JPEG/PNG/HEIC до 20 МБ.
+ * Назначение файла, определяющее MIME, размер и правила доступа. project_document — PDF до 50 МБ; material_invoice — PDF/JPEG до 10 МБ; checklist_photo — JPEG/PNG/HEIC до 20 МБ.
  */
 export const zFilePurpose = z.enum([
     'project_document',
@@ -630,7 +630,7 @@ export const zCreateFileUpload = z.object({
     purpose: zFilePurpose,
     originalName: z.string().min(1).max(255),
     mimeType: z.string().min(1).max(255),
-    sizeBytes: z.int().gte(1).lte(52428800),
+    sizeBytes: z.int().gte(1).lte(50000000),
     checksumSha256: zSha256
 });
 

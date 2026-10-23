@@ -1192,7 +1192,7 @@ describe('Composite project creation', () => {
   it.each([
     { status: 'pending' as const },
     { mimeType: 'image/png' },
-    { sizeBytes: 50 * 1024 * 1024 + 1 },
+    { sizeBytes: 50_000_000 + 1 },
     { purpose: 'material_invoice' as const },
   ])('не сохраняет объект и вложенные записи с неверным PDF: %j', async (invalidFile) => {
     const manager = await createIdentity();

@@ -10,15 +10,55 @@ describe('photo preparation', () => {
     vi.unstubAllGlobals();
   });
 
-  it('rejects empty files, wrong MIME and source files over 20 MiB before conversion', async () => {
+  it('rejects empty files, wrong MIME and source files over 20 MB before conversion', async () => {
     expect(photoError(new File([], 'empty.jpg', { type: 'image/jpeg' }))).toBeDefined();
     expect(photoError(new File(['pdf'], 'photo.jpg', { type: 'application/pdf' }))).toBeDefined();
     const file = new File(['image'], 'photo.heic', { type: 'image/heic' });
-    Object.defineProperty(file, 'size', { value: 20 * 1024 * 1024 + 1 });
+    Object.defineProperty(file, 'size', { value: 20_000_001 });
 
-    await expect(preparePhoto(file)).rejects.toThrow('20 МиБ');
+    await expect(preparePhoto(file)).rejects.toThrow('20 МБ');
 
     expect(conversion.heicTo).not.toHaveBeenCalled();
+  });
+
+  it('accepts a source photo exactly at the decimal limit', () => {
+    const file = new File(['image'], 'photo.jpg', { type: 'image/jpeg' });
+    Object.defineProperty(file, 'size', { value: 20_000_000 });
+    expect(photoError(file)).toBeUndefined();
+  });
+
+  it.each([20_000_000, 20_000_001])('checks the prepared photo size %s', async (sizeBytes) => {
+    const file = new File(['image'], 'photo.jpg', { type: 'image/jpeg' });
+    vi.stubGlobal(
+      'Image',
+      class {
+        naturalWidth = 100;
+        naturalHeight = 100;
+        src = '';
+        decode() {
+          return Promise.resolve();
+        }
+      },
+    );
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:photo');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const canvas = document.createElement('canvas');
+    vi.spyOn(document, 'createElement').mockReturnValue(canvas);
+    vi.spyOn(canvas, 'getContext').mockReturnValue({ drawImage: vi.fn() } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(canvas, 'toBlob').mockImplementation((callback, mime) => {
+      const blob = new Blob(['prepared'], { type: mime });
+      Object.defineProperty(blob, 'size', { value: sizeBytes });
+      callback(blob);
+    });
+    let result = 'accepted';
+    try {
+      await preparePhoto(file);
+    } catch (error) {
+      result = (error as Error).message;
+    }
+    expect(result).toBe(
+      sizeBytes === 20_000_000 ? 'accepted' : 'Подготовленное фото превышает 20 МБ. Выберите меньший снимок.',
+    );
   });
 
   it.each([

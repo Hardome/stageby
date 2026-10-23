@@ -1,5 +1,5 @@
 import type { DocumentUpload } from '../model/types';
-import { documentError, maxDocumentSize, uploadDocument } from './upload-document';
+import { documentError, uploadDocument } from './upload-document';
 
 const mocks = vi.hoisted(() => ({ create: vi.fn(), complete: vi.fn() }));
 vi.mock('@api/clients/createFileUpload', () => ({
@@ -26,11 +26,11 @@ describe('project PDF upload', () => {
     expect(documentError(new File([], 'drawing.pdf', { type: 'application/pdf' }))).toBeDefined();
 
     const file = new File(['%PDF-1.7'], 'drawing.pdf', { type: 'application/pdf' });
-    Object.defineProperty(file, 'size', { value: maxDocumentSize, configurable: true });
+    Object.defineProperty(file, 'size', { value: 50_000_000, configurable: true });
 
     expect(documentError(file)).toBeUndefined();
 
-    Object.defineProperty(file, 'size', { value: maxDocumentSize + 1 });
+    Object.defineProperty(file, 'size', { value: 50_000_001 });
 
     expect(documentError(file)).toBeDefined();
   });

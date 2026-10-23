@@ -1270,7 +1270,7 @@ export type UpdateChecklistItem = {
 };
 
 /**
- * Назначение файла, определяющее MIME, размер и правила доступа. project_document — PDF до 50 МБ; material_invoice — PDF/JPEG до 10 МиБ; checklist_photo — JPEG/PNG/HEIC до 20 МБ.
+ * Назначение файла, определяющее MIME, размер и правила доступа. project_document — PDF до 50 МБ; material_invoice — PDF/JPEG до 10 МБ; checklist_photo — JPEG/PNG/HEIC до 20 МБ.
  */
 export type FilePurpose = 'project_document' | 'checklist_photo' | 'material_invoice';
 
@@ -1293,7 +1293,7 @@ export type CreateFileUpload = {
      */
     mimeType: string;
     /**
-     * Заявленный размер содержимого в байтах. Общий верхний предел схемы нужен для PDF проекта; сервер применяет более строгий предел purpose, включая 10485760 байт для material_invoice.
+     * Заявленный размер содержимого в байтах. Общий верхний предел схемы нужен для PDF проекта; сервер применяет более строгий предел purpose, включая 10000000 байт для material_invoice.
      */
     sizeBytes: number;
     /**

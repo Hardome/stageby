@@ -206,7 +206,7 @@ describe('Материалы, счета и нехватки', () => {
     const data = await fixture();
     const file = await uploadedInvoiceFile(data.manager.user.id);
     const usedFile = await uploadedInvoiceFile(data.manager.user.id);
-    const oversized = await uploadedInvoiceFile(data.manager.user.id, 'application/pdf', 10 * 1024 * 1024 + 1);
+    const oversized = await uploadedInvoiceFile(data.manager.user.id, 'application/pdf', 10_000_000 + 1);
     const invalidMime = await uploadedInvoiceFile(data.manager.user.id, 'image/png');
     const invoice = (
       await createInvoice(data.stage.id, file.id, 10_000, data.manager.cookie)
@@ -728,8 +728,8 @@ describe('Материалы, счета и нехватки', () => {
 
   it('проверяет лимит файла счёта при привязке к этапу', async () => {
     const data = await fixture();
-    const boundary = await uploadedInvoiceFile(data.manager.user.id, 'application/pdf', 10 * 1024 * 1024);
-    const oversized = await uploadedInvoiceFile(data.manager.user.id, 'application/pdf', 10 * 1024 * 1024 + 1);
+    const boundary = await uploadedInvoiceFile(data.manager.user.id, 'application/pdf', 10_000_000);
+    const oversized = await uploadedInvoiceFile(data.manager.user.id, 'application/pdf', 10_000_000 + 1);
 
     expect((await createInvoice(data.stage.id, boundary.id, 10_000, data.manager.cookie)).statusCode).toBe(201);
     const rejected = await createInvoice(data.stage.id, oversized.id, 10_000, data.manager.cookie);

@@ -50,7 +50,7 @@ export function PhotoPicker({ disabled, available, onSelect }: Readonly<PhotoPic
           event.currentTarget.value = '';
         }}
       />
-      <p className="text-sm text-muted-foreground">JPEG, PNG или HEIC до 20 МиБ. Свободно мест: {available} из 20.</p>
+      <p className="text-sm text-muted-foreground">JPEG, PNG или HEIC до 20 МБ. Свободно мест: {available} из 20.</p>
     </div>
   );
 }

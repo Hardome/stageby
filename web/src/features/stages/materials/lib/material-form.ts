@@ -6,7 +6,7 @@ import { createMaterialInvoiceSchema as invoiceSchema } from '@api/zod/createMat
 import { createMaterialShortageSchema as shortageSchema } from '@api/zod/createMaterialShortageSchema';
 import { updateMaterialInvoiceSchema } from '@api/zod/updateMaterialInvoiceSchema';
 
-export const maxInvoiceSize = 10 * 1024 * 1024;
+export const maxInvoiceSize = 10_000_000;
 
 export function invoiceMime(file: File) {
   return /\.pdf$/i.test(file.name) ? 'application/pdf' : 'image/jpeg';
@@ -16,7 +16,7 @@ export function invoiceFileError(file: File): string | undefined {
   if (!/\.(pdf|jpe?g)$/i.test(file.name) || (file.type && file.type !== invoiceMime(file)))
     return 'Выберите PDF или JPEG.';
   if (file.size === 0) return 'Файл пустой.';
-  if (file.size > maxInvoiceSize) return 'Размер файла не должен превышать 10 МиБ.';
+  if (file.size > maxInvoiceSize) return 'Размер файла не должен превышать 10 МБ.';
   if (file.name.length > 255) return 'Имя файла не должно превышать 255 символов.';
 }
 
