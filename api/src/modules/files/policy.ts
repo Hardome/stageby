@@ -1,12 +1,12 @@
 import type { CreateFileUpload, FilePurpose } from '#app/generated/types.gen';
 import type { Actor, FileOperationError } from '#app/modules/files/types';
 
-const bytesPerMiB = 1024 * 1024;
+const bytesPerMB = 1_000_000;
 
 const policies: Record<FilePurpose, { mimeTypes: ReadonlySet<string>; maxSizeBytes: number }> = {
-  project_document: { mimeTypes: new Set(['application/pdf']), maxSizeBytes: 50 * bytesPerMiB },
-  checklist_photo: { mimeTypes: new Set(['image/jpeg', 'image/png', 'image/heic']), maxSizeBytes: 20 * bytesPerMiB },
-  material_invoice: { mimeTypes: new Set(['application/pdf', 'image/jpeg']), maxSizeBytes: 10 * bytesPerMiB },
+  project_document: { mimeTypes: new Set(['application/pdf']), maxSizeBytes: 50 * bytesPerMB },
+  checklist_photo: { mimeTypes: new Set(['image/jpeg', 'image/png', 'image/heic']), maxSizeBytes: 20 * bytesPerMB },
+  material_invoice: { mimeTypes: new Set(['application/pdf', 'image/jpeg']), maxSizeBytes: 10 * bytesPerMB },
 };
 
 export function validateUploadPolicy(

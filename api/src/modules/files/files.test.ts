@@ -761,7 +761,7 @@ describe('File uploads and checklist photos', () => {
     const manager = await createIdentity('manager');
     const mime = await uploadPhoto(manager.cookie, { mimeType: 'text/plain' });
     expect(mime.createResponse.statusCode).toBe(400);
-    const size = await uploadPhoto(manager.cookie, { sizeBytes: 20 * 1024 * 1024 + 1 });
+    const size = await uploadPhoto(manager.cookie, { sizeBytes: 20_000_000 + 1 });
     expect(size.createResponse.statusCode).toBe(413);
 
     const uploaded = await uploadPhoto(manager.cookie);
@@ -775,35 +775,50 @@ describe('File uploads and checklist photos', () => {
     expect(mismatch.statusCode).toBe(409);
   });
 
-  it('применяет лимит счёта 10 МиБ при создании и завершении upload', async () => {
-    const manager = await createIdentity('manager');
-    const oversized = await uploadPhoto(manager.cookie, {
-      purpose: 'material_invoice',
-      originalName: 'invoice.pdf',
+  it.each([
+    {
+      purpose: 'project_document',
+      sizeBytes: 50_000_000,
       mimeType: 'application/pdf',
-      sizeBytes: 10 * 1024 * 1024 + 1,
-    });
-    expect(oversized.createResponse.statusCode).toBe(413);
+      originalName: 'project.pdf',
+      status: 400,
+    },
+    {
+      purpose: 'material_invoice',
+      sizeBytes: 10_000_000,
+      mimeType: 'application/pdf',
+      originalName: 'invoice.pdf',
+      status: 413,
+    },
+    {
+      purpose: 'checklist_photo',
+      sizeBytes: 20_000_000,
+      mimeType: 'image/jpeg',
+      originalName: 'photo.jpg',
+      status: 413,
+    },
+  ])('проверяет десятичную границу $purpose при создании и завершении загрузки', async ({ status, ...input }) => {
+    const manager = await createIdentity('manager');
+    const boundary = await uploadPhoto(manager.cookie, input);
+    expect(boundary.createResponse.statusCode, boundary.createResponse.body).toBe(201);
+    expect(boundary.completeResponse?.statusCode, boundary.completeResponse?.body).toBe(200);
+
+    const oversized = await uploadPhoto(manager.cookie, { ...input, sizeBytes: input.sizeBytes + 1 });
+    expect(oversized.createResponse.statusCode).toBe(status);
 
     const createResponse = await getApp().inject({
       method: 'POST',
       url: '/file-uploads',
       headers: { cookie: manager.cookie },
-      payload: {
-        purpose: 'material_invoice',
-        originalName: 'invoice.pdf',
-        mimeType: 'application/pdf',
-        sizeBytes: 10 * 1024 * 1024,
-        checksumSha256: checksum,
-      },
+      payload: { ...input, checksumSha256: checksum },
     });
     expect(createResponse.statusCode, createResponse.body).toBe(201);
     const upload = createResponse.json<FileUpload>();
     createdFileIds.push(upload.fileId);
     const key = decodeURIComponent(new URL(upload.uploadUrl).pathname.slice(1));
     storage.objects.set(key, {
-      sizeBytes: 10 * 1024 * 1024 + 1,
-      mimeType: 'application/pdf',
+      sizeBytes: input.sizeBytes + 1,
+      mimeType: input.mimeType,
       checksumSha256Base64: upload.headers['x-amz-checksum-sha256']!,
     });
     const completed = await getApp().inject({
@@ -814,6 +829,22 @@ describe('File uploads and checklist photos', () => {
     });
     expect(completed.statusCode).toBe(413);
     expect(completed.json()).toMatchObject({ code: 'file_too_large' });
+  });
+
+  it.each([
+    { sizeBytes: 20_000_000, status: 201 },
+    { sizeBytes: 20_000_001, status: 404 },
+  ])('проверяет размер $sizeBytes при привязке загруженного фото', async ({ sizeBytes, status }) => {
+    const fixture = await createFixture();
+    const [file] = await insertUploadedPhotos(fixture.foreman.user.id, 1);
+    await getApp().db.update(files).set({ sizeBytes }).where(eq(files.id, file!.id));
+    const response = await getApp().inject({
+      method: 'POST',
+      url: `/checklist/items/${fixture.item.id}/photos`,
+      headers: { cookie: fixture.foreman.cookie },
+      payload: { fileId: file!.id },
+    });
+    expect(response.statusCode, response.body).toBe(status);
   });
 
   it('не раскрывает чужой файл по прямому ID', async () => {

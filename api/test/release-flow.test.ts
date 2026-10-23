@@ -167,7 +167,7 @@ describe('Проверка выпуска через HTTP, PostgreSQL и MinIO',
 
     const invoices: StageMaterialInvoice[] = [];
     for (const mimeType of ['application/pdf', 'image/jpeg']) {
-      const body = Buffer.alloc(10 * 1024 * 1024, 1);
+      const body = Buffer.alloc(10_000_000, 1);
       const uploaded = await upload(managerCookie, 'material_invoice', mimeType, body);
       expect(uploaded.repeated).toEqual(uploaded.completed);
       const fileId = uploaded.fileId;

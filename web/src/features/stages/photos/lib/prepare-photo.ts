@@ -1,11 +1,11 @@
-const maxPhotoSize = 20 * 1024 * 1024;
+const maxPhotoSize = 20_000_000;
 const acceptedTypes = new Set(['image/jpeg', 'image/png', 'image/heic', 'image/heif']);
 
 export function photoError(file: File): string | undefined {
   if (!/\.(jpe?g|png|heic|heif)$/i.test(file.name) || (file.type && !acceptedTypes.has(file.type)))
     return 'Выберите JPEG, PNG или HEIC.';
   if (file.size === 0) return 'Файл пустой.';
-  if (file.size > maxPhotoSize) return 'Размер исходного фото не должен превышать 20 МиБ.';
+  if (file.size > maxPhotoSize) return 'Размер исходного фото не должен превышать 20 МБ.';
 }
 
 async function decodePhoto(blob: Blob): Promise<HTMLImageElement> {
@@ -54,7 +54,7 @@ export async function preparePhoto(file: File): Promise<File> {
       0.85,
     );
   });
-  if (blob.size > maxPhotoSize) throw new Error('Подготовленное фото превышает 20 МиБ. Выберите меньший снимок.');
+  if (blob.size > maxPhotoSize) throw new Error('Подготовленное фото превышает 20 МБ. Выберите меньший снимок.');
 
   return new File([blob], `${file.name.replace(/\.[^.]+$/, '').slice(0, 240)}.${isPng ? 'png' : 'jpg'}`, {
     type: mime,

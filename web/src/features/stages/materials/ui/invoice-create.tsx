@@ -67,7 +67,7 @@ export function InvoiceCreate({ stage, count }: Readonly<InvoiceCreateProperties
               items={upload.items}
               label="Файл счёта"
               hideDropzone={upload.items[0]?.status === 'uploaded'}
-              dropzoneText="Прикрепите PDF или JPEG до 10 МиБ."
+              dropzoneText="Прикрепите PDF или JPEG до 10 МБ."
               multiple={false}
               accept={{ 'application/pdf': ['.pdf'], 'image/jpeg': ['.jpg', '.jpeg'] }}
               maxSize={maxInvoiceSize}

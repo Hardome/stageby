@@ -14,6 +14,7 @@ import type {
   UpdateProjectStage,
 } from '#app/generated/types.gen';
 import type { AuditWriter } from '#app/modules/audit/repository';
+import { getMaximumSize } from '#app/modules/files/policy';
 import { loadProjects } from '#app/modules/projects/read';
 import { stageDatesValid } from '#app/modules/stages/dates';
 import { loadChecklist, loadStages } from '#app/modules/stages/repository';
@@ -136,7 +137,7 @@ async function validateDocuments(
       file.status !== 'uploaded' ||
       file.purpose !== 'project_document' ||
       file.mimeType !== 'application/pdf' ||
-      file.sizeBytes > 50 * 1024 * 1024 ||
+      file.sizeBytes > getMaximumSize('project_document') ||
       (link ? link.projectId !== projectId : actorId != null && file.uploadedByUserId !== actorId)
     )
       return failure(

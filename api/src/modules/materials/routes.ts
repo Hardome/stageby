@@ -41,7 +41,7 @@ const errors: Record<MaterialOperationError, { statusCode: 400 | 403 | 404 | 409
   },
   file_too_large: {
     statusCode: 413,
-    error: { error: 'Payload Too Large', code: 'file_too_large', message: 'Файл счёта превышает 10 МиБ.' },
+    error: { error: 'Payload Too Large', code: 'file_too_large', message: 'Файл счёта превышает 10 МБ.' },
   },
   invoice_limit_exceeded: {
     statusCode: 409,
