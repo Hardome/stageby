@@ -1,101 +1,65 @@
 # Stageby Web
 
-Веб-интерфейс Stageby на React и Vite.
+Веб-интерфейс на React и Vite. Подготовка окружения и первый вход описаны в
+[корневом README](../README.md#быстрый-старт).
 
-[Установка ярлыка на главный экран Android и iOS](../docs/guides/install-shortcut.md).
+## Отдельный запуск
 
-## Быстрый старт
-
-Проще всего подготовить и запустить весь проект из корня репозитория:
+После общей подготовки запустите API и выполните из каталога `web`:
 
 ```sh
-pnpm run bootstrap
 pnpm run dev
 ```
 
-Для отдельного запуска веб-приложения:
-
-1. Убедитесь, что API запущено.
-2. Скопируйте `.env.example` в `.env` и при необходимости измените адрес API.
-3. Выполните команды из каталога `web`:
-
-```sh
-pnpm install
-pnpm run codegen
-pnpm run dev
-```
-
-Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000).
-
-## Переменные окружения
-
-| Переменная | Значение по умолчанию | Назначение |
-| --- | --- | --- |
-| `API_PROXY_TARGET` | `http://127.0.0.1:3001` | Адрес API, куда Vite перенаправляет запросы `/auth` и `/users` |
-
-Переменная используется только сервером разработки Vite и не попадает в клиентский код.
+Адрес: [http://localhost:3000](http://localhost:3000).
+`API_PROXY_TARGET` в `web/.env` задаёт backend для Vite dev/preview;
+по умолчанию `http://127.0.0.1:3001`. В клиентский код не попадает.
 
 ## Команды
 
+Команды выполняются из `web`; из корня используйте `pnpm --dir web run <команда>`.
+
 | Команда | Назначение |
 | --- | --- |
-| `pnpm run dev` | Запустить сервер разработки Vite |
-| `pnpm run build` | Обновить сгенерированный код, проверить типы и собрать приложение |
-| `pnpm run preview` | Локально просмотреть production-сборку |
-| `pnpm run codegen` | Параллельно сгенерировать API-клиент и дерево маршрутов |
-| `pnpm run codegen:api` | Сгенерировать типы, схемы, HTTP-клиенты и React Query-хуки |
-| `pnpm run codegen:routes` | Сгенерировать дерево маршрутов TanStack Router |
-| `pnpm run typecheck` | Проверить типы TypeScript |
-| `pnpm run lint` | Запустить проверки Biome, ESLint, Stylelint, Steiger и cspell |
-| `pnpm run format` | Отформатировать файлы с помощью Biome |
-| `pnpm run test` | Однократно запустить тесты |
-| `pnpm run test:watch` | Запустить тесты в режиме наблюдения |
-| `pnpm run test:ui` | Открыть интерфейс Vitest |
-| `pnpm run test:coverage` | Запустить тесты с отчётом о покрытии |
+| `pnpm run dev` | Запустить Vite с HMR |
+| `pnpm run check` | Выполнить линтеры, проверку типов, тесты и сборку |
+| `pnpm run build` | Обновить generated-код, проверить типы и собрать `dist/` |
+| `pnpm run preview` | Локально просмотреть готовую сборку |
+| `pnpm run codegen` | Сгенерировать API-клиент и дерево маршрутов |
+| `pnpm run typecheck` | Проверить типы |
+| `pnpm run lint` | Выполнить Biome, ESLint, Stylelint, Steiger и cspell |
+| `pnpm run test` | Запустить Vitest однократно |
+| `pnpm run test:watch` | Запустить Vitest в режиме наблюдения |
+| `pnpm run test:coverage` | Получить отчёт о покрытии |
 
-Команды линтеров выполняют автоматические исправления и могут изменять файлы.
+`lint` и `check` могут исправлять файлы. `preview` — локальный просмотр сборки.
+Остальные команды — в [package.json](package.json).
 
-## Структура
+## Клиент, маршруты и структура
 
-```text
-web/
-├── src/
-│   ├── app/          # инициализация, провайдеры, маршруты и общие стили
-│   ├── pages/        # страницы приложения
-│   ├── widgets/      # самостоятельные блоки страниц
-│   ├── features/     # пользовательские сценарии
-│   ├── entities/     # бизнес-сущности
-│   ├── shared/       # повторно используемый код и UI
-│   ├── assets/       # статические ресурсы
-│   └── generated/    # API-клиент и дерево маршрутов
-└── tests/            # общая настройка тестов
-```
+Kubb читает `contracts/openapi.yaml` и создаёт в `src/generated/api/`:
 
-Проект следует подходу Feature-Sliced Design. Допустимость импортов между слоями проверяет Steiger.
-
-## API-клиент
-
-Источник истины — [`contracts/references/stageby/stageby.yaml`](../contracts/references/stageby/stageby.yaml), объединяющий файлы сущностей. После изменения исходников выполните из корня Stageby `pnpm --dir contracts run generate`. Kubb читает собранный `contracts/openapi.yaml` и генерирует в `src/generated/api`:
-
-- TypeScript-типы;
-- Zod-схемы;
-- функции Fetch API;
+- TypeScript-типы и Zod-схемы;
+- Fetch-клиенты;
 - query- и mutation-хуки TanStack Query.
 
-После изменения контракта выполните:
+После изменения контракта используйте общую команду `pnpm run codegen` из корня репозитория,
+чтобы обновить и bundle, и оба приложения.
 
-```sh
-pnpm run codegen:api
-```
+Из каталога `web`:
 
-Сгенерированные файлы вручную не редактируются.
+- `pnpm run codegen:routes` — обновить дерево после изменения `src/app/routes/`.
+- `pnpm run codegen:api` — обновить клиент из готового bundle.
 
-## Маршруты
+Файлы `src/generated/` вручную не редактируются.
 
-Файловые маршруты находятся в `src/app/routes`. После добавления, удаления или переименования маршрута обновите дерево:
+Код организован по слоям `app`, `pages`, `widgets`, `features`, `entities`, `shared`; границы
+импортов проверяет Steiger. Правила и примеры — в
+[руководстве по web](../docs/rules/web-guidelines.md).
 
-```sh
-pnpm run codegen:routes
-```
+## Руководства
 
-Файл `src/generated/routes/route-tree.gen.ts` создаётся автоматически и вручную не редактируется.
+- [Дизайн-система](../docs/rules/design-system.md).
+- [Ручной регресс](../docs/guides/regression/README.md).
+- [Доступ с телефона и демонстрация сборки](../docs/guides/local-demo.md).
+- [Ярлык на главном экране Android и iOS](../docs/guides/install-shortcut.md).
