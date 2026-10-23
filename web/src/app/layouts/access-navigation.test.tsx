@@ -16,10 +16,6 @@ vi.mock('@api/clients/getCurrentUser', () => ({
 }));
 vi.mock('@api/clients/login', () => ({ login: () => ({ unwrap: () => mocks.login() as Promise<unknown> }) }));
 vi.mock('@api/clients/getStage', () => ({ getStage: () => ({ unwrap: () => mocks.stage() as Promise<unknown> }) }));
-vi.mock('@features/projects/list', () => ({
-  projectSearchSchema: (search: unknown) => search,
-  TemporaryProjectList: () => null,
-}));
 vi.mock('@widgets/app-header', () => ({ AppHeader: () => null }));
 vi.mock('../devtools/tanstack-router-devtools', () => ({ RouterDevtools: () => null }));
 

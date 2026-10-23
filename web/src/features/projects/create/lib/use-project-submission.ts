@@ -15,7 +15,7 @@ import type { ApiError, CreateProjectOptions } from '@api/types';
 
 import { projectRequest } from './project-form';
 
-export function projectErrorMessage(error: unknown): string {
+function projectErrorMessage(error: unknown): string {
   switch (errorStatus(error)) {
     case 400: {
       return 'Проверьте отмеченные поля.';
