@@ -16,5 +16,5 @@ import { createStageMaterialInvoiceResponseSchema, createStageMaterialInvoiceErr
 export function createStageMaterialInvoice<ThrowOnError extends boolean = true>(options: Options<CreateStageMaterialInvoiceOptions, ThrowOnError>): Unwrappable<RequestResult<CreateStageMaterialInvoiceResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/stages/{stageId}/material-invoices', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createStageMaterialInvoiceResponseSchema, error: createStageMaterialInvoiceErrorSchema }, ...config }) as Promise<RequestResult<CreateStageMaterialInvoiceResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/stages/{stageId}/material-invoices', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createStageMaterialInvoiceResponseSchema, error: createStageMaterialInvoiceErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<CreateStageMaterialInvoiceResponses, ThrowOnError>>)
 }

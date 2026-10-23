@@ -25,7 +25,7 @@ export function ProjectProgress({
   onStepChange,
   label = 'Шаги создания',
   ...stageNavigation
-}: ProjectProgressProperties) {
+}: Readonly<ProjectProgressProperties>) {
   const { disabled, stages } = stageNavigation;
 
   return (
@@ -47,9 +47,9 @@ export function ProjectProgress({
               onClick={() => onStepChange(index + 1)}
             >
               {step > index + 1 ? <CheckIcon data-icon="inline-start" /> : <Icon data-icon="inline-start" />}
-              <span className="flex min-w-0 max-w-full flex-col gap-1 text-center sm:text-left">
-                <span className="wrap-anywhere whitespace-normal text-xs sm:text-sm">{title}</span>
-                <span className="hidden whitespace-normal font-normal text-xs opacity-70 lg:block">{description}</span>
+              <span className="flex max-w-full min-w-0 flex-col gap-1 text-center sm:text-left">
+                <span className="text-xs wrap-anywhere whitespace-normal sm:text-sm">{title}</span>
+                <span className="hidden text-xs font-normal whitespace-normal opacity-70 lg:block">{description}</span>
               </span>
             </Button>
             {index === 2 && stages.length > 0 && (

@@ -46,7 +46,7 @@ export function AssigneePicker({
   ref,
   error,
   label = 'Мастер',
-}: AssigneePickerProperties) {
+}: Readonly<AssigneePickerProperties>) {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search?.trim().slice(0, 100) ?? '', 250);
 
@@ -116,7 +116,7 @@ export function AssigneePicker({
             <ComboboxEmpty>{accessMessage}</ComboboxEmpty>
             <ComboboxList>
               {(item: AssigneeOption) => (
-                <ComboboxItem key={item.id} value={item} disabled={users.isFetching} className="wrap-anywhere min-h-12">
+                <ComboboxItem key={item.id} value={item} disabled={users.isFetching} className="min-h-12 wrap-anywhere">
                   {item.label}
                 </ComboboxItem>
               )}

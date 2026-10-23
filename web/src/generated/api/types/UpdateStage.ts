@@ -126,4 +126,4 @@ export type UpdateStageResponses = {
 /**
  * @description Union of all possible responses
 */
-export type UpdateStageResponse = (UpdateStageStatus200 | UpdateStageStatus400 | UpdateStageStatus401 | UpdateStageStatus403 | UpdateStageStatus404 | UpdateStageStatus409);
+export type UpdateStageResponse = UpdateStageStatus200;

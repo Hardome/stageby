@@ -40,4 +40,4 @@ export type ListStageMaterialInvoicesResponses = {
 /**
  * @description Union of all possible responses
 */
-export type ListStageMaterialInvoicesResponse = (ListStageMaterialInvoicesStatus200 | ListStageMaterialInvoicesStatus401 | ListStageMaterialInvoicesStatus403 | ListStageMaterialInvoicesStatus404);
+export type ListStageMaterialInvoicesResponse = ListStageMaterialInvoicesStatus200;

@@ -11,7 +11,7 @@ interface ProjectMoneyFieldProperties {
   disabled: boolean;
 }
 
-export function ProjectMoneyField({ name, label, disabled }: ProjectMoneyFieldProperties) {
+export function ProjectMoneyField({ name, label, disabled }: Readonly<ProjectMoneyFieldProperties>) {
   const { control } = useFormContext<ProjectFormValues>();
   const id = `project-${name}`;
 

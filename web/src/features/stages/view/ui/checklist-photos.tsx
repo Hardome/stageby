@@ -12,7 +12,7 @@ interface ChecklistPhotosProperties {
   children: ReactNode;
 }
 
-export function ChecklistPhotos({ item, children }: ChecklistPhotosProperties) {
+export function ChecklistPhotos({ item, children }: Readonly<ChecklistPhotosProperties>) {
   return (
     <Card>
       <CardContent className="flex flex-col gap-4">
@@ -20,8 +20,8 @@ export function ChecklistPhotos({ item, children }: ChecklistPhotosProperties) {
           <div className="flex items-start gap-3 rounded-xl border bg-secondary p-4 text-secondary-foreground">
             <ScanLineIcon className="mt-0.5 size-5 shrink-0 text-primary-text" aria-hidden="true" />
             <div className="flex min-w-0 flex-col gap-1">
-              <p className="font-bold text-foreground text-sm">Что должно быть на фото</p>
-              <p className="wrap-anywhere text-muted-foreground text-sm leading-relaxed">{item.photoHint}</p>
+              <p className="text-sm font-bold text-foreground">Что должно быть на фото</p>
+              <p className="text-sm leading-relaxed wrap-anywhere text-muted-foreground">{item.photoHint}</p>
             </div>
           </div>
         )}

@@ -30,4 +30,4 @@ export type RequestPasswordResetResponses = {
 /**
  * @description Union of all possible responses
 */
-export type RequestPasswordResetResponse = (RequestPasswordResetStatus202 | RequestPasswordResetStatus400 | RequestPasswordResetStatus429);
+export type RequestPasswordResetResponse = RequestPasswordResetStatus202;

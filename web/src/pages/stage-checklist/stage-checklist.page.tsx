@@ -19,7 +19,7 @@ interface StageChecklistPageProperties {
   offset?: number;
 }
 
-export function StageChecklistPage({ stageId, itemId, offset }: StageChecklistPageProperties) {
+export function StageChecklistPage({ stageId, itemId, offset }: Readonly<StageChecklistPageProperties>) {
   const navigate = useNavigate();
   const { query, checklist, item, reload, notFound } = useChecklistPage(stageId, itemId);
   const { user } = useAuth();

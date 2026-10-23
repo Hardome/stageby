@@ -7,13 +7,13 @@ import * as z from 'zod'
 import { entityIdSchema } from './entityIdSchema'
 import { fileStatusSchema } from './fileStatusSchema'
 
-export const fileUploadSchema = z.object({
+export const fileUploadSchema = z.strictObject({
   fileId: entityIdSchema.describe('Идентификатор созданной upload-сессии и будущего файла.').meta({ examples: [301] }),
   status: fileStatusSchema.describe('Начальное состояние upload-сессии.').meta({ examples: ['pending'] }),
   method: z.enum(['PUT']).describe('HTTP-метод прямой загрузки в storage.').meta({ examples: ['PUT'] }),
   uploadUrl: z.url().describe('Короткоживущий подписанный URL загрузки.').meta({ examples: ['http://localhost:9000/stageby/uploads/example?X-Amz-Signature=example'] }),
-  headers: z.object({}).catchall(z.string()).describe('Заголовки, которые клиент обязан передать при загрузке.'),
+  headers: z.record(z.string(), z.string()).describe('Заголовки, которые клиент обязан передать при загрузке.'),
   expiresAt: z.iso.datetime().describe('Время истечения подписанного URL и upload-сессии.').meta({ examples: ['2026-09-29T08:30:00Z'] }),
-}).strict()
+})
 
 export type FileUploadSchemaType = z.infer<typeof fileUploadSchema>

@@ -14,8 +14,8 @@ export function ProjectViewSkeleton() {
       </div>
       <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="font-bold text-2xl tracking-tight">Этапы строительства</h2>
-          <p className="text-muted-foreground text-sm">Последовательность и состояние работ</p>
+          <h2 className="text-2xl font-bold tracking-tight">Этапы строительства</h2>
+          <p className="text-sm text-muted-foreground">Последовательность и состояние работ</p>
         </div>
         <ProjectStagesSkeleton />
       </section>

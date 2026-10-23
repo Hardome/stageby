@@ -6,7 +6,7 @@ interface PasswordResetStatusProperties {
   requestedAt: string | null;
 }
 
-export function PasswordResetStatus({ requestedAt }: PasswordResetStatusProperties) {
+export function PasswordResetStatus({ requestedAt }: Readonly<PasswordResetStatusProperties>) {
   return (
     <>
       {requestedAt && (

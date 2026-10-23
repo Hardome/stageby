@@ -10,7 +10,7 @@ interface StageListActionsProperties {
   offset: number;
 }
 
-export function StageListActions({ stage, offset }: StageListActionsProperties) {
+export function StageListActions({ stage, offset }: Readonly<StageListActionsProperties>) {
   const { longitude, latitude } = stage.projectCoordinates;
   const mapUrl = `https://yandex.ru/maps/?pt=${longitude},${latitude}&z=16&l=map`;
 

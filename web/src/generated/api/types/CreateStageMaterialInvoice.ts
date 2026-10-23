@@ -52,4 +52,4 @@ export type CreateStageMaterialInvoiceResponses = {
 /**
  * @description Union of all possible responses
 */
-export type CreateStageMaterialInvoiceResponse = (CreateStageMaterialInvoiceStatus201 | CreateStageMaterialInvoiceStatus400 | CreateStageMaterialInvoiceStatus401 | CreateStageMaterialInvoiceStatus403 | CreateStageMaterialInvoiceStatus404 | CreateStageMaterialInvoiceStatus409 | CreateStageMaterialInvoiceStatus413);
+export type CreateStageMaterialInvoiceResponse = CreateStageMaterialInvoiceStatus201;

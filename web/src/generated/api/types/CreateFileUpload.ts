@@ -78,4 +78,4 @@ export type CreateFileUploadResponses = {
 /**
  * @description Union of all possible responses
 */
-export type CreateFileUploadResponse = (CreateFileUploadStatus201 | CreateFileUploadStatus400 | CreateFileUploadStatus401 | CreateFileUploadStatus403 | CreateFileUploadStatus413);
+export type CreateFileUploadResponse = CreateFileUploadStatus201;

@@ -77,4 +77,4 @@ export type UpdateChecklistItemResponses = {
 /**
  * @description Union of all possible responses
 */
-export type UpdateChecklistItemResponse = (UpdateChecklistItemStatus200 | UpdateChecklistItemStatus400 | UpdateChecklistItemStatus401 | UpdateChecklistItemStatus403 | UpdateChecklistItemStatus404 | UpdateChecklistItemStatus409);
+export type UpdateChecklistItemResponse = UpdateChecklistItemStatus200;

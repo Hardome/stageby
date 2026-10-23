@@ -12,7 +12,7 @@ interface ProjectEditorProperties extends Omit<EditProjectFormProperties, 'snaps
   projectId: number;
 }
 
-export function ProjectEditor({ projectId, ...properties }: ProjectEditorProperties) {
+export function ProjectEditor({ projectId, ...properties }: Readonly<ProjectEditorProperties>) {
   const { query, snapshot, revision, reload } = useProjectEditor(projectId, properties.onDirtyChange);
 
   if (query.error?.status === 403 || query.error?.status === 404) return <NotFound />;

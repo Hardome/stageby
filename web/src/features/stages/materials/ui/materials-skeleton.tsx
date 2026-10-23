@@ -5,7 +5,7 @@ export function MaterialsSkeleton() {
     <div className="flex flex-col gap-4" aria-hidden="true">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="font-bold text-xl">Счета</h2>
+          <h2 className="text-xl font-bold">Счета</h2>
           <Skeleton className="h-6 w-12" />
         </div>
         <Skeleton className="h-10 w-36" />

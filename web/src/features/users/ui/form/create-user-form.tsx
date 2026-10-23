@@ -15,7 +15,7 @@ interface CreateUserFormProperties {
   search: UsersSearch;
 }
 
-export function CreateUserForm({ managerId, search }: CreateUserFormProperties) {
+export function CreateUserForm({ managerId, search }: Readonly<CreateUserFormProperties>) {
   const { form, mutation, errors, isLoading, loginValidationMessage, clearDraft, submit } = useCreateUserForm(
     managerId,
     search,

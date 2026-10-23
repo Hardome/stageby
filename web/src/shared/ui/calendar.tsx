@@ -27,7 +27,7 @@ function Calendar({
   ...properties
 }: Readonly<
   React.ComponentProps<typeof DayPicker> & {
-    buttonVariant?: React.ComponentProps<typeof Button>['variant'];
+    buttonVariant?: Exclude<React.ComponentProps<typeof Button>['variant'], undefined>;
   }
 >) {
   const defaultClassNames = getDefaultClassNames();
@@ -38,7 +38,7 @@ function Calendar({
       className={cn(
         cn(
           'group/calendar bg-background in-data-[slot=card-content]:bg-transparent',
-          'in-data-[slot=popover-content]:bg-transparent p-2 [--cell-radius:var(--radius-md)]',
+          'p-2 [--cell-radius:var(--radius-md)] in-data-[slot=popover-content]:bg-transparent',
           '[--cell-size:--spacing(7)]',
         ),
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
@@ -171,10 +171,10 @@ function CalendarDayButton({
       className={cn(
         cn(
           'relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1',
-          'border-0 font-normal leading-none data-[range-end=true]:rounded-(--cell-radius)',
+          'border-0 leading-none font-normal data-[range-end=true]:rounded-(--cell-radius)',
           'data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-(--cell-radius)',
           'data-[range-end=true]:rounded-r-(--cell-radius)',
-          'data-[range-start=true]:rounded-l-(--cell-radius) data-[range-end=true]:bg-primary',
+          'data-[range-end=true]:bg-primary data-[range-start=true]:rounded-l-(--cell-radius)',
           'data-[range-middle=true]:bg-muted data-[range-start=true]:bg-primary',
           'data-[selected-single=true]:bg-control-selected',
           'data-[selected-single=true]:hover:bg-control-selected',
@@ -200,7 +200,7 @@ function CalendarRoot({ className, rootRef, ...properties }: React.ComponentProp
   return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...properties} />;
 }
 
-function CalendarChevron({ className, orientation, ...properties }: React.ComponentProps<typeof Chevron>) {
+function CalendarChevron({ className, orientation, ...properties }: Readonly<React.ComponentProps<typeof Chevron>>) {
   const horizontalIcon = orientation === 'left' ? ChevronLeftIcon : ChevronRightIcon;
   const Icon = orientation === 'down' || orientation === 'up' ? ChevronDownIcon : horizontalIcon;
 

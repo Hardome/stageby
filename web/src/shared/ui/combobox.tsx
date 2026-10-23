@@ -9,11 +9,11 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '
 
 const Combobox = ComboboxPrimitive.Root;
 
-function ComboboxValue({ ...properties }: ComboboxPrimitive.Value.Props) {
+function ComboboxValue({ ...properties }: Readonly<ComboboxPrimitive.Value.Props>) {
   return <ComboboxPrimitive.Value data-slot="combobox-value" {...properties} />;
 }
 
-function ComboboxTrigger({ className, children, ...properties }: ComboboxPrimitive.Trigger.Props) {
+function ComboboxTrigger({ className, children, ...properties }: Readonly<ComboboxPrimitive.Trigger.Props>) {
   return (
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
@@ -27,7 +27,7 @@ function ComboboxTrigger({ className, children, ...properties }: ComboboxPrimiti
   );
 }
 
-function ComboboxClear({ className, ...properties }: ComboboxPrimitive.Clear.Props) {
+function ComboboxClear({ className, ...properties }: Readonly<ComboboxPrimitive.Clear.Props>) {
   return (
     <ComboboxPrimitive.Clear
       data-slot="combobox-clear"
@@ -53,7 +53,7 @@ function ComboboxInput({
   showTrigger = true,
   showClear = false,
   ...properties
-}: ComboboxInputProperties) {
+}: Readonly<ComboboxInputProperties>) {
   return (
     <ComboboxPrimitive.InputGroup render={<InputGroup className={cn('w-auto', className)} />}>
       <ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...properties} />
@@ -87,7 +87,7 @@ function ComboboxContent({
   alignOffset = 0,
   anchor,
   ...properties
-}: ComboboxContentProperties) {
+}: Readonly<ComboboxContentProperties>) {
   return (
     <ComboboxPrimitive.Portal>
       <ComboboxPrimitive.Positioner
@@ -109,10 +109,10 @@ function ComboboxContent({
               'data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
               'data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95',
               'relative max-h-(--available-height) w-(--anchor-width)',
-              'min-w-(--anchor-width) max-w-(--available-width)',
+              'max-w-(--available-width) min-w-(--anchor-width)',
               'origin-(--transform-origin) overflow-hidden rounded-lg bg-popover',
               'text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100',
-              'data-[chips=true]:min-w-(--anchor-width) data-closed:animate-out data-open:animate-in',
+              'data-[chips=true]:min-w-(--anchor-width) data-open:animate-in data-closed:animate-out',
               '*:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0',
               '*:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30',
               '*:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none',
@@ -126,7 +126,7 @@ function ComboboxContent({
   );
 }
 
-function ComboboxList({ className, ...properties }: ComboboxPrimitive.List.Props) {
+function ComboboxList({ className, ...properties }: Readonly<ComboboxPrimitive.List.Props>) {
   return (
     <ComboboxPrimitive.List
       data-slot="combobox-list"
@@ -143,18 +143,18 @@ function ComboboxList({ className, ...properties }: ComboboxPrimitive.List.Props
   );
 }
 
-function ComboboxItem({ className, children, ...properties }: ComboboxPrimitive.Item.Props) {
+function ComboboxItem({ className, children, ...properties }: Readonly<ComboboxPrimitive.Item.Props>) {
   return (
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
         [
-          'relative flex w-full cursor-pointer select-none items-center gap-2 rounded-md py-1 pr-8',
+          'relative flex w-full cursor-pointer items-center gap-2 rounded-md py-1 pr-8 select-none',
           'pl-1.5 text-sm outline-hidden data-disabled:pointer-events-none',
           'data-highlighted:bg-accent data-highlighted:text-accent-foreground',
           'data-disabled:opacity-50',
           'not-data-[variant=destructive]:data-highlighted:**:text-accent-foreground',
-          "[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+          "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         ],
         className,
       )}
@@ -170,31 +170,31 @@ function ComboboxItem({ className, children, ...properties }: ComboboxPrimitive.
   );
 }
 
-function ComboboxGroup({ className, ...properties }: ComboboxPrimitive.Group.Props) {
+function ComboboxGroup({ className, ...properties }: Readonly<ComboboxPrimitive.Group.Props>) {
   return <ComboboxPrimitive.Group data-slot="combobox-group" className={cn(className)} {...properties} />;
 }
 
-function ComboboxLabel({ className, ...properties }: ComboboxPrimitive.GroupLabel.Props) {
+function ComboboxLabel({ className, ...properties }: Readonly<ComboboxPrimitive.GroupLabel.Props>) {
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-label"
-      className={cn('px-2 py-1.5 text-muted-foreground text-xs', className)}
+      className={cn('px-2 py-1.5 text-xs text-muted-foreground', className)}
       {...properties}
     />
   );
 }
 
-function ComboboxCollection({ ...properties }: ComboboxPrimitive.Collection.Props) {
+function ComboboxCollection({ ...properties }: Readonly<ComboboxPrimitive.Collection.Props>) {
   return <ComboboxPrimitive.Collection data-slot="combobox-collection" {...properties} />;
 }
 
-function ComboboxEmpty({ className, ...properties }: ComboboxPrimitive.Empty.Props) {
+function ComboboxEmpty({ className, ...properties }: Readonly<ComboboxPrimitive.Empty.Props>) {
   return (
     <ComboboxPrimitive.Empty
       data-slot="combobox-empty"
       className={cn(
         [
-          'hidden w-full justify-center py-2 text-center text-muted-foreground text-sm',
+          'hidden w-full justify-center py-2 text-center text-sm text-muted-foreground',
           'group-data-empty/combobox-content:flex',
         ],
         className,
@@ -204,7 +204,7 @@ function ComboboxEmpty({ className, ...properties }: ComboboxPrimitive.Empty.Pro
   );
 }
 
-function ComboboxSeparator({ className, ...properties }: ComboboxPrimitive.Separator.Props) {
+function ComboboxSeparator({ className, ...properties }: Readonly<ComboboxPrimitive.Separator.Props>) {
   return (
     <ComboboxPrimitive.Separator
       data-slot="combobox-separator"
@@ -226,7 +226,7 @@ function ComboboxChips({
           'flex min-h-8 flex-wrap items-center gap-1 rounded-(--radius-control) border border-input bg-transparent',
           'bg-clip-padding px-2.5 py-1 text-sm transition-colors focus-within:border-ring',
           'focus-within:ring-3 focus-within:ring-ring/50 has-aria-invalid:border-destructive',
-          'has-data-[slot=combobox-chip]:px-1 has-aria-invalid:ring-3',
+          'has-aria-invalid:ring-3 has-data-[slot=combobox-chip]:px-1',
           'has-aria-invalid:ring-destructive/20 dark:bg-input/30',
           'dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40',
         ],
@@ -251,9 +251,9 @@ function ComboboxChip({
       className={cn(
         [
           'flex h-[calc(--spacing(5.25))] w-fit items-center justify-center gap-1',
-          'whitespace-nowrap rounded-sm bg-muted px-1.5 font-medium text-foreground text-xs',
+          'rounded-sm bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground',
           'has-disabled:pointer-events-none has-disabled:cursor-not-allowed',
-          'has-data-[slot=combobox-chip-remove]:pr-0 has-disabled:opacity-50',
+          'has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0',
         ],
         className,
       )}
@@ -273,7 +273,7 @@ function ComboboxChip({
   );
 }
 
-function ComboboxChipsInput({ className, ...properties }: ComboboxPrimitive.Input.Props) {
+function ComboboxChipsInput({ className, ...properties }: Readonly<ComboboxPrimitive.Input.Props>) {
   return (
     <ComboboxPrimitive.Input
       data-slot="combobox-chip-input"

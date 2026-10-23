@@ -16,7 +16,7 @@ interface StageMaterialsProperties {
   stage: Stage;
 }
 
-export function StageMaterials({ stage }: StageMaterialsProperties) {
+export function StageMaterials({ stage }: Readonly<StageMaterialsProperties>) {
   const query = useMaterials(stage.id);
   const { user } = useAuth();
 

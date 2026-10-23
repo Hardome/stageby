@@ -15,7 +15,7 @@ interface WorkPaymentListProperties {
   onAction: (action: WorkAction) => void;
 }
 
-export function WorkPaymentList({ payments, editable, showComments, onAction }: WorkPaymentListProperties) {
+export function WorkPaymentList({ payments, editable, showComments, onAction }: Readonly<WorkPaymentListProperties>) {
   return (
     <ul className="flex flex-col divide-y">
       {payments.map((payment) => (
@@ -30,15 +30,15 @@ export function WorkPaymentList({ payments, editable, showComments, onAction }: 
             <ArrowDownLeftIcon className="size-4" aria-hidden="true" />
           </div>
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="wrap-anywhere font-bold text-sm tabular-nums">{formatMoney(payment.amountMinor)}</p>
-            <p className="wrap-anywhere text-muted-foreground text-xs">
+            <p className="text-sm font-bold wrap-anywhere tabular-nums">{formatMoney(payment.amountMinor)}</p>
+            <p className="text-xs wrap-anywhere text-muted-foreground">
               {payment.recipient.fullName} ·{' '}
               <time dateTime={payment.paidAt} className="tabular-nums">
                 {formatDate(payment.paidAt)}
               </time>
             </p>
             {showComments && payment.comment && (
-              <p className="wrap-anywhere mt-1 whitespace-pre-wrap text-sm leading-relaxed">{payment.comment}</p>
+              <p className="mt-1 text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap">{payment.comment}</p>
             )}
           </div>
           {editable && (

@@ -7,7 +7,7 @@ interface MaterialFeedbackProperties {
   action: ReturnType<typeof useMaterialAction>;
 }
 
-export function MaterialFeedback({ action }: MaterialFeedbackProperties) {
+export function MaterialFeedback({ action }: Readonly<MaterialFeedbackProperties>) {
   return (
     <>
       {action.message && (

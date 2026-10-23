@@ -13,7 +13,7 @@ export function StageChecklistSkeleton() {
                 <Skeleton className="h-6 w-24" />
               </div>
               <Skeleton className="h-5 w-4/5" />
-              <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 Фото: <Skeleton className="h-4 w-6" />
               </div>
             </div>

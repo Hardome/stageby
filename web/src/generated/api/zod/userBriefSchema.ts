@@ -5,9 +5,9 @@
 
 import * as z from 'zod'
 
-export const userBriefSchema = z.object({
+export const userBriefSchema = z.strictObject({
   id: z.int().min(1).max(2147483647).describe('Стабильный ID пользователя.').meta({ examples: [1] }),
   fullName: z.string().min(1).max(255).describe('Полное имя сотрудника или исполнителя для отображения.').meta({ examples: ['Иван Петров'] }),
-}).strict().describe('Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.')
+}).describe('Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.')
 
 export type UserBriefSchemaType = z.infer<typeof userBriefSchema>

@@ -9,9 +9,9 @@ import { entityIdSchema } from './entityIdSchema'
 import { fileSchema } from './fileSchema'
 import { sha256Schema } from './sha256Schema'
 
-export const completeFileUploadSchema = z.object({
+export const completeFileUploadSchema = z.strictObject({
   checksumSha256: sha256Schema.describe('Контрольная сумма отправленного содержимого.').meta({ examples: ['0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'] }),
-}).strict()
+})
 
 export type CompleteFileUploadSchemaType = z.infer<typeof completeFileUploadSchema>
 

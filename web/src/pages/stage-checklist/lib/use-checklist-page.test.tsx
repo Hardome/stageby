@@ -17,7 +17,7 @@ interface ProbeProperties {
   itemId: string;
 }
 
-function Probe({ stageId, itemId }: ProbeProperties) {
+function Probe({ stageId, itemId }: Readonly<ProbeProperties>) {
   const result = useChecklistPage(stageId, itemId);
 
   return <div>{result.notFound ? 'Недоступно' : result.item?.title}</div>;
@@ -44,22 +44,22 @@ describe('checklist page access', () => {
     vi.unstubAllGlobals();
   });
 
-  async function render(stageId: string, itemId: string) {
+  async function render(itemId: string) {
     await act(async () => {
-      root.render(<Probe stageId={stageId} itemId={itemId} />);
+      root.render(<Probe stageId="11" itemId={itemId} />);
       await Promise.resolve();
     });
   }
 
   it('accepts a member item and rejects an item from another stage', async () => {
-    await render('11', '211');
+    await render('211');
     expect(container).toHaveTextContent('Армирование');
-    await render('11', '999');
+    await render('999');
     expect(container).toHaveTextContent('Недоступно');
   });
 
   it('does not request checklist data for an invalid item identifier', async () => {
-    await render('11', 'bad');
+    await render('bad');
     expect(mocks.checklist).toHaveBeenLastCalledWith(
       { path: { stageId: 11 } },
       { query: { enabled: false, retry: false } },
@@ -70,7 +70,7 @@ describe('checklist page access', () => {
   it('does not request nested data before stage access is established', async () => {
     mocks.stage.mockReturnValue({ isLoading: true });
     mocks.checklist.mockReturnValue({});
-    await render('11', '211');
+    await render('211');
     expect(mocks.checklist).toHaveBeenLastCalledWith(
       { path: { stageId: 0 } },
       { query: { enabled: false, retry: false } },
@@ -82,7 +82,7 @@ describe('checklist page access', () => {
     for (const status of [403, 404]) {
       mocks.stage.mockReturnValue({ error: { status } });
       mocks.checklist.mockReturnValue({});
-      await render('11', '211');
+      await render('211');
       expect(container).toHaveTextContent('Недоступно');
     }
     expect(mocks.access).toHaveBeenCalled();

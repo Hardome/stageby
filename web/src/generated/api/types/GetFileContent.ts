@@ -40,4 +40,4 @@ export type GetFileContentResponses = {
 /**
  * @description Union of all possible responses
 */
-export type GetFileContentResponse = (GetFileContentStatus200 | GetFileContentStatus401 | GetFileContentStatus404);
+export type GetFileContentResponse = GetFileContentStatus200;

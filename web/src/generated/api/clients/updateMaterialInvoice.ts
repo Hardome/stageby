@@ -16,5 +16,5 @@ import { updateMaterialInvoiceResponseSchema, updateMaterialInvoiceErrorSchema }
 export function updateMaterialInvoice<ThrowOnError extends boolean = true>(options: Options<UpdateMaterialInvoiceOptions, ThrowOnError>): Unwrappable<RequestResult<UpdateMaterialInvoiceResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'PATCH', url: '/material-invoices/{invoiceId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateMaterialInvoiceResponseSchema, error: updateMaterialInvoiceErrorSchema }, ...config }) as Promise<RequestResult<UpdateMaterialInvoiceResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'PATCH', url: '/material-invoices/{invoiceId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateMaterialInvoiceResponseSchema, error: updateMaterialInvoiceErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<UpdateMaterialInvoiceResponses, ThrowOnError>>)
 }

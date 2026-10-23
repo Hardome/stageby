@@ -8,7 +8,7 @@ import { Textarea } from '@shared/ui/textarea';
 import type { WorkFormValues } from '../lib/work-form';
 import { WorkAmountFields } from './work-amount-fields';
 
-export function WorkPaymentFields({ disabled }: { disabled: boolean }) {
+export function WorkPaymentFields({ disabled }: Readonly<{ disabled: boolean }>) {
   const id = useId();
   const {
     register,

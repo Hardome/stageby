@@ -20,7 +20,7 @@ interface InvoiceFileMenuProperties {
   children?: ReactNode;
 }
 
-export function InvoiceFileMenu({ fileId, children }: InvoiceFileMenuProperties) {
+export function InvoiceFileMenu({ fileId, children }: Readonly<InvoiceFileMenuProperties>) {
   const file = useInvoiceFile(fileId);
 
   return (
@@ -33,7 +33,7 @@ export function InvoiceFileMenu({ fileId, children }: InvoiceFileMenuProperties)
           align="end"
           className={cn(
             'w-59 max-w-[calc(100vw-2rem)] shadow-lg',
-            '[&_[role=menuitem]:not([data-disabled])]:cursor-pointer [&_[role=menuitem]]:min-h-12',
+            '[&_[role=menuitem]]:min-h-12 [&_[role=menuitem]:not([data-disabled])]:cursor-pointer',
           )}
         >
           <DropdownMenuGroup>

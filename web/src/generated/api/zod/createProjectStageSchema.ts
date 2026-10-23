@@ -8,7 +8,7 @@ import { createProjectChecklistItemSchema } from './createProjectChecklistItemSc
 import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { stageTypeSchema } from './stageTypeSchema'
 
-export const createProjectStageSchema = z.object({
+export const createProjectStageSchema = z.strictObject({
   type: stageTypeSchema.describe('Стандартный тип этапа; дополнительный этап доступен только при редактировании.').meta({ examples: ['foundation'] }),
   plannedStartDate: z.iso.date().nullish().describe('Необязательное независимое начало внутри срока проекта. Отсутствие или null означает незаданную дату.').meta({ examples: ['2026-10-05'] }),
   plannedEndDate: z.iso.date().nullish().describe('Необязательное независимое окончание внутри срока проекта; при заданном начале не раньше него. Отсутствие или null означает незаданную дату.').meta({ examples: ['2026-10-30'] }),
@@ -16,6 +16,6 @@ export const createProjectStageSchema = z.object({
   plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Ручной план работ. Отсутствие или null — план не задан; 0 — заданный нулевой план. После приёмки статус оплаты определяется сравнением плана и фактических выплат.').meta({ examples: [12500000, 0, ] }),
   plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Ручной план материалов. Отсутствие или null — план не задан. Счета добавляются после создания объекта.').meta({ examples: [12500000, 0, ] }),
   checklistItems: z.array(createProjectChecklistItemSchema).min(1).optional().describe('Изменённый индивидуальный список. Если поле отсутствует, копируется активный шаблон типа этапа.'),
-}).strict()
+})
 
 export type CreateProjectStageSchemaType = z.infer<typeof createProjectStageSchema>

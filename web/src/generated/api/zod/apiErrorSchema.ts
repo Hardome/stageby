@@ -6,14 +6,14 @@
 import * as z from 'zod'
 import { apiErrorCodeSchema } from './apiErrorCodeSchema'
 
-export const apiErrorSchema = z.object({
+export const apiErrorSchema = z.strictObject({
   error: z.string().min(1).max(255).describe('Краткое название ошибки HTTP, соответствующее статусу ответа.').meta({ examples: ['Bad Request'] }),
   code: apiErrorCodeSchema.describe('Стабильный машинный код ошибки. Файловые коды различают MIME, размер, checksum, незавершённую и истёкшую upload-сессию.').meta({ examples: ['invalid_request'] }),
   message: z.string().min(1).max(2000).describe('Описание причины ошибки для человека.').meta({ examples: ['Плановое окончание не может быть раньше планового начала.'] }),
-  details: z.array(z.object({
+  details: z.array(z.strictObject({
     path: z.string().min(1).max(255).describe('Путь к полю: body.plannedEndDate, query.limit и т. п.').meta({ examples: ['body.plannedEndDate'] }),
     message: z.string().min(1).max(1000).describe('Описание ошибки в поле запроса, указанном в path.').meta({ examples: ['Плановое окончание не может быть раньше планового начала.'] }),
-  }).strict()).optional().describe('Подробности ошибок отдельных полей запроса; могут отсутствовать.'),
-}).strict()
+  })).optional().describe('Подробности ошибок отдельных полей запроса; могут отсутствовать.'),
+})
 
 export type ApiErrorSchemaType = z.infer<typeof apiErrorSchema>

@@ -15,7 +15,7 @@ interface EditUserFormProperties {
   search: UsersSearch;
 }
 
-export function EditUserForm({ user, search }: EditUserFormProperties) {
+export function EditUserForm({ user, search }: Readonly<EditUserFormProperties>) {
   const { form, mutation, submit } = useEditUserForm(user, search);
 
   return (

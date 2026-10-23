@@ -16,7 +16,7 @@ interface AcceptanceReviewProperties {
   stage: Stage;
 }
 
-export function AcceptanceReview({ stage }: AcceptanceReviewProperties) {
+export function AcceptanceReview({ stage }: Readonly<AcceptanceReviewProperties>) {
   const { form, action, checklist, blocked, reworkOpen, setReworkOpen, accept, submit } = useAcceptanceForm(stage);
 
   if (checklist.error?.status === 403 || checklist.error?.status === 404) return <NotFound />;

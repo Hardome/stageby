@@ -9,7 +9,7 @@ export function ProjectStageNavigation({
   currentStage,
   disabled,
   onStageChange,
-}: ProjectStageNavigationProperties) {
+}: Readonly<ProjectStageNavigationProperties>) {
   return (
     <ol className="flex min-w-0 flex-col gap-1" aria-label="Этапы проекта">
       {stages.map((stage, position) => (
@@ -26,7 +26,7 @@ export function ProjectStageNavigation({
             <span aria-hidden="true" className="w-5 shrink-0 text-center text-xs tabular-nums opacity-60">
               {position + 1}
             </span>
-            <span className="min-w-0 flex-1 truncate text-left font-semibold text-sm">{stage.title}</span>
+            <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold">{stage.title}</span>
             {stage.hasError && (
               <CircleAlertIcon aria-hidden="true" data-icon="inline-end" className="text-destructive" />
             )}

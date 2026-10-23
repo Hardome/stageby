@@ -12,7 +12,7 @@ interface UserActionsProperties {
   search: UsersSearch;
 }
 
-export function UserActions({ user, search }: UserActionsProperties) {
+export function UserActions({ user, search }: Readonly<UserActionsProperties>) {
   const parameters = { userId: String(user.id) };
 
   return (

@@ -5,9 +5,9 @@
 
 import * as z from 'zod'
 
-export const fileDownloadSchema = z.object({
+export const fileDownloadSchema = z.strictObject({
   downloadUrl: z.url().describe('Короткоживущий подписанный URL скачивания.').meta({ examples: ['http://localhost:9000/stageby/uploads/example?X-Amz-Signature=example'] }),
   expiresAt: z.iso.datetime().describe('Время истечения URL скачивания.').meta({ examples: ['2026-09-29T08:30:00Z'] }),
-}).strict()
+})
 
 export type FileDownloadSchemaType = z.infer<typeof fileDownloadSchema>

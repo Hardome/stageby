@@ -15,7 +15,7 @@ interface ReworkItemsProperties {
   items: ChecklistItem[];
 }
 
-export function ReworkItems({ form, items }: ReworkItemsProperties) {
+export function ReworkItems({ form, items }: Readonly<ReworkItemsProperties>) {
   const drafts = useRef(new Map<number, string>());
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'items' });
   const errors = form.formState.errors.items;
@@ -49,7 +49,7 @@ export function ReworkItems({ form, items }: ReworkItemsProperties) {
                     aria-invalid={Boolean(error)}
                     aria-describedby={error ? 'rework-items-error' : undefined}
                   />
-                  <FieldLabel htmlFor={`rework-item-${item.id}`} className="wrap-anywhere min-w-0">
+                  <FieldLabel htmlFor={`rework-item-${item.id}`} className="min-w-0 wrap-anywhere">
                     {item.title}
                   </FieldLabel>
                 </Field>

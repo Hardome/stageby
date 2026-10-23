@@ -12,7 +12,7 @@ interface InvoiceShortageItemProperties {
   onResolve?: () => void;
 }
 
-export function InvoiceShortageItem({ shortage, canResolve, onResolve }: InvoiceShortageItemProperties) {
+export function InvoiceShortageItem({ shortage, canResolve, onResolve }: Readonly<InvoiceShortageItemProperties>) {
   return (
     <Alert variant={shortage.resolvedAt ? 'default' : 'destructive'} className="p-3">
       {shortage.resolvedAt ? <CheckIcon aria-hidden="true" /> : <AlertTriangleIcon aria-hidden="true" />}

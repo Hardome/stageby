@@ -16,7 +16,7 @@ interface PhotoViewerProperties {
   onSelect: (id?: number) => void;
 }
 
-export function PhotoViewer({ photos, selected, onSelect }: PhotoViewerProperties) {
+export function PhotoViewer({ photos, selected, onSelect }: Readonly<PhotoViewerProperties>) {
   const touch = useRef<number | undefined>(undefined);
   const index = photos.findIndex((photo) => photo.id === selected);
   const photo = photos[index];

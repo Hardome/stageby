@@ -17,7 +17,12 @@ interface StageEditorProperties {
   registerErrorGroup: (element: HTMLElement | null) => void;
 }
 
-export function StageEditor({ index, disabled, checklistReadOnly = false, registerErrorGroup }: StageEditorProperties) {
+export function StageEditor({
+  index,
+  disabled,
+  checklistReadOnly = false,
+  registerErrorGroup,
+}: Readonly<StageEditorProperties>) {
   const { control, setValue } = useFormContext<ProjectFormValues>();
   const [start, end, assigneeName, stageStart] = useWatch({
     control,
@@ -43,8 +48,7 @@ export function StageEditor({ index, disabled, checklistReadOnly = false, regist
           <ProjectDateField
             name={`stages.${index}.plannedEndDate`}
             label="Окончание этапа"
-            // eslint-disable-next-line unicorn/prefer-math-min-max -- Для строк ISO-дат Math.max вернёт NaN.
-            min={stageStart > start ? stageStart : start}
+            min={stageStart.localeCompare(start) > 0 ? stageStart : start}
             max={end}
             disabled={disabled}
           />

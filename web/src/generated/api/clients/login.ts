@@ -16,5 +16,5 @@ import { loginResponseSchema, loginErrorSchema } from '../zod/loginSchema'
 export function login<ThrowOnError extends boolean = true>(options: Options<LoginOptions, ThrowOnError>): Unwrappable<RequestResult<LoginResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/auth/login', validator: { response: loginResponseSchema, error: loginErrorSchema }, ...config }) as Promise<RequestResult<LoginResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/auth/login', validator: { response: loginResponseSchema, error: loginErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<LoginResponses, ThrowOnError>>)
 }

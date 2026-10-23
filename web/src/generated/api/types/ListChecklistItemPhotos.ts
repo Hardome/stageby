@@ -40,4 +40,4 @@ export type ListChecklistItemPhotosResponses = {
 /**
  * @description Union of all possible responses
 */
-export type ListChecklistItemPhotosResponse = (ListChecklistItemPhotosStatus200 | ListChecklistItemPhotosStatus401 | ListChecklistItemPhotosStatus404);
+export type ListChecklistItemPhotosResponse = ListChecklistItemPhotosStatus200;

@@ -6,11 +6,11 @@
 import * as z from 'zod'
 import { projectSchema } from './projectSchema'
 
-export const projectPageSchema = z.object({
+export const projectPageSchema = z.strictObject({
   items: z.array(projectSchema).describe('Проекты текущей страницы с учётом фильтров и прав доступа.'),
   total: z.int().min(0).describe('Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.').meta({ examples: [1] }),
   limit: z.int().min(1).max(100).describe('Применённый размер страницы; количество items может быть меньше.').meta({ examples: [20] }),
   offset: z.int().min(0).describe('Количество пропущенных записей после фильтрации и проверки доступа.').meta({ examples: [0] }),
-}).strict()
+})
 
 export type ProjectPageSchemaType = z.infer<typeof projectPageSchema>

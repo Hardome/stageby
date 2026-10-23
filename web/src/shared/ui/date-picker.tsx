@@ -18,8 +18,8 @@ interface DatePickerProperties
     'id' | 'name' | 'disabled' | 'aria-invalid' | 'aria-describedby' | 'aria-labelledby'
   > {
   /**
-   * ISO date, empty string, or an incomplete manual entry for form validation.
-   */
+  ISO date, empty string, or an incomplete manual entry for form validation.
+  */
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
@@ -63,7 +63,7 @@ function setControlReference(reference: DatePickerProperties['ref'], element: HT
   if (reference) reference.current = element;
 }
 
-export function DatePicker({ showClearButton = true, ...properties }: DatePickerProperties) {
+export function DatePicker({ showClearButton = true, ...properties }: Readonly<DatePickerProperties>) {
   const isNative = useIsNativeDatePicker();
   if (isNative) {
     const { value, onChange, ref, min, max, onBlur, ...inputProperties } = properties;
@@ -96,7 +96,7 @@ function DesktopDatePicker({
   onBlur,
   showClearButton,
   ...properties
-}: DatePickerProperties) {
+}: Readonly<DatePickerProperties>) {
   const fieldReference = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [shouldFocusCalendar, setShouldFocusCalendar] = useState(true);

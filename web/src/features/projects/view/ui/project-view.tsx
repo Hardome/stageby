@@ -19,7 +19,7 @@ interface ProjectViewProperties {
   onEdit?: () => void;
 }
 
-export function ProjectView({ projectId, onEdit }: ProjectViewProperties) {
+export function ProjectView({ projectId, onEdit }: Readonly<ProjectViewProperties>) {
   const project = useGetProject({ path: { projectId } }, { query: { retry: false } });
   const stages = useListProjectStages({ path: { projectId } }, { query: { retry: false } });
   const accessError = useAccessError();

@@ -6,9 +6,9 @@
 import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 
-export const setUserPasswordSchema = z.object({
+export const setUserPasswordSchema = z.strictObject({
   password: z.string().min(8).max(128).describe('Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.').meta({ examples: ['Example-Only-Password-123!'] }),
-}).strict()
+})
 
 export type SetUserPasswordSchemaType = z.infer<typeof setUserPasswordSchema>
 

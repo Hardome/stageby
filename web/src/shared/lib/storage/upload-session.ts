@@ -19,7 +19,9 @@ export function uploadSession(userId: number) {
 export function subscribeUploadSession(listener: () => void) {
   listeners.add(listener);
 
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function resumeUploadSession(userId: number) {

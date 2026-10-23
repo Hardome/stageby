@@ -13,7 +13,7 @@ interface PhotoTileProperties {
   onDelete: () => void;
 }
 
-export function PhotoTile({ photo, canEdit, busy, onOpen, onDelete }: PhotoTileProperties) {
+export function PhotoTile({ photo, canEdit, busy, onOpen, onDelete }: Readonly<PhotoTileProperties>) {
   return (
     <figure className="flex min-w-0 flex-col overflow-hidden rounded-xl border">
       <PhotoImage photo={photo} onOpen={onOpen} />

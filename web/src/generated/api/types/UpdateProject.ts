@@ -161,4 +161,4 @@ export type UpdateProjectResponses = {
 /**
  * @description Union of all possible responses
 */
-export type UpdateProjectResponse = (UpdateProjectStatus200 | UpdateProjectStatus400 | UpdateProjectStatus401 | UpdateProjectStatus403 | UpdateProjectStatus404 | UpdateProjectStatus409);
+export type UpdateProjectResponse = UpdateProjectStatus200;

@@ -16,5 +16,5 @@ import { returnStageForReworkResponseSchema, returnStageForReworkErrorSchema } f
 export function returnStageForRework<ThrowOnError extends boolean = true>(options: Options<ReturnStageForReworkOptions, ThrowOnError>): Unwrappable<RequestResult<ReturnStageForReworkResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/stages/{stageId}/rework', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: returnStageForReworkResponseSchema, error: returnStageForReworkErrorSchema }, ...config }) as Promise<RequestResult<ReturnStageForReworkResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/stages/{stageId}/rework', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: returnStageForReworkResponseSchema, error: returnStageForReworkErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<ReturnStageForReworkResponses, ThrowOnError>>)
 }

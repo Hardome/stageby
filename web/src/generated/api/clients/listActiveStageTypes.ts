@@ -16,5 +16,5 @@ import { listActiveStageTypesResponseSchema, listActiveStageTypesErrorSchema } f
 export function listActiveStageTypes<ThrowOnError extends boolean = true>(options: Options<ListActiveStageTypesOptions, ThrowOnError> = {}): Unwrappable<RequestResult<ListActiveStageTypesResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/stage-types', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listActiveStageTypesResponseSchema, error: listActiveStageTypesErrorSchema }, ...config }) as Promise<RequestResult<ListActiveStageTypesResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/stage-types', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listActiveStageTypesResponseSchema, error: listActiveStageTypesErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<ListActiveStageTypesResponses, ThrowOnError>>)
 }

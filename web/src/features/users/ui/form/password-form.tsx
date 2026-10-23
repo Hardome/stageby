@@ -17,7 +17,7 @@ interface PasswordFormProperties {
   search: UsersSearch;
 }
 
-export function PasswordForm({ user, search }: PasswordFormProperties) {
+export function PasswordForm({ user, search }: Readonly<PasswordFormProperties>) {
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),
     defaultValues: { password: '', confirmPassword: '' },

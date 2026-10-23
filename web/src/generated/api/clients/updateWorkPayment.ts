@@ -16,5 +16,5 @@ import { updateWorkPaymentResponseSchema, updateWorkPaymentErrorSchema } from '.
 export function updateWorkPayment<ThrowOnError extends boolean = true>(options: Options<UpdateWorkPaymentOptions, ThrowOnError>): Unwrappable<RequestResult<UpdateWorkPaymentResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'PATCH', url: '/work-payments/{paymentId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateWorkPaymentResponseSchema, error: updateWorkPaymentErrorSchema }, ...config }) as Promise<RequestResult<UpdateWorkPaymentResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'PATCH', url: '/work-payments/{paymentId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateWorkPaymentResponseSchema, error: updateWorkPaymentErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<UpdateWorkPaymentResponses, ThrowOnError>>)
 }

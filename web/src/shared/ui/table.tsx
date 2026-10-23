@@ -49,7 +49,7 @@ function TableHead({ className, ...properties }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        'h-10 whitespace-nowrap px-4 text-left align-middle font-semibold',
+        'h-10 px-4 text-left align-middle font-semibold whitespace-nowrap',
         'text-muted-foreground [&:has([role=checkbox])]:pr-0',
         className,
       )}
@@ -62,7 +62,7 @@ function TableCell({ className, ...properties }: React.ComponentProps<'td'>) {
   return (
     <td
       data-slot="table-cell"
-      className={cn('whitespace-nowrap px-4 py-3 align-middle [&:has([role=checkbox])]:pr-0', className)}
+      className={cn('px-4 py-3 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0', className)}
       {...properties}
     />
   );
@@ -72,7 +72,7 @@ function TableCaption({ className, ...properties }: React.ComponentProps<'captio
   return (
     <caption
       data-slot="table-caption"
-      className={cn('mt-4 text-muted-foreground text-sm', className)}
+      className={cn('mt-4 text-sm text-muted-foreground', className)}
       {...properties}
     />
   );

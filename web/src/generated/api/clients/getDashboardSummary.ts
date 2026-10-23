@@ -16,5 +16,5 @@ import { getDashboardSummaryResponseSchema, getDashboardSummaryErrorSchema } fro
 export function getDashboardSummary<ThrowOnError extends boolean = true>(options: Options<GetDashboardSummaryOptions, ThrowOnError> = {}): Unwrappable<RequestResult<GetDashboardSummaryResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/dashboard/summary', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getDashboardSummaryResponseSchema, error: getDashboardSummaryErrorSchema }, ...config }) as Promise<RequestResult<GetDashboardSummaryResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/dashboard/summary', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getDashboardSummaryResponseSchema, error: getDashboardSummaryErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<GetDashboardSummaryResponses, ThrowOnError>>)
 }

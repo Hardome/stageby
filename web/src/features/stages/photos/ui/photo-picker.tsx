@@ -10,7 +10,7 @@ interface PhotoPickerProperties {
   onSelect: (files: File[]) => void;
 }
 
-export function PhotoPicker({ disabled, available, onSelect }: PhotoPickerProperties) {
+export function PhotoPicker({ disabled, available, onSelect }: Readonly<PhotoPickerProperties>) {
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
 
@@ -50,7 +50,7 @@ export function PhotoPicker({ disabled, available, onSelect }: PhotoPickerProper
           event.currentTarget.value = '';
         }}
       />
-      <p className="text-muted-foreground text-sm">JPEG, PNG или HEIC до 20 МиБ. Свободно мест: {available} из 20.</p>
+      <p className="text-sm text-muted-foreground">JPEG, PNG или HEIC до 20 МиБ. Свободно мест: {available} из 20.</p>
     </div>
   );
 }

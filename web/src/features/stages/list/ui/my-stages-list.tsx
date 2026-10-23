@@ -16,7 +16,7 @@ interface MyStagesListProperties {
   onPageChange: (offset: number, shouldReplace?: boolean) => void;
 }
 
-export function MyStagesList({ search, onPageChange }: MyStagesListProperties) {
+export function MyStagesList({ search, onPageChange }: Readonly<MyStagesListProperties>) {
   const query = useStagesList(search, onPageChange);
 
   if (query.error?.status === 403 || query.error?.status === 404) return <NotFound />;
@@ -26,7 +26,7 @@ export function MyStagesList({ search, onPageChange }: MyStagesListProperties) {
   return (
     <section aria-label="Мои этапы" aria-busy={query.isFetching} className="flex min-w-0 flex-col gap-4">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="font-bold text-2xl">Мои этапы</h1>
+        <h1 className="text-2xl font-bold">Мои этапы</h1>
         {query.data && (
           <Badge variant="secondary" aria-live="polite">
             Найдено: {query.data.total}

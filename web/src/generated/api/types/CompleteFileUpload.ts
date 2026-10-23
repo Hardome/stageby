@@ -72,4 +72,4 @@ export type CompleteFileUploadResponses = {
 /**
  * @description Union of all possible responses
 */
-export type CompleteFileUploadResponse = (CompleteFileUploadStatus200 | CompleteFileUploadStatus400 | CompleteFileUploadStatus401 | CompleteFileUploadStatus404 | CompleteFileUploadStatus409 | CompleteFileUploadStatus413);
+export type CompleteFileUploadResponse = CompleteFileUploadStatus200;

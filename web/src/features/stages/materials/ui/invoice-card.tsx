@@ -19,7 +19,7 @@ interface InvoiceCardProperties {
   className?: string;
 }
 
-export function InvoiceCard({ invoice, number, actions, children, className }: InvoiceCardProperties) {
+export function InvoiceCard({ invoice, number, actions, children, className }: Readonly<InvoiceCardProperties>) {
   const shortages = invoice.shortages.filter((shortage) => !shortage.resolvedAt).length;
   const paymentStatus = invoicePaymentStatus(invoice);
 
@@ -29,13 +29,13 @@ export function InvoiceCard({ invoice, number, actions, children, className }: I
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <FileTextIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
           <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="wrap-anywhere font-semibold text-sm">{invoice.supplierName ?? `Счёт №${number}`}</span>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-sm font-semibold wrap-anywhere">{invoice.supplierName ?? `Счёт №${number}`}</span>
+            <span className="text-xs text-muted-foreground">
               {invoice.supplierName && `Счёт №${number} · `}
               {formatDate(invoice.createdAt.slice(0, 10))}
             </span>
           </span>
-          <span className="shrink-0 font-bold text-base tabular-nums">{formatMoney(invoice.amountMinor)}</span>
+          <span className="shrink-0 text-base font-bold tabular-nums">{formatMoney(invoice.amountMinor)}</span>
         </div>
         {actions || <InvoiceFileMenu fileId={invoice.fileId} />}
       </div>

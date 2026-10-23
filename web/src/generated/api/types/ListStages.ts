@@ -73,4 +73,4 @@ export type ListStagesResponses = {
 /**
  * @description Union of all possible responses
 */
-export type ListStagesResponse = (ListStagesStatus200 | ListStagesStatus400 | ListStagesStatus401);
+export type ListStagesResponse = ListStagesStatus200;

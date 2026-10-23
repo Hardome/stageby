@@ -11,7 +11,7 @@ interface MaterialsOverviewProperties {
   stage: Stage;
 }
 
-export function MaterialsOverview({ stage }: MaterialsOverviewProperties) {
+export function MaterialsOverview({ stage }: Readonly<MaterialsOverviewProperties>) {
   const { user } = useAuth();
   const balance =
     stage.plannedMaterialAmountMinor === null
@@ -43,9 +43,9 @@ export function MaterialsOverview({ stage }: MaterialsOverviewProperties) {
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-3">
             {metrics.map((metric) => (
-              <div key={metric.label} className="min-w-0 border-border border-l-2 pl-3">
-                <dt className="mb-1 text-muted-foreground text-sm">{metric.label}</dt>
-                <dd className="wrap-anywhere font-bold text-2xl tabular-nums tracking-tight">{metric.value}</dd>
+              <div key={metric.label} className="min-w-0 border-l-2 border-border pl-3">
+                <dt className="mb-1 text-sm text-muted-foreground">{metric.label}</dt>
+                <dd className="text-2xl font-bold tracking-tight wrap-anywhere tabular-nums">{metric.value}</dd>
               </div>
             ))}
           </dl>

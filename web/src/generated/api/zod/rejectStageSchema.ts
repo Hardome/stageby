@@ -7,10 +7,10 @@ import * as z from 'zod'
 import { expectedVersionSchema } from './expectedVersionSchema'
 import { reworkItemSchema } from './reworkItemSchema'
 
-export const rejectStageSchema = z.object({
+export const rejectStageSchema = z.strictObject({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   correctionDueDate: z.iso.date().optional().describe('Срок исправления в формате YYYY-MM-DD, не раньше сегодня в Asia/Yekaterinburg. По умолчанию сегодня + 2 календарных дня.').meta({ examples: ['2026-09-27'] }),
   items: z.array(reworkItemSchema).min(1).describe('Пункты для доработки с индивидуальными замечаниями. itemId не должны повторяться.'),
-}).strict()
+})
 
 export type RejectStageSchemaType = z.infer<typeof rejectStageSchema>

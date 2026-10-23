@@ -80,10 +80,7 @@ export function useProjectEditForm({
   async function save(values: ProjectFormValues) {
     if (isLocked || hasUnfinishedUploads) return;
 
-    await update.save(values, [
-      ...fileIds,
-      ...uploads.documents.flatMap((document) => (document.fileId ? [document.fileId] : [])),
-    ]);
+    await update.save(values, [...fileIds, ...uploads.documents.flatMap((document) => document.fileId || [])]);
   }
 
   function removeDocument(id: number) {

@@ -10,13 +10,13 @@ import { plannedEndDateSchema } from './plannedEndDateSchema'
 import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { plannedStartDateSchema } from './plannedStartDateSchema'
 
-export const createAdditionalStageSchema = z.object({
+export const createAdditionalStageSchema = z.strictObject({
   assigneeId: assigneeIdSchema.nullish().describe('ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.').meta({ examples: [1, ] }),
   plannedStartDate: plannedStartDateSchema.nullish().describe('Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта.').meta({ examples: ['2026-09-21'] }),
   plannedEndDate: plannedEndDateSchema.nullish().describe('Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся.').meta({ examples: ['2026-09-28'] }),
   plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
   plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Плановая сумма в копейках: null — план не задан; 0 — задан нулевой план. В первой версии ненулевое значение кратно 100.').meta({ examples: [12500000, 0, ] }),
   checklistItems: z.array(createProjectChecklistItemSchema).min(1).describe('Непустой индивидуальный чек-лист дополнительного этапа.'),
-}).strict().describe('Новый additional на последней позиции. Если запись уже существует, используйте stages с её ID для восстановления.')
+}).describe('Новый additional на последней позиции. Если запись уже существует, используйте stages с её ID для восстановления.')
 
 export type CreateAdditionalStageSchemaType = z.infer<typeof createAdditionalStageSchema>

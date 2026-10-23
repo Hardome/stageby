@@ -19,18 +19,18 @@ pnpm run dev
 
 Команды выполняются из `web`; из корня используйте `pnpm --dir web run <команда>`.
 
-| Команда | Назначение |
-| --- | --- |
-| `pnpm run dev` | Запустить Vite с HMR |
-| `pnpm run check` | Выполнить линтеры, проверку типов, тесты и сборку |
-| `pnpm run build` | Обновить generated-код, проверить типы и собрать `dist/` |
-| `pnpm run preview` | Локально просмотреть готовую сборку |
-| `pnpm run codegen` | Сгенерировать API-клиент и дерево маршрутов |
-| `pnpm run typecheck` | Проверить типы |
-| `pnpm run lint` | Выполнить Biome, ESLint, Stylelint, Steiger и cspell |
-| `pnpm run test` | Запустить Vitest однократно |
-| `pnpm run test:watch` | Запустить Vitest в режиме наблюдения |
-| `pnpm run test:coverage` | Получить отчёт о покрытии |
+| Команда                  | Назначение                                               |
+| ------------------------ | -------------------------------------------------------- |
+| `pnpm run dev`           | Запустить Vite с HMR                                     |
+| `pnpm run check`         | Выполнить линтеры, проверку типов, тесты и сборку        |
+| `pnpm run build`         | Обновить generated-код, проверить типы и собрать `dist/` |
+| `pnpm run preview`       | Локально просмотреть готовую сборку                      |
+| `pnpm run codegen`       | Сгенерировать API-клиент и дерево маршрутов              |
+| `pnpm run typecheck`     | Проверить типы                                           |
+| `pnpm run lint`          | Выполнить Biome, ESLint, Stylelint, Steiger и cspell     |
+| `pnpm run test`          | Запустить Vitest однократно                              |
+| `pnpm run test:watch`    | Запустить Vitest в режиме наблюдения                     |
+| `pnpm run test:coverage` | Получить отчёт о покрытии                                |
 
 `lint` и `check` могут исправлять файлы. `preview` — локальный просмотр сборки.
 Остальные команды — в [package.json](package.json).
@@ -38,7 +38,6 @@ pnpm run dev
 ## Клиент, маршруты и структура
 
 Kubb читает `contracts/openapi.yaml` и создаёт в `src/generated/api/`:
-
 - TypeScript-типы и Zod-схемы;
 - Fetch-клиенты;
 - query- и mutation-хуки TanStack Query.
@@ -47,7 +46,6 @@ Kubb читает `contracts/openapi.yaml` и создаёт в `src/generated/a
 чтобы обновить и bundle, и оба приложения.
 
 Из каталога `web`:
-
 - `pnpm run codegen:routes` — обновить дерево после изменения `src/app/routes/`.
 - `pnpm run codegen:api` — обновить клиент из готового bundle.
 

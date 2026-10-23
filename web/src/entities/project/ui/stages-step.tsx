@@ -14,7 +14,7 @@ interface StagesStepProperties {
   exclusionReasons?: (string | undefined)[];
 }
 
-export function StagesStep({ stages, isLocked, registerErrorGroup, exclusionReasons }: StagesStepProperties) {
+export function StagesStep({ stages, isLocked, registerErrorGroup, exclusionReasons }: Readonly<StagesStepProperties>) {
   const {
     control,
     clearErrors,

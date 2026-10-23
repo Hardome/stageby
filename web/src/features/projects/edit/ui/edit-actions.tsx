@@ -27,7 +27,7 @@ export function EditActions({
   navigation,
   canRemoveAdditionalStage,
   onRemoveAdditionalStage,
-}: EditActionsProperties) {
+}: Readonly<EditActionsProperties>) {
   const { nextLabel } = navigation;
 
   return (

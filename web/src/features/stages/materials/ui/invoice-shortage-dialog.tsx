@@ -10,7 +10,7 @@ interface InvoiceShortageDialogProperties {
   onClose: () => void;
 }
 
-export function InvoiceShortageDialog({ stage, invoice, onClose }: InvoiceShortageDialogProperties) {
+export function InvoiceShortageDialog({ stage, invoice, onClose }: Readonly<InvoiceShortageDialogProperties>) {
   const editor = useInvoiceShortages(stage, invoice, onClose);
 
   return (

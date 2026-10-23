@@ -13,7 +13,7 @@ import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { plannedStartDateSchema } from './plannedStartDateSchema'
 import { workSubtypesSchema } from './workSubtypesSchema'
 
-export const updateProjectStageSchema = z.object({
+export const updateProjectStageSchema = z.strictObject({
   id: z.int().min(1).max(2147483647).describe('ID существующей записи.').meta({ examples: [1] }),
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   isIncluded: z.boolean().optional().describe('Явное включение или исключение этапа.').meta({ examples: [true] }),
@@ -25,6 +25,6 @@ export const updateProjectStageSchema = z.object({
   workSubtypes: workSubtypesSchema.optional().describe('Новый полный список подтипов работ этапа; заменяет предыдущий целиком. Пустой список удаляет все подтипы.'),
   notes: notesSchema.nullish().describe('Новые примечания к этапу; null очищает сохранённые примечания.').meta({ examples: ['Согласовать время доставки бетона.', ] }),
   checklist: configureChecklistSchema.optional().describe('Индивидуальный чек-лист и его версия.'),
-}).strict()
+})
 
 export type UpdateProjectStageSchemaType = z.infer<typeof updateProjectStageSchema>

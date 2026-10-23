@@ -6,7 +6,7 @@
 import * as z from 'zod'
 import { checklistItemSchema } from './checklistItemSchema'
 
-export const checklistSchema = z.object({
+export const checklistSchema = z.strictObject({
   id: z.int().min(1).max(2147483647).describe('Стабильный ID чек-листа этапа.').meta({ examples: [2001] }),
   stageId: z.int().min(1).max(2147483647).describe('Стабильный ID этапа, которому принадлежит запись.').meta({ examples: [1001] }),
   items: z.array(checklistItemSchema).describe('Пункты индивидуального чек-листа в порядке position ASC; верхнего ограничения нет.'),
@@ -15,6 +15,6 @@ export const checklistSchema = z.object({
   version: z.int().min(1).describe('Версия записи. Увеличивается при каждом изменении.').meta({ examples: [1] }),
   createdAt: z.iso.datetime().describe('Дата и время создания записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-20T08:00:00Z'] }),
   updatedAt: z.iso.datetime().describe('Дата и время последнего изменения записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-24T10:00:00Z'] }),
-}).strict().describe('Индивидуальный чек-лист этапа с версией и состоянием пунктов.')
+}).describe('Индивидуальный чек-лист этапа с версией и состоянием пунктов.')
 
 export type ChecklistSchemaType = z.infer<typeof checklistSchema>

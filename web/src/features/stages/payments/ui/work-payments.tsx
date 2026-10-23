@@ -25,7 +25,7 @@ interface WorkPaymentsProperties {
   stage: Stage;
 }
 
-export function WorkPayments({ stage }: WorkPaymentsProperties) {
+export function WorkPayments({ stage }: Readonly<WorkPaymentsProperties>) {
   const { user } = useAuth();
   const data = useWorkPayments(stage.id);
   const [action, setAction] = useState<WorkAction | null>(null);
@@ -56,7 +56,7 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
         </CardContent>
       </Card>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-bold text-xl">Выплаты</h2>
+        <h2 className="text-xl font-bold">Выплаты</h2>
         {isManager && data.payments.data && (
           <Button disabled={!isEditable || !stage.assignee?.isActive} onClick={() => setAction({ kind: 'payment' })}>
             <PlusIcon data-icon="inline-start" />
@@ -89,7 +89,7 @@ export function WorkPayments({ stage }: WorkPaymentsProperties) {
             {data.payments.data && (
               <div className="flex flex-col gap-4">
                 {payments.length === 0 ? (
-                  <p className="p-4 text-muted-foreground text-sm">Выплат пока нет.</p>
+                  <p className="p-4 text-sm text-muted-foreground">Выплат пока нет.</p>
                 ) : (
                   <WorkPaymentList
                     payments={payments}

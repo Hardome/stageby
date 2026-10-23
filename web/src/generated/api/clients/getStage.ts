@@ -16,5 +16,5 @@ import { getStageResponseSchema, getStageErrorSchema } from '../zod/getStageSche
 export function getStage<ThrowOnError extends boolean = true>(options: Options<GetStageOptions, ThrowOnError>): Unwrappable<RequestResult<GetStageResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/stages/{stageId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getStageResponseSchema, error: getStageErrorSchema }, ...config }) as Promise<RequestResult<GetStageResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/stages/{stageId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getStageResponseSchema, error: getStageErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<GetStageResponses, ThrowOnError>>)
 }

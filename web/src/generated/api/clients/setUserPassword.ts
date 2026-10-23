@@ -16,5 +16,5 @@ import { setUserPasswordResponseSchema, setUserPasswordErrorSchema } from '../zo
 export function setUserPassword<ThrowOnError extends boolean = true>(options: Options<SetUserPasswordOptions, ThrowOnError>): Unwrappable<RequestResult<SetUserPasswordResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'PUT', url: '/users/{userId}/password', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: setUserPasswordResponseSchema, error: setUserPasswordErrorSchema }, ...config }) as Promise<RequestResult<SetUserPasswordResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'PUT', url: '/users/{userId}/password', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: setUserPasswordResponseSchema, error: setUserPasswordErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<SetUserPasswordResponses, ThrowOnError>>)
 }

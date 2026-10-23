@@ -21,7 +21,7 @@ interface StageSidebarBlockProperties {
   children: ReactNode;
 }
 
-export function StageSidebarBlock({ title, summary, children }: StageSidebarBlockProperties) {
+export function StageSidebarBlock({ title, summary, children }: Readonly<StageSidebarBlockProperties>) {
   const isWideScreen = useSyncExternalStore(subscribe, isDesktop, () => false);
 
   if (isWideScreen) return <div>{children}</div>;
@@ -36,8 +36,8 @@ export function StageSidebarBlock({ title, summary, children }: StageSidebarBloc
           )}
         >
           <span className="flex min-w-0 flex-col gap-1">
-            <span className="font-semibold text-sm">{title}</span>
-            <span className="text-muted-foreground text-xs">{summary}</span>
+            <span className="text-sm font-semibold">{title}</span>
+            <span className="text-xs text-muted-foreground">{summary}</span>
           </span>
           <ChevronDownIcon
             className={cn(
@@ -51,7 +51,7 @@ export function StageSidebarBlock({ title, summary, children }: StageSidebarBloc
       <AccordionPrimitive.Panel
         keepMounted
         className={cn(
-          'overflow-hidden border-t data-closed:animate-accordion-up data-open:animate-accordion-down',
+          'overflow-hidden border-t data-open:animate-accordion-down data-closed:animate-accordion-up',
           'motion-reduce:animate-none',
         )}
       >

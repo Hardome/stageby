@@ -84,4 +84,4 @@ export type CreateUserResponses = {
 /**
  * @description Union of all possible responses
 */
-export type CreateUserResponse = (CreateUserStatus201 | CreateUserStatus400 | CreateUserStatus401 | CreateUserStatus403 | CreateUserStatus409);
+export type CreateUserResponse = CreateUserStatus201;

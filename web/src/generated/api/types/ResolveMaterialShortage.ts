@@ -67,4 +67,4 @@ export type ResolveMaterialShortageResponses = {
 /**
  * @description Union of all possible responses
 */
-export type ResolveMaterialShortageResponse = (ResolveMaterialShortageStatus200 | ResolveMaterialShortageStatus400 | ResolveMaterialShortageStatus401 | ResolveMaterialShortageStatus403 | ResolveMaterialShortageStatus404 | ResolveMaterialShortageStatus409);
+export type ResolveMaterialShortageResponse = ResolveMaterialShortageStatus200;

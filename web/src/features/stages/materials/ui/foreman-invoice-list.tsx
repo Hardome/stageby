@@ -12,7 +12,7 @@ interface ForemanInvoiceListProperties {
   canReceive: boolean;
 }
 
-export function ForemanInvoiceList({ stage, invoices, canReceive }: ForemanInvoiceListProperties) {
+export function ForemanInvoiceList({ stage, invoices, canReceive }: Readonly<ForemanInvoiceListProperties>) {
   return (
     <InvoiceList
       count={invoices.length}

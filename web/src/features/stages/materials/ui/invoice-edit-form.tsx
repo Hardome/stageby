@@ -24,7 +24,7 @@ interface InvoiceEditFormProperties {
   onClose: () => void;
 }
 
-export function InvoiceEditForm({ editor, fileId, onClose }: InvoiceEditFormProperties) {
+export function InvoiceEditForm({ editor, fileId, onClose }: Readonly<InvoiceEditFormProperties>) {
   const id = useId();
   const { form, upload, action, submit } = editor;
   const file = useInvoiceFile(fileId);

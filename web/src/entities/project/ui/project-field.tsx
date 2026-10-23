@@ -12,7 +12,7 @@ interface ProjectFieldProperties extends Omit<ComponentProps<typeof Input>, 'nam
   label: string;
 }
 
-export function ProjectField({ name, label, required, ...properties }: ProjectFieldProperties) {
+export function ProjectField({ name, label, required, ...properties }: Readonly<ProjectFieldProperties>) {
   const { register, getFieldState, formState } = useFormContext<ProjectFormValues>();
   const { error } = getFieldState(name, formState);
   const id = `project-${name}`;

@@ -10,7 +10,7 @@ import { ProjectViewSkeleton } from './project-view-skeleton';
 interface ProjectUnavailableProperties {
   query: ReturnType<typeof useGetProject>;
 }
-export function ProjectUnavailable({ query }: ProjectUnavailableProperties) {
+export function ProjectUnavailable({ query }: Readonly<ProjectUnavailableProperties>) {
   if (query.isPending)
     return <DataRegion initialLabel="Загрузка объекта" isLoading skeleton={<ProjectViewSkeleton />} />;
   const status = query.error?.status;

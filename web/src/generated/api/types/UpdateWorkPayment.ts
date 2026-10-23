@@ -87,4 +87,4 @@ export type UpdateWorkPaymentResponses = {
 /**
  * @description Union of all possible responses
 */
-export type UpdateWorkPaymentResponse = (UpdateWorkPaymentStatus200 | UpdateWorkPaymentStatus400 | UpdateWorkPaymentStatus401 | UpdateWorkPaymentStatus403 | UpdateWorkPaymentStatus404 | UpdateWorkPaymentStatus409);
+export type UpdateWorkPaymentResponse = UpdateWorkPaymentStatus200;
