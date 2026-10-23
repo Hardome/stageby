@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.2/schema.json",
   "root": true,
   "vcs": {
     "enabled": true,
@@ -26,20 +26,31 @@
       "complexity": {
         "noExcessiveCognitiveComplexity": "error",
         "noForEach": "error",
-        "useDateNow": "error"
+        "useDateNow": "error",
+        "useMathMinMax": "off",
+        "noExtraBooleanCast": "error",
+        "noAdjacentSpacesInRegex": "error",
+        "noUselessCatch": "error",
+        "noUselessEscapeInRegex": "error",
+        "noArguments": "error",
+        "noStaticOnlyClass": "error",
+        "noUselessSwitchCase": "error",
+        "useFlatMap": "error",
+        "useIndexOf": "error",
+        "noUselessTypeConstraint": "error",
+        "noBannedTypes": "error"
       },
       "correctness": {
         "noUnusedVariables": "error",
-        "useExhaustiveDependencies": "warn"
+        "useExhaustiveDependencies": "warn",
+        "noComponentHookFactories": "error",
+        "noDuplicateFieldDefinitionNames": "error",
+        "noUnusedLabels": "error",
+        "noUnusedImports": "error"
       },
       "nursery": {
-        "useImportsFirst": "error",
-        "noComponentHookFactories": "error",
-        "noConditionalExpect": "error",
-        "useConsistentTestIt": "error",
-        "useExpect": "error",
         "useReactCompiler": "error",
-        "useSortedClasses": {
+        "useTailwindSortedClasses": {
           "level": "error",
           "fix": "safe"
         }
@@ -50,7 +61,10 @@
         "useExportType": "error",
         "useFilenamingConvention": "error",
         "useImportType": "error",
-        "useNodejsImportProtocol": "error"
+        "useNodejsImportProtocol": "error",
+        "useImportsFirst": "error",
+        "useConsistentTestIt": "error",
+        "useArrayLiterals": "error"
       },
       "suspicious": {
         "noDuplicateTestHooks": "error",
@@ -59,7 +73,22 @@
         "noMisplacedAssertion": "error",
         "noSkippedTests": "error",
         "noTsIgnore": "error",
-        "useErrorMessage": "error"
+        "useErrorMessage": "error",
+        "noConditionalExpect": "error",
+        "useExpect": "error",
+        "noCatchAssign": "error",
+        "noIrregularWhitespace": "error",
+        "noPrototypeBuiltins": "error",
+        "noUselessRegexBackrefs": "error",
+        "noUselessEscapeInString": "error",
+        "noDocumentCookie": "error",
+        "noDuplicateEnumValues": "error",
+        "noExtraNonNullAssertion": "error",
+        "useDefaultSwitchClauseLast": "error",
+        "noConfusingLabels": "error"
+      },
+      "performance": {
+        "useDomNodeTextContent": "off"
       }
     }
   },
@@ -122,5 +151,8 @@
         }
       }
     }
+  },
+  "tailwind": {
+    "stylesheet": "./src/app/styles/index.css"
   }
 }

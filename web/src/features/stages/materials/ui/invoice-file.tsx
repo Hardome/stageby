@@ -6,7 +6,7 @@ import { Spinner } from '@shared/ui/spinner';
 
 import { useInvoiceFile } from '../lib/use-invoice-file';
 
-export function InvoiceFile({ fileId }: { fileId: number }) {
+export function InvoiceFile({ fileId }: Readonly<{ fileId: number }>) {
   const { open, pending, message } = useInvoiceFile(fileId);
 
   return (

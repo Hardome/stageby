@@ -7,7 +7,7 @@ import { Skeleton } from '@shared/ui/skeleton';
 
 import { useGetUser } from '@api/queries/useGetUser';
 
-export function WorkRecipient({ recipientId }: { recipientId: number | null }) {
+export function WorkRecipient({ recipientId }: Readonly<{ recipientId: number | null }>) {
   const { user } = useAuth();
   const accessError = useAccessError();
   const query = useGetUser(

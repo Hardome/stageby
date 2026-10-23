@@ -7,9 +7,9 @@ import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 import { expectedVersionSchema } from './expectedVersionSchema'
 
-export const deleteMaterialInvoiceSchema = z.object({
+export const deleteMaterialInvoiceSchema = z.strictObject({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
-}).strict()
+})
 
 export type DeleteMaterialInvoiceSchemaType = z.infer<typeof deleteMaterialInvoiceSchema>
 

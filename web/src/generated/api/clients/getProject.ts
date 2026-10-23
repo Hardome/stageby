@@ -16,5 +16,5 @@ import { getProjectResponseSchema, getProjectErrorSchema } from '../zod/getProje
 export function getProject<ThrowOnError extends boolean = true>(options: Options<GetProjectOptions, ThrowOnError>): Unwrappable<RequestResult<GetProjectResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/projects/{projectId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getProjectResponseSchema, error: getProjectErrorSchema }, ...config }) as Promise<RequestResult<GetProjectResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/projects/{projectId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getProjectResponseSchema, error: getProjectErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<GetProjectResponses, ThrowOnError>>)
 }

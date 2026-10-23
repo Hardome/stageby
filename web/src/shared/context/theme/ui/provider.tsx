@@ -3,7 +3,7 @@ import { type PropsWithChildren, useEffect, useState } from 'react';
 import { ThemeContext } from '../model/context';
 import { applyTheme, readTheme, type Theme, themeStorageKey } from '../model/theme';
 
-export function ThemeProvider({ children }: PropsWithChildren) {
+export function ThemeProvider({ children }: Readonly<PropsWithChildren>) {
   const [theme, setThemeState] = useState(readTheme);
 
   function setTheme(value: Theme) {

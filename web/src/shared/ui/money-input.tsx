@@ -44,7 +44,13 @@ function separatorDeletion(input: HTMLInputElement, key: string) {
   };
 }
 
-function MoneyInput({ value, onValueChange, onKeyDown, inputMode = 'numeric', ...properties }: MoneyInputProperties) {
+function MoneyInput({
+  value,
+  onValueChange,
+  onKeyDown,
+  inputMode = 'numeric',
+  ...properties
+}: Readonly<MoneyInputProperties>) {
   const selection = useRef<{ input: HTMLInputElement; start: number; end: number } | null>(null);
 
   useLayoutEffect(() => {

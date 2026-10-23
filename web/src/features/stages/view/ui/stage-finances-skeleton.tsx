@@ -3,7 +3,7 @@ import { PackageIcon, WalletIcon } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@shared/ui/card';
 import { Skeleton } from '@shared/ui/skeleton';
 
-export function StageFinancesSkeleton({ category }: { category: 'materials' | 'work' }) {
+export function StageFinancesSkeleton({ category }: Readonly<{ category: 'materials' | 'work' }>) {
   const isMaterials = category === 'materials';
   const Icon = isMaterials ? PackageIcon : WalletIcon;
 
@@ -19,7 +19,7 @@ export function StageFinancesSkeleton({ category }: { category: 'materials' | 'w
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div>
-          <p className="mb-2 text-muted-foreground text-xs">Фактические затраты</p>
+          <p className="mb-2 text-xs text-muted-foreground">Фактические затраты</p>
           <Skeleton className="h-9 w-3/5" />
         </div>
         {isMaterials && <Skeleton className="h-6 w-32" />}
@@ -28,7 +28,7 @@ export function StageFinancesSkeleton({ category }: { category: 'materials' | 'w
         <dl className="grid w-full grid-cols-2 gap-4">
           {['План', 'Остаток'].map((label) => (
             <div key={label}>
-              <dt className="mb-1 text-muted-foreground text-xs">{label}</dt>
+              <dt className="mb-1 text-xs text-muted-foreground">{label}</dt>
               <dd>
                 <Skeleton className="h-5 w-3/4" />
               </dd>

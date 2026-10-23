@@ -86,4 +86,4 @@ export type UpdateUserResponses = {
 /**
  * @description Union of all possible responses
 */
-export type UpdateUserResponse = (UpdateUserStatus200 | UpdateUserStatus400 | UpdateUserStatus401 | UpdateUserStatus403 | UpdateUserStatus404 | UpdateUserStatus409);
+export type UpdateUserResponse = UpdateUserStatus200;

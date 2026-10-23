@@ -16,5 +16,5 @@ import { acceptStageResponseSchema, acceptStageErrorSchema } from '../zod/accept
 export function acceptStage<ThrowOnError extends boolean = true>(options: Options<AcceptStageOptions, ThrowOnError>): Unwrappable<RequestResult<AcceptStageResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/stages/{stageId}/acceptance', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: acceptStageResponseSchema, error: acceptStageErrorSchema }, ...config }) as Promise<RequestResult<AcceptStageResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/stages/{stageId}/acceptance', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: acceptStageResponseSchema, error: acceptStageErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<AcceptStageResponses, ThrowOnError>>)
 }

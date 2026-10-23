@@ -7,7 +7,7 @@ import * as z from 'zod'
 import { positiveMoneyAmountMinorSchema } from './positiveMoneyAmountMinorSchema'
 import { userBriefSchema } from './userBriefSchema'
 
-export const workPaymentSchema = z.object({
+export const workPaymentSchema = z.strictObject({
   id: z.int().min(1).max(2147483647).describe('Стабильный идентификатор платежа.').meta({ examples: [501] }),
   stageId: z.int().min(1).max(2147483647).describe('Идентификатор оплачиваемого этапа.').meta({ examples: [1001] }),
   paidAt: z.iso.date().describe('Дата фактической оплаты в формате YYYY-MM-DD.').meta({ examples: ['2026-10-01'] }),
@@ -18,6 +18,6 @@ export const workPaymentSchema = z.object({
   version: z.int().min(1).describe('Версия платежа для защиты от конкурентных изменений.').meta({ examples: [1] }),
   createdAt: z.iso.datetime().describe('Дата и время создания записи в UTC.').meta({ examples: ['2026-10-01T08:00:00Z'] }),
   updatedAt: z.iso.datetime().describe('Дата и время последнего изменения записи в UTC.').meta({ examples: ['2026-10-01T08:00:00Z'] }),
-}).strict()
+})
 
 export type WorkPaymentSchemaType = z.infer<typeof workPaymentSchema>

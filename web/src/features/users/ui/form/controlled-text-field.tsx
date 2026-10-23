@@ -10,7 +10,7 @@ interface ControlledTextFieldProperties
   name: 'fullName' | 'phone' | 'login' | 'password' | 'confirmPassword';
 }
 
-export function ControlledTextField({ name, ...properties }: ControlledTextFieldProperties) {
+export function ControlledTextField({ name, ...properties }: Readonly<ControlledTextFieldProperties>) {
   const { control } = useFormContext<CreateFormValues>();
 
   return (

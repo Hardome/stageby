@@ -58,4 +58,4 @@ export type DeleteMaterialInvoiceResponses = {
 /**
  * @description Union of all possible responses
 */
-export type DeleteMaterialInvoiceResponse = (DeleteMaterialInvoiceStatus204 | DeleteMaterialInvoiceStatus400 | DeleteMaterialInvoiceStatus401 | DeleteMaterialInvoiceStatus403 | DeleteMaterialInvoiceStatus404 | DeleteMaterialInvoiceStatus409);
+export type DeleteMaterialInvoiceResponse = DeleteMaterialInvoiceStatus204;

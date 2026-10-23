@@ -8,10 +8,10 @@ import { apiErrorSchema } from './apiErrorSchema'
 import { expectedVersionSchema } from './expectedVersionSchema'
 import { materialShortageSchema } from './materialShortageSchema'
 
-export const resolveMaterialShortageSchema = z.object({
+export const resolveMaterialShortageSchema = z.strictObject({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   resolutionComment: z.string().min(1).max(500).nullish().describe('Необязательный итоговый комментарий.').meta({ examples: ['Комплект доставлен отдельно'] }),
-}).strict()
+})
 
 export type ResolveMaterialShortageSchemaType = z.infer<typeof resolveMaterialShortageSchema>
 

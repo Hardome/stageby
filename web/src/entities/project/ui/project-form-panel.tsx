@@ -19,7 +19,7 @@ export function ProjectFormPanel({
   children,
   actions,
   titleRef,
-}: ProjectFormPanelProperties) {
+}: Readonly<ProjectFormPanelProperties>) {
   return (
     <Card className="min-w-0">
       <CardHeader className="border-b">

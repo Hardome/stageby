@@ -10,7 +10,7 @@ interface ReworkFieldsProperties {
   form: UseFormReturn<ReworkFormValues>;
 }
 
-export function ReworkFields({ form }: ReworkFieldsProperties) {
+export function ReworkFields({ form }: Readonly<ReworkFieldsProperties>) {
   const errors = form.formState.errors;
 
   return (

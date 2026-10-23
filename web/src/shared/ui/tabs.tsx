@@ -1,11 +1,11 @@
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 import { cn } from 'cn';
 
-function Tabs({ className, ...properties }: TabsPrimitive.Root.Props) {
+function Tabs({ className, ...properties }: Readonly<TabsPrimitive.Root.Props>) {
   return <TabsPrimitive.Root className={cn('flex min-w-0 flex-col gap-4', className)} {...properties} />;
 }
 
-function TabsList({ className, ...properties }: TabsPrimitive.List.Props) {
+function TabsList({ className, ...properties }: Readonly<TabsPrimitive.List.Props>) {
   return (
     <TabsPrimitive.List
       className={cn(
@@ -17,12 +17,12 @@ function TabsList({ className, ...properties }: TabsPrimitive.List.Props) {
   );
 }
 
-function TabsTrigger({ className, ...properties }: TabsPrimitive.Tab.Props) {
+function TabsTrigger({ className, ...properties }: Readonly<TabsPrimitive.Tab.Props>) {
   return (
     <TabsPrimitive.Tab
       className={cn(
-        'flex min-w-0 flex-1 items-center justify-center rounded-lg px-2 py-2 text-center font-medium text-sm',
-        'outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+        'flex min-w-0 flex-1 items-center justify-center rounded-lg px-2 py-2 text-center text-sm font-medium',
+        'transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
         'disabled:pointer-events-none disabled:opacity-50 data-active:bg-background data-active:text-foreground',
         className,
       )}
@@ -31,7 +31,7 @@ function TabsTrigger({ className, ...properties }: TabsPrimitive.Tab.Props) {
   );
 }
 
-function TabsContent({ className, ...properties }: TabsPrimitive.Panel.Props) {
+function TabsContent({ className, ...properties }: Readonly<TabsPrimitive.Panel.Props>) {
   return <TabsPrimitive.Panel className={cn('min-w-0 outline-none data-hidden:hidden', className)} {...properties} />;
 }
 

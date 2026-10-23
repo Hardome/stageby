@@ -14,7 +14,7 @@ interface DashboardProjectRowProperties {
   today: string;
 }
 
-export function DashboardProjectRow({ project, today }: DashboardProjectRowProperties) {
+export function DashboardProjectRow({ project, today }: Readonly<DashboardProjectRowProperties>) {
   const stage = project.selectedStage;
 
   return (
@@ -29,10 +29,10 @@ export function DashboardProjectRow({ project, today }: DashboardProjectRowPrope
           )}
         >
           <span className="flex min-w-0 flex-col gap-1.5">
-            <span className="wrap-anywhere font-semibold underline-offset-4 group-hover:underline">
+            <span className="font-semibold wrap-anywhere underline-offset-4 group-hover:underline">
               {project.ownerName}
             </span>
-            <span className="wrap-anywhere text-muted-foreground text-xs leading-relaxed">{project.address}</span>
+            <span className="text-xs leading-relaxed wrap-anywhere text-muted-foreground">{project.address}</span>
           </span>
           <ArrowUpRightIcon className="mt-0.5 size-4 shrink-0 text-primary-text" aria-hidden="true" />
         </Link>
@@ -40,11 +40,11 @@ export function DashboardProjectRow({ project, today }: DashboardProjectRowPrope
       <TableCell className="max-w-64 whitespace-normal">
         {stage ? (
           <div className="flex flex-col gap-2">
-            <span className="font-medium text-muted-foreground text-xs">
+            <span className="text-xs font-medium text-muted-foreground">
               Этап {stage.position} из {stage.stageCount}
             </span>
             <span className="font-semibold">{stage.title}</span>
-            <span className="text-muted-foreground text-xs leading-relaxed">
+            <span className="text-xs leading-relaxed text-muted-foreground">
               {formatStageDates(stage.plannedStartDate, stage.plannedEndDate)}
             </span>
           </div>

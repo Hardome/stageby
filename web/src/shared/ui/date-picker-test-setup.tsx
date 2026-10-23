@@ -16,7 +16,7 @@ async function flush(action: () => void) {
 const changed = vi.fn();
 const reference = createRef<HTMLInputElement | HTMLButtonElement>();
 
-function Example({ disabled = false }: { disabled?: boolean }) {
+function Example({ disabled = false }: Readonly<{ disabled?: boolean }>) {
   const [value, setValue] = useState('2026-10-05');
 
   return (

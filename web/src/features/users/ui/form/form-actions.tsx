@@ -12,7 +12,12 @@ interface FormActionsProperties {
   label?: string;
 }
 
-export function FormActions({ pending, disabled = false, search, label = 'Сохранить' }: FormActionsProperties) {
+export function FormActions({
+  pending,
+  disabled = false,
+  search,
+  label = 'Сохранить',
+}: Readonly<FormActionsProperties>) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
       <Button variant="success" className="min-h-11" type="submit" disabled={pending || disabled}>

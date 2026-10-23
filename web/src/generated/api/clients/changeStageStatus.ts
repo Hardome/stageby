@@ -16,5 +16,5 @@ import { changeStageStatusResponseSchema, changeStageStatusErrorSchema } from '.
 export function changeStageStatus<ThrowOnError extends boolean = true>(options: Options<ChangeStageStatusOptions, ThrowOnError>): Unwrappable<RequestResult<ChangeStageStatusResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'PUT', url: '/stages/{stageId}/status', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: changeStageStatusResponseSchema, error: changeStageStatusErrorSchema }, ...config }) as Promise<RequestResult<ChangeStageStatusResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'PUT', url: '/stages/{stageId}/status', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: changeStageStatusResponseSchema, error: changeStageStatusErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<ChangeStageStatusResponses, ThrowOnError>>)
 }

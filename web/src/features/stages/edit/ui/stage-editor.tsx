@@ -16,7 +16,12 @@ interface StageEditorProperties {
   focusAssignee?: boolean;
 }
 
-export function StageEditor({ stage, defaultOpen = false, trigger, focusAssignee = false }: StageEditorProperties) {
+export function StageEditor({
+  stage,
+  defaultOpen = false,
+  trigger,
+  focusAssignee = false,
+}: Readonly<StageEditorProperties>) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [isPending, setIsPending] = useState(false);
   const isReadOnly = stage.projectIsArchived || !stage.isIncluded;

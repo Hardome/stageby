@@ -10,7 +10,7 @@ interface DashboardFinanceOverviewProperties {
   through: string;
 }
 
-export function DashboardFinanceOverview({ summary, through }: DashboardFinanceOverviewProperties) {
+export function DashboardFinanceOverview({ summary, through }: Readonly<DashboardFinanceOverviewProperties>) {
   const balance = summary.total.balanceAmountMinor;
   const isOverpaid = balance !== null && balance < 0n;
   const balanceAmount = isOverpaid ? -balance : balance;
@@ -19,24 +19,24 @@ export function DashboardFinanceOverview({ summary, through }: DashboardFinanceO
     <div className="min-w-0 overflow-hidden rounded-2xl border bg-card text-card-foreground">
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-5 sm:pt-4">
         <h3 className="font-semibold">Общий итог</h3>
-        <span className="text-muted-foreground text-xs">К {formatDate(through)}</span>
+        <span className="text-xs text-muted-foreground">К {formatDate(through)}</span>
       </div>
       <dl className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-[1.4fr_1fr_1fr] sm:p-4">
         <div className="col-span-2 min-w-0 sm:col-span-1">
-          <dt className="mb-2 text-muted-foreground text-xs">{isOverpaid ? 'Переплата' : 'Остаток к оплате'}</dt>
-          <dd className="wrap-anywhere font-semibold text-4xl tabular-nums tracking-tight">
+          <dt className="mb-2 text-xs text-muted-foreground">{isOverpaid ? 'Переплата' : 'Остаток к оплате'}</dt>
+          <dd className="text-4xl font-semibold tracking-tight wrap-anywhere tabular-nums">
             {balance === null ? 'Не рассчитан' : formatMoney(balanceAmount)}
           </dd>
         </div>
         <div className="min-w-0 sm:border-l sm:pl-5">
-          <dt className="mb-2 text-muted-foreground text-xs">План к дате</dt>
-          <dd className="wrap-anywhere font-semibold text-xl tabular-nums">
+          <dt className="mb-2 text-xs text-muted-foreground">План к дате</dt>
+          <dd className="text-xl font-semibold wrap-anywhere tabular-nums">
             {formatMoney(summary.total.plannedAmountMinor)}
           </dd>
         </div>
         <div className="min-w-0 sm:border-l sm:pl-5">
-          <dt className="mb-2 text-muted-foreground text-xs">Факт</dt>
-          <dd className="wrap-anywhere font-semibold text-xl tabular-nums">
+          <dt className="mb-2 text-xs text-muted-foreground">Факт</dt>
+          <dd className="text-xl font-semibold wrap-anywhere tabular-nums">
             {formatMoney(summary.total.actualAmountMinor)}
           </dd>
         </div>

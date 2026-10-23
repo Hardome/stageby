@@ -15,7 +15,7 @@ interface StageChecklistItemProperties {
   action?: ReactNode;
 }
 
-export function StageChecklistItem({ item, action }: StageChecklistItemProperties) {
+export function StageChecklistItem({ item, action }: Readonly<StageChecklistItemProperties>) {
   let statusLabel = 'Не выполнен';
   if (item.isCompleted) statusLabel = item.requiresRework ? 'Доработан' : 'Выполнен';
 
@@ -33,7 +33,7 @@ export function StageChecklistItem({ item, action }: StageChecklistItemPropertie
       <ChecklistItemMarker item={item} />
       <div className="contents sm:flex sm:min-w-0 sm:flex-1 sm:flex-col sm:gap-2">
         <div className="col-start-2 flex min-w-0 flex-col items-start justify-between gap-2 sm:flex-row">
-          {action ?? <p className="wrap-anywhere font-semibold leading-relaxed">{item.title}</p>}
+          {action ?? <p className="leading-relaxed font-semibold wrap-anywhere">{item.title}</p>}
           <div className="flex flex-wrap items-center gap-2">
             {item.requiresRework && !item.isCompleted && <Badge variant="warning">Доработка</Badge>}
             {(!item.requiresRework || item.isCompleted) && (
@@ -52,16 +52,16 @@ export function StageChecklistItem({ item, action }: StageChecklistItemPropertie
             <RotateCcwIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <div className="flex min-w-0 flex-col gap-1">
               <p className="font-semibold">Замечание руководителя</p>
-              <p className="wrap-anywhere leading-normal">{item.reworkComment}</p>
+              <p className="leading-normal wrap-anywhere">{item.reworkComment}</p>
             </div>
           </div>
         )}
-        <p className="col-span-2 flex items-center gap-2 text-muted-foreground text-xs">
+        <p className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground">
           <CameraIcon className="size-3.5" aria-hidden="true" />{' '}
           {item.photoCount > 0 ? `Фото: ${item.photoCount}` : 'Фото не приложены'}
         </p>
         {item.photosDeletedByRetention && (
-          <p className="col-span-2 flex items-start gap-2 text-muted-foreground text-xs">
+          <p className="col-span-2 flex items-start gap-2 text-xs text-muted-foreground">
             <ImageOffIcon className="size-3.5 shrink-0" aria-hidden="true" />
             Фото удалены по сроку хранения. Выполнение сохраняется.
           </p>

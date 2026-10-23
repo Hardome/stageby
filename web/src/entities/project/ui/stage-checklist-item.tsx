@@ -24,7 +24,7 @@ export function StageChecklistItem({
   readOnly,
   onMove,
   onRemove,
-}: StageChecklistItemProperties) {
+}: Readonly<StageChecklistItemProperties>) {
   return (
     <FieldSet className="min-w-0 rounded-(--radius-card) border p-4">
       <div className="flex items-center justify-between gap-3">

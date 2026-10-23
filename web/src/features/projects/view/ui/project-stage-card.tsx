@@ -15,7 +15,7 @@ interface ProjectStageCardProperties {
   today: string;
 }
 
-export function ProjectStageCard({ stage, number, today }: ProjectStageCardProperties) {
+export function ProjectStageCard({ stage, number, today }: Readonly<ProjectStageCardProperties>) {
   const isComplete = stage.status === 'completed' || stage.status === 'paid';
 
   return (
@@ -69,10 +69,10 @@ export function ProjectStageCard({ stage, number, today }: ProjectStageCardPrope
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-3">
-              <label htmlFor={`stage-progress-${stage.id}`} className="text-muted-foreground text-xs">
+              <label htmlFor={`stage-progress-${stage.id}`} className="text-xs text-muted-foreground">
                 Готовность
               </label>
-              <span className="font-semibold text-sm tabular-nums">{stage.progressPercent}%</span>
+              <span className="text-sm font-semibold tabular-nums">{stage.progressPercent}%</span>
             </div>
             <progress
               id={`stage-progress-${stage.id}`}
@@ -97,8 +97,8 @@ export function ProjectStageCard({ stage, number, today }: ProjectStageCardPrope
               <UserRoundIcon className="size-4" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="text-muted-foreground text-xs">Мастер</p>
-              <p className="wrap-anywhere font-medium text-sm">{stage.assignee?.fullName || 'Не назначен'}</p>
+              <p className="text-xs text-muted-foreground">Мастер</p>
+              <p className="text-sm font-medium wrap-anywhere">{stage.assignee?.fullName || 'Не назначен'}</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
@@ -109,20 +109,20 @@ export function ProjectStageCard({ stage, number, today }: ProjectStageCardPrope
         <CardFooter className="mt-auto bg-background text-foreground">
           <dl className="grid w-full grid-cols-2 gap-4">
             <div className="min-w-0">
-              <dt className="mb-1 font-medium text-muted-foreground text-xs">Работы</dt>
-              <dd className="wrap-anywhere font-semibold text-sm tabular-nums">
+              <dt className="mb-1 text-xs font-medium text-muted-foreground">Работы</dt>
+              <dd className="text-sm font-semibold wrap-anywhere tabular-nums">
                 Факт: {formatMoney(stage.actualWorkAmountMinor)}
               </dd>
-              <dd className="wrap-anywhere mt-1 text-muted-foreground text-xs tabular-nums">
+              <dd className="mt-1 text-xs wrap-anywhere text-muted-foreground tabular-nums">
                 План: {formatMoney(stage.plannedWorkAmountMinor)}
               </dd>
             </div>
             <div className="min-w-0">
-              <dt className="mb-1 font-medium text-muted-foreground text-xs">Материалы</dt>
-              <dd className="wrap-anywhere font-semibold text-sm tabular-nums">
+              <dt className="mb-1 text-xs font-medium text-muted-foreground">Материалы</dt>
+              <dd className="text-sm font-semibold wrap-anywhere tabular-nums">
                 Факт: {formatMoney(stage.actualMaterialAmountMinor)}
               </dd>
-              <dd className="wrap-anywhere mt-1 text-muted-foreground text-xs tabular-nums">
+              <dd className="mt-1 text-xs wrap-anywhere text-muted-foreground tabular-nums">
                 План: {formatMoney(stage.plannedMaterialAmountMinor)}
               </dd>
             </div>

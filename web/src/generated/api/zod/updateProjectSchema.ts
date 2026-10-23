@@ -11,7 +11,7 @@ import { expectedVersionSchema } from './expectedVersionSchema'
 import { projectSchema } from './projectSchema'
 import { updateProjectStageSchema } from './updateProjectStageSchema'
 
-export const updateProjectSchema = z.object({
+export const updateProjectSchema = z.strictObject({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   documentFileIds: z.array(z.int().min(1).max(2147483647)).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).optional().describe('Полный список PDF. Существующие связи сохраняются; новые файлы предварительно загружены руководителем.'),
   stages: z.array(updateProjectStageSchema).max(9).optional().describe('Частичные изменения существующих этапов.'),
@@ -26,7 +26,7 @@ export const updateProjectSchema = z.object({
   plannedEndDate: z.iso.date().optional().describe('Новая плановая дата окончания проекта, не раньше даты начала.').meta({ examples: ['2027-05-28'] }),
   notes: z.string().min(1).max(5000).nullish().describe('Примечания к проекту; null очищает сохранённое значение.').meta({ examples: ['Въезд на участок со стороны Лесной улицы.', ] }),
   isArchived: z.boolean().optional().describe('Признак архивного проекта. Архивный проект и его этапы доступны только для чтения.').meta({ examples: [false] }),
-}).strict()
+})
 
 export type UpdateProjectSchemaType = z.infer<typeof updateProjectSchema>
 

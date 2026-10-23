@@ -14,7 +14,7 @@ interface ProjectHeaderProperties {
   onEdit?: () => void;
 }
 
-export function ProjectHeader({ project, onEdit }: ProjectHeaderProperties) {
+export function ProjectHeader({ project, onEdit }: Readonly<ProjectHeaderProperties>) {
   const { coordinates } = project;
   const mapUrl = `https://yandex.ru/maps/?pt=${coordinates.longitude},${coordinates.latitude}&z=16&l=map`;
 
@@ -50,7 +50,7 @@ export function ProjectHeader({ project, onEdit }: ProjectHeaderProperties) {
             <div className="flex flex-wrap items-center gap-3">
               <div className="min-w-0">
                 <CardTitle>
-                  <h1 className="wrap-anywhere font-bold text-2xl tracking-tight sm:text-3xl">{project.ownerName}</h1>
+                  <h1 className="text-2xl font-bold tracking-tight wrap-anywhere sm:text-3xl">{project.ownerName}</h1>
                 </CardTitle>
               </div>
               <Badge variant={project.status === 'completed' ? 'success' : 'secondary'}>
@@ -59,10 +59,10 @@ export function ProjectHeader({ project, onEdit }: ProjectHeaderProperties) {
               {project.isArchived && <Badge variant="secondary">В архиве</Badge>}
             </div>
             <CardDescription
-              className={cn('flex max-w-xl items-center gap-2 text-sm', 'text-surface-inverse-muted leading-relaxed')}
+              className={cn('flex max-w-xl items-center gap-2 text-sm', 'leading-relaxed text-surface-inverse-muted')}
             >
               <MapPinIcon className="size-4 shrink-0" aria-hidden="true" />
-              <span className="wrap-anywhere min-w-0">{project.address}</span>
+              <span className="min-w-0 wrap-anywhere">{project.address}</span>
             </CardDescription>
           </CardHeader>
 
@@ -73,17 +73,17 @@ export function ProjectHeader({ project, onEdit }: ProjectHeaderProperties) {
             )}
           >
             <div className="flex flex-col gap-2">
-              <span className="text-surface-inverse-muted text-xs">Начало</span>
-              <span className="font-semibold text-base tabular-nums">{formatDate(project.plannedStartDate)}</span>
+              <span className="text-xs text-surface-inverse-muted">Начало</span>
+              <span className="text-base font-semibold tabular-nums">{formatDate(project.plannedStartDate)}</span>
             </div>
-            <div className="flex flex-col gap-2 border-surface-inverse-foreground/25 border-l pl-3">
-              <span className="text-surface-inverse-muted text-xs">Завершение</span>
-              <span className="font-semibold text-base tabular-nums">{formatDate(project.plannedEndDate)}</span>
+            <div className="flex flex-col gap-2 border-l border-surface-inverse-foreground/25 pl-3">
+              <span className="text-xs text-surface-inverse-muted">Завершение</span>
+              <span className="text-base font-semibold tabular-nums">{formatDate(project.plannedEndDate)}</span>
             </div>
           </div>
         </div>
         <CardContent className="flex flex-col gap-3 p-4 sm:px-5">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             Координаты: {coordinates.latitude}, {coordinates.longitude}
           </p>
         </CardContent>

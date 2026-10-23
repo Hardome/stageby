@@ -21,7 +21,7 @@ interface DashboardProjectsProperties {
   onPageChange: (offset: number, shouldReplace?: boolean) => void;
 }
 
-export function DashboardProjects({ offset, today, onPageChange }: DashboardProjectsProperties) {
+export function DashboardProjects({ offset, today, onPageChange }: Readonly<DashboardProjectsProperties>) {
   const query = useListDashboardProjects(
     { query: { limit: dashboardPageSize, offset } },
     { query: { retry: false, placeholderData: keepPreviousData } },
@@ -51,7 +51,7 @@ export function DashboardProjects({ offset, today, onPageChange }: DashboardProj
     <section aria-label="Объекты" aria-busy={query.isFetching} className="flex min-w-0 flex-col gap-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="font-bold text-2xl tracking-tight">Объекты</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Объекты</h2>
         </div>
       </div>
       {query.error && (

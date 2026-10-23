@@ -9,7 +9,7 @@ import { expectedVersionSchema } from './expectedVersionSchema'
 import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { stageSchema } from './stageSchema'
 
-export const updateStageSchema = z.object({
+export const updateStageSchema = z.strictObject({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   assigneeId: z.int().min(1).max(2147483647).nullish().describe('ID назначаемого ответственного мастера; null снимает назначение, если это допускает текущее состояние этапа.').meta({ examples: [1, ] }),
   plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullish().describe('Новый план оплаты работ; null очищает план. Доступно только руководителю.').meta({ examples: [12500000, 0, ] }),
@@ -18,7 +18,7 @@ export const updateStageSchema = z.object({
   plannedStartDate: z.iso.date().nullish().describe('Новая плановая дата начала этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта.').meta({ examples: ['2026-09-21'] }),
   plannedEndDate: z.iso.date().nullish().describe('Новая плановая дата окончания этапа в формате YYYY-MM-DD; null очищает дату. Заданная дата должна остаться внутри обеих границ проекта и быть не раньше начала, если оно задано. Соседние этапы автоматически не переносятся.').meta({ examples: ['2026-09-28'] }),
   notes: z.string().min(1).max(5000).nullish().describe('Новые примечания к этапу; null очищает сохранённые примечания.').meta({ examples: ['Согласовать время доставки бетона.', ] }),
-}).strict()
+})
 
 export type UpdateStageSchemaType = z.infer<typeof updateStageSchema>
 

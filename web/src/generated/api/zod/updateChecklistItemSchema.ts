@@ -8,10 +8,10 @@ import { apiErrorSchema } from './apiErrorSchema'
 import { checklistSchema } from './checklistSchema'
 import { expectedVersionSchema } from './expectedVersionSchema'
 
-export const updateChecklistItemSchema = z.object({
+export const updateChecklistItemSchema = z.strictObject({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   isCompleted: z.boolean().describe('Новое состояние пункта. true отмечает выполнение, false снимает отметку; сервер заполняет или очищает completedAt и completedBy и пересчитывает прогресс.').meta({ examples: [true] }),
-}).strict()
+})
 
 export type UpdateChecklistItemSchemaType = z.infer<typeof updateChecklistItemSchema>
 

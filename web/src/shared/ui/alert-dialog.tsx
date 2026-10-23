@@ -5,26 +5,26 @@ import { cn } from 'cn';
 
 import { Button } from '@shared/ui/button';
 
-function AlertDialog({ ...properties }: AlertDialogPrimitive.Root.Props) {
+function AlertDialog({ ...properties }: Readonly<AlertDialogPrimitive.Root.Props>) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...properties} />;
 }
 
-function AlertDialogTrigger({ ...properties }: AlertDialogPrimitive.Trigger.Props) {
+function AlertDialogTrigger({ ...properties }: Readonly<AlertDialogPrimitive.Trigger.Props>) {
   return <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...properties} />;
 }
 
-function AlertDialogPortal({ ...properties }: AlertDialogPrimitive.Portal.Props) {
+function AlertDialogPortal({ ...properties }: Readonly<AlertDialogPrimitive.Portal.Props>) {
   return <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...properties} />;
 }
 
-function AlertDialogOverlay({ className, ...properties }: AlertDialogPrimitive.Backdrop.Props) {
+function AlertDialogOverlay({ className, ...properties }: Readonly<AlertDialogPrimitive.Backdrop.Props>) {
   return (
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
         [
-          'data-open:fade-in-0 data-closed:fade-out-0 fixed inset-0 isolate z-50 bg-surface-inverse/40',
-          'duration-200 ease-out data-closed:animate-out data-open:animate-in motion-reduce:animate-none',
+          'fixed inset-0 isolate z-50 bg-surface-inverse/40 data-open:fade-in-0 data-closed:fade-out-0',
+          'duration-200 ease-out motion-reduce:animate-none data-open:animate-in data-closed:animate-out',
           'supports-backdrop-filter:backdrop-blur-xs',
         ],
         className,
@@ -49,12 +49,12 @@ function AlertDialogContent({
         data-size={size}
         className={cn(
           [
-            'group/alert-dialog-content data-open:fade-in-0 data-open:zoom-in-[0.98]',
-            'data-closed:fade-out-0 data-closed:zoom-out-[0.98] fixed top-1/2 left-1/2 z-50 grid w-max',
+            'group/alert-dialog-content data-open:fade-in-0 data-open:zoom-in-98',
+            'fixed top-1/2 left-1/2 z-50 grid w-max data-closed:fade-out-0 data-closed:zoom-out-98',
             '-translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4',
-            'text-popover-foreground outline-none ring-1 ring-foreground/10',
+            'text-popover-foreground ring-1 ring-foreground/10 outline-none',
             'duration-200 ease-out motion-reduce:animate-none',
-            'max-w-[calc(100vw-2rem)] data-[size=sm]:max-w-xs data-closed:animate-out data-open:animate-in',
+            'max-w-[calc(100vw-2rem)] data-[size=sm]:max-w-xs data-open:animate-in data-closed:animate-out',
           ],
           className,
         )}
@@ -91,7 +91,7 @@ function AlertDialogFooter({ className, ...properties }: React.ComponentProps<'d
       className={cn(
         [
           '-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4',
-          '*:h-auto *:min-h-12 *:min-w-0 *:max-w-full *:whitespace-normal *:py-2.5 sm:*:whitespace-nowrap',
+          '*:h-auto *:min-h-12 *:max-w-full *:min-w-0 *:py-2.5 *:whitespace-normal sm:*:whitespace-nowrap',
           'group-data-[size=sm]/alert-dialog-content:grid',
           'group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:grid sm:grid-cols-2',
         ],
@@ -125,7 +125,7 @@ function AlertDialogTitle({ className, ...properties }: React.ComponentProps<typ
       data-slot="alert-dialog-title"
       className={cn(
         [
-          'font-heading font-medium text-base',
+          'font-heading text-base font-medium',
           'sm:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2',
         ],
         className,
@@ -144,7 +144,7 @@ function AlertDialogDescription({
       data-slot="alert-dialog-description"
       className={cn(
         [
-          'text-balance text-muted-foreground text-sm md:text-pretty *:[a]:underline',
+          'text-sm text-balance text-muted-foreground md:text-pretty *:[a]:underline',
           '*:[a]:underline-offset-3 *:[a]:hover:text-foreground',
         ],
         className,
@@ -159,8 +159,8 @@ function AlertDialogAction({ className, ...properties }: React.ComponentProps<ty
 }
 
 interface AlertDialogCancelProperties extends AlertDialogPrimitive.Close.Props {
-  variant?: React.ComponentProps<typeof Button>['variant'];
-  size?: React.ComponentProps<typeof Button>['size'];
+  variant?: Exclude<React.ComponentProps<typeof Button>['variant'], undefined>;
+  size?: Exclude<React.ComponentProps<typeof Button>['size'], undefined>;
 }
 
 function AlertDialogCancel({
@@ -168,7 +168,7 @@ function AlertDialogCancel({
   variant = 'outline',
   size = 'default',
   ...properties
-}: AlertDialogCancelProperties) {
+}: Readonly<AlertDialogCancelProperties>) {
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"

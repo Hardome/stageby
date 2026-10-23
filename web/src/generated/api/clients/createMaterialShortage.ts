@@ -16,5 +16,5 @@ import { createMaterialShortageResponseSchema, createMaterialShortageErrorSchema
 export function createMaterialShortage<ThrowOnError extends boolean = true>(options: Options<CreateMaterialShortageOptions, ThrowOnError>): Unwrappable<RequestResult<CreateMaterialShortageResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/material-invoices/{invoiceId}/shortages', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createMaterialShortageResponseSchema, error: createMaterialShortageErrorSchema }, ...config }) as Promise<RequestResult<CreateMaterialShortageResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/material-invoices/{invoiceId}/shortages', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createMaterialShortageResponseSchema, error: createMaterialShortageErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<CreateMaterialShortageResponses, ThrowOnError>>)
 }

@@ -26,7 +26,7 @@ interface TemporaryProjectListProperties {
 }
 
 // Temporary: remove this feature and its HomePage connection when the manager dashboard is ready.
-export function TemporaryProjectList({ search, onPageChange }: TemporaryProjectListProperties) {
+export function TemporaryProjectList({ search, onPageChange }: Readonly<TemporaryProjectListProperties>) {
   const query = useListProjects(
     { query: getProjectsQuery(search) },
     { query: { retry: false, placeholderData: keepPreviousData } },
@@ -55,7 +55,7 @@ export function TemporaryProjectList({ search, onPageChange }: TemporaryProjectL
 
   return (
     <section aria-label="Объекты" aria-busy={query.isFetching} className="flex min-w-0 flex-col gap-4">
-      <h2 className="font-semibold text-xl">Объекты</h2>
+      <h2 className="text-xl font-semibold">Объекты</h2>
       {query.isError && (
         <Alert variant="destructive">
           <AlertDescription>
@@ -95,10 +95,10 @@ export function TemporaryProjectList({ search, onPageChange }: TemporaryProjectL
                         'text-card-foreground hover:bg-muted focus-visible:outline-ring',
                       ])}
                     >
-                      <span className="break-words font-semibold">
+                      <span className="font-semibold break-words">
                         {project.ownerName} · {project.address}
                       </span>
-                      <span className="text-muted-foreground text-sm">
+                      <span className="text-sm text-muted-foreground">
                         {formatDate(project.plannedStartDate)} — {formatDate(project.plannedEndDate)}
                       </span>
                       <Badge variant={project.status === 'completed' ? 'success' : 'outline'}>

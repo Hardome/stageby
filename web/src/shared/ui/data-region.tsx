@@ -24,7 +24,7 @@ export function DataRegion({
   label = 'Обновляем…',
   initialLabel = 'Загрузка данных…',
   className,
-}: DataRegionProperties) {
+}: Readonly<DataRegionProperties>) {
   let state = 'idle';
   if (isLoading) state = 'initial';
   else if (isRefreshing) state = 'refreshing';
@@ -58,7 +58,7 @@ export function DataRegion({
           role="status"
           className={cn(
             'absolute top-2 right-2 flex items-center gap-2 rounded-md bg-background px-2 py-1',
-            'text-muted-foreground text-xs',
+            'text-xs text-muted-foreground',
           )}
         >
           <Spinner aria-hidden="true" role="presentation" />

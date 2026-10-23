@@ -7,7 +7,7 @@ interface AdditionalStageActionProperties {
   onAdd: () => void;
 }
 
-export function AdditionalStageAction({ disabled, onAdd }: AdditionalStageActionProperties) {
+export function AdditionalStageAction({ disabled, onAdd }: Readonly<AdditionalStageActionProperties>) {
   return (
     <Button
       type="button"

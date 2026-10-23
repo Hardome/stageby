@@ -44,7 +44,7 @@ export function CreateProjectPage() {
             <HousePlusIcon aria-hidden="true" className="size-6 text-primary-text" />
           </span>
           <div className="flex flex-col gap-2">
-            <h1 className="font-bold text-2xl sm:text-3xl">Создание объекта</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl">Создание объекта</h1>
           </div>
         </header>
         <ProjectCreator

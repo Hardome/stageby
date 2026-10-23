@@ -16,5 +16,5 @@ import { getCurrentUserResponseSchema, getCurrentUserErrorSchema } from '../zod/
 export function getCurrentUser<ThrowOnError extends boolean = true>(options: Options<GetCurrentUserOptions, ThrowOnError> = {}): Unwrappable<RequestResult<GetCurrentUserResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/auth/me', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getCurrentUserResponseSchema, error: getCurrentUserErrorSchema }, ...config }) as Promise<RequestResult<GetCurrentUserResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/auth/me', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getCurrentUserResponseSchema, error: getCurrentUserErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<GetCurrentUserResponses, ThrowOnError>>)
 }

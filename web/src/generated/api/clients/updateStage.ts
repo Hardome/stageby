@@ -16,5 +16,5 @@ import { updateStageResponseSchema, updateStageErrorSchema } from '../zod/update
 export function updateStage<ThrowOnError extends boolean = true>(options: Options<UpdateStageOptions, ThrowOnError>): Unwrappable<RequestResult<UpdateStageResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'PATCH', url: '/stages/{stageId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateStageResponseSchema, error: updateStageErrorSchema }, ...config }) as Promise<RequestResult<UpdateStageResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'PATCH', url: '/stages/{stageId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateStageResponseSchema, error: updateStageErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<UpdateStageResponses, ThrowOnError>>)
 }

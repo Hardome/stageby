@@ -8,7 +8,7 @@ interface MaterialStatusProperties {
   summary: MaterialIndicator;
 }
 
-export function MaterialStatus({ summary }: MaterialStatusProperties) {
+export function MaterialStatus({ summary }: Readonly<MaterialStatusProperties>) {
   const variants = { red: 'destructive', yellow: 'caution', green: 'success' } as const;
   const statusVariants =
     summary.openShortageCount > 0 || summary.invoiceCount === 0

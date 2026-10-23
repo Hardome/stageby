@@ -9,7 +9,7 @@ interface SavedDocumentsProperties {
   onRemove: (id: number) => void;
 }
 
-export function SavedDocuments({ fileIds, disabled, onRemove }: SavedDocumentsProperties) {
+export function SavedDocuments({ fileIds, disabled, onRemove }: Readonly<SavedDocumentsProperties>) {
   return (
     <section className="flex flex-col gap-2" aria-label="Сохранённые PDF">
       {fileIds.map((id, index) => (

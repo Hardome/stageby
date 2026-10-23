@@ -4,7 +4,7 @@ interface AuthTestProbeProperties {
   onSession: (session: AuthContextValue) => void;
 }
 
-export function AuthTestProbe({ onSession }: AuthTestProbeProperties) {
+export function AuthTestProbe({ onSession }: Readonly<AuthTestProbeProperties>) {
   const session = useAuth();
   onSession(session);
 

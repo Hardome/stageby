@@ -14,7 +14,7 @@ interface UserFormLayoutProperties extends PropsWithChildren {
   search: UsersSearch;
 }
 
-export function UserFormLayout({ title, description, search, children }: UserFormLayoutProperties) {
+export function UserFormLayout({ title, description, search, children }: Readonly<UserFormLayoutProperties>) {
   return (
     <main className="flex-1 bg-background px-3 py-4 sm:px-5 sm:py-6">
       <div className="mx-auto flex max-w-2xl flex-col gap-4">
@@ -29,7 +29,7 @@ export function UserFormLayout({ title, description, search, children }: UserFor
         <Card>
           <CardHeader>
             <CardTitle>
-              <h1 className="font-bold text-2xl">{title}</h1>
+              <h1 className="text-2xl font-bold">{title}</h1>
             </CardTitle>
             <CardDescription>{description}</CardDescription>
           </CardHeader>

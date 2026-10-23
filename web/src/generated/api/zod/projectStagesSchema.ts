@@ -6,8 +6,8 @@
 import * as z from 'zod'
 import { stageSchema } from './stageSchema'
 
-export const projectStagesSchema = z.object({
+export const projectStagesSchema = z.strictObject({
   items: z.array(stageSchema).max(9).describe('Доступные пользователю включённые этапы одного проекта, максимум девять, в порядке position ASC. Без пагинации.'),
-}).strict()
+})
 
 export type ProjectStagesSchemaType = z.infer<typeof projectStagesSchema>

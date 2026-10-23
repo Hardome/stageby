@@ -15,7 +15,7 @@ interface StageWorkingChecklistProperties {
   offset?: number;
 }
 
-export function StageWorkingChecklist({ stage, offset }: StageWorkingChecklistProperties) {
+export function StageWorkingChecklist({ stage, offset }: Readonly<StageWorkingChecklistProperties>) {
   const { user } = useAuth();
   const stageId = String(stage.id);
 
@@ -45,7 +45,7 @@ export function StageWorkingChecklist({ stage, offset }: StageWorkingChecklistPr
         itemLink={(item) => (
           <Link
             className={cn(
-              'flex min-w-0 flex-1 items-start justify-between gap-3 font-semibold text-base leading-normal',
+              'flex min-w-0 flex-1 items-start justify-between gap-3 text-base leading-normal font-semibold',
               'outline-none after:absolute after:inset-0 after:rounded-xl',
             )}
             to="/stages/$stageId/checklist/$itemId/photos"

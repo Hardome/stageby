@@ -16,7 +16,7 @@ interface ProjectDocumentProperties {
   action?: ReactNode;
 }
 
-export function ProjectDocument({ fileId, number, action }: ProjectDocumentProperties) {
+export function ProjectDocument({ fileId, number, action }: Readonly<ProjectDocumentProperties>) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const busy = useRef(false);
@@ -64,7 +64,7 @@ export function ProjectDocument({ fileId, number, action }: ProjectDocumentPrope
           )}
           <span className="flex min-w-0 flex-1 flex-col gap-1">
             <span className="font-semibold">Документ {number}</span>
-            <span className="font-normal text-muted-foreground text-xs">PDF · Открыть файл</span>
+            <span className="text-xs font-normal text-muted-foreground">PDF · Открыть файл</span>
           </span>
           <ArrowUpRightIcon data-icon="inline-end" />
         </Button>

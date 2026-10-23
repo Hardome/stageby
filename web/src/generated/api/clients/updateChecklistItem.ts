@@ -16,5 +16,5 @@ import { updateChecklistItemResponseSchema, updateChecklistItemErrorSchema } fro
 export function updateChecklistItem<ThrowOnError extends boolean = true>(options: Options<UpdateChecklistItemOptions, ThrowOnError>): Unwrappable<RequestResult<UpdateChecklistItemResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'PATCH', url: '/stages/{stageId}/checklist/items/{itemId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateChecklistItemResponseSchema, error: updateChecklistItemErrorSchema }, ...config }) as Promise<RequestResult<UpdateChecklistItemResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'PATCH', url: '/stages/{stageId}/checklist/items/{itemId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: updateChecklistItemResponseSchema, error: updateChecklistItemErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<UpdateChecklistItemResponses, ThrowOnError>>)
 }

@@ -6,11 +6,11 @@
 import * as z from 'zod'
 import { stageSchema } from './stageSchema'
 
-export const stagePageSchema = z.object({
+export const stagePageSchema = z.strictObject({
   items: z.array(stageSchema).describe('Этапы текущей страницы с учётом фильтров и прав доступа.'),
   total: z.int().min(0).describe('Общее количество записей с учётом фильтров и прав доступа до применения limit и offset.').meta({ examples: [1] }),
   limit: z.int().min(1).max(100).describe('Применённый размер страницы; количество items может быть меньше.').meta({ examples: [20] }),
   offset: z.int().min(0).describe('Количество пропущенных записей после фильтрации и проверки доступа.').meta({ examples: [0] }),
-}).strict()
+})
 
 export type StagePageSchemaType = z.infer<typeof stagePageSchema>

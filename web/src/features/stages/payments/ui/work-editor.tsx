@@ -12,7 +12,7 @@ import { WorkPaymentFields } from './work-payment-fields';
 
 const submitLabels = { payment: 'Добавить', 'delete-payment': 'Удалить платёж' };
 
-export function WorkEditor(properties: WorkEditorProperties) {
+export function WorkEditor(properties: Readonly<WorkEditorProperties>) {
   const editor = useWorkEditor(properties);
   const { action, stage, onClose } = properties;
   const isDisabled = editor.pending || editor.needsReload || editor.unavailable;

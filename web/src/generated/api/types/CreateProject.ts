@@ -139,4 +139,4 @@ export type CreateProjectResponses = {
 /**
  * @description Union of all possible responses
 */
-export type CreateProjectResponse = (CreateProjectStatus201 | CreateProjectStatus400 | CreateProjectStatus401 | CreateProjectStatus403 | CreateProjectStatus409);
+export type CreateProjectResponse = CreateProjectStatus201;

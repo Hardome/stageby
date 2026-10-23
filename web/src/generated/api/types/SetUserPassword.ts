@@ -56,4 +56,4 @@ export type SetUserPasswordResponses = {
 /**
  * @description Union of all possible responses
 */
-export type SetUserPasswordResponse = (SetUserPasswordStatus204 | SetUserPasswordStatus400 | SetUserPasswordStatus401 | SetUserPasswordStatus403 | SetUserPasswordStatus404);
+export type SetUserPasswordResponse = SetUserPasswordStatus204;

@@ -16,5 +16,5 @@ import { createFileUploadResponseSchema, createFileUploadErrorSchema } from '../
 export function createFileUpload<ThrowOnError extends boolean = true>(options: Options<CreateFileUploadOptions, ThrowOnError>): Unwrappable<RequestResult<CreateFileUploadResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/file-uploads', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createFileUploadResponseSchema, error: createFileUploadErrorSchema }, ...config }) as Promise<RequestResult<CreateFileUploadResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/file-uploads', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createFileUploadResponseSchema, error: createFileUploadErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<CreateFileUploadResponses, ThrowOnError>>)
 }

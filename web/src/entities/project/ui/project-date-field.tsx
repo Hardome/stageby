@@ -14,7 +14,7 @@ interface ProjectDateFieldProperties {
   max?: string;
 }
 
-export function ProjectDateField({ name, label, required, ...properties }: ProjectDateFieldProperties) {
+export function ProjectDateField({ name, label, required, ...properties }: Readonly<ProjectDateFieldProperties>) {
   const { control } = useFormContext<ProjectFormValues>();
   const id = `project-${name}`;
 

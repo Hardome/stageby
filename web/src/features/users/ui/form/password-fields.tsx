@@ -3,7 +3,7 @@ import { useFormContext } from 'react-hook-form';
 import type { CreateFormValues } from '../../model/types';
 import { ControlledTextField } from './controlled-text-field';
 
-export function PasswordFields({ disabled }: { disabled: boolean }) {
+export function PasswordFields({ disabled }: Readonly<{ disabled: boolean }>) {
   const {
     formState: { errors },
   } = useFormContext<CreateFormValues>();

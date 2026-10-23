@@ -22,7 +22,7 @@ interface DashboardSummaryProperties {
   today: string;
 }
 
-export function DashboardSummary({ through, today }: DashboardSummaryProperties) {
+export function DashboardSummary({ through, today }: Readonly<DashboardSummaryProperties>) {
   const isAvailable = isCalculationAvailable(through, today);
   const query = useGetDashboardSummary(
     { query: { through } },

@@ -41,4 +41,4 @@ export type GetDashboardSummaryResponses = {
 /**
  * @description Union of all possible responses
 */
-export type GetDashboardSummaryResponse = (GetDashboardSummaryStatus200 | GetDashboardSummaryStatus400 | GetDashboardSummaryStatus401 | GetDashboardSummaryStatus403);
+export type GetDashboardSummaryResponse = GetDashboardSummaryStatus200;

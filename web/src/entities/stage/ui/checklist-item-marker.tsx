@@ -7,7 +7,7 @@ interface ChecklistItemMarkerProperties {
   item: ChecklistItem;
 }
 
-export function ChecklistItemMarker({ item }: ChecklistItemMarkerProperties) {
+export function ChecklistItemMarker({ item }: Readonly<ChecklistItemMarkerProperties>) {
   return (
     <span
       className={cn(

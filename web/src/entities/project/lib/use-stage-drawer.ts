@@ -31,17 +31,6 @@ export function useStageDrawer(isDisabled: boolean, onStageChange: (index: numbe
     setIsOpen(shouldOpen && !isDisabled);
   }
 
-  function onOpenChangeComplete(hasOpened: boolean) {
-    if (hasOpened) {
-      listReference.current?.querySelector('[aria-current="step"]')?.scrollIntoView({ block: 'nearest' });
-    } else {
-      const index = pendingStage.current;
-      pendingStage.current = undefined;
-      if (index !== undefined && !isDisabled) onStageChange(index);
-      setIsOpen(false);
-    }
-  }
-
   function selectStage(index: number) {
     pendingStage.current = index;
     hasSelectedStage.current = true;
@@ -52,7 +41,16 @@ export function useStageDrawer(isDisabled: boolean, onStageChange: (index: numbe
     isOpen: isOpen && !isDisabled,
     listReference,
     onOpenChange,
-    onOpenChangeComplete,
+    onOpenChangeComplete: (hasOpened: boolean) => {
+      if (hasOpened) {
+        listReference.current?.querySelector('[aria-current="step"]')?.scrollIntoView({ block: 'nearest' });
+      } else {
+        const index = pendingStage.current;
+        pendingStage.current = undefined;
+        if (index !== undefined && !isDisabled) onStageChange(index);
+        setIsOpen(false);
+      }
+    },
     selectStage,
     finalFocus: () => !hasSelectedStage.current,
   };

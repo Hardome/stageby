@@ -30,7 +30,13 @@ function shouldShowCompletionActions(item: ChecklistItem, canEdit: boolean, hasN
   return (canEdit && !hasCompletedItemDetails(item)) || hasNoAssignee;
 }
 
-export function ChecklistPhotoEditor({ stage, item, version, canEdit, onComplete }: ChecklistPhotoEditorProperties) {
+export function ChecklistPhotoEditor({
+  stage,
+  item,
+  version,
+  canEdit,
+  onComplete,
+}: Readonly<ChecklistPhotoEditorProperties>) {
   const {
     query,
     queue,
@@ -137,7 +143,7 @@ export function ChecklistPhotoEditor({ stage, item, version, canEdit, onComplete
               </Button>
             )}
             {hasNoAssignee && (
-              <p className="text-muted-foreground text-sm">Чтобы завершить пункт чек-листа, назначьте мастера.</p>
+              <p className="text-sm text-muted-foreground">Чтобы завершить пункт чек-листа, назначьте мастера.</p>
             )}
           </div>
         </div>

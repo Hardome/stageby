@@ -8,7 +8,7 @@ interface TextFieldProperties extends ComponentProps<typeof Input> {
   error?: string;
 }
 
-export function TextField({ label, error, ...properties }: TextFieldProperties) {
+export function TextField({ label, error, ...properties }: Readonly<TextFieldProperties>) {
   return (
     <Field data-invalid={Boolean(error)} data-disabled={properties.disabled}>
       <FieldLabel htmlFor={properties.id}>{label}</FieldLabel>

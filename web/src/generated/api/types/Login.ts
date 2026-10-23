@@ -37,4 +37,4 @@ export type LoginResponses = {
 /**
  * @description Union of all possible responses
 */
-export type LoginResponse = (LoginStatus200 | LoginStatus400 | LoginStatus401 | LoginStatus403 | LoginStatus429);
+export type LoginResponse = LoginStatus200;

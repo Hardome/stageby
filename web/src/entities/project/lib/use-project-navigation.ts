@@ -48,7 +48,7 @@ export function useProjectNavigation(form: UseFormReturn<ProjectFormValues>, ini
     name: 'stages',
     compute: (values) => values.map(({ type, title, enabled }) => ({ type, title, enabled })),
   });
-  const selectedIndexes = stages.flatMap((stage, index) => (stage.enabled ? [index] : []));
+  const selectedIndexes = stages.flatMap((stage, index) => (stage.enabled ? index : []));
   const position = typeof screen === 'number' ? stages.slice(0, screen).filter((stage) => stage.enabled).length : -1;
   const nextIndex = selectedIndexes[position + 1];
   const previousIndex = selectedIndexes[position - 1];

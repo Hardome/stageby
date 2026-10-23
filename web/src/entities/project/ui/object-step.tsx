@@ -19,7 +19,12 @@ interface ObjectStepProperties {
   children?: ReactNode;
 }
 
-export function ObjectStep({ isLocked, uploads, disableAutocomplete = false, children }: ObjectStepProperties) {
+export function ObjectStep({
+  isLocked,
+  uploads,
+  disableAutocomplete = false,
+  children,
+}: Readonly<ObjectStepProperties>) {
   const { control } = useFormContext<ProjectFormValues>();
   const plannedStartDate = useWatch({ control, name: 'plannedStartDate', exact: true });
 

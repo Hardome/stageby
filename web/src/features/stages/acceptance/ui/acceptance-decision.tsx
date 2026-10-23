@@ -11,7 +11,7 @@ interface AcceptanceDecisionProperties {
   isRework: boolean;
 }
 
-export function AcceptanceDecision({ decision, isRework }: AcceptanceDecisionProperties) {
+export function AcceptanceDecision({ decision, isRework }: Readonly<AcceptanceDecisionProperties>) {
   const { user } = useAuth();
   const decidedAt = formatDecisionDate(decision.decidedAt);
 

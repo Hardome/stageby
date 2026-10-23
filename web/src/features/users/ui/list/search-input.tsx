@@ -8,7 +8,7 @@ interface SearchInputProperties {
   onChange: (value: string) => void;
 }
 
-export function SearchInput({ value, onChange }: SearchInputProperties) {
+export function SearchInput({ value, onChange }: Readonly<SearchInputProperties>) {
   const [input, setInput] = useState({ source: value, value });
 
   if (input.source !== value) setInput({ source: value, value });

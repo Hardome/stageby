@@ -20,7 +20,7 @@ export function MaterialDialog({
   description,
   trigger,
   children,
-}: MaterialDialogProperties) {
+}: Readonly<MaterialDialogProperties>) {
   return (
     <Dialog
       open={isOpen}

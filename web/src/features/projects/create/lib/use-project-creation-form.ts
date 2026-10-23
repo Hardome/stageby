@@ -61,7 +61,7 @@ export function useProjectCreationForm({ types, onDirtyChange, onSuccess }: Crea
 
     await submission.save(
       values,
-      uploads.documents.flatMap((document) => (document.fileId ? [document.fileId] : [])),
+      uploads.documents.flatMap((document) => document.fileId || []),
     );
   }
 

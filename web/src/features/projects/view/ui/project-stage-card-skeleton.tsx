@@ -27,7 +27,7 @@ export function ProjectStageCardSkeleton() {
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-muted-foreground text-xs">Готовность</span>
+            <span className="text-xs text-muted-foreground">Готовность</span>
             <Skeleton className="h-5 w-10" />
           </div>
           <Skeleton className="h-1.5 w-full" />
@@ -42,7 +42,7 @@ export function ProjectStageCardSkeleton() {
             <UserRoundIcon className="size-4" aria-hidden="true" />
           </span>
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-muted-foreground text-xs">Мастер</p>
+            <p className="text-xs text-muted-foreground">Мастер</p>
             <Skeleton className="h-5 w-36" />
           </div>
         </div>
@@ -55,11 +55,11 @@ export function ProjectStageCardSkeleton() {
         <dl className="grid w-full grid-cols-2 gap-4">
           {['Работы', 'Материалы'].map((label) => (
             <div key={label} className="min-w-0">
-              <dt className="mb-1 font-medium text-muted-foreground text-xs">{label}</dt>
+              <dt className="mb-1 text-xs font-medium text-muted-foreground">{label}</dt>
               <dd className="flex items-center gap-2 text-sm">
                 Факт: <Skeleton className="h-5 w-16" />
               </dd>
-              <dd className="mt-1 flex items-center gap-2 text-muted-foreground text-xs">
+              <dd className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                 План: <Skeleton className="h-4 w-16" />
               </dd>
             </div>

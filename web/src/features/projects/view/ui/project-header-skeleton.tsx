@@ -46,16 +46,16 @@ export function ProjectHeaderSkeleton() {
             {['Начало', 'Завершение'].map((label) => (
               <div
                 key={label}
-                className="flex flex-col gap-2 last:border-surface-inverse-foreground/25 last:border-l last:pl-3"
+                className="flex flex-col gap-2 last:border-l last:border-surface-inverse-foreground/25 last:pl-3"
               >
-                <span className="text-surface-inverse-muted text-xs">{label}</span>
+                <span className="text-xs text-surface-inverse-muted">{label}</span>
                 <Skeleton className="h-6 w-24" />
               </div>
             ))}
           </div>
         </div>
         <div className="flex flex-col gap-3 p-4 sm:px-5">
-          <div className="flex items-center gap-2 text-muted-foreground text-xs">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             Координаты: <Skeleton className="h-4 w-40" />
           </div>
         </div>

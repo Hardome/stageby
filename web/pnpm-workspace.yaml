@@ -1,25 +1,29 @@
+overrides:
+  # SonarJS и парсер должны использовать одинаковые флаги типов TypeScript.
+  eslint-plugin-sonarjs>typescript: 5.9.3
+
 minimumReleaseAgeExclude:
-  - '@kubb/adapter-oas@5.3.11'
-  - '@kubb/ast@5.3.11'
-  - '@kubb/cli@5.3.11'
-  - '@kubb/core@5.3.11'
-  - '@kubb/kit@5.3.11'
-  - '@kubb/mcp@5.3.11'
-  - '@kubb/parser-md@5.3.11'
-  - '@kubb/parser-ts@5.3.11'
-  - '@kubb/plugin-barrel@5.3.11'
-  - '@kubb/renderer-jsx@5.3.11'
-  - '@kubb/studio@5.3.11'
-  - '@typescript-eslint/eslint-plugin@8.70.1'
-  - '@typescript-eslint/parser@8.70.1'
-  - '@typescript-eslint/project-service@8.70.1'
-  - '@typescript-eslint/scope-manager@8.70.1'
-  - '@typescript-eslint/tsconfig-utils@8.70.1'
-  - '@typescript-eslint/type-utils@8.70.1'
-  - '@typescript-eslint/types@8.70.1'
-  - '@typescript-eslint/typescript-estree@8.70.1'
-  - '@typescript-eslint/utils@8.70.1'
-  - '@typescript-eslint/visitor-keys@8.70.1'
+  - "@kubb/adapter-oas@5.3.11"
+  - "@kubb/ast@5.3.11"
+  - "@kubb/cli@5.3.11"
+  - "@kubb/core@5.3.11"
+  - "@kubb/kit@5.3.11"
+  - "@kubb/mcp@5.3.11"
+  - "@kubb/parser-md@5.3.11"
+  - "@kubb/parser-ts@5.3.11"
+  - "@kubb/plugin-barrel@5.3.11"
+  - "@kubb/renderer-jsx@5.3.11"
+  - "@kubb/studio@5.3.11"
+  - "@typescript-eslint/eslint-plugin@8.70.1"
+  - "@typescript-eslint/parser@8.70.1"
+  - "@typescript-eslint/project-service@8.70.1"
+  - "@typescript-eslint/scope-manager@8.70.1"
+  - "@typescript-eslint/tsconfig-utils@8.70.1"
+  - "@typescript-eslint/type-utils@8.70.1"
+  - "@typescript-eslint/types@8.70.1"
+  - "@typescript-eslint/typescript-estree@8.70.1"
+  - "@typescript-eslint/utils@8.70.1"
+  - "@typescript-eslint/visitor-keys@8.70.1"
   - jsdom@30.1.1
   - kubb@5.3.11
   - typescript-eslint@8.70.1

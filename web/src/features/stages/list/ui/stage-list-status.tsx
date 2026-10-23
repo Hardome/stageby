@@ -8,7 +8,7 @@ interface StageListStatusProperties {
   today: string;
 }
 
-export function StageListStatus({ stage, today }: StageListStatusProperties) {
+export function StageListStatus({ stage, today }: Readonly<StageListStatusProperties>) {
   return (
     <div className="flex flex-wrap gap-2">
       <Badge variant={stage.status === 'completed' || stage.status === 'paid' ? 'success' : 'outline'}>

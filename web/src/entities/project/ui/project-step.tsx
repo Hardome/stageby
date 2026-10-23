@@ -24,7 +24,7 @@ export function ProjectStep({
   uploads,
   registerErrorGroup,
   disableAutocomplete,
-}: ProjectStepProperties) {
+}: Readonly<ProjectStepProperties>) {
   const {
     formState: { errors },
   } = useFormContext<ProjectFormValues>();

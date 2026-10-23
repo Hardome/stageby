@@ -7,9 +7,9 @@ import * as z from 'zod'
 import { projectEditStageSchema } from './projectEditStageSchema'
 import { projectSchema } from './projectSchema'
 
-export const projectEditSchema = z.object({
+export const projectEditSchema = z.strictObject({
   project: projectSchema.describe('Реквизиты, документы, версия и вычисленные итоги объекта.'),
   stages: z.array(projectEditStageSchema).describe('Все этапы, включая исключённые, по position ASC; только для руководителя.'),
-}).strict()
+})
 
 export type ProjectEditSchemaType = z.infer<typeof projectEditSchema>

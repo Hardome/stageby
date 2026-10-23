@@ -16,12 +16,12 @@ export function DashboardActivitySkeleton() {
         <Building2Icon className="size-5 text-primary" aria-hidden="true" />
       </div>
       <div className="flex items-end justify-between gap-4 lg:flex-col lg:items-start">
-        <div className="font-semibold text-5xl tabular-nums tracking-tighter lg:text-6xl">
+        <div className="text-5xl font-semibold tracking-tighter tabular-nums lg:text-6xl">
           <Skeleton className="h-15 w-20 lg:h-24" />
         </div>
         <Skeleton className="h-10 w-44" />
       </div>
-      <div className="hidden items-center justify-between border-surface-inverse-border border-t pt-4 lg:flex">
+      <div className="hidden items-center justify-between border-t border-surface-inverse-border pt-4 lg:flex">
         <Skeleton className="h-4 w-40" />
         <ArrowDownRightIcon className="size-4 text-primary" aria-hidden="true" />
       </div>

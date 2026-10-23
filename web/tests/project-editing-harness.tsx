@@ -23,7 +23,7 @@ export async function flush(action: () => void) {
 }
 export function input(name: string) {
   const field = [...document.querySelectorAll('input')].find((element) => element.id === `project-${name}`);
-  if (!(field instanceof HTMLInputElement)) throw new Error(`Missing input ${name}`);
+  if (!(field instanceof HTMLInputElement)) throw new TypeError(`Missing input ${name}`);
 
   return field;
 }

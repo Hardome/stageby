@@ -9,7 +9,7 @@ import { filePurposeSchema } from './filePurposeSchema'
 import { fileStatusSchema } from './fileStatusSchema'
 import { sha256Schema } from './sha256Schema'
 
-export const fileSchema = z.object({
+export const fileSchema = z.strictObject({
   id: entityIdSchema.describe('Идентификатор файла.').meta({ examples: [301] }),
   purpose: filePurposeSchema.describe('Назначение файла.').meta({ examples: ['checklist_photo'] }),
   status: fileStatusSchema.describe('Текущее состояние файла.').meta({ examples: ['uploaded'] }),
@@ -18,6 +18,6 @@ export const fileSchema = z.object({
   sizeBytes: z.int().min(1).describe('Проверенный размер файла в байтах.').meta({ examples: [1048576] }),
   checksumSha256: sha256Schema.describe('Проверенная контрольная сумма файла.').meta({ examples: ['0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'] }),
   uploadedAt: z.iso.datetime().describe('Серверное время успешного подтверждения загрузки.').meta({ examples: ['2026-09-29T08:15:00Z'] }),
-}).strict()
+})
 
 export type FileSchemaType = z.infer<typeof fileSchema>

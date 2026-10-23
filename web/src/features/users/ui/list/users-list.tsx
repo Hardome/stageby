@@ -36,7 +36,7 @@ interface UsersListProperties {
   onPageChange: (offset: number, shouldReplace?: boolean) => void;
 }
 
-export function UsersList({ search, onFilterChange, onPageChange }: UsersListProperties) {
+export function UsersList({ search, onFilterChange, onPageChange }: Readonly<UsersListProperties>) {
   const query = useListUsers(
     { query: getUsersQuery(search) },
     { query: { retry: false, placeholderData: keepPreviousData } },
@@ -69,8 +69,8 @@ export function UsersList({ search, onFilterChange, onPageChange }: UsersListPro
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-bold text-2xl">Пользователи</h1>
-          <p className="text-muted-foreground text-sm">Сотрудники, роли и доступ к системе</p>
+          <h1 className="text-2xl font-bold">Пользователи</h1>
+          <p className="text-sm text-muted-foreground">Сотрудники, роли и доступ к системе</p>
         </div>
         <Button className="min-h-11" nativeButton={false} render={<Link to="/users/new" search={search} />}>
           <PlusIcon data-icon="inline-start" />
@@ -116,7 +116,7 @@ export function UsersList({ search, onFilterChange, onPageChange }: UsersListPro
         >
           {query.data && (
             <>
-              <p className="text-muted-foreground text-sm" aria-live="polite">
+              <p className="text-sm text-muted-foreground" aria-live="polite">
                 Найдено: {query.data.total}
               </p>
               {query.data.items.length > 0 ? (

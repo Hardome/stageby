@@ -6,16 +6,16 @@
 import * as z from 'zod'
 import { entityIdSchema } from './entityIdSchema'
 
-export const checklistItemPhotoSchema = z.object({
+export const checklistItemPhotoSchema = z.strictObject({
   id: entityIdSchema.describe('Идентификатор связи фотографии с пунктом.').meta({ examples: [501] }),
   itemId: entityIdSchema.describe('Идентификатор пункта чек-листа.').meta({ examples: [201] }),
   fileId: entityIdSchema.describe('Идентификатор физического файла.').meta({ examples: [301] }),
   position: z.int().min(1).max(20).describe('Порядок фотографии внутри пункта.').meta({ examples: [1] }),
-  uploadedBy: z.object({
+  uploadedBy: z.strictObject({
     id: entityIdSchema.describe('Идентификатор автора загрузки.').meta({ examples: [17] }),
     fullName: z.string().min(1).max(255).describe('Отображаемое имя автора загрузки.').meta({ examples: ['Иван Петров'] }),
-  }).strict().describe('Пользователь, создавший upload-сессию фотографии.'),
+  }).describe('Пользователь, создавший upload-сессию фотографии.'),
   uploadedAt: z.iso.datetime().describe('Серверное время подтверждения загрузки файла.').meta({ examples: ['2026-09-29T08:15:00Z'] }),
-}).strict()
+})
 
 export type ChecklistItemPhotoSchemaType = z.infer<typeof checklistItemPhotoSchema>

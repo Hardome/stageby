@@ -14,7 +14,7 @@ import { stageAssigneeSchema } from './stageAssigneeSchema'
 import { stageStatusSchema } from './stageStatusSchema'
 import { stageTypeSchema } from './stageTypeSchema'
 
-export const stageSchema = z.object({
+export const stageSchema = z.strictObject({
   id: z.int().min(1).max(2147483647).describe('Стабильный ID этапа строительства.').meta({ examples: [1001] }),
   projectId: z.int().min(1).max(2147483647).describe('Стабильный ID проекта, которому принадлежит запись.').meta({ examples: [101] }),
   projectOwnerName: z.string().min(1).max(255).describe('Имя клиента объекта, необходимое странице «Мои этапы».').meta({ examples: ['Анна Смирнова'] }),
@@ -52,6 +52,6 @@ export const stageSchema = z.object({
   version: z.int().min(1).describe('Версия записи. Увеличивается при каждом изменении.').meta({ examples: [1] }),
   createdAt: z.iso.datetime().describe('Дата и время создания записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-20T08:00:00Z'] }),
   updatedAt: z.iso.datetime().describe('Дата и время последнего изменения записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-24T10:00:00Z'] }),
-}).strict().describe('Параметры, финансовые итоги и версия этапа.')
+}).describe('Параметры, финансовые итоги и версия этапа.')
 
 export type StageSchemaType = z.infer<typeof stageSchema>

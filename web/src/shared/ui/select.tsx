@@ -6,13 +6,13 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 
 const Select = SelectPrimitive.Root;
 
-function SelectGroup({ className, ...properties }: SelectPrimitive.Group.Props) {
+function SelectGroup({ className, ...properties }: Readonly<SelectPrimitive.Group.Props>) {
   return (
     <SelectPrimitive.Group data-slot="select-group" className={cn('scroll-my-1 p-1', className)} {...properties} />
   );
 }
 
-function SelectValue({ className, ...properties }: SelectPrimitive.Value.Props) {
+function SelectValue({ className, ...properties }: Readonly<SelectPrimitive.Value.Props>) {
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
@@ -35,7 +35,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        'flex w-fit select-none items-center justify-between gap-1.5 whitespace-nowrap rounded-(--radius-control)',
+        'flex w-fit items-center justify-between gap-1.5 rounded-(--radius-control) whitespace-nowrap select-none',
         'border border-control-border bg-control-background py-3 pr-3 pl-3.5 text-base outline-none',
         'transition-colors focus-visible:border-ring focus-visible:ring-3',
         'focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
@@ -46,7 +46,7 @@ function SelectTrigger({
         '*:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center',
         '*:data-[slot=select-value]:gap-1.5 dark:bg-input/30',
         'dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40',
-        "dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
+        "dark:hover:bg-input/50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         '[&_svg]:shrink-0',
         className,
       )}
@@ -88,9 +88,9 @@ function SelectContent({
             'data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
             'data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95',
             'relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36',
-            'origin-(--transform-origin) overflow-y-auto overflow-x-hidden rounded-lg bg-popover',
+            'origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover',
             'text-popover-foreground shadow-md ring-1 ring-border duration-100',
-            'data-[align-trigger=true]:animate-none data-closed:animate-out data-open:animate-in',
+            'data-[align-trigger=true]:animate-none data-open:animate-in data-closed:animate-out',
             className,
           )}
           {...properties}
@@ -104,26 +104,26 @@ function SelectContent({
   );
 }
 
-function SelectLabel({ className, ...properties }: SelectPrimitive.GroupLabel.Props) {
+function SelectLabel({ className, ...properties }: Readonly<SelectPrimitive.GroupLabel.Props>) {
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cn('px-1.5 py-1 text-muted-foreground text-xs', className)}
+      className={cn('px-1.5 py-1 text-xs text-muted-foreground', className)}
       {...properties}
     />
   );
 }
 
-function SelectItem({ className, children, ...properties }: SelectPrimitive.Item.Props) {
+function SelectItem({ className, children, ...properties }: Readonly<SelectPrimitive.Item.Props>) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        'relative flex w-full cursor-pointer select-none items-center gap-1.5 rounded-md py-1',
+        'relative flex w-full cursor-pointer items-center gap-1.5 rounded-md py-1 select-none',
         'pr-8 pl-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground',
         'not-data-[variant=destructive]:focus:**:text-accent-foreground',
         'data-disabled:pointer-events-none data-disabled:opacity-50',
-        "[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         '*:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2',
         className,
       )}
@@ -141,7 +141,7 @@ function SelectItem({ className, children, ...properties }: SelectPrimitive.Item
   );
 }
 
-function SelectSeparator({ className, ...properties }: SelectPrimitive.Separator.Props) {
+function SelectSeparator({ className, ...properties }: Readonly<SelectPrimitive.Separator.Props>) {
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"

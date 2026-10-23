@@ -16,5 +16,5 @@ import { deleteWorkPaymentResponseSchema, deleteWorkPaymentErrorSchema } from '.
 export function deleteWorkPayment<ThrowOnError extends boolean = true>(options: Options<DeleteWorkPaymentOptions, ThrowOnError>): Unwrappable<RequestResult<DeleteWorkPaymentResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'DELETE', url: '/work-payments/{paymentId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: deleteWorkPaymentResponseSchema, error: deleteWorkPaymentErrorSchema }, ...config }) as Promise<RequestResult<DeleteWorkPaymentResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'DELETE', url: '/work-payments/{paymentId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: deleteWorkPaymentResponseSchema, error: deleteWorkPaymentErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<DeleteWorkPaymentResponses, ThrowOnError>>)
 }

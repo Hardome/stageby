@@ -20,7 +20,7 @@ function ItemGroup({ className, ...properties }: React.ComponentProps<'ul'>) {
   );
 }
 
-function ItemSeparator({ className, ...properties }: React.ComponentProps<typeof Separator>) {
+function ItemSeparator({ className, ...properties }: Readonly<React.ComponentProps<typeof Separator>>) {
   return (
     <Separator data-slot="item-separator" orientation="horizontal" className={cn('my-2', className)} {...properties} />
   );
@@ -126,7 +126,7 @@ function ItemTitle({ className, ...properties }: React.ComponentProps<'div'>) {
     <div
       data-slot="item-title"
       className={cn(
-        'line-clamp-1 flex w-fit items-center gap-2 font-medium text-sm leading-snug underline-offset-4',
+        'line-clamp-1 flex w-fit items-center gap-2 text-sm leading-snug font-medium underline-offset-4',
         className,
       )}
       {...properties}
@@ -139,8 +139,8 @@ function ItemDescription({ className, ...properties }: React.ComponentProps<'p'>
     <p
       data-slot="item-description"
       className={cn(
-        'line-clamp-2 text-left font-normal text-muted-foreground text-sm leading-normal',
-        'group-data-[size=xs]/item:text-xs [&>a:hover]:text-primary-text [&>a]:underline',
+        'line-clamp-2 text-left text-sm leading-normal font-normal text-muted-foreground',
+        'group-data-[size=xs]/item:text-xs [&>a]:underline [&>a:hover]:text-primary-text',
         '[&>a]:underline-offset-4',
         className,
       )}

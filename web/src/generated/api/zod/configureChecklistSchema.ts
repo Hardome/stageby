@@ -6,12 +6,12 @@
 import * as z from 'zod'
 import { expectedVersionSchema } from './expectedVersionSchema'
 
-export const configureChecklistSchema = z.object({
+export const configureChecklistSchema = z.strictObject({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
-  items: z.array(z.object({
+  items: z.array(z.strictObject({
     title: z.string().min(1).max(500).describe('Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.').meta({ examples: ['Проверить соответствие выполненных работ проекту'] }),
     photoHint: z.string().min(1).max(1000).nullish().describe('Необязательная фотоподсказка; null удаляет подсказку.').meta({ examples: ['Фото перевязки углов и перехлёста арматуры', ] }),
-  }).strict()).min(1).describe('Порядок массива определяет position. Равный вес каждого пункта.'),
-}).strict().describe('Новый состав индивидуального чек-листа до фактического старта.')
+  })).min(1).describe('Порядок массива определяет position. Равный вес каждого пункта.'),
+}).describe('Новый состав индивидуального чек-листа до фактического старта.')
 
 export type ConfigureChecklistSchemaType = z.infer<typeof configureChecklistSchema>

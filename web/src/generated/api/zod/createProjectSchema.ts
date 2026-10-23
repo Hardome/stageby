@@ -9,7 +9,7 @@ import { coordinatesSchema } from './coordinatesSchema'
 import { createProjectStageSchema } from './createProjectStageSchema'
 import { projectSchema } from './projectSchema'
 
-export const createProjectSchema = z.object({
+export const createProjectSchema = z.strictObject({
   ownerName: z.string().min(1).max(150).describe('Имя клиента или собственника объекта строительства.').meta({ examples: ['Анна Смирнова'] }),
   address: z.string().min(1).max(1000).describe('Обязательный адрес объекта строительства.').meta({ examples: ['Екатеринбург, ул. Лесная, д. 10'] }),
   coordinates: coordinatesSchema.describe('Обязательные географические координаты объекта.'),
@@ -21,7 +21,7 @@ export const createProjectSchema = z.object({
   documentFileIds: z.array(z.int().min(1).max(2147483647)).refine(items => new Set(items).size === items.length, { message: "Array entries must be unique" }).describe('Идентификаторы предварительно успешно загруженных PDF проекта. Пустой список разрешён.'),
   stages: z.array(createProjectStageSchema).min(1).max(8).describe('Все включённые стандартные этапы, включая неоткрытые в форме. Для неоткрытого этапа достаточно type. Пропущенные типы не создаются; additional запрещён. Типы не повторяются, порядок массива не влияет на position.'),
   notes: z.string().min(1).max(5000).nullish().describe('Примечания к проекту; null — отсутствуют.').meta({ examples: ['Въезд на участок со стороны Лесной улицы.', ] }),
-}).strict()
+})
 
 export type CreateProjectSchemaType = z.infer<typeof createProjectSchema>
 

@@ -13,7 +13,7 @@ interface StageListResultsProperties {
   offset: number;
 }
 
-export function StageListResults({ stages, offset }: StageListResultsProperties) {
+export function StageListResults({ stages, offset }: Readonly<StageListResultsProperties>) {
   const today = todayInYekaterinburg();
 
   return (
@@ -32,7 +32,7 @@ export function StageListResults({ stages, offset }: StageListResultsProperties)
             {stages.map((stage) => (
               <TableRow key={stage.id}>
                 <TableCell className="max-w-64 whitespace-normal">
-                  <p className="wrap-anywhere font-semibold">{stage.projectOwnerName}</p>
+                  <p className="font-semibold wrap-anywhere">{stage.projectOwnerName}</p>
                   <p className="wrap-anywhere text-muted-foreground">{stage.projectAddress}</p>
                 </TableCell>
                 <TableCell className="max-w-64 whitespace-normal">

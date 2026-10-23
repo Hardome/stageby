@@ -10,7 +10,7 @@ import { EditProjectFeedback } from './edit-project-feedback';
 import { EditProjectFields } from './edit-project-fields';
 import { ResetProjectDialog } from './reset-project-dialog';
 
-export function EditProjectForm(properties: EditProjectFormProperties) {
+export function EditProjectForm(properties: Readonly<EditProjectFormProperties>) {
   const editor = useProjectEditForm(properties);
   const { form, navigation, update, isLocked, hasUnfinishedUploads, reloading } = editor;
   const { step, title, description } = navigation;

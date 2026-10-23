@@ -14,7 +14,7 @@ interface StageParameterFieldProperties {
   max?: string;
 }
 
-export function StageParameterField({ name, label, disabled, min, max }: StageParameterFieldProperties) {
+export function StageParameterField({ name, label, disabled, min, max }: Readonly<StageParameterFieldProperties>) {
   const { control } = useFormContext<StageFormValues>();
   const id = `stage-${name}`;
 

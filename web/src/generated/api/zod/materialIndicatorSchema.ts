@@ -5,7 +5,7 @@
 
 import * as z from 'zod'
 
-export const materialIndicatorSchema = z.object({
+export const materialIndicatorSchema = z.strictObject({
   color: z.enum(['red', 'yellow', 'green']).describe('Красный — нет счетов или есть открытая нехватка; иначе жёлтый — не все счета оплачены или доставлены; иначе зелёный.').meta({ examples: ['yellow'] }),
   invoiceCount: z.int().min(0).max(10).describe('Количество счетов выбранного этапа.').meta({ examples: [3] }),
   paidInvoiceCount: z.int().min(0).max(10).describe('Количество полностью оплаченных счетов выбранного этапа.').meta({ examples: [2] }),
@@ -13,6 +13,6 @@ export const materialIndicatorSchema = z.object({
   openShortageCount: z.int().min(0).describe('Количество отдельно не устранённых нехваток выбранного этапа.').meta({ examples: [0] }),
   isPartiallyPaid: z.boolean().describe('true, если есть оплата хотя бы одного счёта, но не все счета оплачены полностью. Полная оплата — фактическая сумма не меньше суммы счёта.').meta({ examples: [true] }),
   isPartiallyDelivered: z.boolean().describe('true, только если доставлено больше нуля, но меньше общего количества счетов.').meta({ examples: [true] }),
-}).strict().describe('Вычисляемое состояние счетов и нехваток выбранного этапа.')
+}).describe('Вычисляемое состояние счетов и нехваток выбранного этапа.')
 
 export type MaterialIndicatorSchemaType = z.infer<typeof materialIndicatorSchema>

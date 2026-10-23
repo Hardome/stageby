@@ -5,9 +5,9 @@
 
 import * as z from 'zod'
 
-export const loginRequestSchema = z.object({
+export const loginRequestSchema = z.strictObject({
   login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/).describe('Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.').meta({ examples: ['foreman.ivan'] }),
   password: z.string().min(1).max(128).describe('Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.').meta({ examples: ['Example-Only-Password-123!'] }),
-}).strict()
+})
 
 export type LoginRequestSchemaType = z.infer<typeof loginRequestSchema>

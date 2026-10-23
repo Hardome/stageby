@@ -48,4 +48,4 @@ export type GetStageChecklistResponses = {
 /**
  * @description Union of all possible responses
 */
-export type GetStageChecklistResponse = (GetStageChecklistStatus200 | GetStageChecklistStatus400 | GetStageChecklistStatus401 | GetStageChecklistStatus403 | GetStageChecklistStatus404);
+export type GetStageChecklistResponse = GetStageChecklistStatus200;

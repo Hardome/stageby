@@ -14,7 +14,7 @@ function Card({
       className={cn(
         'group/card @container/card flex flex-col gap-(--card-spacing) overflow-hidden',
         'rounded-(--radius-card) border bg-card',
-        'py-(--card-spacing) text-card-foreground text-sm',
+        'py-(--card-spacing) text-sm text-card-foreground',
         '[--card-spacing:--spacing(4)] has-[>img:first-child]:pt-0',
         'has-data-[slot=card-footer]:pb-0 data-[size=sm]:has-data-[slot=card-footer]:pb-0',
         'data-[size=sm]:[--card-spacing:--spacing(3)] *:[img:first-child]:rounded-t-(--radius-card)',
@@ -48,7 +48,7 @@ function CardTitle({ className, ...properties }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-title"
       className={cn(
-        'wrap-anywhere min-w-0 font-bold font-heading text-lg leading-snug group-data-[size=sm]/card:text-sm',
+        'min-w-0 font-heading text-lg leading-snug font-bold wrap-anywhere group-data-[size=sm]/card:text-sm',
         className,
       )}
       {...properties}
@@ -60,7 +60,7 @@ function CardDescription({ className, ...properties }: React.ComponentProps<'div
   return (
     <div
       data-slot="card-description"
-      className={cn('wrap-anywhere min-w-0 text-muted-foreground text-sm', className)}
+      className={cn('min-w-0 text-sm wrap-anywhere text-muted-foreground', className)}
       {...properties}
     />
   );
@@ -71,7 +71,7 @@ function CardAction({ className, ...properties }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-action"
       className={cn(
-        'col-start-1 mt-2 min-w-0 max-w-full self-start justify-self-start',
+        'col-start-1 mt-2 max-w-full min-w-0 self-start justify-self-start',
         '@lg/card:col-start-2 @lg/card:row-span-2 @lg/card:row-start-1 @lg/card:mt-0 @lg/card:justify-self-end',
         className,
       )}

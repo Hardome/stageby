@@ -16,5 +16,5 @@ import { listUsersResponseSchema, listUsersErrorSchema } from '../zod/listUsersS
 export function listUsers<ThrowOnError extends boolean = true>(options: Options<ListUsersOptions, ThrowOnError> = {}): Unwrappable<RequestResult<ListUsersResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/users', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listUsersResponseSchema, error: listUsersErrorSchema }, ...config }) as Promise<RequestResult<ListUsersResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/users', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listUsersResponseSchema, error: listUsersErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<ListUsersResponses, ThrowOnError>>)
 }

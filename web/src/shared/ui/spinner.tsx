@@ -1,7 +1,7 @@
 import { cn } from 'cn';
 import { Loader2Icon } from 'lucide-react';
 
-function Spinner({ className, ...properties }: React.ComponentProps<'svg'>) {
+function Spinner({ className, ...properties }: Readonly<React.ComponentProps<'svg'>>) {
   return (
     <Loader2Icon
       data-slot="spinner"

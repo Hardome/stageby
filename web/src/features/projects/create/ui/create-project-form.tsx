@@ -8,7 +8,7 @@ import { useProjectCreationForm } from '../lib/use-project-creation-form';
 import type { CreateProjectFormProperties } from '../model/types';
 import { ProjectActions } from './project-actions';
 
-export function CreateProjectForm(properties: CreateProjectFormProperties) {
+export function CreateProjectForm(properties: Readonly<CreateProjectFormProperties>) {
   const { form, navigation, uploads, submission, isLocked, hasUnfinishedUploads, next, submit } =
     useProjectCreationForm(properties);
   const { screen, stages, step, title, description, nextLabel, registerErrorGroup, back } = navigation;

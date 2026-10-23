@@ -9,7 +9,12 @@ interface StageListPaginationProperties {
   onPageChange: (offset: number) => void;
 }
 
-export function StageListPagination({ offset, total, refreshing, onPageChange }: StageListPaginationProperties) {
+export function StageListPagination({
+  offset,
+  total,
+  refreshing,
+  onPageChange,
+}: Readonly<StageListPaginationProperties>) {
   return (
     <nav aria-label="Страницы этапов" className="flex flex-wrap items-center justify-between gap-3">
       <Button

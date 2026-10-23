@@ -16,5 +16,5 @@ import { getProjectEditResponseSchema, getProjectEditErrorSchema } from '../zod/
 export function getProjectEdit<ThrowOnError extends boolean = true>(options: Options<GetProjectEditOptions, ThrowOnError>): Unwrappable<RequestResult<GetProjectEditResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/projects/{projectId}/edit', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getProjectEditResponseSchema, error: getProjectEditErrorSchema }, ...config }) as Promise<RequestResult<GetProjectEditResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/projects/{projectId}/edit', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getProjectEditResponseSchema, error: getProjectEditErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<GetProjectEditResponses, ThrowOnError>>)
 }

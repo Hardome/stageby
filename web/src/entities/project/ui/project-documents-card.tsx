@@ -9,7 +9,7 @@ interface ProjectDocumentsCardProperties {
   fileIds: number[];
 }
 
-export function ProjectDocumentsCard({ fileIds }: ProjectDocumentsCardProperties) {
+export function ProjectDocumentsCard({ fileIds }: Readonly<ProjectDocumentsCardProperties>) {
   return (
     <Card>
       <CardHeader>

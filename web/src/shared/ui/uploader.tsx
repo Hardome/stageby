@@ -49,7 +49,7 @@ export function Uploader<T extends UploadItemModel>({
   onReject,
   onRetry,
   onRemove,
-}: UploaderProperties<T>) {
+}: Readonly<UploaderProperties<T>>) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const descriptionId = `${inputId}-description`;

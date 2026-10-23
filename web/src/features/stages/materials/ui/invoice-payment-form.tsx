@@ -18,7 +18,7 @@ interface InvoicePaymentFormProperties {
   onClose: () => void;
 }
 
-export function InvoicePaymentForm({ editor, isPaid, onClose }: InvoicePaymentFormProperties) {
+export function InvoicePaymentForm({ editor, isPaid, onClose }: Readonly<InvoicePaymentFormProperties>) {
   const id = useId();
   const { form, action, submit, clear, hasChanges } = editor;
   const errors = form.formState.errors;
@@ -71,7 +71,7 @@ export function InvoicePaymentForm({ editor, isPaid, onClose }: InvoicePaymentFo
         <MaterialFeedback action={action} />
         {isPaid && (
           <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-            <p className="text-muted-foreground text-sm">Отметка внесена ошибочно?</p>
+            <p className="text-sm text-muted-foreground">Отметка внесена ошибочно?</p>
             <Button
               type="button"
               variant="destructive"

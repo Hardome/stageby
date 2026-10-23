@@ -21,7 +21,7 @@ interface InvoiceShortagesProperties {
   canManage: boolean;
 }
 
-export function InvoiceShortages({ stage, invoice, canReceive, canManage }: InvoiceShortagesProperties) {
+export function InvoiceShortages({ stage, invoice, canReceive, canManage }: Readonly<InvoiceShortagesProperties>) {
   const [open, setOpen] = useState(false);
   const editor = useInvoiceShortages(stage, invoice, () => setOpen(false));
   const active = invoice.shortages.filter((shortage) => !shortage.resolvedAt);

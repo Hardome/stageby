@@ -8,11 +8,11 @@ import { apiErrorSchema } from './apiErrorSchema'
 import { positiveMoneyAmountMinorSchema } from './positiveMoneyAmountMinorSchema'
 import { workPaymentSchema } from './workPaymentSchema'
 
-export const createWorkPaymentSchema = z.object({
+export const createWorkPaymentSchema = z.strictObject({
   paidAt: z.iso.date().describe('Дата фактической оплаты в формате YYYY-MM-DD.').meta({ examples: ['2026-10-01'] }),
   amountMinor: positiveMoneyAmountMinorSchema.describe('Положительная сумма платежа или счёта в копейках. В первой версии минимум 100 копеек и только целые рубли.').meta({ examples: [500000] }),
   comment: z.string().min(1).max(1000).nullish().describe('Необязательный комментарий руководителя.').meta({ examples: ['Аванс', ] }),
-}).strict()
+})
 
 export type CreateWorkPaymentSchemaType = z.infer<typeof createWorkPaymentSchema>
 

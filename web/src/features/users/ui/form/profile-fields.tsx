@@ -6,7 +6,7 @@ import type { CreateFormValues } from '../../model/types';
 import { ControlledTextField } from './controlled-text-field';
 import { RoleSelect } from './role-select';
 
-export function ProfileFields({ disabled }: { disabled: boolean }) {
+export function ProfileFields({ disabled }: Readonly<{ disabled: boolean }>) {
   const {
     control,
     formState: { errors },

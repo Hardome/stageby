@@ -6,6 +6,6 @@ interface UserStatusProperties {
   user: User;
 }
 
-export function UserStatus({ user }: UserStatusProperties) {
+export function UserStatus({ user }: Readonly<UserStatusProperties>) {
   return <Badge variant={user.isActive ? 'success' : 'outline'}>{user.isActive ? 'Активен' : 'Неактивен'}</Badge>;
 }

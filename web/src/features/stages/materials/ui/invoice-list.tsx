@@ -9,11 +9,11 @@ interface InvoiceListProperties {
   children: ReactNode;
 }
 
-export function InvoiceList({ count, emptyDescription, action, children }: InvoiceListProperties) {
+export function InvoiceList({ count, emptyDescription, action, children }: Readonly<InvoiceListProperties>) {
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-bold text-xl">Счета</h2>
+        <h2 className="text-xl font-bold">Счета</h2>
         {action}
       </div>
       {count === 0 ? (

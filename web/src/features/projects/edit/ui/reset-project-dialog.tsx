@@ -15,7 +15,12 @@ interface ResetProjectDialogProperties {
   onConfirm: () => void;
 }
 
-export function ResetProjectDialog({ isOpen, reloading, onOpenChange, onConfirm }: ResetProjectDialogProperties) {
+export function ResetProjectDialog({
+  isOpen,
+  reloading,
+  onOpenChange,
+  onConfirm,
+}: Readonly<ResetProjectDialogProperties>) {
   return (
     <AlertDialog
       open={isOpen}

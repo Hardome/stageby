@@ -11,7 +11,7 @@ interface StageFinancesProperties {
   category: 'materials' | 'work';
 }
 
-export function StageFinances({ stage, category }: StageFinancesProperties) {
+export function StageFinances({ stage, category }: Readonly<StageFinancesProperties>) {
   const isMaterials = category === 'materials';
   const plan = isMaterials ? stage.plannedMaterialAmountMinor : stage.plannedWorkAmountMinor;
   const actual = isMaterials ? stage.actualMaterialAmountMinor : stage.actualWorkAmountMinor;
@@ -34,22 +34,22 @@ export function StageFinances({ stage, category }: StageFinancesProperties) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div>
-          <p className="mb-2 text-muted-foreground text-xs">Фактические затраты</p>
-          <p className="wrap-anywhere font-bold text-3xl tabular-nums tracking-tight">{formatMoney(actual)}</p>
+          <p className="mb-2 text-xs text-muted-foreground">Фактические затраты</p>
+          <p className="text-3xl font-bold tracking-tight wrap-anywhere tabular-nums">{formatMoney(actual)}</p>
         </div>
         {isMaterials && <MaterialStatus summary={stage.materialSummary} />}
       </CardContent>
       <CardFooter className="bg-background text-foreground">
         <dl className="grid w-full grid-cols-2 gap-4">
           <div>
-            <dt className="mb-1 text-muted-foreground text-xs">План</dt>
-            <dd className="wrap-anywhere font-semibold tabular-nums">{formatMoney(plan)}</dd>
+            <dt className="mb-1 text-xs text-muted-foreground">План</dt>
+            <dd className="font-semibold wrap-anywhere tabular-nums">{formatMoney(plan)}</dd>
           </div>
           <div>
-            <dt className="mb-1 text-muted-foreground text-xs">
+            <dt className="mb-1 text-xs text-muted-foreground">
               {balance !== null && balance < 0n ? 'Переплата' : 'Остаток'}
             </dt>
-            <dd className="wrap-anywhere font-semibold tabular-nums">
+            <dd className="font-semibold wrap-anywhere tabular-nums">
               {formatMoney(balance !== null && balance < 0n ? -balance : balance)}
             </dd>
           </div>

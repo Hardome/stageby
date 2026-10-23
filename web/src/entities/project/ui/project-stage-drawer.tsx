@@ -9,7 +9,7 @@ import { useStageDrawer } from '../lib/use-stage-drawer';
 import type { ProjectStageNavigationProperties } from '../model/navigation';
 import { ProjectStageNavigation } from './project-stage-navigation';
 
-export function ProjectStageDrawer(properties: ProjectStageNavigationProperties) {
+export function ProjectStageDrawer(properties: Readonly<ProjectStageNavigationProperties>) {
   const { stages, currentStage, disabled, onStageChange } = properties;
   const { isOpen, onOpenChange, onOpenChangeComplete, finalFocus, listReference, selectStage } = useStageDrawer(
     disabled,
@@ -35,7 +35,7 @@ export function ProjectStageDrawer(properties: ProjectStageNavigationProperties)
               {errorCount}
             </Badge>
           )}
-          <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
             {position === -1 ? stages.length : `${position + 1} из ${stages.length}`}
           </span>
           <ChevronDownIcon data-icon="inline-end" />
@@ -47,14 +47,14 @@ export function ProjectStageDrawer(properties: ProjectStageNavigationProperties)
               'border-b px-4 pt-1 pb-4',
             )}
           >
-            <DrawerTitle className="font-semibold text-lg">Этапы проекта</DrawerTitle>
+            <DrawerTitle className="text-lg font-semibold">Этапы проекта</DrawerTitle>
             <DrawerClose
               render={<Button type="button" variant="ghost" size="icon-sm" />}
               aria-label="Закрыть список этапов"
             >
               <XIcon />
             </DrawerClose>
-            <DrawerDescription className="col-span-2 text-muted-foreground text-sm">
+            <DrawerDescription className="col-span-2 text-sm text-muted-foreground">
               Включено этапов: {stages.length}. Выберите нужный.
             </DrawerDescription>
           </div>

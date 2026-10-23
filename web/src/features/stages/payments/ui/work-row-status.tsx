@@ -7,7 +7,7 @@ interface WorkRowStatusProperties {
   actual: bigint;
 }
 
-export function WorkRowStatus({ plan, actual }: WorkRowStatusProperties) {
+export function WorkRowStatus({ plan, actual }: Readonly<WorkRowStatusProperties>) {
   if (actual > plan) return <Badge variant="warning">Переплата</Badge>;
   if (actual === plan && actual > 0n)
     return (

@@ -79,4 +79,4 @@ export type CreateWorkPaymentResponses = {
 /**
  * @description Union of all possible responses
 */
-export type CreateWorkPaymentResponse = (CreateWorkPaymentStatus201 | CreateWorkPaymentStatus400 | CreateWorkPaymentStatus401 | CreateWorkPaymentStatus403 | CreateWorkPaymentStatus404 | CreateWorkPaymentStatus409);
+export type CreateWorkPaymentResponse = CreateWorkPaymentStatus201;

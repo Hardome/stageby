@@ -19,7 +19,7 @@ interface FormProperties {
   submit: (values: ReworkFormValues) => void;
 }
 
-function Form({ submit }: FormProperties) {
+function Form({ submit }: Readonly<FormProperties>) {
   const schema = reworkFormSchema(
     items.map((item) => item.id),
     '2026-10-16',

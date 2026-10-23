@@ -16,5 +16,5 @@ import { requestPasswordResetResponseSchema, requestPasswordResetErrorSchema } f
 export function requestPasswordReset<ThrowOnError extends boolean = true>(options: Options<RequestPasswordResetOptions, ThrowOnError>): Unwrappable<RequestResult<RequestPasswordResetResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/auth/password-reset-requests', validator: { response: requestPasswordResetResponseSchema, error: requestPasswordResetErrorSchema }, ...config }) as Promise<RequestResult<RequestPasswordResetResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/auth/password-reset-requests', validator: { response: requestPasswordResetResponseSchema, error: requestPasswordResetErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<RequestPasswordResetResponses, ThrowOnError>>)
 }

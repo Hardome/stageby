@@ -13,7 +13,7 @@ interface DocumentPickerProperties {
   onRemove: (id: string) => void;
 }
 
-export function DocumentPicker({ documents, ...properties }: DocumentPickerProperties) {
+export function DocumentPicker({ documents, ...properties }: Readonly<DocumentPickerProperties>) {
   return (
     <Uploader
       {...properties}

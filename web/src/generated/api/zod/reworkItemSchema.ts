@@ -5,9 +5,9 @@
 
 import * as z from 'zod'
 
-export const reworkItemSchema = z.object({
+export const reworkItemSchema = z.strictObject({
   itemId: z.int().min(1).max(2147483647).describe('ID пункта текущего чек-листа, требующего повторного выполнения.').meta({ examples: [1] }),
   comment: z.string().min(1).max(5000).describe('Индивидуальное замечание к пункту; пробелы по краям удаляются, пустой текст запрещён.').meta({ examples: ['Исправить угол.'] }),
-}).strict()
+})
 
 export type ReworkItemSchemaType = z.infer<typeof reworkItemSchema>

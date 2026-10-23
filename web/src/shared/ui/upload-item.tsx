@@ -25,7 +25,7 @@ export function UploadItem<T extends UploadItemModel>({
   onRetry,
   onRemove,
   onOpen,
-}: UploadItemProperties<T>) {
+}: Readonly<UploadItemProperties<T>>) {
   return (
     <li className="flex min-w-0 flex-wrap items-center gap-3 rounded-(--radius-control) border p-3">
       {item.status === 'uploading' && <Spinner />}
@@ -35,20 +35,20 @@ export function UploadItem<T extends UploadItemModel>({
         {onOpen ? (
           <button
             type="button"
-            className="wrap-anywhere cursor-pointer text-left font-medium hover:underline"
+            className="cursor-pointer text-left font-medium wrap-anywhere hover:underline"
             disabled={disabled}
             onClick={onOpen}
           >
             {item.file.name}
           </button>
         ) : (
-          <p className="wrap-anywhere font-medium">{item.file.name}</p>
+          <p className="font-medium wrap-anywhere">{item.file.name}</p>
         )}
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           {item.file.size !== undefined && `${(item.file.size / 1024 / 1024).toFixed(1)} МБ · `}
           {{ uploading: 'Загрузка…', uploaded: 'Загружен', failed: 'Ошибка загрузки' }[item.status]}
         </p>
-        {item.error && <p className="wrap-anywhere text-destructive text-sm">{item.error}</p>}
+        {item.error && <p className="text-sm wrap-anywhere text-destructive">{item.error}</p>}
       </div>
       <Button
         type="button"

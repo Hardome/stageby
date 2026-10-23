@@ -24,7 +24,7 @@ export function RoleSelect({
   invalid,
   onBlur,
   inputRef,
-}: RoleSelectProperties) {
+}: Readonly<RoleSelectProperties>) {
   return (
     <Select items={items} value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger
