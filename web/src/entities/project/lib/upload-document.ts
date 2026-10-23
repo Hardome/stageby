@@ -4,7 +4,7 @@ import { createFileUploadSchema as fileUploadSchema } from '@api/zod/createFileU
 
 import type { DocumentUpload } from '../model/types';
 
-export const maxDocumentSize = 50 * 1024 * 1024;
+export const maxDocumentSize = 50_000_000;
 
 export function documentError(file: File): string | undefined {
   if (!file.name.toLowerCase().endsWith('.pdf') || (file.type && file.type !== 'application/pdf'))

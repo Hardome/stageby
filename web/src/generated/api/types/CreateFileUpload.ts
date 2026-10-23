@@ -32,9 +32,9 @@ export type CreateFileUpload = {
     */
     mimeType: string;
     /**
-     * @description Заявленный размер содержимого в байтах. Общий верхний предел схемы нужен для PDF проекта; сервер применяет более строгий предел purpose, включая 10485760 байт для material_invoice.
+     * @description Заявленный размер содержимого в байтах. Общий верхний предел схемы нужен для PDF проекта; сервер применяет более строгий предел purpose, включая 10000000 байт для material_invoice.
      * @minLength 1
-     * @maxLength 52428800
+     * @maxLength 50000000
      * @example 1048576
      * @type integer
     */

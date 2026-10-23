@@ -15,6 +15,7 @@ import { users } from '#app/db/schema/users';
 import type { CreateProject, ListProjectsData, Project, ProjectPage, UpdateProject } from '#app/generated/types.gen';
 import type { AuditContext } from '#app/modules/audit/context';
 import { type AuditWriter, auditedTransaction } from '#app/modules/audit/repository';
+import { getMaximumSize } from '#app/modules/files/policy';
 import { loadProjectEdit, saveProject } from '#app/modules/projects/edit';
 import { loadProjects } from '#app/modules/projects/read';
 import type { OperationResult } from '#app/modules/stages/types';
@@ -104,7 +105,7 @@ async function validateDocuments(
     return file?.status === 'uploaded' &&
       file.purpose === 'project_document' &&
       file.mimeType === 'application/pdf' &&
-      file.sizeBytes <= 50 * 1024 * 1024 &&
+      file.sizeBytes <= getMaximumSize('project_document') &&
       (actorId == null || file.uploadedByUserId === actorId) &&
       !alreadyAttached.has(fileId)
       ? []

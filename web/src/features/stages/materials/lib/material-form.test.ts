@@ -1,13 +1,7 @@
 import { editStage } from '@tests/project-edit-fixture';
 
 import { materialAccess } from './material-access';
-import {
-  invoiceFileError,
-  invoiceFormSchema,
-  maxInvoiceSize,
-  paymentFormSchema,
-  shortageFormSchema,
-} from './material-form';
+import { invoiceFileError, invoiceFormSchema, paymentFormSchema, shortageFormSchema } from './material-form';
 
 describe('material invoice validation and permissions', () => {
   it.each(['invoice.pdf', 'invoice.jpg', 'invoice.jpeg', 'INVOICE.JPG'])('accepts supported files: %s', (name) => {
@@ -18,9 +12,9 @@ describe('material invoice validation and permissions', () => {
     expect(invoiceFileError(new File(['contents'], 'invoice.png', { type: 'image/png' }))).toBeDefined();
     expect(invoiceFileError(new File(['contents'], 'invoice.pdf', { type: 'image/jpeg' }))).toBeDefined();
     const file = new File(['contents'], 'invoice.pdf');
-    Object.defineProperty(file, 'size', { value: maxInvoiceSize, configurable: true });
+    Object.defineProperty(file, 'size', { value: 10_000_000, configurable: true });
     expect(invoiceFileError(file)).toBeUndefined();
-    Object.defineProperty(file, 'size', { value: maxInvoiceSize + 1 });
+    Object.defineProperty(file, 'size', { value: 10_000_001 });
     expect(invoiceFileError(file)).toBeDefined();
   });
   it.each(['', '0', '-1', '1.5', '999999999999999999999'])('rejects invalid positive amounts: %s', (amount) => {

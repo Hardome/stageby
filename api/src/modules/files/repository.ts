@@ -32,6 +32,7 @@ function canAttachFile(file: FileRow | undefined, actor: Actor): boolean {
     file !== undefined &&
     file.status === 'uploaded' &&
     file.purpose === 'checklist_photo' &&
+    file.sizeBytes <= getMaximumSize('checklist_photo') &&
     (actor.role === 'manager' || file.uploadedByUserId === actor.id)
   );
 }
