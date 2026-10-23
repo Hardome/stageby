@@ -6,7 +6,7 @@ export { formatDate, formatStageDates, isStageOverdue, todayInYekaterinburg } fr
 export { useDocuments } from './lib/use-documents';
 export { useProjectNavigation } from './lib/use-project-navigation';
 export { projectStatuses, stageStatuses } from './model/data';
-export type { DocumentUpload, ProjectFormValues } from './model/types';
+export type { ProjectFormValues } from './model/types';
 export { ObjectStep } from './ui/object-step';
 export { ProjectDocument } from './ui/project-document';
 export { ProjectDocumentsCard } from './ui/project-documents-card';
