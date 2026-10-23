@@ -55,7 +55,7 @@ Add a commit body only when needed to explain a non-trivial reason for the chang
 
 ## PR description
 
-Write concise bullet points: one bullet per concrete change. Do not repeat the title or summarize commits one by one.
+Write concise bullet points: one bullet per concrete change. Describe every change in its own bullet; a short phrase is enough if it conveys the point. Do not repeat the title or summarize commits one by one.
 
 Describe the final result and its purpose for a reviewer who has not seen the conversation. Include implementation details only when they help assess correctness, a tradeoff, or a risk. Omit editing history, wording corrections, and explanations of how the PR itself is formatted. For instruction or skill changes, describe their purpose rather than enumerating individual writing rules.
 

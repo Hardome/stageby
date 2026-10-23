@@ -6,6 +6,13 @@ Stageby has three pnpm packages: `api/`, `web/`, and `contracts/`. Package-speci
 
 ## Task-Specific Documentation
 
+Keep all documentation concise: state the rule or action directly, use short paragraphs,
+lists and tables, and remove repetition and implementation narratives. Keep one source of truth
+and link to it. Wrap prose at readable line lengths and separate logical blocks with blank lines.
+Preserve requirements, constraints and acceptance criteria when shortening text.
+Keep instructions as complete, natural sentences: say what to do and where to run commands.
+Do not shorten text into fragments that lose meaning or make the action implicit.
+
 Read documentation only when the task touches the area listed below, and read only the relevant sections. Do not preload all of `docs/` or follow every cross-reference; open another document only when it is needed for the current task. For tasks spanning several areas, use the applicable documents together.
 
 Keep requirements and project rules in `docs/rules/`, task instructions in `docs/guides/`, accepted decisions in `docs/decisions/`, and release verification reports in `docs/reports/`. Use `docs/templates/` for new plans and decisions. Track active plans in `docs/plans/` until the entire cycle passes acceptance; then preserve lasting knowledge in permanent documentation and delete the cycle's plan, subplans, and acceptance report. Do not create a plan archive. Local drafts and task materials belong in ignored `docs/tmp/plans/` and `docs/tmp/tasks/`; create these directories locally as needed.
@@ -14,12 +21,14 @@ Keep requirements and project rules in `docs/rules/`, task instructions in `docs
 | --- | --- |
 | HTTP endpoints, request/response schemas, API errors, access rules, or OpenAPI contracts | [API contract](docs/rules/api-contract.md) |
 | Business entities, relationships, roles, construction stages, checklists, or domain rules | [Domain model](docs/rules/domain-model.md) |
+| Manual regression, functional acceptance, or preparing human test checklists | [Manual regression checklists](docs/guides/regression/README.md) |
+| API environment, S3 settings, local tunnels, or demonstrating a build | [API configuration](docs/guides/api-configuration.md), [local demo](docs/guides/local-demo.md) |
 
 ## Build, Test, and Development Commands
 
 Use Node.js 24.7+ and pnpm 11+. Run commands from the root.
 
-- `pnpm run bootstrap` prepares env files and dependencies, generates code, starts PostgreSQL, and applies migrations.
+- `pnpm run bootstrap` prepares env files and dependencies, generates code, starts PostgreSQL and MinIO, and applies migrations.
 - `pnpm run dev` starts the API and web app together.
 - `pnpm run check` builds the contract and runs lint, type checks, tests, and builds for both apps. Lint tasks may modify files.
 - `pnpm run codegen` rebuilds the OpenAPI bundle and generated API, client, and route code after contract or route changes.
@@ -33,7 +42,12 @@ Write comments in Russian. Add them only where they truly help to understand non
 
 ## Testing Guidelines
 
-Use Vitest. Name tests `*.test.ts` or `*.test.tsx` beside implementation; API integration tests may live in `api/test/`. Cover changed behavior and error paths. API integration tests need PostgreSQL running (`pnpm run db:up`) with migrations applied (`pnpm --dir api run db:migrate`). Web tests use jsdom and Testing Library. No repository wide coverage threshold is configured; run `pnpm --dir web run test:coverage` when coverage detail is useful.
+Use Vitest. Name tests `*.test.ts` or `*.test.tsx` beside implementation; API integration tests may
+live in `api/test/`. Cover changed behavior and error paths. The full API suite needs PostgreSQL
+and MinIO running (`pnpm run db:up`). Vitest creates and migrates a temporary database
+automatically; the database user needs permission to create and drop databases. Web tests use jsdom
+and Testing Library. No repository wide coverage threshold is configured; run
+`pnpm --dir web run test:coverage` when coverage detail is useful.
 
 ## Commit & Pull Request Guidelines
 
