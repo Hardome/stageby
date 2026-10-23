@@ -14,7 +14,7 @@ export function DashboardProjectCardSkeleton() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 rounded-xl border bg-background p-4">
-          <div className="flex items-center gap-2 text-muted-foreground text-xs">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             Текущий этап · <Skeleton className="h-4 w-12" />
           </div>
           <Skeleton className="h-5 w-3/4" />
@@ -25,7 +25,7 @@ export function DashboardProjectCardSkeleton() {
         </div>
         <dl className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <dt className="text-muted-foreground text-xs">Материалы</dt>
+            <dt className="text-xs text-muted-foreground">Материалы</dt>
             <dd className="flex flex-col gap-1.5">
               <div className="flex min-h-10 items-center">
                 <Skeleton className="h-6 w-36" />
@@ -34,7 +34,7 @@ export function DashboardProjectCardSkeleton() {
             </dd>
           </div>
           <div className="flex flex-col gap-2 border-t pt-4">
-            <dt className="text-muted-foreground text-xs">Мастер</dt>
+            <dt className="text-xs text-muted-foreground">Мастер</dt>
             <dd className="flex flex-col gap-1.5">
               <Skeleton className="h-5 w-40" />
               <Skeleton className="h-4 w-44" />

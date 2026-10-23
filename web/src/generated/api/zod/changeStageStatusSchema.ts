@@ -8,10 +8,10 @@ import { apiErrorSchema } from './apiErrorSchema'
 import { expectedVersionSchema } from './expectedVersionSchema'
 import { stageSchema } from './stageSchema'
 
-export const changeStageStatusSchema = z.object({
+export const changeStageStatusSchema = z.strictObject({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   status: z.enum(['supplied']).describe('Явный переход в supplied после комплектации. Повтор текущего статуса допустим; остальные переходы запрещены.').meta({ examples: ['supplied'] }),
-}).strict()
+})
 
 export type ChangeStageStatusSchemaType = z.infer<typeof changeStageStatusSchema>
 

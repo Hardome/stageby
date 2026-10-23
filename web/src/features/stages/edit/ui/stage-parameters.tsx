@@ -21,7 +21,12 @@ interface StageParametersProperties {
   onPendingChange: (isPending: boolean) => void;
 }
 
-export function StageParameters({ stage, focusAssignee = false, onClose, onPendingChange }: StageParametersProperties) {
+export function StageParameters({
+  stage,
+  focusAssignee = false,
+  onClose,
+  onPendingChange,
+}: Readonly<StageParametersProperties>) {
   const editor = useStageForm(stage, onClose);
   const assigneeReference = useRef<HTMLInputElement>(null);
   const isDisabled =
@@ -37,7 +42,7 @@ export function StageParameters({ stage, focusAssignee = false, onClose, onPendi
     <DialogContent initialFocus={focusAssignee ? assigneeReference : undefined}>
       <div className="flex shrink-0 items-center justify-between gap-4 border-b p-4 sm:p-4">
         <div className="flex min-w-0 flex-col gap-2">
-          <DialogTitle className="flex items-center gap-2 font-bold text-xl">
+          <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <SlidersHorizontalIcon className="size-5 shrink-0 text-primary-text" aria-hidden="true" />
             Редактирование этапа
           </DialogTitle>
@@ -88,7 +93,7 @@ export function StageParameters({ stage, focusAssignee = false, onClose, onPendi
               />
             </FieldGroup>
             {stage.status === 'paid' && (
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 План работ выплаченного этапа обязателен и не может превышать фактические выплаты.
               </p>
             )}

@@ -6,7 +6,7 @@ interface UserErrorProperties {
   retry?: () => void;
 }
 
-export function UserError({ message, retry }: UserErrorProperties) {
+export function UserError({ message, retry }: Readonly<UserErrorProperties>) {
   return (
     <Empty role="status">
       <EmptyHeader>

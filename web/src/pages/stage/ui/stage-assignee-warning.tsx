@@ -9,7 +9,7 @@ interface StageAssigneeWarningProperties {
   purpose: 'checklist' | 'work';
 }
 
-export function StageAssigneeWarning({ stage, purpose }: StageAssigneeWarningProperties) {
+export function StageAssigneeWarning({ stage, purpose }: Readonly<StageAssigneeWarningProperties>) {
   const { user } = useAuth();
   const isAssigneeRequired = purpose === 'work' ? !stage.assignee?.isActive : stage.assignee === null;
   const shouldShowWarning = isAssigneeRequired && stage.isIncluded && !stage.projectIsArchived;

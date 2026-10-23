@@ -29,4 +29,4 @@ export type GetCurrentUserResponses = {
 /**
  * @description Union of all possible responses
 */
-export type GetCurrentUserResponse = (GetCurrentUserStatus200 | GetCurrentUserStatus401);
+export type GetCurrentUserResponse = GetCurrentUserStatus200;

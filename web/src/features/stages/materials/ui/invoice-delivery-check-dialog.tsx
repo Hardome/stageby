@@ -15,7 +15,11 @@ interface InvoiceDeliveryCheckDialogProperties {
   onClose: () => void;
 }
 
-export function InvoiceDeliveryCheckDialog({ stage, invoice, onClose }: InvoiceDeliveryCheckDialogProperties) {
+export function InvoiceDeliveryCheckDialog({
+  stage,
+  invoice,
+  onClose,
+}: Readonly<InvoiceDeliveryCheckDialogProperties>) {
   const [hasShortage, setHasShortage] = useState(false);
   const editor = useInvoiceShortages(stage, invoice, onClose);
 

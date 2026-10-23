@@ -16,5 +16,5 @@ import { createWorkPaymentResponseSchema, createWorkPaymentErrorSchema } from '.
 export function createWorkPayment<ThrowOnError extends boolean = true>(options: Options<CreateWorkPaymentOptions, ThrowOnError>): Unwrappable<RequestResult<CreateWorkPaymentResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/stages/{stageId}/work-payments', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createWorkPaymentResponseSchema, error: createWorkPaymentErrorSchema }, ...config }) as Promise<RequestResult<CreateWorkPaymentResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/stages/{stageId}/work-payments', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: createWorkPaymentResponseSchema, error: createWorkPaymentErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<CreateWorkPaymentResponses, ThrowOnError>>)
 }

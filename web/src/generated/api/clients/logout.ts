@@ -16,5 +16,5 @@ import { logoutResponseSchema, logoutErrorSchema } from '../zod/logoutSchema'
 export function logout<ThrowOnError extends boolean = true>(options: Options<LogoutOptions, ThrowOnError> = {}): Unwrappable<RequestResult<LogoutResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/auth/logout', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: logoutResponseSchema, error: logoutErrorSchema }, ...config }) as Promise<RequestResult<LogoutResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/auth/logout', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: logoutResponseSchema, error: logoutErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<LogoutResponses, ThrowOnError>>)
 }

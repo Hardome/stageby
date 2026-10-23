@@ -68,4 +68,4 @@ export type ListUsersResponses = {
 /**
  * @description Union of all possible responses
 */
-export type ListUsersResponse = (ListUsersStatus200 | ListUsersStatus400 | ListUsersStatus401 | ListUsersStatus403);
+export type ListUsersResponse = ListUsersStatus200;

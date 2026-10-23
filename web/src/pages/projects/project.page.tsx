@@ -9,7 +9,7 @@ interface ProjectPageProperties {
   projectId: string;
 }
 
-export function ProjectPage({ projectId }: ProjectPageProperties) {
+export function ProjectPage({ projectId }: Readonly<ProjectPageProperties>) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const id = parseProjectId(projectId);

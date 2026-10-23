@@ -6,9 +6,9 @@
 import * as z from 'zod'
 import { userSchema } from './userSchema'
 
-export const sessionSchema = z.object({
+export const sessionSchema = z.strictObject({
   expiresAt: z.iso.datetime().describe('Дата и время истечения сессии в UTC, формат RFC 3339. После истечения требуется новый вход.').meta({ examples: ['2026-09-24T20:00:00Z'] }),
   user: userSchema.describe('Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.'),
-}).strict()
+})
 
 export type SessionSchemaType = z.infer<typeof sessionSchema>

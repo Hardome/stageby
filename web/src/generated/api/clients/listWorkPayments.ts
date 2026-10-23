@@ -16,5 +16,5 @@ import { listWorkPaymentsResponseSchema, listWorkPaymentsErrorSchema } from '../
 export function listWorkPayments<ThrowOnError extends boolean = true>(options: Options<ListWorkPaymentsOptions, ThrowOnError>): Unwrappable<RequestResult<ListWorkPaymentsResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/stages/{stageId}/work-payments', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listWorkPaymentsResponseSchema, error: listWorkPaymentsErrorSchema }, ...config }) as Promise<RequestResult<ListWorkPaymentsResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/stages/{stageId}/work-payments', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listWorkPaymentsResponseSchema, error: listWorkPaymentsErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<ListWorkPaymentsResponses, ThrowOnError>>)
 }

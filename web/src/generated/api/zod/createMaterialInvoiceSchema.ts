@@ -6,10 +6,10 @@
 import * as z from 'zod'
 import { positiveMoneyAmountMinorSchema } from './positiveMoneyAmountMinorSchema'
 
-export const createMaterialInvoiceSchema = z.object({
+export const createMaterialInvoiceSchema = z.strictObject({
   fileId: z.int().min(1).max(2147483647).describe('Успешно загруженный файл счёта.').meta({ examples: [201] }),
   supplierName: z.string().min(1).max(255).nullish().describe('Необязательное имя поставщика.').meta({ examples: ['Стройснаб'] }),
   amountMinor: positiveMoneyAmountMinorSchema.describe('Положительная сумма в копейках.').meta({ examples: [500000] }),
-}).strict()
+})
 
 export type CreateMaterialInvoiceSchemaType = z.infer<typeof createMaterialInvoiceSchema>

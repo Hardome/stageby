@@ -15,5 +15,5 @@ import { listChecklistItemPhotosResponseSchema, listChecklistItemPhotosErrorSche
 export function listChecklistItemPhotos<ThrowOnError extends boolean = true>(options: Options<ListChecklistItemPhotosOptions, ThrowOnError>): Unwrappable<RequestResult<ListChecklistItemPhotosResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/checklist/items/{itemId}/photos', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listChecklistItemPhotosResponseSchema, error: listChecklistItemPhotosErrorSchema }, ...config }) as Promise<RequestResult<ListChecklistItemPhotosResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/checklist/items/{itemId}/photos', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listChecklistItemPhotosResponseSchema, error: listChecklistItemPhotosErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<ListChecklistItemPhotosResponses, ThrowOnError>>)
 }

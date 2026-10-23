@@ -6,12 +6,12 @@
 import * as z from 'zod'
 import { userBriefSchema } from './userBriefSchema'
 
-export const acceptanceSchema = z.object({
+export const acceptanceSchema = z.strictObject({
   decision: z.enum(['accepted', 'rejected']).describe('Решение по этапу: accepted — принят, rejected — возвращён на доработку.').meta({ examples: ['rejected'] }),
   comment: z.string().min(1).max(5000).nullable().describe('Комментарий при успешной приёмке, может быть null. При возврате на доработку null: индивидуальные замечания доступны в reworkComment пунктов.').meta({ examples: ['Устранить замечания по качеству выполнения контрольной точки.', ] }),
   correctionDueDate: z.iso.date().nullable().describe('Срок исправления замечаний в формате YYYY-MM-DD при возврате на доработку; null — этап принят.').meta({ examples: ['2026-09-27', ] }),
   decidedBy: userBriefSchema.describe('Краткие сведения о пользователе для назначений и отметок выполнения или приёмки.'),
   decidedAt: z.iso.datetime().describe('Дата и время принятия решения в UTC, формат RFC 3339. Устанавливается сервером.').meta({ examples: ['2026-09-24T10:00:00Z'] }),
-}).strict()
+})
 
 export type AcceptanceSchemaType = z.infer<typeof acceptanceSchema>

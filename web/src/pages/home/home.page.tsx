@@ -33,7 +33,7 @@ export function HomePage() {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-col gap-3">
-            <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">Дашборд руководителя</h1>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Дашборд руководителя</h1>
           </div>
           <Button render={<Link to="/projects/new" />} nativeButton={false}>
             <PlusIcon data-icon="inline-start" />
@@ -44,7 +44,7 @@ export function HomePage() {
           <div className="flex items-center gap-3 pb-1 text-sm">
             <CalendarDaysIcon className="size-5 text-muted-foreground" aria-hidden="true" />
             <div className="flex flex-col gap-1">
-              <span className="text-muted-foreground text-xs">Сегодня</span>
+              <span className="text-xs text-muted-foreground">Сегодня</span>
               <time dateTime={today} className="font-semibold">
                 {formatDate(today)}
               </time>

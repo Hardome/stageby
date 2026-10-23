@@ -117,4 +117,4 @@ export type UpdateMaterialInvoiceResponses = {
 /**
  * @description Union of all possible responses
 */
-export type UpdateMaterialInvoiceResponse = (UpdateMaterialInvoiceStatus200 | UpdateMaterialInvoiceStatus400 | UpdateMaterialInvoiceStatus401 | UpdateMaterialInvoiceStatus403 | UpdateMaterialInvoiceStatus404 | UpdateMaterialInvoiceStatus409 | UpdateMaterialInvoiceStatus413);
+export type UpdateMaterialInvoiceResponse = UpdateMaterialInvoiceStatus200;

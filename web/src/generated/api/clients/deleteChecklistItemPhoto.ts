@@ -16,5 +16,5 @@ import { deleteChecklistItemPhotoResponseSchema, deleteChecklistItemPhotoErrorSc
 export function deleteChecklistItemPhoto<ThrowOnError extends boolean = true>(options: Options<DeleteChecklistItemPhotoOptions, ThrowOnError>): Unwrappable<RequestResult<DeleteChecklistItemPhotoResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'DELETE', url: '/checklist/photos/{photoId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: deleteChecklistItemPhotoResponseSchema, error: deleteChecklistItemPhotoErrorSchema }, ...config }) as Promise<RequestResult<DeleteChecklistItemPhotoResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'DELETE', url: '/checklist/photos/{photoId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: deleteChecklistItemPhotoResponseSchema, error: deleteChecklistItemPhotoErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<DeleteChecklistItemPhotoResponses, ThrowOnError>>)
 }

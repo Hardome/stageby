@@ -70,4 +70,4 @@ export type ChangeStageStatusResponses = {
 /**
  * @description Union of all possible responses
 */
-export type ChangeStageStatusResponse = (ChangeStageStatusStatus200 | ChangeStageStatusStatus400 | ChangeStageStatusStatus401 | ChangeStageStatusStatus403 | ChangeStageStatusStatus404 | ChangeStageStatusStatus409);
+export type ChangeStageStatusResponse = ChangeStageStatusStatus200;

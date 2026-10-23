@@ -76,7 +76,7 @@ function ToggleGroupItem({
       data-size={context.size || size}
       data-spacing={context.spacing}
       className={cn(
-        'shrink-0 focus:z-10 focus-visible:z-10 group-data-[spacing=0]/toggle-group:rounded-none',
+        'shrink-0 group-data-[spacing=0]/toggle-group:rounded-none focus:z-10 focus-visible:z-10',
         'group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0',
         'group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0',
         'group-data-[spacing=0]/toggle-group:px-2',

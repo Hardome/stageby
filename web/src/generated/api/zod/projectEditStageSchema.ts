@@ -7,9 +7,9 @@ import * as z from 'zod'
 import { checklistSchema } from './checklistSchema'
 import { stageSchema } from './stageSchema'
 
-export const projectEditStageSchema = z.object({
+export const projectEditStageSchema = z.strictObject({
   stage: stageSchema.describe('Параметры и версия этапа.'),
   checklist: checklistSchema.describe('Индивидуальный чек-лист и его версия.'),
-}).strict()
+})
 
 export type ProjectEditStageSchemaType = z.infer<typeof projectEditStageSchema>

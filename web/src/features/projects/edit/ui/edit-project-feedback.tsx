@@ -8,7 +8,12 @@ interface EditProjectFeedbackProperties {
   onReload: () => void;
 }
 
-export function EditProjectFeedback({ message, needsReload, disabled, onReload }: EditProjectFeedbackProperties) {
+export function EditProjectFeedback({
+  message,
+  needsReload,
+  disabled,
+  onReload,
+}: Readonly<EditProjectFeedbackProperties>) {
   return (
     <>
       {message && (

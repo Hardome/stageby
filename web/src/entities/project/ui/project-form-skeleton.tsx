@@ -60,8 +60,8 @@ export function ProjectFormSkeleton() {
           </FieldSet>
           <Separator />
           <div className="flex flex-col gap-3">
-            <p className="font-medium text-sm">Проект</p>
-            <p className="text-muted-foreground text-sm">Один или несколько PDF до 50 МБ каждый</p>
+            <p className="text-sm font-medium">Проект</p>
+            <p className="text-sm text-muted-foreground">Один или несколько PDF до 50 МБ каждый</p>
             <Skeleton className="h-24 w-full" />
           </div>
         </FieldGroup>

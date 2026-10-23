@@ -7,9 +7,9 @@ import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 import { materialShortageSchema } from './materialShortageSchema'
 
-export const createMaterialShortageSchema = z.object({
+export const createMaterialShortageSchema = z.strictObject({
   comment: z.string().min(1).max(500).describe('Описание нехватки.').meta({ examples: ['Не доставлены крепёжные элементы'] }),
-}).strict()
+})
 
 export type CreateMaterialShortageSchemaType = z.infer<typeof createMaterialShortageSchema>
 

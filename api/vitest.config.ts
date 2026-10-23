@@ -17,6 +17,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // Дисковый кэш Vitest 5.0.5 передаёт Buffer вместо строки при загрузке globalSetup.
+    fsModuleCache: false,
     globalSetup: ['./test/global-setup.ts'],
     setupFiles: ['./test/setup-environment.ts'],
     fileParallelism: false,

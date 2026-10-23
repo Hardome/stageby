@@ -8,7 +8,7 @@ import { moneyAmountMinorSchema } from './moneyAmountMinorSchema'
 import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { variancePercentSchema } from './variancePercentSchema'
 
-export const projectFinancialSummarySchema = z.object({
+export const projectFinancialSummarySchema = z.strictObject({
   plannedWorkAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Сумма планов работ включённых в расчёт этапов; null при неполном плане.').meta({ examples: [12500000, 0, ] }),
   actualWorkAmountMinor: moneyAmountMinorSchema.describe('Сумма платежей за работы включённых в расчёт этапов.').meta({ examples: [12500000] }),
   plannedMaterialAmountMinor: plannedMoneyAmountMinorSchema.nullable().describe('Сумма планов материалов включённых в расчёт этапов; null при неполном плане.').meta({ examples: [12500000, 0, ] }),
@@ -17,6 +17,6 @@ export const projectFinancialSummarySchema = z.object({
   totalActualAmountMinor: moneyAmountMinorSchema.describe('Общие фактические затраты проекта на работы и материалы.').meta({ examples: [12500000] }),
   isPlanComplete: z.boolean().describe('true, если планы работ и материалов заданы у всех включённых в расчёт этапов. Нулевые планы считаются заданными.').meta({ examples: [false] }),
   variancePercent: variancePercentSchema.nullable().describe('Процент отклонения общего плана проекта от общего факта.').meta({ examples: [10, -10, ] }),
-}).strict().describe('Вычисляемые финансовые итоги проекта. Все поля доступны только для чтения; при неполном плане плановые итоги и отклонение равны null.')
+}).describe('Вычисляемые финансовые итоги проекта. Все поля доступны только для чтения; при неполном плане плановые итоги и отклонение равны null.')
 
 export type ProjectFinancialSummarySchemaType = z.infer<typeof projectFinancialSummarySchema>

@@ -6,7 +6,7 @@
 import * as z from 'zod'
 import { userBriefSchema } from './userBriefSchema'
 
-export const materialShortageSchema = z.object({
+export const materialShortageSchema = z.strictObject({
   id: z.int().min(1).max(2147483647).describe('Идентификатор нехватки.').meta({ examples: [501] }),
   invoiceId: z.int().min(1).max(2147483647).describe('Идентификатор счёта.').meta({ examples: [401] }),
   comment: z.string().min(1).max(500).describe('Описание нехватки.').meta({ examples: ['Не доставлены крепёжные элементы'] }),
@@ -16,6 +16,6 @@ export const materialShortageSchema = z.object({
   resolvedBy: z.union([userBriefSchema, z.null()]).describe('Автор устранения или null.'),
   resolutionComment: z.string().min(1).max(500).nullable().describe('Итоговый комментарий или null.').meta({ examples: ['Комплект доставлен отдельно'] }),
   version: z.int().min(1).describe('Версия нехватки.').meta({ examples: [1] }),
-}).strict()
+})
 
 export type MaterialShortageSchemaType = z.infer<typeof materialShortageSchema>

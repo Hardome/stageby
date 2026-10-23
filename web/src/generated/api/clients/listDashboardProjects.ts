@@ -16,5 +16,5 @@ import { listDashboardProjectsResponseSchema, listDashboardProjectsErrorSchema }
 export function listDashboardProjects<ThrowOnError extends boolean = true>(options: Options<ListDashboardProjectsOptions, ThrowOnError> = {}): Unwrappable<RequestResult<ListDashboardProjectsResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/dashboard/projects', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listDashboardProjectsResponseSchema, error: listDashboardProjectsErrorSchema }, ...config }) as Promise<RequestResult<ListDashboardProjectsResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/dashboard/projects', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: listDashboardProjectsResponseSchema, error: listDashboardProjectsErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<ListDashboardProjectsResponses, ThrowOnError>>)
 }

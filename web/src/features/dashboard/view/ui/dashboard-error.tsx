@@ -7,7 +7,7 @@ interface DashboardErrorProperties {
   onRetry: () => void;
 }
 
-export function DashboardError({ message, pending, onRetry }: DashboardErrorProperties) {
+export function DashboardError({ message, pending, onRetry }: Readonly<DashboardErrorProperties>) {
   return (
     <Alert variant="destructive">
       <AlertDescription className="flex flex-wrap items-center justify-between gap-3">

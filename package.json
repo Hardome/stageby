@@ -19,7 +19,7 @@
     "db:logs": "docker compose logs --follow postgres minio"
   },
   "devDependencies": {
-    "lefthook": "2.1.14",
-    "lint-staged": "17.5.1"
+    "lefthook": "2.2.2",
+    "lint-staged": "17.6.0"
   }
 }

@@ -54,4 +54,4 @@ export type ReturnStageForReworkResponses = {
 /**
  * @description Union of all possible responses
 */
-export type ReturnStageForReworkResponse = (ReturnStageForReworkStatus200 | ReturnStageForReworkStatus400 | ReturnStageForReworkStatus401 | ReturnStageForReworkStatus403 | ReturnStageForReworkStatus404 | ReturnStageForReworkStatus409);
+export type ReturnStageForReworkResponse = ReturnStageForReworkStatus200;

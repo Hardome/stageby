@@ -25,7 +25,7 @@ interface HeaderContentProperties {
   user: User;
 }
 
-export function HeaderContent({ user }: HeaderContentProperties) {
+export function HeaderContent({ user }: Readonly<HeaderContentProperties>) {
   const { clearSession } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -46,7 +46,7 @@ export function HeaderContent({ user }: HeaderContentProperties) {
   const name = formatDisplayName(user.fullName);
 
   return (
-    <header className="border-surface-inverse-border border-b bg-surface-inverse text-surface-inverse-foreground">
+    <header className="border-b border-surface-inverse-border bg-surface-inverse text-surface-inverse-foreground">
       <div
         className={cn([
           'mx-auto flex min-h-14 max-w-7xl items-center gap-2 px-3 sm:grid',

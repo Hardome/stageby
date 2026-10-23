@@ -6,7 +6,7 @@
 import * as z from 'zod'
 import { userRoleSchema } from './userRoleSchema'
 
-export const userSchema = z.object({
+export const userSchema = z.strictObject({
   id: z.int().min(1).max(2147483647).describe('Стабильный ID пользователя.').meta({ examples: [1] }),
   login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/).describe('Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.').meta({ examples: ['foreman.ivan'] }),
   passwordResetRequestedAt: z.iso.datetime().nullable().describe('Время открытого запроса сброса пароля; null означает отсутствие запроса. Руководитель закрывает запрос назначением нового пароля.').meta({ examples: ['2026-10-04T08:00:00Z', ] }),
@@ -16,6 +16,6 @@ export const userSchema = z.object({
   isActive: z.boolean().describe('Признак активной учётной записи. Неактивный пользователь не может войти в систему.').meta({ examples: [true] }),
   createdAt: z.iso.datetime().describe('Дата и время создания записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-20T08:00:00Z'] }),
   updatedAt: z.iso.datetime().describe('Дата и время последнего изменения записи в UTC, формат RFC 3339.').meta({ examples: ['2026-09-24T10:00:00Z'] }),
-}).strict().describe('Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.')
+}).describe('Учётная запись сотрудника или исполнителя с ролью, контактами и признаком активности.')
 
 export type UserSchemaType = z.infer<typeof userSchema>

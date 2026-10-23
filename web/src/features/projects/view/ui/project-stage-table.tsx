@@ -16,7 +16,7 @@ interface ProjectStageTableProperties {
   today: string;
 }
 
-export function ProjectStageTable({ stages, today }: ProjectStageTableProperties) {
+export function ProjectStageTable({ stages, today }: Readonly<ProjectStageTableProperties>) {
   const navigate = useNavigate();
 
   return (
@@ -49,7 +49,7 @@ export function ProjectStageTable({ stages, today }: ProjectStageTableProperties
                   {stage.title}
                 </div>
                 <div className="mt-2 flex max-w-40 flex-col gap-1.5">
-                  <span className="font-medium text-xs tabular-nums">{stage.progressPercent}%</span>
+                  <span className="text-xs font-medium tabular-nums">{stage.progressPercent}%</span>
                   <progress
                     aria-label={`Готовность этапа ${stage.title}`}
                     max={100}
@@ -61,7 +61,7 @@ export function ProjectStageTable({ stages, today }: ProjectStageTableProperties
                     ])}
                   />
                 </div>
-                <div className="mt-1 text-muted-foreground text-xs">
+                <div className="mt-1 text-xs text-muted-foreground">
                   {formatStageDates(stage.plannedStartDate, stage.plannedEndDate)}
                 </div>
               </TableCell>

@@ -11,7 +11,7 @@ interface DashboardProjectResultsProperties {
   today: string;
 }
 
-export function DashboardProjectResults({ projects, today }: DashboardProjectResultsProperties) {
+export function DashboardProjectResults({ projects, today }: Readonly<DashboardProjectResultsProperties>) {
   return (
     <>
       <ul aria-label="Карточки объектов" className="grid gap-4 md:hidden">

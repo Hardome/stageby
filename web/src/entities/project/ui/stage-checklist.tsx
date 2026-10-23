@@ -17,7 +17,7 @@ interface StageChecklistProperties {
   registerErrorGroup: (element: HTMLElement | null) => void;
 }
 
-export function StageChecklist({ index, disabled, readOnly, registerErrorGroup }: StageChecklistProperties) {
+export function StageChecklist({ index, disabled, readOnly, registerErrorGroup }: Readonly<StageChecklistProperties>) {
   const { control, getFieldState, formState } = useFormContext<ProjectFormValues>();
   const checklist = useFieldArray({ control, name: `stages.${index}.checklistItems` });
   const fieldError = getFieldState(`stages.${index}.checklistItems`, formState).error;

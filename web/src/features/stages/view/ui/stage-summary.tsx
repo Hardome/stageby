@@ -13,7 +13,7 @@ interface StageSummaryProperties {
   refreshing: boolean;
 }
 
-export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
+export function StageSummary({ stage, refreshing }: Readonly<StageSummaryProperties>) {
   const isComplete = stage.status === 'completed' || stage.status === 'paid';
 
   return (
@@ -28,8 +28,8 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
           <div className="flex flex-wrap items-center gap-3">
             <span
               className={cn(
-                'flex items-center gap-2 font-medium text-surface-inverse-muted text-xs',
-                'uppercase tracking-widest',
+                'flex items-center gap-2 text-xs font-medium text-surface-inverse-muted',
+                'tracking-widest uppercase',
               )}
             >
               <LayersIcon className="size-4" aria-hidden="true" />
@@ -39,13 +39,13 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
             </span>
             <Badge variant={isComplete ? 'success' : 'secondary'}>{stageStatuses[stage.status]}</Badge>
           </div>
-          <h1 className="wrap-anywhere font-bold text-2xl tracking-tight sm:text-3xl">{stage.title}</h1>
-          <p className="flex max-w-xl items-center gap-2 text-sm text-surface-inverse-muted leading-relaxed">
+          <h1 className="text-2xl font-bold tracking-tight wrap-anywhere sm:text-3xl">{stage.title}</h1>
+          <p className="flex max-w-xl items-center gap-2 text-sm leading-relaxed text-surface-inverse-muted">
             <MapPinIcon className="size-4 shrink-0" aria-hidden="true" />
-            <span className="wrap-anywhere min-w-0">{stage.projectAddress}</span>
+            <span className="min-w-0 wrap-anywhere">{stage.projectAddress}</span>
           </p>
           {stage.workSubtypes.length > 0 && (
-            <p className="wrap-anywhere text-surface-inverse-muted text-xs">{stage.workSubtypes.join(' · ')}</p>
+            <p className="text-xs wrap-anywhere text-surface-inverse-muted">{stage.workSubtypes.join(' · ')}</p>
           )}
         </div>
         <div
@@ -58,7 +58,7 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
             <label htmlFor="stage-progress" className="pt-1 text-sm text-surface-inverse-muted">
               Готовность этапа
             </label>
-            <span className="font-bold text-4xl tabular-nums tracking-tight">
+            <span className="text-4xl font-bold tracking-tight tabular-nums">
               {stage.progressPercent}
               <span className="ml-1 text-lg text-surface-inverse-muted">%</span>
             </span>
@@ -79,7 +79,7 @@ export function StageSummary({ stage, refreshing }: StageSummaryProperties) {
       {stage.projectIsArchived && (
         <div className="border-t px-4 py-3 sm:px-5">
           {stage.projectIsArchived && (
-            <p className="text-muted-foreground text-sm">Объект в архиве. Доступен просмотр.</p>
+            <p className="text-sm text-muted-foreground">Объект в архиве. Доступен просмотр.</p>
           )}
         </div>
       )}

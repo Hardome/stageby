@@ -44,9 +44,9 @@ export const createChecklistItemPhotoErrorSchema = z.union([createChecklistItemP
 
 export type CreateChecklistItemPhotoErrorSchemaType = z.infer<typeof createChecklistItemPhotoErrorSchema>
 
-export const createChecklistItemPhotoBodySchema = z.object({
+export const createChecklistItemPhotoBodySchema = z.strictObject({
   fileId: entityIdSchema.describe('Идентификатор предварительно загруженного файла-фотографии.').meta({ examples: [301] }),
-}).strict()
+})
 
 export type CreateChecklistItemPhotoBodySchemaType = z.infer<typeof createChecklistItemPhotoBodySchema>
 

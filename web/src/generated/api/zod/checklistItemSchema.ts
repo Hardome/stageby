@@ -6,7 +6,7 @@
 import * as z from 'zod'
 import { userBriefSchema } from './userBriefSchema'
 
-export const checklistItemSchema = z.object({
+export const checklistItemSchema = z.strictObject({
   id: z.int().min(1).max(2147483647).describe('ID пункта чек-листа. При замене состава чек-листа создаются новые идентификаторы пунктов.').meta({ examples: [3001] }),
   title: z.string().min(1).max(500).describe('Название контрольной точки, которую необходимо выполнить для передачи этапа на приёмку.').meta({ examples: ['Проверить соответствие выполненных работ проекту'] }),
   photoHint: z.string().min(1).max(1000).nullable().describe('Необязательная подсказка из шаблона о том, что должно быть видно на фотографии.').meta({ examples: ['Фото перевязки углов и перехлёста арматуры', ] }),
@@ -18,6 +18,6 @@ export const checklistItemSchema = z.object({
   reworkComment: z.string().nullable().describe('Последнее замечание руководителя к этому пункту; null, если пункт не возвращался на доработку.').meta({ examples: [] }),
   completedAt: z.iso.datetime().nullable().describe('Дата и время отметки выполнения в UTC, формат RFC 3339. Устанавливается сервером; null — пункт не выполнен.').meta({ examples: ['2026-09-24T09:30:00Z', ] }),
   completedBy: z.union([userBriefSchema, z.null()]).describe('Пользователь, отметивший выполнение; null — пункт не выполнен. Устанавливается сервером.'),
-}).strict()
+})
 
 export type ChecklistItemSchemaType = z.infer<typeof checklistItemSchema>

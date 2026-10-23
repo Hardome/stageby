@@ -16,5 +16,5 @@ import { getFileContentResponseSchema, getFileContentErrorSchema } from '../zod/
 export function getFileContent<ThrowOnError extends boolean = true>(options: Options<GetFileContentOptions, ThrowOnError>): Unwrappable<RequestResult<GetFileContentResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/files/{fileId}/content', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getFileContentResponseSchema, error: getFileContentErrorSchema }, ...config }) as Promise<RequestResult<GetFileContentResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/files/{fileId}/content', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getFileContentResponseSchema, error: getFileContentErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<GetFileContentResponses, ThrowOnError>>)
 }

@@ -8,12 +8,12 @@ import { apiErrorSchema } from './apiErrorSchema'
 import { userRoleSchema } from './userRoleSchema'
 import { userSchema } from './userSchema'
 
-export const updateUserSchema = z.object({
+export const updateUserSchema = z.strictObject({
   fullName: z.string().min(1).max(255).optional().describe('Полное имя сотрудника или исполнителя для отображения.').meta({ examples: ['Иван Петров'] }),
   role: userRoleSchema.optional().describe('manager — руководитель; foreman — мастер/исполнитель.').meta({ examples: ['foreman'] }),
   phone: z.string().min(1).max(32).nullish().describe('Контактный телефон пользователя; null очищает сохранённый телефон.').meta({ examples: ['+7 900 000-00-00', ] }),
   isActive: z.boolean().optional().describe('Активность учётной записи. false деактивирует пользователя и отзывает его сессии; ограничения на последнего руководителя и действующие назначения проверяет сервер.').meta({ examples: [true] }),
-}).strict()
+})
 
 export type UpdateUserSchemaType = z.infer<typeof updateUserSchema>
 

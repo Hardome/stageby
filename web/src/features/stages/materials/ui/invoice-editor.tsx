@@ -17,7 +17,7 @@ interface InvoiceEditorProperties {
   onClose: () => void;
 }
 
-export function InvoiceEditor({ stage, invoice, kind, onClose }: InvoiceEditorProperties) {
+export function InvoiceEditor({ stage, invoice, kind, onClose }: Readonly<InvoiceEditorProperties>) {
   const editor = useInvoiceEditor(stage, invoice, onClose);
   const { action } = editor;
   const isDelete = kind === 'delete';

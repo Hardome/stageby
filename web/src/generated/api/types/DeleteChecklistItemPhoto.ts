@@ -56,4 +56,4 @@ export type DeleteChecklistItemPhotoResponses = {
 /**
  * @description Union of all possible responses
 */
-export type DeleteChecklistItemPhotoResponse = (DeleteChecklistItemPhotoStatus204 | DeleteChecklistItemPhotoStatus400 | DeleteChecklistItemPhotoStatus401 | DeleteChecklistItemPhotoStatus403 | DeleteChecklistItemPhotoStatus404 | DeleteChecklistItemPhotoStatus409);
+export type DeleteChecklistItemPhotoResponse = DeleteChecklistItemPhotoStatus204;

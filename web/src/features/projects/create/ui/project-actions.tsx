@@ -29,7 +29,7 @@ export function ProjectActions({
   onCancel,
   onBack,
   onNext,
-}: ProjectActionsProperties) {
+}: Readonly<ProjectActionsProperties>) {
   const idleLabel = hasSnapshot ? 'Повторить' : 'Создать объект';
   const label = isPending ? 'Создание…' : idleLabel;
 

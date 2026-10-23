@@ -5,8 +5,8 @@
 
 import * as z from 'zod'
 
-export const passwordResetRequestSchema = z.object({
+export const passwordResetRequestSchema = z.strictObject({
   login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/).describe('Логин пользователя, которому требуется новый пароль.').meta({ examples: ['foreman.ivan'] }),
-}).strict()
+})
 
 export type PasswordResetRequestSchemaType = z.infer<typeof passwordResetRequestSchema>

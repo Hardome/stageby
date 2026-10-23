@@ -9,7 +9,7 @@ import { plannedMoneyAmountMinorSchema } from './plannedMoneyAmountMinorSchema'
 import { positiveMoneyAmountMinorSchema } from './positiveMoneyAmountMinorSchema'
 import { userBriefSchema } from './userBriefSchema'
 
-export const stageMaterialInvoiceSchema = z.object({
+export const stageMaterialInvoiceSchema = z.strictObject({
   id: z.int().min(1).max(2147483647).describe('Идентификатор счёта.').meta({ examples: [401] }),
   stageId: z.int().min(1).max(2147483647).describe('Этап, к которому напрямую относится счёт.').meta({ examples: [101] }),
   fileId: z.int().min(1).max(2147483647).describe('Идентификатор загруженного файла счёта.').meta({ examples: [201] }),
@@ -25,6 +25,6 @@ export const stageMaterialInvoiceSchema = z.object({
   version: z.int().min(1).describe('Версия счёта для последующих изменений.').meta({ examples: [1] }),
   createdAt: z.iso.datetime().describe('Время создания в UTC.').meta({ examples: ['2026-10-01T08:00:00Z'] }),
   updatedAt: z.iso.datetime().describe('Время изменения в UTC.').meta({ examples: ['2026-10-03T08:00:00Z'] }),
-}).strict()
+})
 
 export type StageMaterialInvoiceSchemaType = z.infer<typeof stageMaterialInvoiceSchema>

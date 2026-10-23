@@ -41,4 +41,4 @@ export type ListWorkPaymentsResponses = {
 /**
  * @description Union of all possible responses
 */
-export type ListWorkPaymentsResponse = (ListWorkPaymentsStatus200 | ListWorkPaymentsStatus401 | ListWorkPaymentsStatus403 | ListWorkPaymentsStatus404);
+export type ListWorkPaymentsResponse = ListWorkPaymentsStatus200;

@@ -91,7 +91,7 @@ describe('stage acceptance actions', () => {
   async function fillRework() {
     await click('Вернуть на доработку');
     const checkbox = container.querySelector('[role="checkbox"]');
-    if (!(checkbox instanceof HTMLElement)) throw new Error('Нет полей доработки');
+    if (!(checkbox instanceof HTMLElement)) throw new TypeError('Нет полей доработки');
 
     await act(async () => {
       checkbox.click();

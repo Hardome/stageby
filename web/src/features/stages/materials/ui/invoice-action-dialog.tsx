@@ -12,7 +12,7 @@ interface InvoiceActionDialogProperties {
   onClose: () => void;
 }
 
-export function InvoiceActionDialog({ stage, invoice, kind, onClose }: InvoiceActionDialogProperties) {
+export function InvoiceActionDialog({ stage, invoice, kind, onClose }: Readonly<InvoiceActionDialogProperties>) {
   if (kind === 'delivery-check')
     return <InvoiceDeliveryCheckDialog stage={stage} invoice={invoice} onClose={onClose} />;
   if (kind === 'payment') return <InvoicePaymentDialog stage={stage} invoice={invoice} onClose={onClose} />;

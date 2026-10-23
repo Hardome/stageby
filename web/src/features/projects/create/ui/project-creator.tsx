@@ -18,7 +18,7 @@ interface ProjectCreatorProperties {
   onSuccess: () => Promise<void>;
 }
 
-export function ProjectCreator(properties: ProjectCreatorProperties) {
+export function ProjectCreator(properties: Readonly<ProjectCreatorProperties>) {
   const query = useListActiveStageTypes();
   const accessError = useAccessError();
 

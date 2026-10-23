@@ -22,7 +22,7 @@ interface ProjectStagesProperties {
   onRetry: () => void;
 }
 
-export function ProjectStages({ stages, isPending, isFetching, hasError, onRetry }: ProjectStagesProperties) {
+export function ProjectStages({ stages, isPending, isFetching, hasError, onRetry }: Readonly<ProjectStagesProperties>) {
   const [displayMode, setDisplayMode] = useState<'cards' | 'table'>('table');
   const included = stages
     ?.filter((stage) => stage.isIncluded)
@@ -33,7 +33,7 @@ export function ProjectStages({ stages, isPending, isFetching, hasError, onRetry
     <section aria-label="Этапы объекта" aria-busy={isFetching} className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="font-bold text-2xl tracking-tight">Этапы строительства</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Этапы строительства</h2>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {included && <Badge variant="outline">Всего: {included.length}</Badge>}

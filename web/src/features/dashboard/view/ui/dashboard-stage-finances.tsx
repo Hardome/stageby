@@ -7,12 +7,12 @@ interface DashboardStageFinancesProperties {
   kind: 'materials' | 'assignee';
 }
 
-export function DashboardStageFinances({ finances, kind }: DashboardStageFinancesProperties) {
+export function DashboardStageFinances({ finances, kind }: Readonly<DashboardStageFinancesProperties>) {
   const plan = kind === 'materials' ? finances.plannedMaterialAmountMinor : finances.plannedWorkAmountMinor;
   const actual = kind === 'materials' ? finances.actualMaterialAmountMinor : finances.actualWorkAmountMinor;
 
   return (
-    <span className="wrap-anywhere text-muted-foreground text-xs tabular-nums">
+    <span className="text-xs wrap-anywhere text-muted-foreground tabular-nums">
       План / факт: {formatMoney(plan)} / {formatMoney(actual)}
     </span>
   );

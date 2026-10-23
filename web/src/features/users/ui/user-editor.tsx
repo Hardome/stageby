@@ -18,7 +18,7 @@ interface UserEditorProperties {
   mode: 'edit' | 'password';
 }
 
-export function UserEditor({ userId, search, mode }: UserEditorProperties) {
+export function UserEditor({ userId, search, mode }: Readonly<UserEditorProperties>) {
   const id = Number(userId);
 
   const isValid = /^\d+$/.test(userId) && userPathSchema.safeParse({ userId: id }).success;

@@ -8,7 +8,7 @@ interface WorkEditorHeadingProperties {
   pending: boolean;
 }
 
-export function WorkEditorHeading({ action, stage, pending }: WorkEditorHeadingProperties) {
+export function WorkEditorHeading({ action, stage, pending }: Readonly<WorkEditorHeadingProperties>) {
   const title = action.kind === 'delete-payment' ? 'Удалить выплату?' : 'Выплата за работы';
   const description =
     action.kind === 'payment'

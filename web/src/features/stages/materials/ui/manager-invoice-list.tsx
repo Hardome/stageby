@@ -12,7 +12,7 @@ interface ManagerInvoiceListProperties {
   canManage: boolean;
 }
 
-export function ManagerInvoiceList({ stage, invoices, canManage }: ManagerInvoiceListProperties) {
+export function ManagerInvoiceList({ stage, invoices, canManage }: Readonly<ManagerInvoiceListProperties>) {
   return (
     <InvoiceList
       count={invoices.length}
@@ -32,7 +32,7 @@ export function ManagerInvoiceList({ stage, invoices, canManage }: ManagerInvoic
         </InvoiceCard>
       ))}
       {invoices.length >= 10 && canManage && (
-        <li className="p-4 text-muted-foreground text-sm">На этапе может быть не больше 10 счетов. Лимит достигнут.</li>
+        <li className="p-4 text-sm text-muted-foreground">На этапе может быть не больше 10 счетов. Лимит достигнут.</li>
       )}
     </InvoiceList>
   );

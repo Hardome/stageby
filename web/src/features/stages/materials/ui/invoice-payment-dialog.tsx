@@ -10,7 +10,7 @@ interface InvoicePaymentDialogProperties {
   onClose: () => void;
 }
 
-export function InvoicePaymentDialog({ stage, invoice, onClose }: InvoicePaymentDialogProperties) {
+export function InvoicePaymentDialog({ stage, invoice, onClose }: Readonly<InvoicePaymentDialogProperties>) {
   const editor = useInvoicePayment(stage, invoice, onClose);
   const isPaid = invoice.paidAt !== null;
 

@@ -45,7 +45,7 @@ export function StageSummarySkeleton() {
               'md:not-first:border-l md:not-first:pl-4 md:last:col-span-1',
             )}
           >
-            <dt className="flex items-center gap-2 text-muted-foreground text-xs">
+            <dt className="flex items-center gap-2 text-xs text-muted-foreground">
               {label === 'Плановые даты' && <CalendarDaysIcon className="size-4" aria-hidden="true" />}
               {label === 'Мастер' && <UserRoundIcon className="size-4" aria-hidden="true" />}
               {label}

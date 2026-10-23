@@ -22,7 +22,7 @@ const destinations = {
   status: { to: '/stages/$stageId', label: 'Чек-лист' },
 } as const;
 
-export function DashboardStageSignal({ project, kind, today }: DashboardStageSignalProperties) {
+export function DashboardStageSignal({ project, kind, today }: Readonly<DashboardStageSignalProperties>) {
   const stage = project.selectedStage;
 
   if (!stage) {
@@ -55,7 +55,7 @@ export function DashboardStageSignal({ project, kind, today }: DashboardStageSig
         {kind === 'materials' && <MaterialStatus summary={stage.materials} />}
         {kind === 'assignee' &&
           (stage.assignee ? (
-            <span className="wrap-anywhere font-medium">{stage.assignee.fullName}</span>
+            <span className="font-medium wrap-anywhere">{stage.assignee.fullName}</span>
           ) : (
             <Badge variant="outline" className="underline-offset-4 group-hover/signal:underline">
               Не назначен

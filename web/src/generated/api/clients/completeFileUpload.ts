@@ -16,5 +16,5 @@ import { completeFileUploadResponseSchema, completeFileUploadErrorSchema } from 
 export function completeFileUpload<ThrowOnError extends boolean = true>(options: Options<CompleteFileUploadOptions, ThrowOnError>): Unwrappable<RequestResult<CompleteFileUploadResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'POST', url: '/file-uploads/{uploadId}/completion', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: completeFileUploadResponseSchema, error: completeFileUploadErrorSchema }, ...config }) as Promise<RequestResult<CompleteFileUploadResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'POST', url: '/file-uploads/{uploadId}/completion', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: completeFileUploadResponseSchema, error: completeFileUploadErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<CompleteFileUploadResponses, ThrowOnError>>)
 }

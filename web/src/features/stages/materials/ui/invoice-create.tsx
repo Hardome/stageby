@@ -23,7 +23,7 @@ interface InvoiceCreateProperties {
   count: number;
 }
 
-export function InvoiceCreate({ stage, count }: InvoiceCreateProperties) {
+export function InvoiceCreate({ stage, count }: Readonly<InvoiceCreateProperties>) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const { form, upload, action, submit, locked } = useInvoiceCreate(stage, () => setOpen(false));
@@ -118,7 +118,7 @@ export function InvoiceCreate({ stage, count }: InvoiceCreateProperties) {
             </Field>
           </FieldGroup>
           {locked && (
-            <p className="text-muted-foreground text-sm">Повтор отправит тот же счёт с прежними реквизитами.</p>
+            <p className="text-sm text-muted-foreground">Повтор отправит тот же счёт с прежними реквизитами.</p>
           )}
           <MaterialFeedback action={action} />
         </DialogBody>

@@ -8,13 +8,13 @@ import { apiErrorSchema } from './apiErrorSchema'
 import { userRoleSchema } from './userRoleSchema'
 import { userSchema } from './userSchema'
 
-export const createUserSchema = z.object({
+export const createUserSchema = z.strictObject({
   login: z.string().min(3).max(64).regex(/^[a-z0-9][a-z0-9._-]{2,63}$/).describe('Уникальный логин в нижнем регистре. Не email и не телефон. Не изменяется после создания.').meta({ examples: ['foreman.ivan'] }),
   password: z.string().min(8).max(128).describe('Пароль не возвращается в ответах и не записывается в логи. На сервере хранится только стойкий хеш.').meta({ examples: ['Example-Only-Password-123!'] }),
   fullName: z.string().min(1).max(255).describe('Полное имя сотрудника или исполнителя для отображения.').meta({ examples: ['Иван Петров'] }),
   role: userRoleSchema.describe('manager — руководитель; foreman — мастер/исполнитель.').meta({ examples: ['foreman'] }),
   phone: z.string().min(1).max(32).nullish().describe('Контактный телефон пользователя; null — не указан.').meta({ examples: ['+7 900 000-00-00', ] }),
-}).strict()
+})
 
 export type CreateUserSchemaType = z.infer<typeof createUserSchema>
 

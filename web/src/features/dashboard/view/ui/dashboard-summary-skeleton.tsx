@@ -14,7 +14,7 @@ export function DashboardSummarySkeleton() {
         <dl className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-[1.4fr_1fr_1fr] sm:p-4">
           {['Остаток к оплате', 'План к дате', 'Факт'].map((label, index) => (
             <div key={label} className={index === 0 ? 'col-span-2 sm:col-span-1' : undefined}>
-              <dt className="mb-2 text-muted-foreground text-xs">{label}</dt>
+              <dt className="mb-2 text-xs text-muted-foreground">{label}</dt>
               <dd>
                 <Skeleton className={index === 0 ? 'h-10 w-3/4' : 'h-7 w-3/4'} />
               </dd>
@@ -27,11 +27,11 @@ export function DashboardSummarySkeleton() {
               key={label}
               className="flex flex-col gap-4 p-4 last:border-t sm:p-4 sm:last:border-t-0 sm:last:border-l"
             >
-              <h4 className="font-semibold text-sm">{label}</h4>
+              <h4 className="text-sm font-semibold">{label}</h4>
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 {['План', 'Факт', 'Остаток'].map((metric) => (
                   <div key={metric} className="min-w-0">
-                    <dt className="mb-1.5 text-muted-foreground text-xs">{metric}</dt>
+                    <dt className="mb-1.5 text-xs text-muted-foreground">{metric}</dt>
                     <dd>
                       <Skeleton className="h-5 w-3/4" />
                     </dd>

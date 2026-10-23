@@ -12,7 +12,7 @@ import { StageAssigneeWarning } from './ui/stage-assignee-warning';
 import { StageTabs } from './ui/stage-tabs';
 import { StageWorkingChecklist } from './ui/stage-working-checklist';
 
-export function StagePage({ stageId }: { stageId: string }) {
+export function StagePage({ stageId }: Readonly<{ stageId: string }>) {
   const search = useSearch({ from: '/_auth/stages/$stageId' });
   const navigate = useNavigate({ from: '/stages/$stageId' });
   const hash = useLocation({ select: (location) => location.hash });

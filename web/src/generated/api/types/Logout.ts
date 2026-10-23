@@ -27,4 +27,4 @@ export type LogoutResponses = {
 /**
  * @description Union of all possible responses
 */
-export type LogoutResponse = (LogoutStatus204 | LogoutStatus401 | LogoutStatus403);
+export type LogoutResponse = LogoutStatus204;

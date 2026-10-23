@@ -6,7 +6,7 @@ interface DashboardActivityProperties {
   total?: number;
 }
 
-export function DashboardActivity({ count, total }: DashboardActivityProperties) {
+export function DashboardActivity({ count, total }: Readonly<DashboardActivityProperties>) {
   let description = '';
   if (count > 0) description = 'Есть этапы, которые ещё не выплачены';
   else if (total) description = 'Все этапы выплачены';
@@ -24,14 +24,14 @@ export function DashboardActivity({ count, total }: DashboardActivityProperties)
         <Building2Icon className="size-5 text-primary" aria-hidden="true" />
       </div>
       <div className="flex items-end justify-between gap-4 lg:flex-col lg:items-start">
-        <div className="font-semibold text-5xl tabular-nums tracking-tighter lg:text-6xl">
+        <div className="text-5xl font-semibold tracking-tighter tabular-nums lg:text-6xl">
           <p>{count}</p>
         </div>
-        {hasDescription && <p className="max-w-44 text-sm text-surface-inverse-muted leading-relaxed">{description}</p>}
+        {hasDescription && <p className="max-w-44 text-sm leading-relaxed text-surface-inverse-muted">{description}</p>}
       </div>
       {count > 0 && (
-        <div className="hidden items-center justify-between border-surface-inverse-border border-t pt-4 lg:flex">
-          <span className="text-surface-inverse-muted text-xs">В работе до полной выплаты</span>
+        <div className="hidden items-center justify-between border-t border-surface-inverse-border pt-4 lg:flex">
+          <span className="text-xs text-surface-inverse-muted">В работе до полной выплаты</span>
           <ArrowDownRightIcon className="size-4 text-primary" aria-hidden="true" />
         </div>
       )}

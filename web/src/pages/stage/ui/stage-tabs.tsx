@@ -14,7 +14,7 @@ interface StageTabsProperties {
 
 const labels = { checklist: 'Чек-лист', materials: 'Материалы', work: 'Оплата работ' };
 
-export function StageTabs({ tab, onTabChange, ...panels }: StageTabsProperties) {
+export function StageTabs({ tab, onTabChange, ...panels }: Readonly<StageTabsProperties>) {
   const [visited, setVisited] = useState(() => new Set<StageTab>([tab]));
   if (!visited.has(tab)) setVisited(new Set([...visited, tab]));
 

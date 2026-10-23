@@ -58,4 +58,4 @@ export type ConfigureStageChecklistResponses = {
 /**
  * @description Union of all possible responses
 */
-export type ConfigureStageChecklistResponse = (ConfigureStageChecklistStatus200 | ConfigureStageChecklistStatus400 | ConfigureStageChecklistStatus401 | ConfigureStageChecklistStatus403 | ConfigureStageChecklistStatus404 | ConfigureStageChecklistStatus409);
+export type ConfigureStageChecklistResponse = ConfigureStageChecklistStatus200;

@@ -16,5 +16,5 @@ import { deleteMaterialInvoiceResponseSchema, deleteMaterialInvoiceErrorSchema }
 export function deleteMaterialInvoice<ThrowOnError extends boolean = true>(options: Options<DeleteMaterialInvoiceOptions, ThrowOnError>): Unwrappable<RequestResult<DeleteMaterialInvoiceResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'DELETE', url: '/material-invoices/{invoiceId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: deleteMaterialInvoiceResponseSchema, error: deleteMaterialInvoiceErrorSchema }, ...config }) as Promise<RequestResult<DeleteMaterialInvoiceResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'DELETE', url: '/material-invoices/{invoiceId}', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: deleteMaterialInvoiceResponseSchema, error: deleteMaterialInvoiceErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<DeleteMaterialInvoiceResponses, ThrowOnError>>)
 }

@@ -10,13 +10,13 @@ interface PhotoUploadItemProperties {
   onRemove: () => void;
 }
 
-export function PhotoUploadItem({ item, disabled, onRetry, onRemove }: PhotoUploadItemProperties) {
+export function PhotoUploadItem({ item, disabled, onRetry, onRemove }: Readonly<PhotoUploadItemProperties>) {
   return (
     <li className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border p-3">
       {item.status === 'uploading' && <Spinner />}
       <div className="min-w-0 flex-1">
-        <p className="wrap-anywhere font-semibold text-sm">{item.file.name}</p>
-        <p className="text-muted-foreground text-sm" role="status">
+        <p className="text-sm font-semibold wrap-anywhere">{item.file.name}</p>
+        <p className="text-sm text-muted-foreground" role="status">
           {
             {
               waiting: 'Ожидает загрузки',
@@ -26,7 +26,7 @@ export function PhotoUploadItem({ item, disabled, onRetry, onRemove }: PhotoUplo
             }[item.status]
           }
         </p>
-        {item.error && <p className="wrap-anywhere text-destructive text-sm">{item.error}</p>}
+        {item.error && <p className="text-sm wrap-anywhere text-destructive">{item.error}</p>}
       </div>
       {item.status === 'failed' && (
         <Button variant="outline" size="sm" disabled={disabled} onClick={onRetry}>

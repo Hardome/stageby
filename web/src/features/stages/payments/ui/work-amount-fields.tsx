@@ -8,7 +8,7 @@ import { MoneyInput } from '@shared/ui/money-input';
 
 import type { WorkFormValues } from '../lib/work-form';
 
-export function WorkAmountFields({ disabled }: { disabled: boolean }) {
+export function WorkAmountFields({ disabled }: Readonly<{ disabled: boolean }>) {
   const id = useId();
   const { control } = useFormContext<WorkFormValues>();
 

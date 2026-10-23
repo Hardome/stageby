@@ -5,9 +5,9 @@
 
 import * as z from 'zod'
 
-export const createProjectChecklistItemSchema = z.object({
+export const createProjectChecklistItemSchema = z.strictObject({
   title: z.string().min(1).max(500).describe('Название индивидуального пункта чек-листа.').meta({ examples: ['Армирование'] }),
   photoHint: z.string().min(1).max(1000).nullish().describe('Необязательная подсказка о том, что должно быть видно на фотографии.').meta({ examples: ['Фото перевязки углов и перехлёста арматуры', ] }),
-}).strict()
+})
 
 export type CreateProjectChecklistItemSchemaType = z.infer<typeof createProjectChecklistItemSchema>

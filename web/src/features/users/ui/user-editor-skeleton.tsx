@@ -2,7 +2,7 @@ import { Button } from '@shared/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@shared/ui/field';
 import { Skeleton } from '@shared/ui/skeleton';
 
-export function UserEditorSkeleton({ mode }: { mode: 'edit' | 'password' }) {
+export function UserEditorSkeleton({ mode }: Readonly<{ mode: 'edit' | 'password' }>) {
   const isPassword = mode === 'password';
   const labels = isPassword ? ['Новый пароль', 'Повторите пароль'] : ['Полное имя', 'Роль', 'Телефон (необязательно)'];
 

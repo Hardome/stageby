@@ -10,7 +10,7 @@ export function LoginPage() {
       <Card className="mx-auto w-full max-w-md">
         <CardHeader className="gap-2">
           <CardTitle>
-            <h1 className="font-bold text-2xl tracking-tight">Вход в Stageby</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Вход в Stageby</h1>
           </CardTitle>
           <CardDescription>Введите логин и пароль, чтобы продолжить работу.</CardDescription>
         </CardHeader>

@@ -23,7 +23,7 @@ interface EditProjectPageProperties {
   stageId?: number;
 }
 
-export function EditProjectPage({ projectId, stageId }: EditProjectPageProperties) {
+export function EditProjectPage({ projectId, stageId }: Readonly<EditProjectPageProperties>) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [dirty, setDirty] = useState(false);
@@ -40,11 +40,11 @@ export function EditProjectPage({ projectId, stageId }: EditProjectPagePropertie
 
   async function finish(hasChanges = true) {
     finished.current = true;
-    if (stageId === undefined) {
-      await navigate({ to: '/projects/$projectId', params: { projectId } });
-    } else {
-      await navigate({ to: '/stages/$stageId', params: { stageId: String(stageId) } });
-    }
+    await navigate(
+      stageId === undefined
+        ? { to: '/projects/$projectId', params: { projectId } }
+        : { to: '/stages/$stageId', params: { stageId: String(stageId) } },
+    );
 
     if (hasChanges) toast.add({ type: 'success', title: 'Изменения сохранены' });
   }
@@ -59,7 +59,7 @@ export function EditProjectPage({ projectId, stageId }: EditProjectPagePropertie
             <PencilRulerIcon aria-hidden="true" className="size-6 text-primary-text" />
           </span>
           <div className="flex flex-col gap-2">
-            <h1 className="font-bold text-2xl sm:text-3xl">Редактирование объекта</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl">Редактирование объекта</h1>
           </div>
         </header>
         <ProjectEditor

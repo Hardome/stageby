@@ -6,7 +6,7 @@ interface StageFormProbeProperties {
   onEditor: (editor: ReturnType<typeof useStageForm>) => void;
 }
 
-export function StageFormProbe({ onEditor }: StageFormProbeProperties) {
+export function StageFormProbe({ onEditor }: Readonly<StageFormProbeProperties>) {
   const editor = useStageForm(editStage().stage);
   onEditor(editor);
 

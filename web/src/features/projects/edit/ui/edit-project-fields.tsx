@@ -11,7 +11,7 @@ interface EditProjectFieldsProperties {
   editor: ReturnType<typeof useProjectEditForm>;
 }
 
-export function EditProjectFields({ snapshot, editor }: EditProjectFieldsProperties) {
+export function EditProjectFields({ snapshot, editor }: Readonly<EditProjectFieldsProperties>) {
   const { form, navigation, uploads, fileIds, removeDocument, isLocked, exclusionReasons, update } = editor;
   const { screen, stages, registerErrorGroup } = navigation;
   if (screen === 'object')

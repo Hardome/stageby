@@ -16,7 +16,7 @@ interface PhotoDeletionDialogProperties {
   onConfirm: () => void;
 }
 
-export function PhotoDeletionDialog({ open, busy, onCancel, onConfirm }: PhotoDeletionDialogProperties) {
+export function PhotoDeletionDialog({ open, busy, onCancel, onConfirm }: Readonly<PhotoDeletionDialogProperties>) {
   return (
     <AlertDialog
       open={open}

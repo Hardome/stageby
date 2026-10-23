@@ -41,7 +41,7 @@ function projectErrorMessage(error: unknown): string {
 export function projectErrorPath(path: string, values: ProjectFormValues): string {
   let result = path.replace(/^body\./, '');
   const match = /^stages\.(\d+)(\..*)?$/.exec(result);
-  const included = values.stages.flatMap((stage, index) => (stage.enabled ? [index] : []));
+  const included = values.stages.flatMap((stage, index) => (stage.enabled ? index : []));
   const index = match ? included[Number(match[1])] : undefined;
   if (index !== undefined && match) result = `stages.${index}${match[2] ?? ''}`;
   result = result

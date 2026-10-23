@@ -29,7 +29,7 @@ function getAcceptanceSummary(stage: Stage) {
   return stage.latestAcceptance?.decision === 'accepted' ? 'Этап принят' : 'Замечания по приёмке';
 }
 
-export function StageOverview({ stageId, backLink, actions, content, acceptance }: StageOverviewProperties) {
+export function StageOverview({ stageId, backLink, actions, content, acceptance }: Readonly<StageOverviewProperties>) {
   const { query, invalidId } = useStageAccess(stageId);
 
   if (invalidId || query.error?.status === 403 || query.error?.status === 404) {

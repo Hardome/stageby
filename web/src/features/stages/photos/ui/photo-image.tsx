@@ -17,7 +17,7 @@ interface PhotoImageProperties {
   onOpen?: () => void;
 }
 
-export function PhotoImage({ photo, fullscreen = false, onOpen }: PhotoImageProperties) {
+export function PhotoImage({ photo, fullscreen = false, onOpen }: Readonly<PhotoImageProperties>) {
   const { query, hasError, retry, handleImageError } = usePhotoImage(photo.fileId);
   const [loadedUrl, setLoadedUrl] = useState<string>();
   const isImageLoading = query.data && loadedUrl !== query.data.downloadUrl;

@@ -50,8 +50,8 @@ function ToastList() {
                 aria-hidden="true"
               />
               <ToastPrimitive.Content className="min-w-0 flex-1">
-                <ToastPrimitive.Title className="wrap-anywhere font-medium text-sm" />
-                {item.description && <ToastPrimitive.Description className="wrap-anywhere text-current text-sm" />}
+                <ToastPrimitive.Title className="text-sm font-medium wrap-anywhere" />
+                {item.description && <ToastPrimitive.Description className="text-sm wrap-anywhere text-current" />}
                 {item.actionProps && (
                   <ToastPrimitive.Action render={<Button variant="outline" size="sm" />} className="mt-2" />
                 )}

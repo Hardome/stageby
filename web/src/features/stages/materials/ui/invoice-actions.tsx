@@ -19,7 +19,7 @@ interface InvoiceActionsProperties {
 
 type InvoiceDialog = 'edit' | 'delete' | 'payment' | 'shortage' | 'delivery-check';
 
-export function InvoiceActions({ stage, invoice, canManage }: InvoiceActionsProperties) {
+export function InvoiceActions({ stage, invoice, canManage }: Readonly<InvoiceActionsProperties>) {
   const [dialog, setDialog] = useState<InvoiceDialog | null>(null);
   const delivery = useInvoiceDelivery(stage, invoice, () => setDialog('delivery-check'));
   const close = () => setDialog(null);

@@ -8,7 +8,7 @@ import { StageListTableHeader } from './stage-list-table-header';
 export function StageListSkeleton() {
   return (
     <div aria-hidden="true" className="flex min-w-0 flex-col gap-4">
-      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         Найдено: <Skeleton className="h-5 w-10" />
       </div>
       <ul className="grid gap-4 md:hidden">

@@ -10,7 +10,7 @@ export function PasswordResetPage() {
       <Card className="mx-auto w-full max-w-md">
         <CardHeader className="gap-2">
           <CardTitle>
-            <h1 className="font-bold text-2xl tracking-tight">Восстановление доступа</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Восстановление доступа</h1>
           </CardTitle>
           <CardDescription>Введите логин, чтобы запросить новый пароль у руководителя.</CardDescription>
         </CardHeader>

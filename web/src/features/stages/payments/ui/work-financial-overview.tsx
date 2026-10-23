@@ -6,7 +6,7 @@ interface WorkFinancialOverviewProperties {
   stage: Stage;
 }
 
-export function WorkFinancialOverview({ stage }: WorkFinancialOverviewProperties) {
+export function WorkFinancialOverview({ stage }: Readonly<WorkFinancialOverviewProperties>) {
   const balance = stage.workBalanceAmountMinor;
   const isOverpaid = balance !== null && balance < 0n;
   const balanceAmount = isOverpaid ? -balance : balance;
@@ -22,9 +22,9 @@ export function WorkFinancialOverview({ stage }: WorkFinancialOverviewProperties
   return (
     <dl className="grid gap-4 sm:grid-cols-3" aria-label="Итоги оплаты этапа">
       {metrics.map((metric) => (
-        <div key={metric.label} className="min-w-0 border-border border-l-2 pl-3">
-          <dt className="mb-1 text-muted-foreground text-sm">{metric.label}</dt>
-          <dd className="wrap-anywhere font-bold text-2xl tabular-nums tracking-tight">{metric.value}</dd>
+        <div key={metric.label} className="min-w-0 border-l-2 border-border pl-3">
+          <dt className="mb-1 text-sm text-muted-foreground">{metric.label}</dt>
+          <dd className="text-2xl font-bold tracking-tight wrap-anywhere tabular-nums">{metric.value}</dd>
         </div>
       ))}
     </dl>

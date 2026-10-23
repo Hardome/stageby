@@ -1,7 +1,7 @@
 import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer';
 import { cn } from 'cn';
 
-export function DrawerContent({ className, children, ...properties }: DrawerPrimitive.Popup.Props) {
+export function DrawerContent({ className, children, ...properties }: Readonly<DrawerPrimitive.Popup.Props>) {
   return (
     <DrawerPrimitive.Portal>
       <DrawerPrimitive.Backdrop data-slot="drawer-overlay" />

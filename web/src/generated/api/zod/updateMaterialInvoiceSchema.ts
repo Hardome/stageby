@@ -9,7 +9,7 @@ import { expectedVersionSchema } from './expectedVersionSchema'
 import { positiveMoneyAmountMinorSchema } from './positiveMoneyAmountMinorSchema'
 import { stageMaterialInvoiceSchema } from './stageMaterialInvoiceSchema'
 
-export const updateMaterialInvoiceSchema = z.object({
+export const updateMaterialInvoiceSchema = z.strictObject({
   expectedVersion: expectedVersionSchema.describe('Версия ресурса из последнего чтения. Обязательна при изменении финансовых и материальных ресурсов; несовпадение возвращает 409 version_conflict без частичного изменения.').meta({ examples: [1] }),
   amountMinor: positiveMoneyAmountMinorSchema.optional().describe('Новая сумма выставленного счёта; не изменяет фактическую оплату.').meta({ examples: [500000] }),
   supplierName: z.string().min(1).max(255).nullish().describe('Новый поставщик; null очищает значение.').meta({ examples: ['Стройснаб'] }),
@@ -18,7 +18,7 @@ export const updateMaterialInvoiceSchema = z.object({
   paidAmountMinor: positiveMoneyAmountMinorSchema.optional().describe('Фактическая сумма оплаты; обязательна вместе с isPaid true.').meta({ examples: [500000] }),
   paidDate: z.iso.date().optional().describe('Календарная дата оплаты; обязательна вместе с isPaid true.').meta({ examples: ['2026-10-02'] }),
   isDelivered: z.boolean().optional().describe('Требуемая отметка доставки.').meta({ examples: [true] }),
-}).strict()
+})
 
 export type UpdateMaterialInvoiceSchemaType = z.infer<typeof updateMaterialInvoiceSchema>
 

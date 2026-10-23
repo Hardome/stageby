@@ -23,7 +23,7 @@ interface StageChecklistProperties {
   editorLink?: ReactNode;
 }
 
-export function StageChecklist({ stageId, itemLink, editorLink }: StageChecklistProperties) {
+export function StageChecklist({ stageId, itemLink, editorLink }: Readonly<StageChecklistProperties>) {
   const query = useGetStageChecklist({ path: { stageId } }, { query: { retry: false } });
   const accessError = useAccessError();
 

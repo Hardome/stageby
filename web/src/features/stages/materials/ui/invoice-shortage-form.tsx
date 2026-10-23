@@ -16,7 +16,7 @@ interface InvoiceShortageFormProperties {
   onClose: () => void;
 }
 
-export function InvoiceShortageForm({ editor, onClose }: InvoiceShortageFormProperties) {
+export function InvoiceShortageForm({ editor, onClose }: Readonly<InvoiceShortageFormProperties>) {
   const id = useId();
   const { form, action, submit } = editor;
   const comment = useWatch({ control: form.control, name: 'comment' });
@@ -39,7 +39,7 @@ export function InvoiceShortageForm({ editor, onClose }: InvoiceShortageFormProp
               aria-invalid={Boolean(error)}
               aria-describedby={[`${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ')}
             />
-            <p id={`${id}-hint`} className="text-right text-muted-foreground text-xs tabular-nums">
+            <p id={`${id}-hint`} className="text-right text-xs text-muted-foreground tabular-nums">
               {comment?.length ?? 0} / 500
             </p>
             {error && <FieldError id={`${id}-error`}>{error.message}</FieldError>}

@@ -16,15 +16,15 @@ interface DialogHeaderProperties {
   pending?: boolean;
 }
 
-export function DialogHeader({ title, description, pending = false }: DialogHeaderProperties) {
+export function DialogHeader({ title, description, pending = false }: Readonly<DialogHeaderProperties>) {
   return (
     <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 border-b p-4 sm:p-5">
-      <DialogTitle className="font-bold text-xl">{title}</DialogTitle>
+      <DialogTitle className="text-xl font-bold">{title}</DialogTitle>
       <DialogClose render={<Button variant="ghost" size="icon-sm" disabled={pending} aria-label="Закрыть" />}>
         <XIcon />
       </DialogClose>
       {description && (
-        <DialogDescription className="wrap-anywhere col-span-2 text-muted-foreground text-sm">
+        <DialogDescription className="col-span-2 text-sm wrap-anywhere text-muted-foreground">
           {description}
         </DialogDescription>
       )}
@@ -58,13 +58,18 @@ export function DialogFooter({ className, ...properties }: React.ComponentProps<
   );
 }
 
-export function DialogContent({ className, children, fullscreen = false, ...properties }: DialogContentProperties) {
+export function DialogContent({
+  className,
+  children,
+  fullscreen = false,
+  ...properties
+}: Readonly<DialogContentProperties>) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop
         className={cn(
           'fixed inset-0 z-50 bg-surface-inverse/40 supports-backdrop-filter:backdrop-blur-xs',
-          'data-open:fade-in-0 data-closed:fade-out-0 data-closed:animate-out data-open:animate-in',
+          'data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
           'duration-200 ease-out motion-reduce:animate-none',
         )}
       />
@@ -74,9 +79,9 @@ export function DialogContent({ className, children, fullscreen = false, ...prop
         <DialogPrimitive.Popup
           className={cn(
             'flex h-dvh w-full flex-col overflow-hidden bg-card text-card-foreground outline-none',
-            'data-open:fade-in-0 data-closed:fade-out-0 data-closed:animate-out data-open:animate-in',
+            'data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
             'duration-200 ease-out motion-reduce:animate-none',
-            !fullscreen && 'data-open:zoom-in-[0.98] data-closed:zoom-out-[0.98]',
+            !fullscreen && 'data-open:zoom-in-98 data-closed:zoom-out-98',
             !fullscreen && 'sm:h-auto sm:max-h-[min(90dvh,800px)] sm:max-w-2xl sm:rounded-2xl sm:border sm:shadow-lg',
             className,
           )}

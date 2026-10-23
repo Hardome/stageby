@@ -2,13 +2,13 @@ import { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
 import { cn } from 'cn';
 import { CheckIcon } from 'lucide-react';
 
-function Checkbox({ className, ...properties }: CheckboxPrimitive.Root.Props) {
+function Checkbox({ className, ...properties }: Readonly<CheckboxPrimitive.Root.Props>) {
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
         'peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
-        'border-input outline-none transition-colors after:absolute after:-inset-x-3',
+        'border-input transition-colors outline-none after:absolute after:-inset-x-3',
         'after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3',
         'focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
         'group-has-[:focus-visible]/field-label:not-data-checked:border-input',
@@ -16,8 +16,8 @@ function Checkbox({ className, ...properties }: CheckboxPrimitive.Root.Props) {
         'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20',
         'aria-invalid:aria-checked:border-success data-checked:border-success',
         'data-checked:bg-success data-checked:text-success-foreground',
-        'bg-control-background group-has-[:focus-visible]/field-label:data-checked:border-success dark:bg-input/30',
-        'dark:data-checked:bg-success dark:aria-invalid:border-destructive/50',
+        'bg-control-background dark:bg-input/30 group-has-[:focus-visible]/field-label:data-checked:border-success',
+        'dark:aria-invalid:border-destructive/50 dark:data-checked:bg-success',
         'dark:aria-invalid:ring-destructive/40',
         className,
       )}

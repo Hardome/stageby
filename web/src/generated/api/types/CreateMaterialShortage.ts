@@ -59,4 +59,4 @@ export type CreateMaterialShortageResponses = {
 /**
  * @description Union of all possible responses
 */
-export type CreateMaterialShortageResponse = (CreateMaterialShortageStatus201 | CreateMaterialShortageStatus400 | CreateMaterialShortageStatus401 | CreateMaterialShortageStatus403 | CreateMaterialShortageStatus404 | CreateMaterialShortageStatus409);
+export type CreateMaterialShortageResponse = CreateMaterialShortageStatus201;

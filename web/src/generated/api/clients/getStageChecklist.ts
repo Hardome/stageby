@@ -16,5 +16,5 @@ import { getStageChecklistResponseSchema, getStageChecklistErrorSchema } from '.
 export function getStageChecklist<ThrowOnError extends boolean = true>(options: Options<GetStageChecklistOptions, ThrowOnError>): Unwrappable<RequestResult<GetStageChecklistResponses, ThrowOnError>> {
   const { client: request = client, ...config } = options
 
-  return withUnwrap(request({ method: 'GET', url: '/stages/{stageId}/checklist', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getStageChecklistResponseSchema, error: getStageChecklistErrorSchema }, ...config }) as Promise<RequestResult<GetStageChecklistResponses, ThrowOnError>>)
+  return withUnwrap(request({ method: 'GET', url: '/stages/{stageId}/checklist', security: [{ type: 'apiKey', name: 'stageby_session', in: 'cookie' }], validator: { response: getStageChecklistResponseSchema, error: getStageChecklistErrorSchema }, ...config, throwOnError: config.throwOnError ?? true }) as Promise<RequestResult<GetStageChecklistResponses, ThrowOnError>>)
 }
