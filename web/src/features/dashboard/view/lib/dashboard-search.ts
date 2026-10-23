@@ -7,8 +7,6 @@ export const dashboardSearchSchema = z.object({
   offset: z.number().int().min(0).max(2147483647).catch(0).optional(),
 });
 
-export type DashboardSearch = z.infer<typeof dashboardSearchSchema>;
-
 export function addCalendarDays(value: string, days: number): string {
   const date = new Date(`${value}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);

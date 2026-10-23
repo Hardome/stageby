@@ -1,7 +1,7 @@
 import type { KnipConfig } from 'knip';
 
 const config: KnipConfig = {
-  project: ['src/**/*.{ts,tsx,css}', 'tests/**/*.{ts,tsx}'],
+  project: ['src/**/*.{ts,tsx,css}!', '!src/**/*.{test,spec}.{ts,tsx}!', 'tests/**/*.{ts,tsx}'],
   ignore: ['src/generated/**'],
   ignoreIssues: {
     'src/shared/ui/**': ['exports'],

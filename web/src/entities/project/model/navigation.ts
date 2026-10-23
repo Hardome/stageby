@@ -1,4 +1,4 @@
-export interface ProjectNavigationStage {
+interface ProjectNavigationStage {
   index: number;
   title: string;
   hasError: boolean;
