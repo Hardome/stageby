@@ -10,7 +10,7 @@ export function toFile(file: FileRow): File {
     originalName: file.originalName,
     mimeType: file.mimeType,
     sizeBytes: file.sizeBytes,
-    checksumSha256: file.checksumSha256,
+    checksumMd5: file.checksumMd5,
     uploadedAt: file.uploadedAt.toISOString(),
   };
 }

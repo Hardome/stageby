@@ -6,7 +6,7 @@
 import type { ApiError } from './ApiError'
 import type { FilePurposeKey } from './FilePurpose'
 import type { FileUpload } from './FileUpload'
-import type { Sha256 } from './Sha256'
+import type { Md5 } from './Md5'
 
 export type CreateFileUpload = {
     /**
@@ -41,11 +41,13 @@ export type CreateFileUpload = {
     sizeBytes: number;
     /**
      * @description Ожидаемая контрольная сумма содержимого.
-     * @pattern ^[a-f0-9]{64}$
-     * @example 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+     * @minLength 32
+     * @maxLength 32
+     * @pattern ^[a-f0-9]{32}$
+     * @example 0123456789abcdef0123456789abcdef
      * @type string
     */
-    checksumSha256: Sha256;
+    checksumMd5: Md5;
 };
 
 export type CreateFileUploadStatus201 = FileUpload;

@@ -1275,9 +1275,9 @@ export type UpdateChecklistItem = {
 export type FilePurpose = 'project_document' | 'checklist_photo' | 'material_invoice';
 
 /**
- * SHA-256 содержимого в нижнем регистре, шестнадцатеричная запись.
+ * MD5 содержимого в нижнем регистре, шестнадцатеричная запись.
  */
-export type Sha256 = string;
+export type Md5 = string;
 
 export type CreateFileUpload = {
     /**
@@ -1299,7 +1299,7 @@ export type CreateFileUpload = {
     /**
      * Ожидаемая контрольная сумма содержимого.
      */
-    checksumSha256: Sha256;
+    checksumMd5: Md5;
 };
 
 /**
@@ -1345,7 +1345,7 @@ export type CompleteFileUpload = {
     /**
      * Контрольная сумма отправленного содержимого.
      */
-    checksumSha256: Sha256;
+    checksumMd5: Md5;
 };
 
 export type File = {
@@ -1376,7 +1376,7 @@ export type File = {
     /**
      * Проверенная контрольная сумма файла.
      */
-    checksumSha256: Sha256;
+    checksumMd5: Md5;
     /**
      * Серверное время успешного подтверждения загрузки.
      */

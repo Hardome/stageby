@@ -622,16 +622,16 @@ export const zFilePurpose = z.enum([
 ]);
 
 /**
- * SHA-256 содержимого в нижнем регистре, шестнадцатеричная запись.
+ * MD5 содержимого в нижнем регистре, шестнадцатеричная запись.
  */
-export const zSha256 = z.string().regex(/^[a-f0-9]{64}$/);
+export const zMd5 = z.string().length(32).regex(/^[a-f0-9]{32}$/);
 
 export const zCreateFileUpload = z.object({
     purpose: zFilePurpose,
     originalName: z.string().min(1).max(255),
     mimeType: z.string().min(1).max(255),
     sizeBytes: z.int().gte(1).lte(50000000),
-    checksumSha256: zSha256
+    checksumMd5: zMd5
 });
 
 /**
@@ -659,7 +659,7 @@ export const zFileUpload = z.object({
 });
 
 export const zCompleteFileUpload = z.object({
-    checksumSha256: zSha256
+    checksumMd5: zMd5
 });
 
 export const zFile = z.object({
@@ -669,7 +669,7 @@ export const zFile = z.object({
     originalName: z.string(),
     mimeType: z.string(),
     sizeBytes: z.int().gte(1),
-    checksumSha256: zSha256,
+    checksumMd5: zMd5,
     uploadedAt: z.iso.datetime()
 });
 

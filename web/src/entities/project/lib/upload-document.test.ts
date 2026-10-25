@@ -96,7 +96,7 @@ describe('project PDF upload', () => {
       key: 'completion-key',
       file,
       status: 'failed',
-      checksum: 'a'.repeat(64),
+      checksum: 'a'.repeat(32),
       session: {
         fileId: 40,
         status: 'pending',
@@ -128,7 +128,7 @@ describe('project PDF upload', () => {
       key: 'completion-key',
       file,
       status: 'failed',
-      checksum: 'a'.repeat(64),
+      checksum: 'a'.repeat(32),
       session: {
         fileId: 40,
         status: 'pending',
@@ -157,9 +157,9 @@ describe('project PDF upload', () => {
 
     await uploadDocument(document, update);
 
-    const request = mocks.create.mock.calls[0]?.[0] as { body: { checksumSha256: string } };
+    const request = mocks.create.mock.calls[0]?.[0] as { body: { checksumMd5: string } };
 
-    expect(request.body.checksumSha256).toBe(document.checksum);
+    expect(request.body.checksumMd5).toBe(document.checksum);
     expect(mocks.complete).toHaveBeenCalledWith(
       expect.objectContaining({
         path: { uploadId: 41 },

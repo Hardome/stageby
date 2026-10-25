@@ -7,7 +7,7 @@ import * as z from 'zod'
 import { entityIdSchema } from './entityIdSchema'
 import { filePurposeSchema } from './filePurposeSchema'
 import { fileStatusSchema } from './fileStatusSchema'
-import { sha256Schema } from './sha256Schema'
+import { md5Schema } from './md5Schema'
 
 export const fileSchema = z.strictObject({
   id: entityIdSchema.describe('Идентификатор файла.').meta({ examples: [301] }),
@@ -16,7 +16,7 @@ export const fileSchema = z.strictObject({
   originalName: z.string().describe('Исходное имя файла.').meta({ examples: ['foundation.jpg'] }),
   mimeType: z.string().describe('Проверенный MIME-тип файла.').meta({ examples: ['image/jpeg'] }),
   sizeBytes: z.int().min(1).describe('Проверенный размер файла в байтах.').meta({ examples: [1048576] }),
-  checksumSha256: sha256Schema.describe('Проверенная контрольная сумма файла.').meta({ examples: ['0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'] }),
+  checksumMd5: md5Schema.describe('Проверенная контрольная сумма файла.').meta({ examples: ['0123456789abcdef0123456789abcdef'] }),
   uploadedAt: z.iso.datetime().describe('Серверное время успешного подтверждения загрузки.').meta({ examples: ['2026-09-29T08:15:00Z'] }),
 })
 

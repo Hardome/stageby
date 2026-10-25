@@ -7,10 +7,10 @@ import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 import { entityIdSchema } from './entityIdSchema'
 import { fileSchema } from './fileSchema'
-import { sha256Schema } from './sha256Schema'
+import { md5Schema } from './md5Schema'
 
 export const completeFileUploadSchema = z.strictObject({
-  checksumSha256: sha256Schema.describe('Контрольная сумма отправленного содержимого.').meta({ examples: ['0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'] }),
+  checksumMd5: md5Schema.describe('Контрольная сумма отправленного содержимого.').meta({ examples: ['0123456789abcdef0123456789abcdef'] }),
 })
 
 export type CompleteFileUploadSchemaType = z.infer<typeof completeFileUploadSchema>

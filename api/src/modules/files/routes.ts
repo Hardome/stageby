@@ -46,6 +46,7 @@ const deletePhotoQuerySchema = z.preprocess((value) => {
 }, zDeleteChecklistItemPhotoQuery);
 const idempotencyHeadersSchema = z.object({ 'idempotency-key': z.string().min(16).max(100) }).passthrough();
 const createUploadBodySchema = zCreateFileUploadBody
+  .strict()
   .superRefine((body, context) => {
     if (body.originalName.trim().length === 0) {
       context.addIssue({ code: 'custom', path: ['originalName'], message: 'Имя файла не может быть пустым.' });
@@ -142,7 +143,7 @@ export function registerFileRoutes(app: FastifyInstance, repository: FileReposit
     preHandler: [app.authenticate, app.requireRoles('manager', 'foreman')],
     schema: {
       params: completePathSchema,
-      body: zCompleteFileUploadBody,
+      body: zCompleteFileUploadBody.strict(),
       headers: idempotencyHeadersSchema,
       response: { 200: zCompleteFileUploadResponse, ...errorResponses },
     },
@@ -151,7 +152,7 @@ export function registerFileRoutes(app: FastifyInstance, repository: FileReposit
         reply,
         await repository.completeUpload(
           request.params.uploadId,
-          request.body.checksumSha256,
+          request.body.checksumMd5,
           request.headers['idempotency-key'],
           request.auth!.user,
           requestAuditContext(request),

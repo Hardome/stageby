@@ -42,6 +42,11 @@ overrides:
       - заблюрим
       - статирование
 words:
+  - токенам
+  - подплана
+  - бакеты
+  - бакете
+  - версионирование
   - Certbot
   - ECONNREFUSED
   - Healthchecks

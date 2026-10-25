@@ -36,7 +36,7 @@ describe('shared invoice file transfer', () => {
       status: 'pending',
       method: 'PUT',
       uploadUrl: 'https://storage.example/invoice',
-      headers: {},
+      headers: { 'content-md5': 'checksum-base64' },
       expiresAt: '2099-01-01T00:00:00Z',
     });
     mocks.complete.mockRejectedValueOnce(new Error('Connection lost')).mockResolvedValueOnce({ id: 41 });
@@ -52,9 +52,37 @@ describe('shared invoice file transfer', () => {
     expect(item.fileId).toBe(41);
     expect(transfer).toHaveBeenCalledWith(
       'https://storage.example/invoice',
-      expect.objectContaining({ credentials: 'omit' }),
+      expect.objectContaining({ credentials: 'omit', headers: { 'content-md5': 'checksum-base64' } }),
     );
     await uploadFile(item, update, 'material_invoice', 'image/jpeg');
     expect(mocks.complete).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the file available after BadDigest and retries with its session', async () => {
+    const item = jpegTransfer();
+    const update = (values: Partial<FileTransfer>) => Object.assign(item, values);
+    mocks.create.mockResolvedValue({
+      fileId: 41,
+      status: 'pending',
+      method: 'PUT',
+      uploadUrl: 'https://storage.example/invoice',
+      headers: { 'content-md5': 'checksum-base64' },
+      expiresAt: '2099-01-01T00:00:00Z',
+    });
+    const transfer = vi.fn().mockResolvedValueOnce({ ok: false, status: 400 }).mockResolvedValueOnce({ ok: true });
+    vi.stubGlobal('fetch', transfer);
+    mocks.complete.mockResolvedValue({ id: 41 });
+
+    await expect(uploadFile(item, update, 'material_invoice', 'image/jpeg')).rejects.toThrow('Повторите загрузку');
+
+    expect(item.file).toBeInstanceOf(File);
+    expect(item.fileId).toBeUndefined();
+    expect(mocks.complete).not.toHaveBeenCalled();
+
+    await uploadFile(item, update, 'material_invoice', 'image/jpeg');
+
+    expect(item.fileId).toBe(41);
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(transfer).toHaveBeenCalledTimes(2);
   });
 });
