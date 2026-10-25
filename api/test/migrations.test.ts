@@ -266,7 +266,7 @@ describe('миграции БД', () => {
       await expect(
         temporaryPool.query(`update stages set "plannedEndDate" = '2026-12-31' where "projectId" = $1`, [projectId]),
       ).rejects.toMatchObject({ code: '23514' });
-      expect(firstJournal.rows[0]?.count).toBe('5');
+      expect(firstJournal.rows[0]?.count).toBe('6');
       expect(secondJournal.rows).toEqual(firstJournal.rows);
       expect(firstTables.rows.map((row) => row.name)).toEqual(expectedTables);
       expect(secondTables.rows).toEqual(firstTables.rows);

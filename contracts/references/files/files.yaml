@@ -35,7 +35,7 @@ paths:
       tags:
         - Files
       summary: Подтвердить загрузку файла
-      description: Проверяет объект в storage по MIME, фактическому размеру и SHA-256, повторно применяя лимит purpose. Включительный предел для project_document равен 50000000, material_invoice — 10000000, checklist_photo — 20000000 байт. Повтор с тем же Idempotency-Key и телом возвращает тот же результат.
+      description: Проверяет объект в storage по MIME, фактическому размеру и MD5, повторно применяя лимит purpose. Включительный предел для project_document равен 50000000, material_invoice — 10000000, checklist_photo — 20000000 байт. Повтор с тем же Idempotency-Key и телом возвращает тот же результат.
       parameters:
         - name: Idempotency-Key
           in: header
@@ -238,12 +238,14 @@ components:
       description: Состояние upload-сессии и объекта в файловом хранилище.
       examples:
         - uploaded
-    Sha256:
+    Md5:
       type: string
-      pattern: "^[a-f0-9]{64}$"
-      description: SHA-256 содержимого в нижнем регистре, шестнадцатеричная запись.
+      minLength: 32
+      maxLength: 32
+      pattern: "^[a-f0-9]{32}$"
+      description: MD5 содержимого в нижнем регистре, шестнадцатеричная запись.
       examples:
-        - 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+        - 0123456789abcdef0123456789abcdef
     CreateFileUpload:
       type: object
       additionalProperties: false
@@ -252,7 +254,7 @@ components:
         - originalName
         - mimeType
         - sizeBytes
-        - checksumSha256
+        - checksumMd5
       properties:
         purpose:
           description: Назначение загружаемого файла.
@@ -280,22 +282,22 @@ components:
           description: Заявленный размер содержимого в байтах. Общий верхний предел схемы нужен для PDF проекта; сервер применяет более строгий предел purpose, включая 10000000 байт для material_invoice.
           examples:
             - 1048576
-        checksumSha256:
+        checksumMd5:
           description: Ожидаемая контрольная сумма содержимого.
           examples:
-            - 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-          $ref: "#/components/schemas/Sha256"
+            - 0123456789abcdef0123456789abcdef
+          $ref: "#/components/schemas/Md5"
     CompleteFileUpload:
       type: object
       additionalProperties: false
       required:
-        - checksumSha256
+        - checksumMd5
       properties:
-        checksumSha256:
+        checksumMd5:
           description: Контрольная сумма отправленного содержимого.
           examples:
-            - 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-          $ref: "#/components/schemas/Sha256"
+            - 0123456789abcdef0123456789abcdef
+          $ref: "#/components/schemas/Md5"
     File:
       type: object
       additionalProperties: false
@@ -306,7 +308,7 @@ components:
         - originalName
         - mimeType
         - sizeBytes
-        - checksumSha256
+        - checksumMd5
         - uploadedAt
       properties:
         id:
@@ -340,11 +342,11 @@ components:
           description: Проверенный размер файла в байтах.
           examples:
             - 1048576
-        checksumSha256:
+        checksumMd5:
           description: Проверенная контрольная сумма файла.
           examples:
-            - 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-          $ref: "#/components/schemas/Sha256"
+            - 0123456789abcdef0123456789abcdef
+          $ref: "#/components/schemas/Md5"
         uploadedAt:
           type: string
           format: date-time

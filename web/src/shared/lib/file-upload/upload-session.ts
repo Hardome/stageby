@@ -5,7 +5,7 @@ import type { FileUpload } from '@api/types';
 export async function completeUpload(session: FileUpload, checksum: string, key: string) {
   return completeFileUpload({
     path: { uploadId: session.fileId },
-    body: { checksumSha256: checksum },
+    body: { checksumMd5: checksum },
     headers: { 'Idempotency-Key': key },
   }).unwrap();
 }
@@ -36,7 +36,7 @@ export function createUploadSession(
       originalName: file.name,
       mimeType,
       sizeBytes: file.size,
-      checksumSha256: checksum,
+      checksumMd5: checksum,
     },
   }).unwrap();
 }

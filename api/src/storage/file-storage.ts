@@ -1,7 +1,7 @@
 export interface StoredObjectMetadata {
   sizeBytes: number;
   mimeType: string;
-  checksumSha256Base64: string | null;
+  checksumMd5Hex: string | null;
 }
 
 export interface SignedStorageRequest {
@@ -18,7 +18,7 @@ export interface FileStorage {
     key: string;
     mimeType: string;
     sizeBytes: number;
-    checksumSha256Base64: string;
+    checksumMd5Base64: string;
     expiresInSeconds: number;
   }): Promise<SignedUploadRequest>;
   createDownloadRequest(input: {

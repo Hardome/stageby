@@ -27,6 +27,7 @@ export class S3FileStorage implements FileStorage {
       endpoint: environment.S3_ENDPOINT,
       region: environment.S3_REGION,
       forcePathStyle: environment.S3_FORCE_PATH_STYLE,
+      requestChecksumCalculation: 'WHEN_REQUIRED',
       credentials: {
         accessKeyId: environment.S3_ACCESS_KEY_ID,
         secretAccessKey: environment.S3_SECRET_ACCESS_KEY,
@@ -55,7 +56,7 @@ export class S3FileStorage implements FileStorage {
     key: string;
     mimeType: string;
     sizeBytes: number;
-    checksumSha256Base64: string;
+    checksumMd5Base64: string;
     expiresInSeconds: number;
   }): Promise<SignedUploadRequest> {
     const command = new PutObjectCommand({
@@ -63,16 +64,19 @@ export class S3FileStorage implements FileStorage {
       Key: input.key,
       ContentType: input.mimeType,
       ContentLength: input.sizeBytes,
-      ChecksumSHA256: input.checksumSha256Base64,
+      ContentMD5: input.checksumMd5Base64,
     });
-    const url = await getSignedUrl(this.#client, command, { expiresIn: input.expiresInSeconds });
+    const url = await getSignedUrl(this.#client, command, {
+      expiresIn: input.expiresInSeconds,
+      signableHeaders: new Set(['content-md5', 'content-type']),
+    });
     return {
       url,
       expiresAt: new Date(Date.now() + input.expiresInSeconds * 1000),
       headers: {
         'content-length': String(input.sizeBytes),
         'content-type': input.mimeType,
-        'x-amz-checksum-sha256': input.checksumSha256Base64,
+        'content-md5': input.checksumMd5Base64,
       },
     };
   }
@@ -96,14 +100,12 @@ export class S3FileStorage implements FileStorage {
 
   async getMetadata(key: string): Promise<StoredObjectMetadata | null> {
     try {
-      const metadata = await this.#client.send(
-        new HeadObjectCommand({ Bucket: this.#bucket, Key: key, ChecksumMode: 'ENABLED' }),
-      );
+      const metadata = await this.#client.send(new HeadObjectCommand({ Bucket: this.#bucket, Key: key }));
       if (metadata.ContentLength === undefined || !metadata.ContentType) return null;
       return {
         sizeBytes: metadata.ContentLength,
         mimeType: metadata.ContentType,
-        checksumSha256Base64: metadata.ChecksumSHA256 ?? null,
+        checksumMd5Hex: md5FromETag(metadata.ETag),
       };
     } catch (error) {
       if (
@@ -122,4 +124,11 @@ export class S3FileStorage implements FileStorage {
   async delete(key: string): Promise<void> {
     await this.#client.send(new DeleteObjectCommand({ Bucket: this.#bucket, Key: key }));
   }
+}
+
+export function md5FromETag(etag: string | undefined): string | null {
+  if (!etag) return null;
+  const value = etag.replace(/^"([a-fA-F0-9]{32})"$/, '$1');
+
+  return /^[a-fA-F0-9]{32}$/.test(value) ? value.toLowerCase() : null;
 }

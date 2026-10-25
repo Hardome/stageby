@@ -7,14 +7,14 @@ import * as z from 'zod'
 import { apiErrorSchema } from './apiErrorSchema'
 import { filePurposeSchema } from './filePurposeSchema'
 import { fileUploadSchema } from './fileUploadSchema'
-import { sha256Schema } from './sha256Schema'
+import { md5Schema } from './md5Schema'
 
 export const createFileUploadSchema = z.strictObject({
   purpose: filePurposeSchema.describe('Назначение загружаемого файла.').meta({ examples: ['checklist_photo'] }),
   originalName: z.string().min(1).max(255).describe('Исходное имя файла без пути на устройстве пользователя.').meta({ examples: ['foundation.jpg'] }),
   mimeType: z.string().min(1).max(255).describe('Заявленный MIME-тип содержимого.').meta({ examples: ['image/jpeg'] }),
   sizeBytes: z.int().min(1).max(50000000).describe('Заявленный размер содержимого в байтах. Общий верхний предел схемы нужен для PDF проекта; сервер применяет более строгий предел purpose, включая 10000000 байт для material_invoice.').meta({ examples: [1048576] }),
-  checksumSha256: sha256Schema.describe('Ожидаемая контрольная сумма содержимого.').meta({ examples: ['0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'] }),
+  checksumMd5: md5Schema.describe('Ожидаемая контрольная сумма содержимого.').meta({ examples: ['0123456789abcdef0123456789abcdef'] }),
 })
 
 export type CreateFileUploadSchemaType = z.infer<typeof createFileUploadSchema>

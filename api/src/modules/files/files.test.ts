@@ -36,7 +36,7 @@ import { auditRecords } from '#test/audit-records';
 import { setupModuleTest } from '#test/setup-module-test';
 
 const PASSWORD = 'Files-test-password-123!';
-const checksum = 'a'.repeat(64);
+const checksum = 'a'.repeat(32);
 const createdUserIds: number[] = [];
 const createdProjectIds: number[] = [];
 const createdFileIds: number[] = [];
@@ -51,7 +51,7 @@ class FakeFileStorage implements FileStorage {
     key: string;
     mimeType: string;
     sizeBytes: number;
-    checksumSha256Base64: string;
+    checksumMd5Base64: string;
     expiresInSeconds: number;
   }): Promise<SignedUploadRequest> {
     if (this.failNextUploadRequest) {
@@ -63,7 +63,7 @@ class FakeFileStorage implements FileStorage {
       headers: {
         'content-type': input.mimeType,
         'content-length': String(input.sizeBytes),
-        'x-amz-checksum-sha256': input.checksumSha256Base64,
+        'content-md5': input.checksumMd5Base64,
       },
       expiresAt: new Date(Date.now() + input.expiresInSeconds * 1000),
     };
@@ -196,7 +196,7 @@ async function uploadPhoto(cookie: string, overrides: Record<string, unknown> = 
       originalName: 'photo.jpg',
       mimeType: 'image/jpeg',
       sizeBytes: 1024,
-      checksumSha256: checksum,
+      checksumMd5: checksum,
       ...overrides,
     },
   });
@@ -207,13 +207,13 @@ async function uploadPhoto(cookie: string, overrides: Record<string, unknown> = 
   storage.objects.set(key, {
     sizeBytes: Number(upload.headers['content-length']),
     mimeType: upload.headers['content-type']!,
-    checksumSha256Base64: upload.headers['x-amz-checksum-sha256']!,
+    checksumMd5Hex: Buffer.from(upload.headers['content-md5']!, 'base64').toString('hex'),
   });
   const completeResponse = await getApp().inject({
     method: 'POST',
     url: `/file-uploads/${upload.fileId}/completion`,
     headers: { cookie, 'idempotency-key': randomUUID() },
-    payload: { checksumSha256: checksum },
+    payload: { checksumMd5: checksum },
   });
   return { createResponse, completeResponse, upload, key };
 }
@@ -230,7 +230,7 @@ async function insertUploadedPhotos(userId: number, count: number) {
         originalName: `photo-${index}.jpg`,
         mimeType: 'image/jpeg',
         sizeBytes: 1024,
-        checksumSha256: checksum,
+        checksumMd5: checksum,
         uploadedByUserId: userId,
         uploadExpiresAt: uploadedAt,
         uploadedAt,
@@ -243,6 +243,70 @@ async function insertUploadedPhotos(userId: number, count: number) {
 }
 
 describe('File uploads and checklist photos', () => {
+  it.each(['a'.repeat(64), 'a'.repeat(31), 'a'.repeat(33), 'A'.repeat(32), 'g'.repeat(32), ''])(
+    'отклоняет неверный формат MD5 %s при создании и завершении',
+    async (invalid) => {
+      const manager = await createIdentity('manager');
+      const created = await uploadPhoto(manager.cookie, { checksumMd5: invalid });
+      expect(created.createResponse.statusCode).toBe(400);
+
+      const completed = await getApp().inject({
+        method: 'POST',
+        url: '/file-uploads/1/completion',
+        headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
+        payload: { checksumMd5: invalid },
+      });
+      expect(completed.statusCode).toBe(400);
+    },
+  );
+
+  it('отклоняет старое поле checksumSha256 даже вместе с MD5', async () => {
+    const manager = await createIdentity('manager');
+    const created = await uploadPhoto(manager.cookie, { checksumSha256: 'a'.repeat(64) });
+    expect(created.createResponse.statusCode).toBe(400);
+
+    const completed = await getApp().inject({
+      method: 'POST',
+      url: '/file-uploads/1/completion',
+      headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
+      payload: { checksumMd5: checksum, checksumSha256: 'a'.repeat(64) },
+    });
+    expect(completed.statusCode).toBe(400);
+  });
+
+  it.each([null, 'b'.repeat(32)])('не завершает загрузку с MD5 из HEAD %s', async (checksumMd5Hex) => {
+    const manager = await createIdentity('manager');
+    const created = await getApp().inject({
+      method: 'POST',
+      url: '/file-uploads',
+      headers: { cookie: manager.cookie },
+      payload: {
+        purpose: 'checklist_photo',
+        originalName: 'photo.jpg',
+        mimeType: 'image/jpeg',
+        sizeBytes: 1024,
+        checksumMd5: checksum,
+      },
+    });
+    expect(created.statusCode).toBe(201);
+    const upload = created.json<FileUpload>();
+    createdFileIds.push(upload.fileId);
+    const key = decodeURIComponent(new URL(upload.uploadUrl).pathname.slice(1));
+    storage.objects.set(key, { sizeBytes: 1024, mimeType: 'image/jpeg', checksumMd5Hex });
+
+    const completed = await getApp().inject({
+      method: 'POST',
+      url: `/file-uploads/${upload.fileId}/completion`,
+      headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
+      payload: { checksumMd5: checksum },
+    });
+
+    expect(completed.statusCode).toBe(409);
+    expect(completed.json()).toMatchObject({ code: 'checksum_mismatch' });
+    const [file] = await getApp().db.select().from(files).where(eq(files.id, upload.fileId));
+    expect(file?.status).toBe('pending');
+  });
+
   it('выдаёт через этап только загруженные PDF в порядке документов без дублирования итогов', async () => {
     const fixture = await createFixture();
     const read = () =>
@@ -540,7 +604,7 @@ describe('File uploads and checklist photos', () => {
       method: 'POST',
       url: `/file-uploads/${uploaded.upload!.fileId}/completion`,
       headers: { cookie: other.cookie, 'idempotency-key': randomUUID() },
-      payload: { checksumSha256: checksum },
+      payload: { checksumMd5: checksum },
     });
     expect(foreignCompletion.statusCode).toBe(404);
     const foreignAttach = await getApp().inject({
@@ -558,7 +622,7 @@ describe('File uploads and checklist photos', () => {
       {
         method: 'POST' as const,
         url: `/file-uploads/${uploaded.upload!.fileId}/completion`,
-        payload: { checksumSha256: checksum },
+        payload: { checksumMd5: checksum },
       },
       {
         method: 'POST' as const,
@@ -701,7 +765,7 @@ describe('File uploads and checklist photos', () => {
       method: 'POST',
       url: `/file-uploads/${uploaded.upload!.fileId}/completion`,
       headers: { cookie: manager.cookie, 'idempotency-key': idempotencyKey },
-      payload: { checksumSha256: checksum },
+      payload: { checksumMd5: checksum },
     });
     expect(first.statusCode).toBe(409);
     const stored = await getApp().db.select().from(files).where(eq(files.id, uploaded.upload!.fileId));
@@ -719,7 +783,7 @@ describe('File uploads and checklist photos', () => {
         originalName: 'photo.jpg',
         mimeType: 'image/jpeg',
         sizeBytes: 1024,
-        checksumSha256: checksum,
+        checksumMd5: checksum,
       },
     });
     const upload = createResponse.json<FileUpload>();
@@ -728,7 +792,7 @@ describe('File uploads and checklist photos', () => {
     storage.objects.set(key, {
       sizeBytes: 1024,
       mimeType: 'image/jpeg',
-      checksumSha256Base64: Buffer.from(checksum, 'hex').toString('base64'),
+      checksumMd5Hex: checksum,
     });
     const idempotencyKey = randomUUID();
     const complete = () =>
@@ -736,7 +800,7 @@ describe('File uploads and checklist photos', () => {
         method: 'POST',
         url: `/file-uploads/${upload.fileId}/completion`,
         headers: { cookie: manager.cookie, 'idempotency-key': idempotencyKey },
-        payload: { checksumSha256: checksum },
+        payload: { checksumMd5: checksum },
       });
     const first = await complete();
     const second = await complete();
@@ -770,7 +834,7 @@ describe('File uploads and checklist photos', () => {
       method: 'POST',
       url: `/file-uploads/${uploaded.upload!.fileId}/completion`,
       headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
-      payload: { checksumSha256: 'b'.repeat(64) },
+      payload: { checksumMd5: 'b'.repeat(32) },
     });
     expect(mismatch.statusCode).toBe(409);
   });
@@ -810,7 +874,7 @@ describe('File uploads and checklist photos', () => {
       method: 'POST',
       url: '/file-uploads',
       headers: { cookie: manager.cookie },
-      payload: { ...input, checksumSha256: checksum },
+      payload: { ...input, checksumMd5: checksum },
     });
     expect(createResponse.statusCode, createResponse.body).toBe(201);
     const upload = createResponse.json<FileUpload>();
@@ -819,13 +883,13 @@ describe('File uploads and checklist photos', () => {
     storage.objects.set(key, {
       sizeBytes: input.sizeBytes + 1,
       mimeType: input.mimeType,
-      checksumSha256Base64: upload.headers['x-amz-checksum-sha256']!,
+      checksumMd5Hex: Buffer.from(upload.headers['content-md5']!, 'base64').toString('hex'),
     });
     const completed = await getApp().inject({
       method: 'POST',
       url: `/file-uploads/${upload.fileId}/completion`,
       headers: { cookie: manager.cookie, 'idempotency-key': randomUUID() },
-      payload: { checksumSha256: checksum },
+      payload: { checksumMd5: checksum },
     });
     expect(completed.statusCode).toBe(413);
     expect(completed.json()).toMatchObject({ code: 'file_too_large' });
@@ -958,7 +1022,7 @@ describe('File uploads and checklist photos', () => {
     storage.objects.set(file!.storageKey, {
       sizeBytes: file!.sizeBytes,
       mimeType: file!.mimeType,
-      checksumSha256Base64: Buffer.from(file!.checksumSha256, 'hex').toString('base64'),
+      checksumMd5Hex: file!.checksumMd5,
     });
     const repository = new FileRepository(getApp().db, storage, 900);
     storage.failNextDelete = true;

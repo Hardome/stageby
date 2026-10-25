@@ -50,7 +50,7 @@ describe('durable checklist photo queue', () => {
     await first.select([image()], 0);
     const selected = first.state.items[0];
     if (!selected) throw new Error('Missing upload');
-    await first.save({ ...selected, prepared: image(), fileId: 42, status: 'uploading' });
+    await first.save({ ...selected, prepared: image(), checksum: 'a'.repeat(32), fileId: 42, status: 'uploading' });
 
     const restored = new PhotoQueue(1, 7);
     await restored.load();
@@ -59,6 +59,7 @@ describe('durable checklist photo queue', () => {
       id: selected.id,
       completionKey: selected.completionKey,
       fileId: 42,
+      checksum: 'a'.repeat(32),
       status: 'waiting',
     });
     expect(restored.state.items[0]?.prepared).toBeInstanceOf(File);

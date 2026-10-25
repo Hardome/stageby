@@ -118,7 +118,7 @@ async function invoice(stageId: number, userId: number, amountMinor: number, pai
       originalName: 'invoice.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 1024,
-      checksumSha256: 'a'.repeat(64),
+      checksumMd5: 'a'.repeat(32),
       uploadedByUserId: userId,
       uploadExpiresAt: now,
       uploadedAt: now,

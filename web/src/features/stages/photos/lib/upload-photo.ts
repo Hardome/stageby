@@ -1,3 +1,5 @@
+import { checksumMd5 } from '@shared/lib/file-upload';
+
 import { createChecklistItemPhoto } from '@api/clients/createChecklistItemPhoto';
 import { createFileUpload } from '@api/clients/createFileUpload';
 
@@ -32,8 +34,7 @@ export async function uploadPhoto(
   if (!file) throw new Error('Не удалось подготовить фото.');
 
   if (!item.checksum) {
-    const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
-    const checksum = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    const checksum = checksumMd5(await file.arrayBuffer());
     await checkpoint({ checksum });
   }
 
@@ -47,7 +48,7 @@ export async function uploadPhoto(
           originalName: file.name,
           mimeType: file.type,
           sizeBytes: file.size,
-          checksumSha256: item.checksum ?? '',
+          checksumMd5: item.checksum ?? '',
         },
         signal,
       }).unwrap();

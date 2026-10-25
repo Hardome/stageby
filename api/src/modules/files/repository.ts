@@ -107,27 +107,27 @@ function photoMutationError(context: NonNullable<Awaited<ReturnType<typeof loadI
 function getCompletionPrecondition(
   file: FileRow | undefined,
   actor: Actor,
-  checksumSha256: string,
+  checksumMd5: string,
   idempotencyKey: string,
   keyOwnerId: number | undefined,
 ): FileOperationResult<File> | null {
   if (!file || file.uploadedByUserId !== actor.id) return { status: 'not_found' };
   if (keyOwnerId !== undefined && keyOwnerId !== file.id) return { status: 'idempotency_conflict' };
   if (file.status === 'uploaded') {
-    return file.completionIdempotencyKey === idempotencyKey && file.checksumSha256 === checksumSha256
+    return file.completionIdempotencyKey === idempotencyKey && file.checksumMd5 === checksumMd5
       ? { status: 'ok', value: toFile(file) }
       : { status: 'idempotency_conflict' };
   }
   if (file.status !== 'pending') return { status: 'invalid_state' };
   if (file.uploadExpiresAt <= new Date()) return { status: 'upload_expired' };
-  if (file.checksumSha256 !== checksumSha256) return { status: 'checksum_mismatch' };
+  if (file.checksumMd5 !== checksumMd5) return { status: 'checksum_mismatch' };
   return null;
 }
 
 function getMetadataError(
   file: FileRow,
   metadata: StoredObjectMetadata | null,
-  checksumSha256: string,
+  checksumMd5: string,
 ): FileOperationError | null {
   if (!metadata) return 'upload_incomplete';
   if (!isAllowedMimeType(file.purpose, metadata.mimeType) || metadata.mimeType !== file.mimeType) {
@@ -135,7 +135,7 @@ function getMetadataError(
   }
   if (metadata.sizeBytes > getMaximumSize(file.purpose)) return 'file_too_large';
   if (metadata.sizeBytes !== file.sizeBytes) return 'upload_incomplete';
-  if (metadata.checksumSha256Base64 !== checksumToBase64(checksumSha256)) return 'checksum_mismatch';
+  if (metadata.checksumMd5Hex !== checksumMd5) return 'checksum_mismatch';
   return null;
 }
 
@@ -207,7 +207,7 @@ export class FileRepository {
       key: storageKey,
       mimeType: input.mimeType,
       sizeBytes: input.sizeBytes,
-      checksumSha256Base64: checksumToBase64(input.checksumSha256),
+      checksumMd5Base64: checksumToBase64(input.checksumMd5),
       expiresInSeconds: this.#signedUrlTtlSeconds,
     });
     return auditedTransaction(this.#database, context, 'createFileUpload', async (transaction, audit) => {
@@ -221,7 +221,7 @@ export class FileRepository {
             originalName: input.originalName,
             mimeType: input.mimeType,
             sizeBytes: input.sizeBytes,
-            checksumSha256: input.checksumSha256,
+            checksumMd5: input.checksumMd5,
             uploadedByUserId: actor.id,
             uploadExpiresAt: request.expiresAt,
           })
@@ -244,7 +244,7 @@ export class FileRepository {
 
   completeUpload(
     uploadId: number,
-    checksumSha256: string,
+    checksumMd5: string,
     idempotencyKey: string,
     actor: Actor,
     context: AuditContext = { source: 'system' },
@@ -256,12 +256,12 @@ export class FileRepository {
         .select({ id: files.id })
         .from(files)
         .where(eq(files.completionIdempotencyKey, idempotencyKey));
-      const precondition = getCompletionPrecondition(file, actor, checksumSha256, idempotencyKey, keyOwner?.id);
+      const precondition = getCompletionPrecondition(file, actor, checksumMd5, idempotencyKey, keyOwner?.id);
       if (precondition) return precondition;
       if (!file) return { status: 'not_found' };
 
       const metadata = await this.#storage.getMetadata(file.storageKey);
-      const metadataError = getMetadataError(file, metadata, checksumSha256);
+      const metadataError = getMetadataError(file, metadata, checksumMd5);
       if (metadataError) return { status: metadataError };
 
       const uploadedAt = new Date();

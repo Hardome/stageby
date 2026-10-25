@@ -9,7 +9,7 @@ export const photoQueueSchema = z.array(
     prepared: z.instanceof(File).optional(),
     checksum: z
       .string()
-      .regex(/^[a-f0-9]{64}$/)
+      .regex(/^[a-f0-9]{32}$/)
       .optional(),
     session: fileUploadSchema.optional(),
     completionKey: z.uuid(),

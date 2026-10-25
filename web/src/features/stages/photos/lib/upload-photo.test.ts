@@ -1,4 +1,7 @@
 // cspell:ignore unstub
+/* eslint-disable sonarjs/hashing -- MD5 проверяется только для контроля передачи файлов. */
+import { createHash } from 'node:crypto';
+
 import type { PhotoUpload } from '../model/types';
 import { uploadPhoto } from './upload-photo';
 
@@ -51,7 +54,7 @@ describe('photo upload checkpoints', () => {
       status: 'pending',
       method: 'PUT',
       uploadUrl: 'https://storage.example/upload',
-      headers: { 'Content-Type': 'image/jpeg' },
+      headers: { 'Content-Type': 'image/jpeg', 'content-md5': 'checksum-base64' },
       expiresAt: '2099-01-01T00:00:00Z',
     });
     mocks.complete.mockResolvedValue({ id: 41 });
@@ -79,9 +82,14 @@ describe('photo upload checkpoints', () => {
         originalName: 'camera.jpg',
         mimeType: 'image/jpeg',
         sizeBytes: 4,
-        checksumSha256: item.checksum,
+        checksumMd5: item.checksum,
       });
       expect(mocks.create).toHaveBeenLastCalledWith(expect.objectContaining({ body: expectedBody }));
+      expect(item.checksum).toBe(createHash('md5').update('jpeg').digest('hex'));
+      expect(put).toHaveBeenLastCalledWith(
+        'https://storage.example/upload',
+        expect.objectContaining({ headers: { 'Content-Type': 'image/jpeg', 'content-md5': 'checksum-base64' } }),
+      );
 
       await uploadPhoto(item, 7, signal, save);
 

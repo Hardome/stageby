@@ -20,7 +20,7 @@ describe('S3FileStorage with MinIO', () => {
     const storage = new S3FileStorage(environment);
     const key = `tests/storage/${randomUUID()}`;
     const body = Buffer.from('stageby-minio-integration');
-    const checksumHex = createHash('sha256').update(body).digest('hex');
+    const checksumHex = createHash('md5').update(body).digest('hex');
     const checksumBase64 = Buffer.from(checksumHex, 'hex').toString('base64');
 
     await storage.ensureBucket();
@@ -29,9 +29,52 @@ describe('S3FileStorage with MinIO', () => {
         key,
         mimeType: 'image/jpeg',
         sizeBytes: body.byteLength,
-        checksumSha256Base64: checksumBase64,
+        checksumMd5Base64: checksumBase64,
         expiresInSeconds: 60,
       });
+      const signedUrl = new URL(upload.url);
+      expect(signedUrl.searchParams.get('X-Amz-SignedHeaders')?.split(';')).toContain('content-md5');
+      expect([...signedUrl.searchParams.keys()].some((name) => name.startsWith('x-amz-checksum-'))).toBe(false);
+      expect(upload.headers['content-md5']).toBe(checksumBase64);
+
+      const origin = process.env.MINIO_API_CORS_ALLOW_ORIGIN?.split(',')[0] ?? 'http://localhost:3000';
+      const preflight = await fetch(upload.url, {
+        method: 'OPTIONS',
+        headers: {
+          Origin: origin,
+          'Access-Control-Request-Method': 'PUT',
+          'Access-Control-Request-Headers': 'content-type,content-md5',
+        },
+      });
+      expect(preflight.ok).toBe(true);
+      expect(preflight.headers.get('access-control-allow-origin')).toBe(origin);
+      expect(preflight.headers.get('access-control-allow-headers')?.toLowerCase()).toContain('content-md5');
+
+      const foreign = await fetch(upload.url, {
+        method: 'OPTIONS',
+        headers: { Origin: 'https://foreign.invalid', 'Access-Control-Request-Method': 'PUT' },
+      });
+      expect(foreign.headers.get('access-control-allow-origin')).toBeNull();
+
+      const corruptBody = Buffer.from(body);
+      corruptBody[0] = corruptBody[0]! ^ 1;
+      const corrupt = await fetch(upload.url, { method: 'PUT', headers: upload.headers, body: corruptBody });
+      expect(corrupt.status).toBe(400);
+      expect(await corrupt.text()).toContain('BadDigest');
+      expect(await storage.getMetadata(key)).toBeNull();
+
+      const { 'content-md5': omittedChecksum, ...unsignedHeaders } = upload.headers;
+      expect(omittedChecksum).toBe(checksumBase64);
+      const missing = await fetch(upload.url, { method: 'PUT', headers: unsignedHeaders, body });
+      expect(missing.ok).toBe(false);
+
+      const replaced = await fetch(upload.url, {
+        method: 'PUT',
+        headers: { ...upload.headers, 'content-md5': Buffer.alloc(16).toString('base64') },
+        body,
+      });
+      expect(replaced.ok).toBe(false);
+
       const uploadResponse = await fetch(upload.url, { method: 'PUT', headers: upload.headers, body });
       expect(uploadResponse.status, await uploadResponse.text()).toBe(200);
 
@@ -39,7 +82,7 @@ describe('S3FileStorage with MinIO', () => {
       expect(metadata).toEqual({
         sizeBytes: body.byteLength,
         mimeType: 'image/jpeg',
-        checksumSha256Base64: checksumBase64,
+        checksumMd5Hex: checksumHex,
       });
 
       const download = await storage.createDownloadRequest({ key, originalName: 'photo.jpg', expiresInSeconds: 60 });
