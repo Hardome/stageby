@@ -18,7 +18,7 @@ export const files = pgTable(
     originalName: varchar({ length: 255 }).notNull(),
     mimeType: varchar({ length: 255 }).notNull(),
     sizeBytes: integer().notNull(),
-    checksumSha256: varchar({ length: 64 }).notNull(),
+    checksumMd5: varchar({ length: 32 }).notNull(),
     uploadedByUserId: integer()
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
@@ -40,7 +40,7 @@ export const files = pgTable(
     check('files_original_name_not_blank_check', sql`btrim(${table.originalName}) <> ''`),
     check('files_mime_type_not_blank_check', sql`btrim(${table.mimeType}) <> ''`),
     check('files_size_bytes_check', sql`${table.sizeBytes} > 0`),
-    check('files_checksum_sha256_check', sql`${table.checksumSha256} ~ '^[a-f0-9]{64}$'`),
+    check('files_checksum_md5_check', sql`${table.checksumMd5} ~ '^[a-f0-9]{32}$'`),
     check(
       'files_lifecycle_check',
       sql`(${table.status} = 'pending' and ${table.uploadedAt} is null and ${table.deletedAt} is null) or (${table.status} = 'uploaded' and ${table.uploadedAt} is not null and ${table.deletedAt} is null) or (${table.status} = 'failed' and ${table.uploadedAt} is null) or (${table.status} = 'deleted' and ${table.deletedAt} is not null)`,

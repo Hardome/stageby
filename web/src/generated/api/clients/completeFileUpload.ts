@@ -9,7 +9,7 @@ import { client, withUnwrap } from '../.kubb/client'
 import { completeFileUploadResponseSchema, completeFileUploadErrorSchema } from '../zod/completeFileUploadSchema'
 
 /**
- * @description Проверяет объект в storage по MIME, фактическому размеру и SHA-256, повторно применяя лимит purpose. Включительный предел для project_document равен 50000000, material_invoice — 10000000, checklist_photo — 20000000 байт. Повтор с тем же Idempotency-Key и телом возвращает тот же результат.
+ * @description Проверяет объект в storage по MIME, фактическому размеру и MD5, повторно применяя лимит purpose. Включительный предел для project_document равен 50000000, material_invoice — 10000000, checklist_photo — 20000000 байт. Повтор с тем же Idempotency-Key и телом возвращает тот же результат.
  * @summary Подтвердить загрузку файла
  * {@link /file-uploads/:uploadId/completion}
  */

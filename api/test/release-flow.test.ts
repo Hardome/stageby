@@ -93,7 +93,7 @@ afterAll(async () => {
 });
 
 async function upload(cookie: string, purpose: 'material_invoice' | 'checklist_photo', mimeType: string, body: Buffer) {
-  const checksumSha256 = createHash('sha256').update(body).digest('hex');
+  const checksumMd5 = createHash('md5').update(body).digest('hex');
   const value = await request<FileUpload>(
     cookie,
     {
@@ -104,7 +104,7 @@ async function upload(cookie: string, purpose: 'material_invoice' | 'checklist_p
         originalName: mimeType === 'application/pdf' ? 'invoice.pdf' : 'photo.jpg',
         mimeType,
         sizeBytes: body.length,
-        checksumSha256,
+        checksumMd5,
       },
     },
     201,
@@ -118,7 +118,7 @@ async function upload(cookie: string, purpose: 'material_invoice' | 'checklist_p
     method: 'POST',
     url: `/file-uploads/${value.fileId}/completion`,
     headers: { 'idempotency-key': randomUUID() },
-    payload: { checksumSha256 },
+    payload: { checksumMd5 },
   };
   const completed = await request(cookie, options);
   const repeated = await request(cookie, options);

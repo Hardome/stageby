@@ -9,7 +9,7 @@ export function completePhotoUpload(item: PhotoUpload, signal: AbortSignal) {
   return completeFileUpload({
     path: { uploadId: item.session.fileId },
     headers: { 'Idempotency-Key': item.completionKey },
-    body: { checksumSha256: item.checksum },
+    body: { checksumMd5: item.checksum },
     signal,
   }).unwrap();
 }
