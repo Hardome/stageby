@@ -3,14 +3,16 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { configureApiClient } from '@shared/api';
-import { initializeTheme } from '@shared/context';
 import { configureZod } from '@shared/lib';
 
-import { App } from './app';
 import './styles/index.css';
 
 configureZod();
 configureApiClient();
+
+// Схемы приложения создаются после отключения JIT, чтобы не нарушать CSP.
+const [{ App }, { initializeTheme }] = await Promise.all([import('./app'), import('@shared/context')]);
+
 initializeTheme();
 
 const rootElement = document.querySelector('#root');

@@ -1,0 +1,122 @@
+name: stageby-production
+
+x-runtime: &runtime
+  restart: unless-stopped
+  logging:
+    driver: local
+    options:
+      max-size: '10m'
+      max-file: '3'
+
+services:
+  postgres:
+    <<: *runtime
+    image: ${POSTGRES_IMAGE:-postgres:18.6-trixie@sha256:979bccfde35445db618c65107d27d08c6c21339d8dc3ad4c830c6633947be0e4}
+    platform: linux/amd64
+    env_file: ${STAGEBY_CONFIG_DIR:?Set STAGEBY_CONFIG_DIR}/database.env
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks: [database]
+    mem_limit: 1g
+    cpus: 1
+    shm_size: 256m
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    <<: *runtime
+    image: stageby-api:${RELEASE_ID:?Set RELEASE_ID}
+    platform: linux/amd64
+    env_file: ${STAGEBY_CONFIG_DIR:?Set STAGEBY_CONFIG_DIR}/api.env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3001
+      CORS_ORIGIN: https://pro-rab.net
+      API_PUBLIC_ORIGIN: https://pro-rab.net
+      TRUST_PROXY: 172.30.40.2
+      S3_CREATE_BUCKET: 'false'
+      S3_SIGNED_URL_TTL_SECONDS: 900
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [proxy, database, egress]
+    read_only: true
+    tmpfs: ['/tmp:size=64m,noexec,nosuid']
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    mem_limit: 1g
+    cpus: 1
+    pids_limit: 128
+    stop_grace_period: 30s
+    healthcheck:
+      test: ['CMD', 'node', '-e', 'fetch("http://127.0.0.1:3001/health/live").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  web:
+    <<: *runtime
+    image: stageby-web:${RELEASE_ID:?Set RELEASE_ID}
+    platform: linux/amd64
+    environment:
+      APP_ADDRESS: ${APP_ADDRESS:-pro-rab.net}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      edge:
+      proxy:
+        ipv4_address: 172.30.40.2
+    mem_limit: 256m
+    cpus: 0.5
+    security_opt: ['no-new-privileges:true']
+
+  migrator:
+    image: stageby-migrator:${RELEASE_ID:?Set RELEASE_ID}
+    platform: linux/amd64
+    profiles: [tools]
+    env_file: ${STAGEBY_CONFIG_DIR:?Set STAGEBY_CONFIG_DIR}/migrator.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [database]
+    read_only: true
+    tmpfs: ['/tmp:size=32m,noexec,nosuid']
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 64
+    logging:
+      driver: local
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+networks:
+  edge:
+  egress:
+  proxy:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.40.0/24
+          ip_range: 172.30.40.128/25
+  database:
+    internal: true
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

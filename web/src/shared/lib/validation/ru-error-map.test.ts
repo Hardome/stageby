@@ -12,6 +12,23 @@ function errorMessage(schema: z.ZodType, input: unknown): string {
 }
 
 describe('Russian Zod errors', () => {
+  it('validates objects without dynamic compilation under CSP', () => {
+    configureZod();
+    const dynamicFunction = vi.spyOn(globalThis, 'Function').mockImplementation(() => {
+      throw new Error('CSP forbids dynamic compilation');
+    });
+
+    try {
+      const schema = z.object({ name: z.string().min(1) });
+
+      expect(schema.safeParse({ name: 'Имя' }).success).toBe(true);
+      expect(errorMessage(schema, { name: '' })).toBe('Минимум символов: 1');
+      expect(dynamicFunction).not.toHaveBeenCalled();
+    } finally {
+      dynamicFunction.mockRestore();
+    }
+  });
+
   it.each([
     [z.string(), undefined, 'Необходимо заполнить поле'],
     [z.number(), null, 'Необходимо заполнить поле'],

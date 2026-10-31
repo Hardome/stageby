@@ -63,7 +63,7 @@ S3-хранилище. Браузер обращается к нему напр�
 примера используйте только для разработки и локального демо. Для стороннего хранилища настройте CORS
 bucket под origin приложения и необходимые операции прямой загрузки; API CORS не заменяет CORS S3.
 
-Для Beget в панели bucket разрешите origin `https://stageby.ru`, методы GET/HEAD/PUT
+Для Beget в панели bucket разрешите origin `https://pro-rab.net`, методы GET/HEAD/PUT
 и заголовки `content-type`, `content-md5`. Удалите прежний `x-amz-checksum-sha256`.
 ETag браузер не читает: проверку HEAD выполняет API. Загрузка требует проверки
 Content-MD5 при PUT и ETag с MD5 для обычного объекта без multipart и шифрования,

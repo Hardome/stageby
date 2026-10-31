@@ -18,6 +18,11 @@ interface DatabasePluginOptions {
 
 const databasePluginCallback: FastifyPluginAsync<DatabasePluginOptions> = async (app, options) => {
   const pool = new Pool({ connectionString: options.databaseUrl });
+
+  pool.on('error', () => {
+    app.log.error('Потеряно неактивное соединение с БД');
+  });
+
   const database = drizzle({ client: pool, schema: databaseSchema });
 
   app.decorate('db', database);

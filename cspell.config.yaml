@@ -51,6 +51,9 @@ words:
   - ECONNREFUSED
   - Healthchecks
   - HSTS
+  - jitless
+  - opencontainers
+  - libheif
   - tmpfs
   - Backrefs
   - Instantiator
