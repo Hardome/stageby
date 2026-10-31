@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -38,9 +38,11 @@ describe('release artifacts', () => {
     mkdirSync(output, { recursive: true });
     const payload = Buffer.from([0, 255, 1, 128, 10, 13]);
     writeFileSync(join(output, 'images.tar.gz'), payload);
+    const artifacts = await artifactList(output);
     writeFileSync(join(output, 'manifest.json'), '{"id":"test"}\n');
+    unlinkSync(join(output, 'images.tar.gz'));
 
-    await writeChecksums(output);
+    await writeChecksums(output, artifacts);
     const checksums = readFileSync(join(output, 'SHA256SUMS'), 'utf8');
     const digest = createHash('sha256').update(payload).digest('hex');
 

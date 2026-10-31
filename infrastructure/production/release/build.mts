@@ -76,7 +76,7 @@ export async function buildRelease(
       checks: { linux: 'passed', smoke: 'passed' },
     };
     await writeFile(join(staging, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-    await writeChecksums(staging);
+    await writeChecksums(staging, artifacts);
 
     const destination = join(outputRoot, id);
     if (existsSync(destination)) throw new Error(`Release already exists: ${id}`);

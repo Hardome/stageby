@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 
 import Fastify from 'fastify';
 import { Pool } from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { registerHealth } from '#app/plugins/health';
 
@@ -55,6 +55,51 @@ afterAll(async () => {
 });
 
 describe('Внутренние проверки состояния', () => {
+  it('использует загруженный manifest после удаления файла', async () => {
+    await rm(manifestPath);
+    expect((await app.inject('/health/ready')).statusCode).toBe(200);
+  });
+
+  it('журналирует только изменения причины и восстановление готовности', async () => {
+    const warn = vi.spyOn(app.log, 'warn');
+    const info = vi.spyOn(app.log, 'info');
+    try {
+      await pool.query('update stageby_deployment.schema_state set migrating = true');
+      await app.inject('/health/ready');
+      await app.inject('/health/ready');
+      expect(warn).toHaveBeenCalledExactlyOnceWith({ reason: 'migration_unfinished' }, 'Readiness state changed');
+      await pool.query('update stageby_deployment.schema_state set compatibility_version = 2, migrating = false');
+      await app.inject('/health/ready');
+      expect(warn).toHaveBeenLastCalledWith({ reason: 'schema_incompatible' }, 'Readiness state changed');
+      await pool.query('update stageby_deployment.schema_state set compatibility_version = 1');
+      await app.inject('/health/ready');
+      await app.inject('/health/ready');
+      expect(info.mock.calls.filter((call) => call[1] === 'Readiness state changed')).toEqual([
+        [{ reason: 'ready' }, 'Readiness state changed'],
+      ]);
+    } finally {
+      await pool.query('update stageby_deployment.schema_state set compatibility_version = 1, migrating = false');
+    }
+  });
+
+  it.each(['missing', 'invalid'])('сохраняет liveness при ошибке manifest: %s', async (kind) => {
+    const broken = Fastify();
+    const path = pathToFileURL(join(directory, `${kind}.json`));
+    if (kind === 'invalid') await writeFile(path, '{"compatibilityVersion":0}');
+    await registerHealth(broken, process.env.DATABASE_URL ?? '', path);
+    const warn = vi.spyOn(broken.log, 'warn');
+    try {
+      expect((await broken.inject('/health/live')).statusCode).toBe(200);
+      expect((await broken.inject('/health/ready')).json()).toEqual({ status: 'not_ready' });
+      await broken.inject('/health/ready');
+      expect(warn).toHaveBeenCalledExactlyOnceWith(
+        { reason: 'manifest_unavailable_or_invalid' },
+        'Readiness state changed',
+      );
+    } finally {
+      await broken.close();
+    }
+  });
   it('принимает дополнительные завершённые миграции при совместимой схеме', async () => {
     expect((await app.inject('/health/ready')).statusCode).toBe(200);
   });
@@ -91,12 +136,16 @@ describe('Внутренние проверки состояния', () => {
 
   it('сохраняет liveness при недоступной БД и не раскрывает ошибку подключения', async () => {
     const unavailable = Fastify();
-    await registerHealth(unavailable, 'postgresql://test:test@127.0.0.1:1/test', manifestPath);
+    const path = pathToFileURL(join(directory, 'unavailable.json'));
+    await writeFile(path, JSON.stringify({ compatibilityVersion: 1, migrations: [] }));
+    await registerHealth(unavailable, 'postgresql://test:test@127.0.0.1:1/test', path);
+    const warn = vi.spyOn(unavailable.log, 'warn');
     try {
       expect((await unavailable.inject('/health/live')).statusCode).toBe(200);
       const response = await unavailable.inject('/health/ready');
       expect(response.statusCode).toBe(503);
       expect(response.json()).toEqual({ status: 'not_ready' });
+      expect(warn).toHaveBeenCalledWith({ reason: 'database_check_failed' }, 'Readiness state changed');
     } finally {
       await unavailable.close();
     }

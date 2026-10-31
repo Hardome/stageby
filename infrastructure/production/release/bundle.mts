@@ -47,7 +47,13 @@ export async function artifactList(
   return artifacts.sort((left, right) => left.path.localeCompare(right.path, 'en'));
 }
 
-export async function writeChecksums(directory: string): Promise<void> {
-  const artifacts = await artifactList(directory);
+export async function writeChecksums(
+  directory: string,
+  payload: Awaited<ReturnType<typeof artifactList>>,
+): Promise<void> {
+  const artifacts = [
+    ...payload,
+    { path: 'manifest.json', sha256: await sha256(join(directory, 'manifest.json')) },
+  ].sort((left, right) => left.path.localeCompare(right.path, 'en'));
   await writeFile(join(directory, 'SHA256SUMS'), artifacts.map((file) => `${file.sha256}  ${file.path}\n`).join(''));
 }
