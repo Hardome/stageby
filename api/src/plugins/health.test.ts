@@ -60,7 +60,7 @@ describe('Внутренние проверки состояния', () => {
     expect((await app.inject('/health/ready')).statusCode).toBe(200);
   });
 
-  it('журналирует только изменения причины и восстановление готовности', async () => {
+  it('записывает в журнал только изменения причины и восстановление готовности', async () => {
     const warn = vi.spyOn(app.log, 'warn');
     const info = vi.spyOn(app.log, 'info');
     try {
