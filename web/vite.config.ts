@@ -40,34 +40,11 @@ export default defineConfig(({ mode }) => ({
     strictPort: true,
     allowedHosts: ['.trycloudflare.com'],
     proxy: {
-      '/auth': {
+      '/api': {
         target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api(?=\/|$)/, '') || '/',
       },
-      ...Object.fromEntries(
-        [
-          '/dashboard',
-          '/projects',
-          '/stages',
-          '/checklist',
-          '/stage-types',
-          '/work-plan-rows',
-          '/work-payments',
-          '/material-invoices',
-          '/material-shortages',
-          '/file-uploads',
-          '/files',
-          '/users',
-        ].map((path) => [
-          path,
-          {
-            bypass: (request: { headers: { accept?: string } }) =>
-              request.headers.accept?.includes('text/html') ? '/index.html' : undefined,
-            target: loadEnv(mode, process.cwd(), 'API_PROXY_TARGET').API_PROXY_TARGET ?? 'http://127.0.0.1:3001',
-            changeOrigin: true,
-          },
-        ]),
-      ),
     },
   },
 }));

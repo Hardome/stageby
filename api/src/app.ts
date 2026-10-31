@@ -16,6 +16,7 @@ import { registerAuthentication } from '#app/plugins/authentication';
 import { registerDatabase } from '#app/plugins/database';
 import { registerDocumentation } from '#app/plugins/documentation';
 import { registerErrorHandler } from '#app/plugins/error-handler';
+import { registerHealth } from '#app/plugins/health';
 import { registerSecurity } from '#app/plugins/security';
 import { S3FileStorage } from '#app/storage/s3-file-storage';
 
@@ -59,7 +60,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await registerSecurity(app, options.environment);
   await registerDatabase(app, options.environment);
   await registerAuthentication(app);
-  await registerDocumentation(app);
+  await registerHealth(app, options.environment.DATABASE_URL);
+
+  if (options.environment.NODE_ENV !== 'production') await registerDocumentation(app);
 
   /* Модули */
   await app.register(authModule, {

@@ -7,8 +7,13 @@
     "pnpm": ">=11.0.0"
   },
   "scripts": {
+    "release": "node scripts/release.mjs",
+    "release:test": "pnpm --dir api exec vitest run --config vitest.infrastructure.config.ts",
+    "production:build": "node scripts/production.mjs build",
+    "production:check": "node scripts/production.mjs check",
+    "production:smoke": "node scripts/production-smoke.mjs",
     "bootstrap": "node ./scripts/bootstrap.mjs",
-    "check": "pnpm --dir contracts run build && pnpm --dir api run check && pnpm --dir web run check",
+    "check": "pnpm --dir api exec biome check --write --unsafe --vcs-enabled=false --config-path . ../infrastructure/production/release && pnpm --dir contracts run build && pnpm --dir api run check && pnpm --dir web run check",
     "codegen": "pnpm --dir contracts run generate && pnpm --dir api run codegen && pnpm --dir web run codegen",
     "prepare": "lefthook install",
     "dev": "pnpm --dir web exec concurrently --raw -k \"pnpm --dir ../api run dev\" \"pnpm run dev\"",

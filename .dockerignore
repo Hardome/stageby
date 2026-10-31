@@ -1,0 +1,13 @@
+.git
+.agents
+.codex
+.aws
+.playwright-mcp
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+**/dist
+**/coverage
+**/*.tsbuildinfo
+docs/tmp
