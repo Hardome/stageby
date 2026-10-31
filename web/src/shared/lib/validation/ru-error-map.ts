@@ -155,5 +155,5 @@ function getIssueMessage(issue: ZodIssue): string {
 export const ruErrorMap: z.core.$ZodErrorMap = (issue) => ({ message: getIssueMessage(issue) });
 
 export function configureZod(): void {
-  z.config({ customError: ruErrorMap });
+  z.config({ customError: ruErrorMap, jitless: true });
 }

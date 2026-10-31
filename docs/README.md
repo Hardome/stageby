@@ -31,6 +31,7 @@
 ## Руководства, решения и отчёты
 
 - [Конфигурация API, S3 и авторизация](guides/api-configuration.md)
+- [Структура инфраструктуры и назначение команд](../infrastructure/README.md)
 - [Доступ с телефона и демо через Quick Tunnel](guides/local-demo.md)
 - [Ручной регресс: подготовка, чек-листы по функционалу и сквозные сценарии](guides/regression/README.md)
 - [Установка ярлыка на главный экран](guides/install-shortcut.md)
