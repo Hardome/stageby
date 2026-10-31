@@ -47,6 +47,7 @@
 ## Текущие планы
 
 - [Деплой и сопровождение Stageby](plans/production-deployment.md)
+- [Журнал команд и проверок развёртывания](plans/production-deployment-journal.md)
 
 Порядок работы с планом:
 

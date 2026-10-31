@@ -12,6 +12,7 @@ export function createReleaseFixture() {
   git('config', 'user.email', 'release@example.invalid');
   writeFileSync(join(root, '.gitignore'), '.env\nignored-material/\n');
   writeFileSync(join(root, 'source.txt'), 'Committed source\n');
+  writeFileSync(join(root, 'ТЗ с пробелами.md'), 'Unicode filename\n');
   mkdirSync(join(root, 'infrastructure/production/runtime/env'), { recursive: true });
   mkdirSync(join(root, 'infrastructure/production/build'), { recursive: true });
   mkdirSync(join(root, 'scripts'));
@@ -28,7 +29,7 @@ export function createReleaseFixture() {
     join(root, 'infrastructure/production/build/Dockerfile'),
     `FROM node:24@sha256:${digest} AS tooling\nFROM caddy:2@sha256:${digest}\n`,
   );
-  git('add', '.gitignore', 'source.txt', 'infrastructure');
+  git('add', '.gitignore', 'source.txt', 'ТЗ с пробелами.md', 'infrastructure');
   git('commit', '-m', 'Release fixture');
   git('branch', 'main');
   git('remote', 'add', 'origin', 'https://github.com/example/stageby.git');

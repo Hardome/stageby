@@ -25,6 +25,9 @@ export function buildFixture(failure?: Failure) {
   function runNode(args: string[], options: CommandOptions) {
     if (args[0]?.endsWith('schema-manifest.mjs')) return JSON.stringify(schema);
     snapshot = options.cwd;
+    if (readFileSync(join(snapshot, 'ТЗ с пробелами.md'), 'utf8') !== 'Unicode filename\n') {
+      throw new Error('Git snapshot changed Unicode filename or content');
+    }
     snapshots.push({
       content: readFileSync(join(snapshot, 'source.txt'), 'utf8'),
       localEnv: existsSync(join(snapshot, '.env')),

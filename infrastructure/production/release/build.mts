@@ -45,7 +45,9 @@ export async function buildRelease(
       ['-c', 'core.autocrlf=false', '-c', 'core.eol=lf', 'archive', '--format=tar', `--output=${archive}`, source.sha],
       { cwd: root },
     );
-    run(tarExecutable(), ['-xf', archive, '-C', snapshot], { cwd: root });
+    // Git пишет имена в UTF-8; системный bsdtar Windows иначе использует локальную кодировку.
+    const tarOptions = process.platform === 'win32' ? ['--options', 'hdrcharset=UTF-8'] : [];
+    run(tarExecutable(), [...tarOptions, '-xf', archive, '-C', snapshot], { cwd: root });
     const { images, schema, tools } = prepareImages(snapshot, id, source.sha, run);
 
     await mkdir(outputRoot, { recursive: true });
