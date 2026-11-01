@@ -1,4 +1,13 @@
 @layer components {
+  /* Base UI не вставляет эти стили при включённом CSPProvider disableStyleElements. */
+  .base-ui-disable-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .base-ui-disable-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   [data-slot="drawer-overlay"] {
     position: fixed;
     z-index: 50;
