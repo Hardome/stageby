@@ -18,7 +18,7 @@
     "format": "biome format --write --no-errors-on-unmatched .",
     "lint": "concurrently -n biome,eslint,styles,fsd,spell \"pnpm run lint:biome\" \"pnpm run lint:eslint\" \"pnpm run lint:styles\" \"pnpm run lint:fsd\" \"pnpm run lint:spell\"",
     "lint:biome": "biome check --write --unsafe --no-errors-on-unmatched .",
-    "lint:eslint": "eslint . --fix --cache --cache-strategy content --cache-location node_modules/.cache/eslint/.eslintcache --concurrency auto --max-warnings=0",
+    "lint:eslint": "eslint . --fix --cache --cache-strategy content --cache-location node_modules/.cache/eslint/.eslintcache --max-warnings=0",
     "lint:styles": "stylelint \"src/**/*.css\" --fix --allow-empty-input",
     "lint:fsd": "steiger ./src",
     "lint:spell": "cspell --config ../cspell.config.yaml \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"*.{ts,js,json}\"",

@@ -1,6 +1,7 @@
 # Журнал подготовки production
 
 <!-- cspell:ignore hdrcharset MOUNTPOINTS publickey FSTYPE lntup chrony -->
+<!-- cspell:ignore dpkg getent permitrootlogin passwordauthentication pubkeyauthentication onlink keyrings buildx hardo сверён просмотрщика резолвер -->
 
 План: `docs/plans/production-deployment.md`.
 Сервер: `82.202.131.126`; пользователь администрирования и деплоя: `root`.

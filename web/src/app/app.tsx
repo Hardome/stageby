@@ -1,3 +1,4 @@
+import { CSPProvider } from '@base-ui/react/csp-provider';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 
 import { routeTree } from '@route-tree';
@@ -16,13 +17,15 @@ declare module '@tanstack/react-router' {
 
 export function App() {
   return (
-    <ThemeProvider>
-      <ReactQueryProvider>
-        <AuthProvider>
-          <RouterProvider router={router} />
-          <Toaster />
-        </AuthProvider>
-      </ReactQueryProvider>
-    </ThemeProvider>
+    <CSPProvider disableStyleElements>
+      <ThemeProvider>
+        <ReactQueryProvider>
+          <AuthProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </AuthProvider>
+        </ReactQueryProvider>
+      </ThemeProvider>
+    </CSPProvider>
   );
 }
