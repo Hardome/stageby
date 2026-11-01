@@ -1,6 +1,6 @@
 # Журнал подготовки production
 
-<!-- cspell:ignore hdrcharset MOUNTPOINTS publickey FSTYPE lntup chrony -->
+<!-- cspell:ignore hdrcharset MOUNTPOINTS publickey FSTYPE lntup chrony gosu -->
 <!-- cspell:ignore dpkg getent permitrootlogin passwordauthentication pubkeyauthentication onlink keyrings buildx hardo pscustomobject noout mktemp dbname dumpall cpus -->
 <!-- cspell:ignore сверён просмотрщика резолвер автозапуска перегенерировать -->
 
@@ -967,4 +967,239 @@ STAGEBY_RESTORE_CHECK
 Под ролью `stageby_api` прочитаны версия схемы 1, `migrating = f`, шесть
 миграций, два пользователя и один руководитель. Получено итоговое сообщение
 об успешном восстановлении. По завершении блока trap удаляет временный
-контейнер; отдельный вывод проверки удаления пока не получен.
+контейнер; отсутствие контейнера отдельно подтверждено повторным запуском блока 18.
+
+### Блок 18: передача и проверка комплекта с pgBackRest
+
+Статус: выполнен пользователем 01.11.2026; вывод получен.
+Результаты локальной сборки записаны в плане. Выполнить передачу с Windows,
+затем серверный блок от root по SSH. Он загружает образы с новыми тегами,
+проверяет их ID и версии инструментов, измеряет диск. Работающие контейнеры,
+конфигурация и тома не меняются; миграции не запускаются.
+
+На Windows в PowerShell из корня репозитория выполнить:
+
+```powershell
+scp -r "C:\Users\hardo\homework\stageby\docs\tmp\releases\20261101T141007668Z-c0efd62c5d6d-c0d7df" root@82.202.131.126:/opt/stageby/incoming/
+```
+
+Пароль вводить интерактивно. При ошибке SCP серверный блок не выполнять;
+повторить передачу в тот же каталог. После успешной передачи выполнить
+в SSH-сессии root:
+
+```bash
+bash <<'STAGEBY_BACKREST_LOAD'
+set -eu
+cd /opt/stageby/incoming/20261101T141007668Z-c0efd62c5d6d-c0d7df
+printf '%s  %s\n' 'a9a3f97071cb3a6cf58d498bd36bae3c862fbf9ed9e93347f831d9d10bec448c' manifest.json | sha256sum --check -
+sha256sum --check SHA256SUMS
+if docker container inspect stageby-safety-restore-check > /dev/null 2>&1; then
+  echo 'Safety restore container still exists; stop here and report'
+  exit 1
+fi
+echo 'Safety restore container is absent'
+df -hT /
+docker image load --input images.tar.gz
+while read -r stageby_image stageby_expected_id; do
+  stageby_actual_id=$(docker image inspect --format '{{.Id}}' "$stageby_image")
+  test "$stageby_actual_id" = "$stageby_expected_id"
+  stageby_platform=$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$stageby_image")
+  test "$stageby_platform" = 'linux/amd64'
+  printf 'Verified %s %s %s\n' "$stageby_image" "$stageby_actual_id" "$stageby_platform"
+done <<'STAGEBY_EXPECTED_IMAGES'
+stageby-api:20261101T141007668Z-c0efd62c5d6d-c0d7df sha256:995561140150938440456c6aea2d0c61d80aae8346b6ee093e4373071f0d507f
+stageby-migrator:20261101T141007668Z-c0efd62c5d6d-c0d7df sha256:806d1df20818c6ef736dd4d20c20ab6d1c922faaa590607a0260bb66dc9e6e07
+stageby-web:20261101T141007668Z-c0efd62c5d6d-c0d7df sha256:a9d985e7c3b8ddb2ea4530453875c7503e9a48d1691090aca148f565d85beede
+stageby-postgres:20261101T141007668Z-c0efd62c5d6d-c0d7df sha256:9e25748015c302d46d67238728300c68d0c2aba93c56398c3d8104490867e9d7
+STAGEBY_EXPECTED_IMAGES
+docker run --rm --pull=never --network none --read-only --entrypoint pgbackrest stageby-postgres:20261101T141007668Z-c0efd62c5d6d-c0d7df version
+docker run --rm --pull=never --network none --read-only --entrypoint postgres stageby-postgres:20261101T141007668Z-c0efd62c5d6d-c0d7df --version
+docker system df
+du -sh /var/lib/docker /var/lib/containerd /opt/stageby
+df -hT /
+stat -c '%a %U:%G %s %y %n' /opt/stageby/pre-pgbackrest-nMXK3IEm/stageby.dump /opt/stageby/pre-pgbackrest-nMXK3IEm/globals.sql
+cd /opt/stageby/incoming/20261031T131317903Z-1f8763d7c884-0c6dc4
+export STAGEBY_CONFIG_DIR=/etc/stageby
+docker compose --env-file release.env -f runtime/compose.yaml ps
+echo 'Release loaded and verified; running services unchanged'
+STAGEBY_BACKREST_LOAD
+```
+
+Ожидаются `OK` для manifest и всех девяти записей `SHA256SUMS`, отсутствие
+временного контейнера восстановления, четыре строки `Verified`,
+pgBackRest 2.60.0 и PostgreSQL 18.6. В конце должны остаться работающими
+прежние PostgreSQL, API и Web/Caddy; API и PostgreSQL — healthy.
+Получить полный вывод блока без паролей и содержимого файлов конфигурации.
+При ошибке блок останавливается; переключение не выполнять.
+
+Загрузка сжатого архива поддерживается
+[Docker CLI](https://docs.docker.com/reference/cli/docker/image/load/).
+После получения вывода сверить расход с бюджетом диска. Следующим отдельным
+блоком подготовить подключение нового образа к прежнему тому: проверить свежесть
+страховочной копии, доступ к конфигурации и repository при выключенном
+архивировании. Последовательность stanza, проверки и первого бэкапа сверена с
+[руководством pgBackRest](https://pgbackrest.org/user-guide.html).
+Выпуск приложения и переключение PostgreSQL этим блоком не выполняются.
+
+Результат: при первой попытке все суммы совпали, но проверка обнаружила
+`stageby-safety-restore-check` и остановила блок до загрузки образов.
+Команды выполнялись непосредственно в login shell: `exit 1` закрыл SSH.
+Причина сохранения контейнера и его последующего исчезновения по выводу
+не установлена; команды удаления пользователь не прислал.
+При повторе временный контейнер отсутствовал, блок завершился успешно.
+
+| Проверка | Результат |
+| --- | --- |
+| Целостность | Manifest и девять записей SHA256SUMS — `OK` |
+| Образы | Четыре ID совпали с manifest, платформа `linux/amd64` |
+| Инструменты | pgBackRest 2.60.0, PostgreSQL 18.6 |
+| Docker | 9 образов, 1,17 GB; 3 работающих контейнера и 3 тома |
+| Диск | `/var/lib/docker` — 898 МиБ, `/var/lib/containerd` — 1,1 ГиБ, `/opt/stageby` — 526 МиБ |
+| Корневой раздел | Занято 4,8 ГиБ, свободно 33 ГиБ |
+| Страховочная копия | Дамп 102 993 байта, роли 1 241 байт, root:root 0600, созданы в 12:24 UTC |
+| Рабочее приложение | Прежний комплект `20261031T131317903Z-1f8763d7c884-0c6dc4`; API и PostgreSQL healthy, Web/Caddy запущен |
+
+Приложение не переключено. Расход каталогов Docker/containerd и комплектов —
+около 2,5 ГиБ; для двух комплектов бюджет 6 ГиБ не превышен.
+Хранение четырёх комплектов остаётся расчётной оценкой: на новый комплект
+архив, логические размеры четырёх образов и удвоенный размер несжатого tar
+дают около 1,12 ГиБ, на четыре — около 4,47 ГиБ. Это оценка без скидки
+на общие слои; фактический расход четырёх комплектов ещё не измерен.
+
+### Блок 19: проверка конфигурации и доступа к S3 перед переключением
+
+Статус: выполнен частично 01.11.2026; вывод получен. Чтение S3 остановилось
+на ошибке TLS, переключение не выполнялось. Выполнить от root по SSH.
+Скопировать блок целиком, включая первую строку `bash` и последний маркер:
+ошибка завершит дочерний bash, сохранив SSH-сессию.
+Создаётся свежая страховочная копия; прежняя сохраняется.
+Новый образ читает конфигурацию и список repository через исходящую сеть.
+Рабочий том к проверочному контейнеру не подключается, PostgreSQL не запускается,
+stanza и объекты S3 не создаются, рабочие контейнеры не пересоздаются.
+
+```bash
+bash <<'STAGEBY_BACKREST_PREFLIGHT'
+set -eu
+umask 077
+cd /opt/stageby/incoming/20261031T131317903Z-1f8763d7c884-0c6dc4
+export STAGEBY_CONFIG_DIR=/etc/stageby
+test "$(stat -c '%a:%U:%G' /etc/stageby/pgbackrest.conf)" = '600:root:root'
+if grep -q 'REPLACE_ME' /etc/stageby/pgbackrest.conf; then
+  echo 'Configuration still contains placeholders; stop here'
+  exit 1
+fi
+docker network inspect stageby-production_egress --format '{{.Name}} internal={{.Internal}}'
+docker compose --env-file release.env -f runtime/compose.yaml exec -T postgres psql -X -U stageby_admin -d stageby -v ON_ERROR_STOP=1 -c "SELECT compatibility_version, migrating FROM stageby_deployment.schema_state; SELECT count(*) AS applied_migrations FROM drizzle.__drizzle_migrations; SELECT count(*) AS users, count(*) FILTER (WHERE role = 'manager') AS managers FROM public.users; SHOW archive_mode; SHOW data_directory;"
+stageby_backup_dir=$(mktemp -d /opt/stageby/pre-pgbackrest-XXXXXXXX)
+printf 'Fresh safety backup directory: %s\n' "$stageby_backup_dir"
+docker compose --env-file release.env -f runtime/compose.yaml exec -T postgres pg_dump --username=stageby_admin --dbname=stageby --format=custom > "$stageby_backup_dir/stageby.dump"
+docker compose --env-file release.env -f runtime/compose.yaml exec -T postgres pg_dumpall --username=stageby_admin --globals-only > "$stageby_backup_dir/globals.sql"
+test -s "$stageby_backup_dir/stageby.dump"
+test -s "$stageby_backup_dir/globals.sql"
+docker compose --env-file release.env -f runtime/compose.yaml exec -T postgres pg_restore --list < "$stageby_backup_dir/stageby.dump" > /dev/null
+sha256sum "$stageby_backup_dir/stageby.dump" "$stageby_backup_dir/globals.sql"
+stat -c '%a %U:%G %s %y %n' "$stageby_backup_dir" "$stageby_backup_dir/stageby.dump" "$stageby_backup_dir/globals.sql"
+if ! docker run --rm -i --pull=never --network stageby-production_egress --memory=256m --cpus=0.5 --mount type=bind,src=/etc/stageby/pgbackrest.conf,dst=/run/stageby/pgbackrest.conf,readonly stageby-postgres:20261101T141007668Z-c0efd62c5d6d-c0d7df sh -s <<'STAGEBY_REPOSITORY_READ'
+set -eu
+test "$(stat -c '%U:%G:%a' /run/stageby/pgbackrest.conf)" = 'root:root:600'
+test "$(stat -c '%U:%G:%a' /etc/pgbackrest/pgbackrest.conf)" = 'postgres:postgres:600'
+gosu postgres test -r /etc/pgbackrest/pgbackrest.conf
+echo 'Configuration copied: host root:root 0600; container postgres:postgres 0600'
+gosu postgres pgbackrest --stanza=stageby --repo=1 --log-level-console=warn repo-ls
+echo 'S3 repository listing succeeded as postgres'
+STAGEBY_REPOSITORY_READ
+then
+  echo 'Repository preflight failed; do not switch PostgreSQL'
+  exit 1
+fi
+docker compose --env-file release.env -f runtime/compose.yaml ps
+echo 'Preflight completed; running services unchanged'
+STAGEBY_BACKREST_PREFLIGHT
+```
+
+Получить вывод, включая путь и SHA-256 свежей копии. Содержимое дампа,
+SQL ролей и конфигурации не присылать. Ожидаются схема 1, `migrating = f`,
+шесть миграций, наличие руководителя, `archive_mode = off` и каталог
+`/var/lib/postgresql/18/docker`. Для пустого repository список может быть пустым;
+успех подтверждается сообщением `S3 repository listing succeeded as postgres`.
+
+[`repo-ls`](https://pgbackrest.org/command.html#command-repo-ls) проверяет чтение
+списка repository, но не запись, шифрование, приватность бакета или lifecycle.
+Приватность и отсутствие независимой очистки проверить отдельно до создания
+stanza. Свежий дамп здесь проверяется только чтением оглавления;
+восстановление предыдущей копии подтверждено блоком 17.
+После результата подготовить подключение нового образа к прежнему тому
+при выключенном архивировании и проверить readiness приложения.
+
+Результат блока 19: сеть `stageby-production_egress` имеет `internal=false`;
+схема 1, `migrating = f`, шесть миграций, два пользователя и один руководитель.
+Архивирование выключено, каталог данных — `/var/lib/postgresql/18/docker`.
+Конфигурация хоста root:root 0600 успешно скопирована в postgres:postgres 0600
+внутри временного контейнера и доступна процессу postgres.
+
+Свежая страховочная копия создана в `/opt/stageby/pre-pgbackrest-t3oXyE4y`
+в 14:27 UTC. Каталог root:root 0700, файлы root:root 0600;
+оглавление дампа прочитано, полное восстановление этой копии ещё не проверено.
+
+| Файл | Размер, байт | SHA-256 |
+| --- | ---: | --- |
+| `stageby.dump` | 102 993 | `98d04842574f980853b271f5b15fe23f7344c5460fc7bfd2dd69f3495ee268fe` |
+| `globals.sql` | 1 241 | `585b1ba420001275adaab8b85ffb906716898159f6b44969915e2c49ac3412df` |
+
+`repo-ls` завершился ошибкой 095: `unable to get local issuer certificate`
+для `s3.ru1.storage.beget.cloud:443`. Чтение repository не подтверждено,
+проверка авторизации S3 ещё не пройдена. Блок остановился до переключения;
+stanza не создавалась. SSH-сессия закрылась после `exit 1`.
+Локально в точном образе релиза подтверждено отсутствие системного CA bundle;
+результаты исправления Dockerfile и проверки записаны в плане.
+
+### Блок 20: повторная проверка S3 с системным CA bundle хоста
+
+Статус: выполнен пользователем 01.11.2026; вывод получен. Выполнить от root по SSH.
+Это диагностический запуск прежнего проверочного образа: системный CA bundle
+VPS монтируется только для чтения во временный контейнер и явно передаётся
+pgBackRest. Проверка TLS остаётся включённой. Конфигурация и доверенные
+сертификаты VPS не меняются, рабочий том не подключается, stanza не создаётся.
+Для постоянного запуска подготовлено исправление образа с `ca-certificates`;
+новый комплект нужно собрать после ревью и объединения исправления в main.
+
+```bash
+bash <<'STAGEBY_BACKREST_CA_RETRY'
+set -eu
+test -s /etc/ssl/certs/ca-certificates.crt
+test "$(stat -c '%a:%U:%G' /etc/stageby/pgbackrest.conf)" = '600:root:root'
+docker run --rm -i --pull=never --network stageby-production_egress --memory=256m --cpus=0.5 --mount type=bind,src=/etc/stageby/pgbackrest.conf,dst=/run/stageby/pgbackrest.conf,readonly --mount type=bind,src=/etc/ssl/certs/ca-certificates.crt,dst=/run/stageby/ca-certificates.crt,readonly stageby-postgres:20261101T141007668Z-c0efd62c5d6d-c0d7df sh -s <<'STAGEBY_TRUSTED_REPOSITORY_READ'
+set -eu
+gosu postgres test -r /etc/pgbackrest/pgbackrest.conf
+gosu postgres test -r /run/stageby/ca-certificates.crt
+gosu postgres pgbackrest --stanza=stageby --repo=1 --repo1-storage-ca-file=/run/stageby/ca-certificates.crt --repo1-storage-verify-tls=y --log-level-console=warn repo-ls
+echo 'S3 repository listing succeeded with TLS verification'
+STAGEBY_TRUSTED_REPOSITORY_READ
+cd /opt/stageby/incoming/20261031T131317903Z-1f8763d7c884-0c6dc4
+export STAGEBY_CONFIG_DIR=/etc/stageby
+docker compose --env-file release.env -f runtime/compose.yaml ps
+echo 'CA preflight completed; running services unchanged'
+STAGEBY_BACKREST_CA_RETRY
+```
+
+Получить вывод целиком. Для пустого repository список может быть пустым;
+успех подтверждается `S3 repository listing succeeded with TLS verification`.
+При ошибке остановиться и прислать её текст без содержимого конфигурации.
+Успех этой проверки не подтверждает приватность, отсутствие lifecycle-правил,
+запись или шифрование repository; эти проверки остаются до создания бэкапов.
+Параметры CA и проверки сертификата описаны в
+[конфигурации pgBackRest](https://pgbackrest.org/configuration.html#section-repository/option-repo-storage-ca-file).
+
+Результат: `repo-ls` от postgres завершился успешно с явной проверкой TLS
+и системным CA bundle VPS. Список repository пуст; получены сообщения
+`S3 repository listing succeeded with TLS verification` и
+`CA preflight completed; running services unchanged`.
+Таким образом, чтение списка S3 с указанными credentials и проверкой TLS
+подтверждено. Шифрование и запись пока не проверялись.
+
+После проверки работают три контейнера прежнего комплекта
+`20261031T131317903Z-1f8763d7c884-0c6dc4`; API и PostgreSQL healthy.
+Причина TLS-отказа образа без CA bundle подтверждена успешной повторной проверкой.
+Переключение PostgreSQL выполнять после выпуска исправленного комплекта;
+перед созданием stanza остаётся проверить приватность бакета и отсутствие
+независимых lifecycle-правил.

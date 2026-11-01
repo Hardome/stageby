@@ -39,6 +39,9 @@ pnpm run production:smoke
 [`Dockerfile`](../../infrastructure/production/build/Dockerfile).
 Базовый PostgreSQL закреплён по digest, пакет pgBackRest — по версии в
 [`postgres.Dockerfile`](../../infrastructure/production/build/postgres.Dockerfile).
+Образ PostgreSQL устанавливает `ca-certificates` и проверяет наличие непустого
+системного CA bundle при сборке: pgBackRest использует его для проверки TLS
+внешнего S3. Локальный тест с отдельным CA MinIO не заменяет эту проверку.
 
 ## Проверка pgBackRest
 
