@@ -30,16 +30,16 @@ describe('release build', () => {
     const release = await buildRelease(current.root, output, current.run);
     const manifest = JSON.parse(readFileSync(join(release.directory, 'manifest.json'), 'utf8'));
 
-    expect(current.stages).toEqual(['check', 'build', 'smoke']);
+    expect(current.stages).toEqual(['check', 'build', 'backup', 'smoke']);
     expect(current.state().environments).toEqual(
-      Array.from({ length: 3 }, () => ({
+      Array.from({ length: 4 }, () => ({
         releaseId: manifest.id,
         checkImage: `stageby-check:${manifest.id}`,
-        postgresImage: `postgres:18@sha256:${'a'.repeat(64)}`,
+        postgresImage: `stageby-postgres:${manifest.id}`,
       })),
     );
     expect(current.state().snapshots).toEqual(
-      Array.from({ length: 3 }, () => ({
+      Array.from({ length: 4 }, () => ({
         content: 'Committed source\n',
         localEnv: false,
         gitDirectory: false,
@@ -49,6 +49,8 @@ describe('release build', () => {
     expect(manifest.source.pullRequest.number).toBe(77);
     expect(manifest.schema).toEqual(current.schema);
     expect(manifest.images).toHaveLength(4);
+    expect(manifest.checks.backup).toBe('passed');
+    expect(manifest.tools.pgbackrest).toBe('pgBackRest 2.60.0');
     expect(manifest.images[3].source).toContain('postgres:18@sha256:');
     expect(gunzipSync(readFileSync(join(release.directory, 'images.tar.gz'))).toString()).toBe(
       'Fixture image archive\n',
@@ -63,26 +65,35 @@ describe('release build', () => {
     expect(existsSync(join(current.root, '.env'))).toBe(true);
   });
 
-  it.each<Failure>(['check', 'build', 'smoke', 'platform', 'revision', 'schema', 'save'])(
-    'publishes no bundle after failure at %s',
-    async (failure) => {
-      const current = fixture(failure);
-      const output = join(current.root, 'ignored-material/releases');
-      const messages: Record<Failure, string> = {
-        check: 'Fixture check failed',
-        build: 'Fixture build failed',
-        smoke: 'Fixture smoke failed',
-        platform: 'must target linux/amd64',
-        revision: 'revision does not match',
-        schema: 'schema manifest mismatch',
-        save: 'Fixture save failed',
-      };
+  it.each<Failure>([
+    'check',
+    'build',
+    'backup',
+    'smoke',
+    'platform',
+    'revision',
+    'postgres-revision',
+    'schema',
+    'save',
+  ])('publishes no bundle after failure at %s', async (failure) => {
+    const current = fixture(failure);
+    const output = join(current.root, 'ignored-material/releases');
+    const messages: Record<Failure, string> = {
+      check: 'Fixture check failed',
+      build: 'Fixture build failed',
+      backup: 'Fixture backup failed',
+      smoke: 'Fixture smoke failed',
+      platform: 'must target linux/amd64',
+      revision: 'revision does not match',
+      'postgres-revision': 'revision does not match',
+      schema: 'schema manifest mismatch',
+      save: 'Fixture save failed',
+    };
 
-      await expect(buildRelease(current.root, output, current.run)).rejects.toThrow(messages[failure]);
+    await expect(buildRelease(current.root, output, current.run)).rejects.toThrow(messages[failure]);
 
-      expect(existsSync(output) ? readdirSync(output) : []).toEqual([]);
-      expect(existsSync(current.state().snapshot)).toBe(false);
-      expect(current.state().saved).toBe(failure === 'save');
-    },
-  );
+    expect(existsSync(output) ? readdirSync(output) : []).toEqual([]);
+    expect(existsSync(current.state().snapshot)).toBe(false);
+    expect(current.state().saved).toBe(failure === 'save');
+  });
 });

@@ -22,6 +22,7 @@ describe('release artifacts', () => {
 
     expect(files.map((file) => file.path)).toEqual([
       'release.env',
+      'runtime/backup.compose.yaml',
       'runtime/Caddyfile',
       'runtime/compose.yaml',
       'runtime/env/api.env.example',

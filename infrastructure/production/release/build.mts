@@ -75,7 +75,7 @@ export async function buildRelease(
         imageTarBytes: (await stat(imageTar)).size,
         payloadBytes: artifacts.reduce((sum, file) => sum + file.bytes, 0),
       },
-      checks: { linux: 'passed', smoke: 'passed' },
+      checks: { linux: 'passed', backup: 'passed', smoke: 'passed' },
     };
     await writeFile(join(staging, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
     await writeChecksums(staging, artifacts);

@@ -10,6 +10,8 @@
 | `../compose.yaml` | PostgreSQL и MinIO для обычной разработки |
 | `minio/Dockerfile` | Сборка MinIO для разработки и временных тестов |
 | `production/build/` | Сборка образов приложения и manifest схемы БД |
+| `production/build/postgres.Dockerfile` | Образ PostgreSQL 18.6 с pgBackRest 2.60.0 |
+| `production/runtime/backup.compose.yaml` | Архивирование WAL, конфигурация pgBackRest и исходящий доступ PostgreSQL к S3 |
 | `production/runtime/` | Compose приложения и конфигурация Caddy |
 | `production/runtime/env/` | Примеры переменных окружения без секретов |
 | `production/migrations/` | Запуск миграций в отдельном контейнере |
@@ -82,3 +84,9 @@
 не перезаписываются, секреты не выводятся. S3 credentials замените в `api.env`
 вручную. SQL содержит секреты и хранится вместе с конфигурацией вне релиза.
 Скрипт не подключается к БД и не применяет SQL или миграции.
+
+## Локальная проверка pgBackRest
+
+Команды проверки бэкапов и восстановления, назначение дополнительного Compose
+и доступ процесса postgres к конфигурации описаны в
+[руководстве production-контейнеров](../docs/guides/production-containers.md#проверка-pgbackrest).
