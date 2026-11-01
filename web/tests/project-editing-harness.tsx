@@ -20,6 +20,11 @@ export async function flush(action: () => void) {
     action();
     await Promise.resolve();
   });
+
+  // Доставляем уведомления Query и отложенный фокус формы внутри act.
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 }
 export function input(name: string) {
   const field = [...document.querySelectorAll('input')].find((element) => element.id === `project-${name}`);

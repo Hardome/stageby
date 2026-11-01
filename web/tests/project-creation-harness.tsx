@@ -21,6 +21,11 @@ export async function flush(action: () => void) {
     action();
     await Promise.resolve();
   });
+
+  // React Hook Form откладывает setFocus до таймера после обновления компонента.
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 }
 
 export function setupProjectCreation() {
