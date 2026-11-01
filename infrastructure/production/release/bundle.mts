@@ -5,6 +5,7 @@ import { join } from 'node:path';
 
 const runtimeFiles = [
   'compose.yaml',
+  'backup.compose.yaml',
   'Caddyfile',
   'env/api.env.example',
   'env/database.env.example',

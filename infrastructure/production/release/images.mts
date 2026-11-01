@@ -13,26 +13,41 @@ interface ImageInspection {
 
 export function prepareImages(source: string, id: string, sha: string, run: CommandRunner) {
   const options = { cwd: source };
-  const compose = readFileSync(join(source, 'infrastructure/production/runtime/compose.yaml'), 'utf8');
-  const postgres = compose.match(/image:\s*\$\{POSTGRES_IMAGE:-(postgres:[^}]+)\}/)?.[1];
+  const postgresDockerfile = readFileSync(join(source, 'infrastructure/production/build/postgres.Dockerfile'), 'utf8');
+  const postgres = postgresDockerfile.match(/^FROM (postgres:[^\s]+)/m)?.[1];
   if (!postgres || !/@sha256:[a-f0-9]{64}$/.test(postgres))
     throw new Error('PostgreSQL image must be pinned by digest');
 
   const environment = {
     ...process.env,
     RELEASE_ID: id,
-    POSTGRES_IMAGE: postgres,
+    POSTGRES_IMAGE: `stageby-postgres:${id}`,
+    STAGEBY_BACKUP_MINIO_IMAGE: `stageby-backup-minio:${id}`,
     STAGEBY_CHECK_IMAGE: `stageby-check:${id}`,
   };
   const execute = (script: string, args: string[] = []) =>
-    run(process.execPath, [join(source, 'scripts', script), ...args], { ...options, env: environment, inherit: true });
+    run(process.execPath, [join(source, script), ...args], { ...options, env: environment, inherit: true });
 
-  execute('production.mjs', ['check']);
-  execute('production.mjs', ['build', id, sha]);
-  execute('production-smoke.mjs');
+  execute('scripts/production.mjs', ['check']);
+  execute('scripts/production.mjs', ['build', id, sha]);
+  run(
+    'docker',
+    [
+      'build',
+      '--load',
+      '--platform',
+      'linux/amd64',
+      '--file',
+      'infrastructure/minio/Dockerfile',
+      '--tag',
+      environment.STAGEBY_BACKUP_MINIO_IMAGE,
+      '.',
+    ],
+    { ...options, inherit: true },
+  );
+  execute('infrastructure/production/checks/backrest.mjs', [environment.POSTGRES_IMAGE]);
+  execute('scripts/production-smoke.mjs');
 
-  run('docker', ['pull', '--platform', 'linux/amd64', postgres], { ...options, inherit: true });
-  run('docker', ['tag', postgres, `stageby-postgres:${id}`], options);
   const references = ['api', 'migrator', 'web', 'postgres'].map((target) => `stageby-${target}:${id}`);
   const inspections = JSON.parse(run('docker', ['image', 'inspect', ...references], options)) as ImageInspection[];
   if (inspections.length !== references.length) throw new Error('Incomplete image inspection');
@@ -40,7 +55,7 @@ export function prepareImages(source: string, id: string, sha: string, run: Comm
   const images = inspections.map((image, index) => {
     if (image.Os !== 'linux' || image.Architecture !== 'amd64')
       throw new Error('Release images must target linux/amd64');
-    if (index < 3 && image.Config.Labels?.['org.opencontainers.image.revision'] !== sha) {
+    if (image.Config.Labels?.['org.opencontainers.image.revision'] !== sha) {
       throw new Error('Application image revision does not match the release');
     }
 
@@ -92,7 +107,14 @@ export function prepareImages(source: string, id: string, sha: string, run: Comm
     ),
     docker: run('docker', ['version', '--format', '{{.Client.Version}}/{{.Server.Version}}'], options),
     compose: run('docker', ['compose', 'version', '--short'], options),
-    baseImages: [...new Set([...dockerfile.matchAll(/^FROM (\S+@sha256:[a-f0-9]{64})/gm)].map((match) => match[1]!))],
+    pgbackrest: run('docker', ['run', '--rm', '--network', 'none', references[3]!, 'pgbackrest', 'version'], options),
+    baseImages: [
+      ...new Set(
+        [...`${dockerfile}\n${postgresDockerfile}`.matchAll(/^FROM (\S+@sha256:[a-f0-9]{64})/gm)].map(
+          (match) => match[1]!,
+        ),
+      ),
+    ],
   };
 
   return { images, schema: expectedSchema, tools };

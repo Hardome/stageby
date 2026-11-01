@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const dockerfilePath = 'infrastructure/production/build/Dockerfile';
 const checkComposePath = 'infrastructure/production/checks/compose.yaml';
-const imageTargets = ['api', 'migrator', 'web'];
+const imageTargets = ['api', 'migrator', 'web', 'postgres'];
 
 function runDocker(args) {
   const result = spawnSync('docker', args, {
@@ -32,12 +32,12 @@ switch (process.argv[2]) {
     for (const target of imageTargets) {
       runDocker([
         'build',
+        '--load',
         '--platform',
         'linux/amd64',
         '--file',
-        dockerfilePath,
-        '--target',
-        target,
+        target === 'postgres' ? 'infrastructure/production/build/postgres.Dockerfile' : dockerfilePath,
+        ...(target === 'postgres' ? [] : ['--target', target]),
         '--tag',
         `stageby-${target}:${releaseId}`,
         ...(revision ? ['--label', `org.opencontainers.image.revision=${revision}`] : []),

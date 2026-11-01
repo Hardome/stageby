@@ -147,6 +147,11 @@ words:
   - фикстурой
   - фикстуру
   - хешированные
+  - pgbackrest
+  - pgdg
+  - бэкапа
+  - бэкапами
+  - бакету
 ignorePaths:
   - "**/node_modules/**"
   - "**/dist/**"

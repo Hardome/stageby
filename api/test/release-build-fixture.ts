@@ -4,7 +4,16 @@ import { join } from 'node:path';
 import type { CommandOptions, CommandRunner } from '../../infrastructure/production/release/command.mts';
 import { createReleaseFixture } from './release-fixture.ts';
 
-export type Failure = 'check' | 'build' | 'smoke' | 'platform' | 'revision' | 'schema' | 'save';
+export type Failure =
+  | 'check'
+  | 'build'
+  | 'backup'
+  | 'smoke'
+  | 'platform'
+  | 'revision'
+  | 'postgres-revision'
+  | 'schema'
+  | 'save';
 
 export function buildFixture(failure?: Failure) {
   const current = createReleaseFixture();
@@ -38,7 +47,9 @@ export function buildFixture(failure?: Failure) {
       checkImage: options.env?.STAGEBY_CHECK_IMAGE,
       postgresImage: options.env?.POSTGRES_IMAGE,
     });
-    const stage = args[0]?.endsWith('production-smoke.mjs') ? 'smoke' : args[1]!;
+    let stage = args[1]!;
+    if (args[0]?.endsWith('backrest.mjs')) stage = 'backup';
+    if (args[0]?.endsWith('production-smoke.mjs')) stage = 'smoke';
     stages.push(stage);
     if (stage === failure) throw new Error(`Fixture ${stage} failed`);
 
@@ -52,7 +63,12 @@ export function buildFixture(failure?: Failure) {
         Os: 'linux',
         Architecture: failure === 'platform' ? 'arm64' : 'amd64',
         Size: 100,
-        Config: { Labels: { 'org.opencontainers.image.revision': failure === 'revision' ? 'other' : current.sha } },
+        Config: {
+          Labels: {
+            'org.opencontainers.image.revision':
+              failure === 'revision' || (failure === 'postgres-revision' && index === 3) ? 'other' : current.sha,
+          },
+        },
         RepoTags: [reference],
       })),
     );
@@ -67,6 +83,7 @@ export function buildFixture(failure?: Failure) {
   }
 
   function runContainer(args: string[]) {
+    if (args.includes('pgbackrest')) return 'pgBackRest 2.60.0';
     if (args.at(-1)?.includes('schema-manifest.json')) {
       return JSON.stringify(failure === 'schema' ? { ...schema, compatibilityVersion: 2 } : schema);
     }
@@ -88,6 +105,7 @@ export function buildFixture(failure?: Failure) {
         return 'v2.40.3';
       case 'pull':
       case 'tag':
+      case 'build':
         return '';
     }
 

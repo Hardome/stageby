@@ -1,0 +1,18 @@
+services:
+  postgres:
+    volumes:
+      - type: bind
+        source: ${STAGEBY_CONFIG_DIR:?Set STAGEBY_CONFIG_DIR}/pgbackrest.conf
+        target: /run/stageby/pgbackrest.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [database, egress]
+    command:
+      - postgres
+      - -c
+      - archive_mode=${STAGEBY_ARCHIVE_MODE:-on}
+      - -c
+      - archive_timeout=300
+      - -c
+      - archive_command=pgbackrest --stanza=stageby archive-push %p

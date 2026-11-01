@@ -22,9 +22,14 @@ export function createReleaseFixture() {
     `services:\n  postgres:\n    image: \${POSTGRES_IMAGE:-postgres:18@sha256:${digest}}\n`,
   );
   writeFileSync(join(root, 'infrastructure/production/runtime/Caddyfile'), 'localhost\n');
+  writeFileSync(join(root, 'infrastructure/production/runtime/backup.compose.yaml'), 'services: {}\n');
   for (const name of ['api', 'database', 'migrator']) {
     writeFileSync(join(root, `infrastructure/production/runtime/env/${name}.env.example`), 'EXAMPLE=placeholder\n');
   }
+  writeFileSync(
+    join(root, 'infrastructure/production/build/postgres.Dockerfile'),
+    `FROM postgres:18@sha256:${digest}\n`,
+  );
   writeFileSync(
     join(root, 'infrastructure/production/build/Dockerfile'),
     `FROM node:24@sha256:${digest} AS tooling\nFROM caddy:2@sha256:${digest}\n`,
